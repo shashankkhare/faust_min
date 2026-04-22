@@ -78,7 +78,11 @@ class FaustFluteInstrument implements FaustInstrument {
       _renderBuffer?.dispose();
       _renderBuffer = _NativeAudioBuffer(buffer.length);
     }
-    _bindings.flute_render(_nativeHandle, buffer.length, _renderBuffer!.pointer);
+    _bindings.flute_render(
+      _nativeHandle,
+      buffer.length,
+      _renderBuffer!.pointer,
+    );
     _renderBuffer!.copyTo(buffer);
   }
 
@@ -170,7 +174,11 @@ class FaustDayanInstrument implements FaustInstrument {
       _renderBuffer?.dispose();
       _renderBuffer = _NativeAudioBuffer(buffer.length);
     }
-    _bindings.dayan_render(_nativeHandle, buffer.length, _renderBuffer!.pointer);
+    _bindings.dayan_render(
+      _nativeHandle,
+      buffer.length,
+      _renderBuffer!.pointer,
+    );
     _renderBuffer!.copyTo(buffer);
   }
 
@@ -216,7 +224,11 @@ class FaustBayanInstrument implements FaustInstrument {
       _renderBuffer?.dispose();
       _renderBuffer = _NativeAudioBuffer(buffer.length);
     }
-    _bindings.bayan_render(_nativeHandle, buffer.length, _renderBuffer!.pointer);
+    _bindings.bayan_render(
+      _nativeHandle,
+      buffer.length,
+      _renderBuffer!.pointer,
+    );
     _renderBuffer!.copyTo(buffer);
   }
 
@@ -267,7 +279,11 @@ class FaustSitarInstrument implements FaustInstrument {
       _renderBuffer?.dispose();
       _renderBuffer = _NativeAudioBuffer(buffer.length);
     }
-    _bindings.sitar_render(_nativeHandle, buffer.length, _renderBuffer!.pointer);
+    _bindings.sitar_render(
+      _nativeHandle,
+      buffer.length,
+      _renderBuffer!.pointer,
+    );
     _renderBuffer!.copyTo(buffer);
   }
 
@@ -339,7 +355,11 @@ class FaustSnareInstrument implements FaustInstrument {
       _renderBuffer?.dispose();
       _renderBuffer = _NativeAudioBuffer(buffer.length);
     }
-    _bindings.snare_render(_nativeHandle, buffer.length, _renderBuffer!.pointer);
+    _bindings.snare_render(
+      _nativeHandle,
+      buffer.length,
+      _renderBuffer!.pointer,
+    );
     _renderBuffer!.copyTo(buffer);
   }
 
@@ -421,7 +441,11 @@ class FaustHiHatInstrument implements FaustInstrument {
       _renderBuffer?.dispose();
       _renderBuffer = _NativeAudioBuffer(buffer.length);
     }
-    _bindings.hihat_render(_nativeHandle, buffer.length, _renderBuffer!.pointer);
+    _bindings.hihat_render(
+      _nativeHandle,
+      buffer.length,
+      _renderBuffer!.pointer,
+    );
     _renderBuffer!.copyTo(buffer);
   }
 

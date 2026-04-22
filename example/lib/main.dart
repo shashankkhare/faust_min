@@ -113,7 +113,7 @@ class _DrumKitSectionState extends State<DrumKitSection> {
     final pcm = Float32List(11025); // 0.25 seconds
     if (inst is FaustHiHatInstrument) inst.setOpenness(_hatOpenness);
     if (inst is FaustTomInstrument) inst.setFrequency(_tomFreq);
-    
+
     // Type-specific strike
     if (inst is FaustKickInstrument) inst.strike(1.0);
     if (inst is FaustSnareInstrument) inst.strike(1.0);
@@ -122,7 +122,10 @@ class _DrumKitSectionState extends State<DrumKitSection> {
     if (inst is FaustRideInstrument) inst.strike(0.8);
 
     inst.render(pcm);
-    final source = await SoLoud.instance.loadMem('${name}_${DateTime.now().microsecondsSinceEpoch}', createWavFile(pcm, 44100));
+    final source = await SoLoud.instance.loadMem(
+      '${name}_${DateTime.now().microsecondsSinceEpoch}',
+      createWavFile(pcm, 44100),
+    );
     await SoLoud.instance.play(source);
     await Future.delayed(const Duration(milliseconds: 250));
     await SoLoud.instance.disposeSource(source);
@@ -130,34 +133,74 @@ class _DrumKitSectionState extends State<DrumKitSection> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(padding: const EdgeInsets.all(15), child: Column(children: [
-      Expanded(child: GridView.count(
-        crossAxisCount: 3, // 3 columns for better fit
-        mainAxisSpacing: 8,
-        crossAxisSpacing: 8,
-        childAspectRatio: 1.2, // Make pads slightly wider/shorter
+    return Padding(
+      padding: const EdgeInsets.all(15),
+      child: Column(
         children: [
-          _pad("KICK", Colors.deepOrange, () => _trigger(_kick, "kick")),
-          _pad("SNARE", Colors.blueGrey, () => _trigger(_snare, "snare")),
-          _pad("TOM", Colors.blue, () => _trigger(_tom, "tom")),
-          _pad("HI-HAT", Colors.yellow.shade800, () => _trigger(_hat, "hat")),
-          _pad("RIDE", Colors.teal, () => _trigger(_ride, "ride")),
+          Expanded(
+            child: GridView.count(
+              crossAxisCount: 3, // 3 columns for better fit
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              childAspectRatio: 1.2, // Make pads slightly wider/shorter
+              children: [
+                _pad("KICK", Colors.deepOrange, () => _trigger(_kick, "kick")),
+                _pad("SNARE", Colors.blueGrey, () => _trigger(_snare, "snare")),
+                _pad("TOM", Colors.blue, () => _trigger(_tom, "tom")),
+                _pad(
+                  "HI-HAT",
+                  Colors.yellow.shade800,
+                  () => _trigger(_hat, "hat"),
+                ),
+                _pad("RIDE", Colors.teal, () => _trigger(_ride, "ride")),
+              ],
+            ),
+          ),
+          const Divider(),
+          Text(
+            "Tom Tuning: ${_tomFreq.toStringAsFixed(0)} Hz",
+            style: const TextStyle(fontSize: 12),
+          ),
+          Slider(
+            value: _tomFreq,
+            min: 60,
+            max: 400,
+            onChanged: (v) => setState(() => _tomFreq = v),
+          ),
+          Text(
+            "Hi-Hat Openness: ${_hatOpenness.toStringAsFixed(2)}",
+            style: const TextStyle(fontSize: 12),
+          ),
+          Slider(
+            value: _hatOpenness,
+            min: 0,
+            max: 1.0,
+            onChanged: (v) => setState(() => _hatOpenness = v),
+          ),
         ],
-      )),
-      const Divider(),
-      Text("Tom Tuning: ${_tomFreq.toStringAsFixed(0)} Hz", style: const TextStyle(fontSize: 12)),
-      Slider(value: _tomFreq, min: 60, max: 400, onChanged: (v) => setState(() => _tomFreq = v)),
-      Text("Hi-Hat Openness: ${_hatOpenness.toStringAsFixed(2)}", style: const TextStyle(fontSize: 12)),
-      Slider(value: _hatOpenness, min: 0, max: 1.0, onChanged: (v) => setState(() => _hatOpenness = v)),
-    ]));
+      ),
+    );
   }
 
   Widget _pad(String label, Color color, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       child: Container(
-        decoration: BoxDecoration(color: color.withOpacity(0.3), borderRadius: BorderRadius.circular(15), border: Border.all(color: color, width: 2)),
-        child: Center(child: Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 18))),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: color, width: 2),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -170,7 +213,20 @@ double midiToFreq(double midi) {
 }
 
 String getNoteName(double midi) {
-  const names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+  const names = [
+    "C",
+    "C#",
+    "D",
+    "D#",
+    "E",
+    "F",
+    "F#",
+    "G",
+    "G#",
+    "A",
+    "A#",
+    "B",
+  ];
   int imidi = midi.round();
   int octave = (imidi / 12).floor() - 1;
   return "${names[imidi % 12]}$octave";
@@ -217,34 +273,70 @@ class _FluteSectionState extends State<FluteSection> {
   bool _isPlaying = false;
 
   @override
-  void initState() { super.initState(); _inst = FaustFluteInstrument(); }
+  void initState() {
+    super.initState();
+    _inst = FaustFluteInstrument();
+  }
+
   @override
-  void dispose() { _inst.dispose(); super.dispose(); }
+  void dispose() {
+    _inst.dispose();
+    super.dispose();
+  }
 
   void _play() async {
     if (_isPlaying) return;
     setState(() => _isPlaying = true);
     _inst.setFrequency(midiToFreq(_midi));
     _inst.setPressure(_pressure);
-    final pcm = Float32List(22050); 
+    final pcm = Float32List(22050);
     _inst.render(pcm);
-    final source = await SoLoud.instance.loadMem('flute_${DateTime.now()}', createWavFile(pcm, 44100));
+    final source = await SoLoud.instance.loadMem(
+      'flute_${DateTime.now()}',
+      createWavFile(pcm, 44100),
+    );
     await SoLoud.instance.play(source);
     await Future.delayed(const Duration(milliseconds: 600));
     await SoLoud.instance.disposeSource(source);
-    if(mounted) setState(() => _isPlaying = false);
+    if (mounted) setState(() => _isPlaying = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(padding: const EdgeInsets.all(30), child: Column(children: [
-      Text("Note: ${getNoteName(_midi)}", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-      Slider(value: _midi, min: 36, max: 84, onChanged: (v) => setState(() => _midi = v)),
-      Text("Pressure: ${_pressure.toStringAsFixed(2)}"),
-      Slider(value: _pressure, min: 0, max: 1.2, onChanged: (v) => setState(() => _pressure = v)),
-      const Spacer(),
-      SizedBox(width: double.infinity, height: 80, child: ElevatedButton.icon(onPressed: _isPlaying ? null : _play, icon: const Icon(Icons.air), label: const Text("Blow Flute"))),
-    ]));
+    return Padding(
+      padding: const EdgeInsets.all(30),
+      child: Column(
+        children: [
+          Text(
+            "Note: ${getNoteName(_midi)}",
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          Slider(
+            value: _midi,
+            min: 36,
+            max: 84,
+            onChanged: (v) => setState(() => _midi = v),
+          ),
+          Text("Pressure: ${_pressure.toStringAsFixed(2)}"),
+          Slider(
+            value: _pressure,
+            min: 0,
+            max: 1.2,
+            onChanged: (v) => setState(() => _pressure = v),
+          ),
+          const Spacer(),
+          SizedBox(
+            width: double.infinity,
+            height: 80,
+            child: ElevatedButton.icon(
+              onPressed: _isPlaying ? null : _play,
+              icon: const Icon(Icons.air),
+              label: const Text("Blow Flute"),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -262,59 +354,90 @@ class _BowlSectionState extends State<BowlSection> {
   bool _isPlaying = false;
 
   @override
-  void initState() { super.initState(); _inst = FaustBowlInstrument(); }
+  void initState() {
+    super.initState();
+    _inst = FaustBowlInstrument();
+  }
+
   @override
-  void dispose() { _inst.dispose(); super.dispose(); }
+  void dispose() {
+    _inst.dispose();
+    super.dispose();
+  }
 
   void _strike() async {
     if (_isPlaying) return;
     setState(() => _isPlaying = true);
     _inst.setFrequency(midiToFreq(_midi));
-    _inst.setRub(_rub); 
-    _inst.setWaver(_waver); 
+    _inst.setRub(_rub);
+    _inst.setWaver(_waver);
     _inst.strike(0.8);
-    
-    final pcm = Float32List(44100 * 5); 
+
+    final pcm = Float32List(44100 * 5);
     _inst.render(pcm);
-    
-    final source = await SoLoud.instance.loadMem('bowl_${DateTime.now().microsecondsSinceEpoch}', createWavFile(pcm, 44100));
+
+    final source = await SoLoud.instance.loadMem(
+      'bowl_${DateTime.now().microsecondsSinceEpoch}',
+      createWavFile(pcm, 44100),
+    );
     await SoLoud.instance.play(source);
-    
+
     await Future.delayed(const Duration(seconds: 5));
     await SoLoud.instance.disposeSource(source);
-    if(mounted) setState(() => _isPlaying = false);
+    if (mounted) setState(() => _isPlaying = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(padding: const EdgeInsets.all(30), child: Column(children: [
-      Text("Note: ${getNoteName(_midi)}", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-      Slider(value: _midi, min: 36, max: 72, onChanged: (v) => setState(() => _midi = v)),
-      const SizedBox(height: 20),
-      Text("Sustain (Rub) Intensity: ${_rub.toStringAsFixed(2)}"),
-      Slider(
-        value: _rub, 
-        min: 0, 
-        max: 1.0, 
-        onChanged: (v) {
-          setState(() => _rub = v);
-          _inst.setRub(v);
-        }
+    return Padding(
+      padding: const EdgeInsets.all(30),
+      child: Column(
+        children: [
+          Text(
+            "Note: ${getNoteName(_midi)}",
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          Slider(
+            value: _midi,
+            min: 36,
+            max: 72,
+            onChanged: (v) => setState(() => _midi = v),
+          ),
+          const SizedBox(height: 20),
+          Text("Sustain (Rub) Intensity: ${_rub.toStringAsFixed(2)}"),
+          Slider(
+            value: _rub,
+            min: 0,
+            max: 1.0,
+            onChanged: (v) {
+              setState(() => _rub = v);
+              _inst.setRub(v);
+            },
+          ),
+          const SizedBox(height: 20),
+          Text("Waver (Beating): ${(_waver * 100).toStringAsFixed(2)}%"),
+          Slider(
+            value: _waver,
+            min: 0.0,
+            max: 0.02,
+            onChanged: (v) {
+              setState(() => _waver = v);
+              _inst.setWaver(v);
+            },
+          ),
+          const Spacer(),
+          SizedBox(
+            width: double.infinity,
+            height: 80,
+            child: ElevatedButton.icon(
+              onPressed: _isPlaying ? null : _strike,
+              icon: const Icon(Icons.gavel),
+              label: const Text("Strike & Sustain"),
+            ),
+          ),
+        ],
       ),
-      const SizedBox(height: 20),
-      Text("Waver (Beating): ${(_waver * 100).toStringAsFixed(2)}%"),
-      Slider(
-        value: _waver, 
-        min: 0.0, 
-        max: 0.02, 
-        onChanged: (v) {
-          setState(() => _waver = v);
-          _inst.setWaver(v);
-        }
-      ),
-      const Spacer(),
-      SizedBox(width: double.infinity, height: 80, child: ElevatedButton.icon(onPressed: _isPlaying ? null : _strike, icon: const Icon(Icons.gavel), label: const Text("Strike & Sustain"))),
-    ]));
+    );
   }
 }
 
@@ -330,32 +453,63 @@ class _DayanSectionState extends State<DayanSection> {
   bool _isPlaying = false;
 
   @override
-  void initState() { super.initState(); _inst = FaustDayanInstrument(); }
+  void initState() {
+    super.initState();
+    _inst = FaustDayanInstrument();
+  }
+
   @override
-  void dispose() { _inst.dispose(); super.dispose(); }
+  void dispose() {
+    _inst.dispose();
+    super.dispose();
+  }
 
   void _strike() async {
     if (_isPlaying) return;
     setState(() => _isPlaying = true);
     _inst.setFrequency(midiToFreq(_midi));
     _inst.strike(0.9);
-    final pcm = Float32List(22050); 
+    final pcm = Float32List(22050);
     _inst.render(pcm);
-    final source = await SoLoud.instance.loadMem('dayan_${DateTime.now()}', createWavFile(pcm, 44100));
+    final source = await SoLoud.instance.loadMem(
+      'dayan_${DateTime.now()}',
+      createWavFile(pcm, 44100),
+    );
     await SoLoud.instance.play(source);
     await Future.delayed(const Duration(milliseconds: 500));
     await SoLoud.instance.disposeSource(source);
-    if(mounted) setState(() => _isPlaying = false);
+    if (mounted) setState(() => _isPlaying = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(padding: const EdgeInsets.all(30), child: Column(children: [
-      Text("Note: ${getNoteName(_midi)}", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-      Slider(value: _midi, min: 48, max: 72, onChanged: (v) => setState(() => _midi = v)),
-      const Spacer(),
-      SizedBox(width: double.infinity, height: 80, child: ElevatedButton.icon(onPressed: _isPlaying ? null : _strike, icon: const Icon(Icons.circle), label: const Text("Strike Dayan"))),
-    ]));
+    return Padding(
+      padding: const EdgeInsets.all(30),
+      child: Column(
+        children: [
+          Text(
+            "Note: ${getNoteName(_midi)}",
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          Slider(
+            value: _midi,
+            min: 48,
+            max: 72,
+            onChanged: (v) => setState(() => _midi = v),
+          ),
+          const Spacer(),
+          SizedBox(
+            width: double.infinity,
+            height: 80,
+            child: ElevatedButton.icon(
+              onPressed: _isPlaying ? null : _strike,
+              icon: const Icon(Icons.circle),
+              label: const Text("Strike Dayan"),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -371,9 +525,16 @@ class _BayanSectionState extends State<BayanSection> {
   bool _isPlaying = false;
 
   @override
-  void initState() { super.initState(); _inst = FaustBayanInstrument(); }
+  void initState() {
+    super.initState();
+    _inst = FaustBayanInstrument();
+  }
+
   @override
-  void dispose() { _inst.dispose(); super.dispose(); }
+  void dispose() {
+    _inst.dispose();
+    super.dispose();
+  }
 
   void _strike() async {
     if (_isPlaying) return;
@@ -381,25 +542,52 @@ class _BayanSectionState extends State<BayanSection> {
     _inst.setFrequency(110.0);
     _inst.setMeend(_meend);
     _inst.strike(1.0);
-    final pcm = Float32List(44100); 
+    final pcm = Float32List(44100);
     _inst.render(pcm);
-    final source = await SoLoud.instance.loadMem('bayan_${DateTime.now()}', createWavFile(pcm, 44100));
+    final source = await SoLoud.instance.loadMem(
+      'bayan_${DateTime.now()}',
+      createWavFile(pcm, 44100),
+    );
     await SoLoud.instance.play(source);
     await Future.delayed(const Duration(milliseconds: 1000));
     await SoLoud.instance.disposeSource(source);
-    if(mounted) setState(() => _isPlaying = false);
+    if (mounted) setState(() => _isPlaying = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(padding: const EdgeInsets.all(30), child: Column(children: [
-      const Text("Bayan (Bass Drum)", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-      const SizedBox(height: 40),
-      Text("Meend (Slide): ${_meend.toStringAsFixed(2)}x"),
-      Slider(value: _meend, min: 1.0, max: 2.5, onChanged: (v) => setState(() { _meend = v; _inst.setMeend(v); })),
-      const Spacer(),
-      SizedBox(width: double.infinity, height: 80, child: ElevatedButton.icon(onPressed: _isPlaying ? null : _strike, icon: const Icon(Icons.lens), label: const Text("Strike Bayan"))),
-    ]));
+    return Padding(
+      padding: const EdgeInsets.all(30),
+      child: Column(
+        children: [
+          const Text(
+            "Bayan (Bass Drum)",
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 40),
+          Text("Meend (Slide): ${_meend.toStringAsFixed(2)}x"),
+          Slider(
+            value: _meend,
+            min: 1.0,
+            max: 2.5,
+            onChanged: (v) => setState(() {
+              _meend = v;
+              _inst.setMeend(v);
+            }),
+          ),
+          const Spacer(),
+          SizedBox(
+            width: double.infinity,
+            height: 80,
+            child: ElevatedButton.icon(
+              onPressed: _isPlaying ? null : _strike,
+              icon: const Icon(Icons.lens),
+              label: const Text("Strike Bayan"),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -416,9 +604,16 @@ class _SitarSectionState extends State<SitarSection> {
   bool _isPlaying = false;
 
   @override
-  void initState() { super.initState(); _inst = FaustSitarInstrument(); }
+  void initState() {
+    super.initState();
+    _inst = FaustSitarInstrument();
+  }
+
   @override
-  void dispose() { _inst.dispose(); super.dispose(); }
+  void dispose() {
+    _inst.dispose();
+    super.dispose();
+  }
 
   void _pluck() async {
     if (_isPlaying) return;
@@ -426,9 +621,9 @@ class _SitarSectionState extends State<SitarSection> {
     _inst.setFrequency(midiToFreq(_midi));
     _inst.setJivari(_jivari);
     _inst.pluck(0.8);
-    final pcm = Float32List(44100 * 2); 
+    final pcm = Float32List(44100 * 2);
     _inst.render(pcm);
-    
+
     // Debug: Check if PCM has sound
     double maxAmp = 0;
     for (var s in pcm) {
@@ -436,22 +631,51 @@ class _SitarSectionState extends State<SitarSection> {
     }
     debugPrint('Sitar Render - Max Amplitude: $maxAmp');
 
-    final source = await SoLoud.instance.loadMem('sitar_${DateTime.now().microsecondsSinceEpoch}', createWavFile(pcm, 44100));
+    final source = await SoLoud.instance.loadMem(
+      'sitar_${DateTime.now().microsecondsSinceEpoch}',
+      createWavFile(pcm, 44100),
+    );
     await SoLoud.instance.play(source);
     await Future.delayed(const Duration(seconds: 2));
     await SoLoud.instance.disposeSource(source);
-    if(mounted) setState(() => _isPlaying = false);
+    if (mounted) setState(() => _isPlaying = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(padding: const EdgeInsets.all(30), child: Column(children: [
-      Text("Note: ${getNoteName(_midi)}", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-      Slider(value: _midi, min: 36, max: 72, onChanged: (v) => setState(() => _midi = v)),
-      Text("Jivari (Buzz): ${_jivari.toStringAsFixed(2)}"),
-      Slider(value: _jivari, min: 0, max: 1, onChanged: (v) => setState(() => _jivari = v)),
-      const Spacer(),
-      SizedBox(width: double.infinity, height: 80, child: ElevatedButton.icon(onPressed: _isPlaying ? null : _pluck, icon: const Icon(Icons.music_note), label: const Text("Pluck Sitar"))),
-    ]));
+    return Padding(
+      padding: const EdgeInsets.all(30),
+      child: Column(
+        children: [
+          Text(
+            "Note: ${getNoteName(_midi)}",
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          Slider(
+            value: _midi,
+            min: 36,
+            max: 72,
+            onChanged: (v) => setState(() => _midi = v),
+          ),
+          Text("Jivari (Buzz): ${_jivari.toStringAsFixed(2)}"),
+          Slider(
+            value: _jivari,
+            min: 0,
+            max: 1,
+            onChanged: (v) => setState(() => _jivari = v),
+          ),
+          const Spacer(),
+          SizedBox(
+            width: double.infinity,
+            height: 80,
+            child: ElevatedButton.icon(
+              onPressed: _isPlaying ? null : _pluck,
+              icon: const Icon(Icons.music_note),
+              label: const Text("Pluck Sitar"),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
