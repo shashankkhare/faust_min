@@ -1,6 +1,6 @@
 #include "FaustBayan.hpp"
 
-FaustBayan::FaustBayan(float sampleRate) : _sampleRate(sampleRate), _baseFreq(110.0f), _meend(1.0f), _currentFreq(110.0f), _excitation(0.0f) {
+FaustBayan::FaustBayan(float sampleRate) : _sampleRate(sampleRate), _baseFreq(110.0f), _meend(1.0f), _currentFreq(110.0f), _excitation(0.0f), _muted(false) {
     struct ModeData { float ratio; float t60; float gain; };
     std::vector<ModeData> data = {
         {1.0f, 1.8f, 1.0f},
@@ -26,7 +26,20 @@ void FaustBayan::setFrequency(float freq) {
 
 void FaustBayan::setMeend(float multiplier) {
     _meend = multiplier;
-    // We don't call updateInternal here, we smoothly interpolate in render
+}
+
+void FaustBayan::setMute(bool muted) {
+    _muted = muted;
+    struct ModeData { float t60; };
+    std::vector<ModeData> baseT60 = {
+        {1.8f}, {1.0f}, {0.5f}
+    };
+    
+    float scale = _muted ? 0.1f : 1.0f; // Damping for "Ka"
+    for (size_t i = 0; i < _modes.size() && i < baseT60.size(); ++i) {
+        _modes[i].t60 = baseT60[i].t60 * scale;
+    }
+    updateInternal();
 }
 
 void FaustBayan::strike(float velocity) {

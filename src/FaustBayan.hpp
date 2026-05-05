@@ -6,6 +6,7 @@ public:
     FaustBayan(float sampleRate);
     void setFrequency(float freq);
     void setMeend(float multiplier);
+    void setMute(bool muted);
     void strike(float velocity);
     void render(int numFrames, float* buffer);
 
@@ -16,6 +17,7 @@ private:
     float _currentFreq;
     std::vector<Faust::Resonator> _modes;
     float _excitation;
+    bool _muted;
 
     void updateInternal();
 };

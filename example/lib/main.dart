@@ -3,6 +3,8 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'dart:math' as math;
 
+import 'dart:ffi';
+import 'package:ffi/ffi.dart';
 import 'package:faust_min/faust_min.dart';
 import 'package:flutter_soloud/flutter_soloud.dart';
 
@@ -40,7 +42,7 @@ class _FaustExampleHomeState extends State<FaustExampleHome> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 6,
+      length: 8,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Faust Classical Suite'),
@@ -53,6 +55,8 @@ class _FaustExampleHomeState extends State<FaustExampleHome> {
               Tab(icon: Icon(Icons.lens), text: "Bayan"),
               Tab(icon: Icon(Icons.music_note), text: "Sitar"),
               Tab(icon: Icon(Icons.grid_view), text: "Drums"),
+              Tab(icon: Icon(Icons.notifications), text: "Bell"),
+              Tab(icon: Icon(Icons.playlist_play), text: "Patterns"),
             ],
           ),
         ),
@@ -64,6 +68,8 @@ class _FaustExampleHomeState extends State<FaustExampleHome> {
             BayanSection(),
             SitarSection(),
             DrumKitSection(),
+            BellSection(),
+            SequencerSection(),
           ],
         ),
       ),
@@ -349,6 +355,7 @@ class BowlSection extends StatefulWidget {
 class _BowlSectionState extends State<BowlSection> {
   late FaustBowlInstrument _inst;
   double _midi = 48.0;
+  double _duration = 6.0;
   double _rub = 0.0;
   double _waver = 0.002;
   bool _isPlaying = false;
@@ -369,11 +376,12 @@ class _BowlSectionState extends State<BowlSection> {
     if (_isPlaying) return;
     setState(() => _isPlaying = true);
     _inst.setFrequency(midiToFreq(_midi));
+    _inst.setDuration(_duration);
     _inst.setRub(_rub);
     _inst.setWaver(_waver);
-    _inst.strike(0.8);
+    _inst.strike(1.0);
 
-    final pcm = Float32List(44100 * 5);
+    final pcm = Float32List(44100 * (_duration + 1).toInt());
     _inst.render(pcm);
 
     final source = await SoLoud.instance.loadMem(
@@ -382,7 +390,7 @@ class _BowlSectionState extends State<BowlSection> {
     );
     await SoLoud.instance.play(source);
 
-    await Future.delayed(const Duration(seconds: 5));
+    await Future.delayed(Duration(seconds: _duration.toInt()));
     await SoLoud.instance.disposeSource(source);
     if (mounted) setState(() => _isPlaying = false);
   }
@@ -424,6 +432,14 @@ class _BowlSectionState extends State<BowlSection> {
               setState(() => _waver = v);
               _inst.setWaver(v);
             },
+          ),
+          const SizedBox(height: 20),
+          Text("Ring Length: ${_duration.toStringAsFixed(1)}s"),
+          Slider(
+            value: _duration,
+            min: 1.0,
+            max: 15.0,
+            onChanged: (v) => setState(() => _duration = v),
           ),
           const Spacer(),
           SizedBox(
@@ -672,6 +688,275 @@ class _SitarSectionState extends State<SitarSection> {
               onPressed: _isPlaying ? null : _pluck,
               icon: const Icon(Icons.music_note),
               label: const Text("Pluck Sitar"),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+class SequencerSection extends StatefulWidget {
+  const SequencerSection({super.key});
+
+  @override
+  State<SequencerSection> createState() => _SequencerSectionState();
+}
+
+class _SequencerSectionState extends State<SequencerSection> {
+  bool _isPlaying = false;
+  String _status = "Ready to play patterns";
+
+  Future<void> _playPattern(String type) async {
+    if (_isPlaying) return;
+    setState(() {
+      _isPlaying = true;
+      _status = "Rendering $type...";
+    });
+
+    try {
+      const double sampleRate = 44100.0;
+      const double tempoBpm = 120.0;
+      const double durationSec = 4.0;
+      final int totalSamples = (durationSec * sampleRate).toInt();
+
+      final List<FaustTriggerData> triggers = [];
+      final double secondsPerBeat = 60.0 / tempoBpm;
+      final double secondsPerStep = secondsPerBeat / 4.0;
+      final int samplesPerStep = (secondsPerStep * sampleRate).floor();
+
+      if (type == "Tabla") {
+        const String pattern = "D . n t G . k . D n t . G k . .";
+        for (int i = 0; i < pattern.length; i++) {
+          int offset = i * samplesPerStep;
+          String stroke = pattern[i];
+          if (stroke == ' ' || stroke == '.') continue;
+          double vel = (stroke == stroke.toUpperCase()) ? 1.0 : 0.6;
+          String s = stroke.toLowerCase();
+          if (s == 'd') {
+            triggers.add(FaustTriggerData(sampleOffset: offset, instrumentId: 0, velocity: vel * 0.8, param: 0.0));
+            triggers.add(FaustTriggerData(sampleOffset: offset, instrumentId: 1, velocity: vel, param: 1.1));
+          } else if (s == 'n') {
+            triggers.add(FaustTriggerData(sampleOffset: offset, instrumentId: 0, velocity: vel, param: 0.0));
+          } else if (s == 't') {
+            triggers.add(FaustTriggerData(sampleOffset: offset, instrumentId: 0, velocity: vel, param: 1.0));
+          } else if (s == 'g') {
+            triggers.add(FaustTriggerData(sampleOffset: offset, instrumentId: 1, velocity: vel, param: 1.2));
+          } else if (s == 'k') {
+            triggers.add(FaustTriggerData(sampleOffset: offset, instrumentId: 1, velocity: vel, param: 1.0));
+          }
+        }
+      } else if (type == "Zen") {
+        const String bowlPattern = "B . . . . . . . B . . . . . . .";
+        const String bellPattern = ". . . . . . . . . . . . . . . L";
+        for (int i = 0; i < bowlPattern.length; i++) {
+          int offset = i * samplesPerStep;
+          if (bowlPattern[i] == 'B') {
+            triggers.add(FaustTriggerData(sampleOffset: offset, instrumentId: 8, velocity: 0.8)); // Bowl
+          }
+          if (bellPattern[i] == 'L') {
+            triggers.add(FaustTriggerData(sampleOffset: offset, instrumentId: 7, velocity: 1.0, param: 880.0)); // Bell
+          }
+        }
+      } else {
+        const String pattern = "K . H . S . H . K K H . S . H R";
+        for (int i = 0; i < pattern.length; i++) {
+          int offset = i * samplesPerStep;
+          String stroke = pattern[i];
+          if (stroke == ' ' || stroke == '.') continue;
+          double vel = (stroke == stroke.toUpperCase()) ? 1.0 : 0.5;
+          String s = stroke.toLowerCase();
+          if (s == 'k') triggers.add(FaustTriggerData(sampleOffset: offset, instrumentId: 2, velocity: vel));
+          else if (s == 's') triggers.add(FaustTriggerData(sampleOffset: offset, instrumentId: 3, velocity: vel));
+          else if (s == 'h') triggers.add(FaustTriggerData(sampleOffset: offset, instrumentId: 4, velocity: vel, param: 0.2));
+          else if (s == 'r') triggers.add(FaustTriggerData(sampleOffset: offset, instrumentId: 6, velocity: vel));
+        }
+        // Snare roll
+        int lastBarStart = 12 * samplesPerStep;
+        for (int i = 0; i < 4; i++) {
+          int microOffset = lastBarStart + (i * (samplesPerStep ~/ 2));
+          triggers.add(FaustTriggerData(sampleOffset: microOffset, instrumentId: 3, velocity: 0.4 + (i * 0.1)));
+        }
+      }
+
+      final Pointer<Float> outputBuffer = calloc<Float>(totalSamples);
+      try {
+        FaustMin.renderSequencedAudio(
+          triggers: triggers,
+          baseFreq: 140.0,
+          sampleRate: sampleRate,
+          totalSamples: totalSamples,
+          outputBuffer: outputBuffer,
+        );
+
+        final pcm = outputBuffer.asTypedList(totalSamples);
+        final source = await SoLoud.instance.loadMem(
+          'pattern_${DateTime.now().microsecondsSinceEpoch}',
+          createWavFile(pcm, 44100),
+        );
+        
+        setState(() => _status = "Playing $type...");
+        await SoLoud.instance.play(source);
+        await Future.delayed(const Duration(seconds: 4));
+        await SoLoud.instance.disposeSource(source);
+      } finally {
+        calloc.free(outputBuffer);
+      }
+    } catch (e) {
+      setState(() => _status = "Error: $e");
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isPlaying = false;
+          _status = "Finished playing $type";
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(30),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.queue_music, size: 80, color: Colors.blue),
+          const SizedBox(height: 20),
+          Text(
+            "Native Sequencer Demo",
+            style: Theme.of(context).textTheme.headlineMedium,
+          ),
+          const SizedBox(height: 10),
+          Text(
+            _status,
+            style: const TextStyle(color: Colors.grey),
+          ),
+          const SizedBox(height: 40),
+          _patternButton("Tabla: Teental Variation", "Tabla", Colors.orange),
+          const SizedBox(height: 15),
+          _patternButton("Rock: Classic 4/4 Groove", "Rock", Colors.blueGrey),
+          const SizedBox(height: 15),
+          _patternButton("Zen: Meditative Chime", "Zen", Colors.amber),
+          const SizedBox(height: 40),
+          const Text(
+            "Patterns are rendered in a single sample-accurate native pass for zero jitter and maximum efficiency.",
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _patternButton(String label, String type, Color color) {
+    return SizedBox(
+      width: double.infinity,
+      height: 60,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color.withOpacity(0.2),
+          foregroundColor: color,
+          side: BorderSide(color: color),
+        ),
+        onPressed: _isPlaying ? null : () => _playPattern(type),
+        child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+      ),
+    );
+  }
+}
+
+class BellSection extends StatefulWidget {
+  const BellSection({super.key});
+  @override
+  State<BellSection> createState() => _BellSectionState();
+}
+
+class _BellSectionState extends State<BellSection> {
+  late FaustBellInstrument _inst;
+  double _midi = 67.0; // G4
+  double _duration = 6.0;
+  bool _isPlaying = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _inst = FaustBellInstrument();
+  }
+
+  @override
+  void dispose() {
+    _inst.dispose();
+    super.dispose();
+  }
+
+  void _strike() async {
+    if (_isPlaying) return;
+    setState(() => _isPlaying = true);
+    _inst.setFrequency(midiToFreq(_midi));
+    _inst.setDuration(_duration);
+    _inst.strike(1.0);
+    final pcm = Float32List(44100 * (_duration + 1).toInt());
+    _inst.render(pcm);
+
+    final source = await SoLoud.instance.loadMem(
+      'bell_${DateTime.now().microsecondsSinceEpoch}',
+      createWavFile(pcm, 44100),
+    );
+    await SoLoud.instance.play(source);
+    await Future.delayed(Duration(seconds: _duration.toInt()));
+    await SoLoud.instance.disposeSource(source);
+    if (mounted) setState(() => _isPlaying = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(30),
+      child: Column(
+        children: [
+          const Text(
+            "Meditative Bell",
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 20),
+          const Icon(Icons.notifications_active, size: 100, color: Colors.amber),
+          const SizedBox(height: 20),
+          Text(
+            "Note: ${getNoteName(_midi)}",
+            style: const TextStyle(fontSize: 18),
+          ),
+          Slider(
+            value: _midi,
+            min: 48,
+            max: 84,
+            onChanged: (v) => setState(() => _midi = v),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            "Ring Length: ${_duration.toStringAsFixed(1)}s",
+            style: const TextStyle(fontSize: 14),
+          ),
+          Slider(
+            value: _duration,
+            min: 1.0,
+            max: 15.0,
+            onChanged: (v) {
+              setState(() => _duration = v);
+              _inst.setDuration(v);
+            },
+          ),
+          const Spacer(),
+          SizedBox(
+            width: double.infinity,
+            height: 80,
+            child: ElevatedButton.icon(
+              onPressed: _isPlaying ? null : _strike,
+              icon: const Icon(Icons.notifications),
+              label: const Text("Strike Bell"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.amber.shade900,
+                foregroundColor: Colors.white,
+              ),
             ),
           ),
         ],

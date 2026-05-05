@@ -1,6 +1,6 @@
 #include "FaustDayan.hpp"
 
-FaustDayan::FaustDayan(float sampleRate) : _sampleRate(sampleRate), _baseFreq(293.66f), _excitation(0.0f) {
+FaustDayan::FaustDayan(float sampleRate) : _sampleRate(sampleRate), _baseFreq(293.66f), _excitation(0.0f), _muted(false) {
     // Tuned harmonic modes for Dayan (Sa, Pa, Sa...)
     struct ModeData { float ratio; float t60; float gain; };
     std::vector<ModeData> data = {
@@ -24,6 +24,21 @@ FaustDayan::FaustDayan(float sampleRate) : _sampleRate(sampleRate), _baseFreq(29
 
 void FaustDayan::setFrequency(float freq) {
     _baseFreq = freq;
+    updateInternal();
+}
+
+void FaustDayan::setMute(bool muted) {
+    _muted = muted;
+    // We update T60 of resonators based on mute state
+    struct ModeData { float t60; };
+    std::vector<ModeData> baseT60 = {
+        {3.5f}, {2.8f}, {2.0f}, {1.4f}, {0.9f}
+    };
+    
+    float scale = _muted ? 0.05f : 1.0f; // Aggressive damping for "Tak"
+    for (size_t i = 0; i < _modes.size() && i < baseT60.size(); ++i) {
+        _modes[i].t60 = baseT60[i].t60 * scale;
+    }
     updateInternal();
 }
 

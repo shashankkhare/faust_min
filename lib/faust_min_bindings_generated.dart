@@ -149,6 +149,17 @@ class FaustMinBindings {
   late final _bowl_set_frequency = _bowl_set_frequencyPtr
       .asFunction<void Function(ffi.Pointer<FaustBowl>, double)>();
 
+  void bowl_set_duration(ffi.Pointer<FaustBowl> bowl, double seconds) {
+    return _bowl_set_duration(bowl, seconds);
+  }
+
+  late final _bowl_set_durationPtr =
+      _lookup<
+        ffi.NativeFunction<ffi.Void Function(ffi.Pointer<FaustBowl>, ffi.Float)>
+      >('bowl_set_duration');
+  late final _bowl_set_duration = _bowl_set_durationPtr
+      .asFunction<void Function(ffi.Pointer<FaustBowl>, double)>();
+
   void bowl_set_rub(ffi.Pointer<FaustBowl> bowl, double rub) {
     return _bowl_set_rub(bowl, rub);
   }
@@ -241,6 +252,17 @@ class FaustMinBindings {
   late final _dayan_set_frequency = _dayan_set_frequencyPtr
       .asFunction<void Function(ffi.Pointer<FaustDayan>, double)>();
 
+  void dayan_set_mute(ffi.Pointer<FaustDayan> dayan, int muted) {
+    return _dayan_set_mute(dayan, muted);
+  }
+
+  late final _dayan_set_mutePtr =
+      _lookup<
+        ffi.NativeFunction<ffi.Void Function(ffi.Pointer<FaustDayan>, ffi.Int)>
+      >('dayan_set_mute');
+  late final _dayan_set_mute = _dayan_set_mutePtr
+      .asFunction<void Function(ffi.Pointer<FaustDayan>, int)>();
+
   void dayan_strike(ffi.Pointer<FaustDayan> dayan, double velocity) {
     return _dayan_strike(dayan, velocity);
   }
@@ -325,6 +347,17 @@ class FaustMinBindings {
       >('bayan_set_meend');
   late final _bayan_set_meend = _bayan_set_meendPtr
       .asFunction<void Function(ffi.Pointer<FaustBayan>, double)>();
+
+  void bayan_set_mute(ffi.Pointer<FaustBayan> bayan, int muted) {
+    return _bayan_set_mute(bayan, muted);
+  }
+
+  late final _bayan_set_mutePtr =
+      _lookup<
+        ffi.NativeFunction<ffi.Void Function(ffi.Pointer<FaustBayan>, ffi.Int)>
+      >('bayan_set_mute');
+  late final _bayan_set_mute = _bayan_set_mutePtr
+      .asFunction<void Function(ffi.Pointer<FaustBayan>, int)>();
 
   void bayan_strike(ffi.Pointer<FaustBayan> bayan, double velocity) {
     return _bayan_strike(bayan, velocity);
@@ -458,6 +491,96 @@ class FaustMinBindings {
   late final _sitar_render = _sitar_renderPtr
       .asFunction<
         void Function(ffi.Pointer<FaustSitar>, int, ffi.Pointer<ffi.Float>)
+      >();
+
+  /// --- Bell ---
+  ffi.Pointer<FaustBell> bell_create(double sampleRate) {
+    return _bell_create(sampleRate);
+  }
+
+  late final _bell_createPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<FaustBell> Function(ffi.Float)>>(
+        'bell_create',
+      );
+  late final _bell_create = _bell_createPtr
+      .asFunction<ffi.Pointer<FaustBell> Function(double)>();
+
+  void bell_destroy(ffi.Pointer<FaustBell> bell) {
+    return _bell_destroy(bell);
+  }
+
+  late final _bell_destroyPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<FaustBell>)>>(
+        'bell_destroy',
+      );
+  late final _bell_destroy = _bell_destroyPtr
+      .asFunction<void Function(ffi.Pointer<FaustBell>)>();
+
+  void bell_set_frequency(ffi.Pointer<FaustBell> bell, double freq) {
+    return _bell_set_frequency(bell, freq);
+  }
+
+  late final _bell_set_frequencyPtr =
+      _lookup<
+        ffi.NativeFunction<ffi.Void Function(ffi.Pointer<FaustBell>, ffi.Float)>
+      >('bell_set_frequency');
+  late final _bell_set_frequency = _bell_set_frequencyPtr
+      .asFunction<void Function(ffi.Pointer<FaustBell>, double)>();
+
+  void bell_set_duration(ffi.Pointer<FaustBell> bell, double seconds) {
+    return _bell_set_duration(bell, seconds);
+  }
+
+  late final _bell_set_durationPtr =
+      _lookup<
+        ffi.NativeFunction<ffi.Void Function(ffi.Pointer<FaustBell>, ffi.Float)>
+      >('bell_set_duration');
+  late final _bell_set_duration = _bell_set_durationPtr
+      .asFunction<void Function(ffi.Pointer<FaustBell>, double)>();
+
+  void bell_set_damping(ffi.Pointer<FaustBell> bell, double damping) {
+    return _bell_set_damping(bell, damping);
+  }
+
+  late final _bell_set_dampingPtr =
+      _lookup<
+        ffi.NativeFunction<ffi.Void Function(ffi.Pointer<FaustBell>, ffi.Float)>
+      >('bell_set_damping');
+  late final _bell_set_damping = _bell_set_dampingPtr
+      .asFunction<void Function(ffi.Pointer<FaustBell>, double)>();
+
+  void bell_strike(ffi.Pointer<FaustBell> bell, double velocity) {
+    return _bell_strike(bell, velocity);
+  }
+
+  late final _bell_strikePtr =
+      _lookup<
+        ffi.NativeFunction<ffi.Void Function(ffi.Pointer<FaustBell>, ffi.Float)>
+      >('bell_strike');
+  late final _bell_strike = _bell_strikePtr
+      .asFunction<void Function(ffi.Pointer<FaustBell>, double)>();
+
+  void bell_render(
+    ffi.Pointer<FaustBell> bell,
+    int numFrames,
+    ffi.Pointer<ffi.Float> buffer,
+  ) {
+    return _bell_render(bell, numFrames, buffer);
+  }
+
+  late final _bell_renderPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<FaustBell>,
+            ffi.Int,
+            ffi.Pointer<ffi.Float>,
+          )
+        >
+      >('bell_render');
+  late final _bell_render = _bell_renderPtr
+      .asFunction<
+        void Function(ffi.Pointer<FaustBell>, int, ffi.Pointer<ffi.Float>)
       >();
 
   ffi.Pointer<FaustKick> kick_create(double sampleRate) {
@@ -767,6 +890,157 @@ class FaustMinBindings {
       .asFunction<
         void Function(ffi.Pointer<FaustRide>, int, ffi.Pointer<ffi.Float>)
       >();
+
+  /// High-Fidelity Stereo Mixer Algorithm:
+  ///
+  /// 1. Track Normalization: Each input track is pre-scanned to find its peak amplitude.
+  /// The track is then scaled so its peak reaches 1.0. This ensures that the
+  /// 'amplitudeScale' parameters act as absolute proportional weights regardless
+  /// of the instrument's raw output level.
+  ///
+  /// 2. Proportional Scaling: The normalized signal is multiplied by (amplitudeScale * balanceMultiplier).
+  /// balanceMultiplier ensures the sum of all weights does not exceed 1.0, preventing initial clipping.
+  ///
+  /// 3. Enveloping: Quadratic fades are applied at the start (offset) and end of each track.
+  ///
+  /// 4. Linear Panning: The signal is distributed into Left/Right channels based on the pan value (-1 to 1).
+  ///
+  /// 5. Master Peak Protection: After all tracks are accumulated, the final stereo mix is scanned.
+  /// If the combined signal exceeds 1.0, a global master scale is applied to prevent digital clipping.
+  void mix_raw_signals(
+    ffi.Pointer<ffi.Pointer<ffi.Float>> inputBuffers,
+    ffi.Pointer<ffi.Float> amplitudeScales,
+    ffi.Pointer<ffi.Int> fadeInSamples,
+    ffi.Pointer<ffi.Int> fadeOutSamples,
+    ffi.Pointer<ffi.Int> curveTypes,
+    ffi.Pointer<ffi.Int> offsetSamples,
+    ffi.Pointer<ffi.Float> pans,
+    int numTracks,
+    int numSamples,
+    ffi.Pointer<ffi.Float> outputBuffer,
+    double masterGain,
+  ) {
+    return _mix_raw_signals(
+      inputBuffers,
+      amplitudeScales,
+      fadeInSamples,
+      fadeOutSamples,
+      curveTypes,
+      offsetSamples,
+      pans,
+      numTracks,
+      numSamples,
+      outputBuffer,
+      masterGain,
+    );
+  }
+
+  late final _mix_raw_signalsPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<ffi.Pointer<ffi.Float>>,
+            ffi.Pointer<ffi.Float>,
+            ffi.Pointer<ffi.Int>,
+            ffi.Pointer<ffi.Int>,
+            ffi.Pointer<ffi.Int>,
+            ffi.Pointer<ffi.Int>,
+            ffi.Pointer<ffi.Float>,
+            ffi.Int,
+            ffi.Int,
+            ffi.Pointer<ffi.Float>,
+            ffi.Float,
+          )
+        >
+      >('mix_raw_signals');
+  late final _mix_raw_signals = _mix_raw_signalsPtr
+      .asFunction<
+        void Function(
+          ffi.Pointer<ffi.Pointer<ffi.Float>>,
+          ffi.Pointer<ffi.Float>,
+          ffi.Pointer<ffi.Int>,
+          ffi.Pointer<ffi.Int>,
+          ffi.Pointer<ffi.Int>,
+          ffi.Pointer<ffi.Int>,
+          ffi.Pointer<ffi.Float>,
+          int,
+          int,
+          ffi.Pointer<ffi.Float>,
+          double,
+        )
+      >();
+
+  void normalize_signal(
+    ffi.Pointer<ffi.Float> signal,
+    int numSamples,
+    double targetPeak,
+  ) {
+    return _normalize_signal(signal, numSamples, targetPeak);
+  }
+
+  late final _normalize_signalPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<ffi.Float>, ffi.Int, ffi.Float)
+        >
+      >('normalize_signal');
+  late final _normalize_signal = _normalize_signalPtr
+      .asFunction<void Function(ffi.Pointer<ffi.Float>, int, double)>();
+
+  void render_sequenced_audio(
+    ffi.Pointer<ffi.Int> offsets,
+    ffi.Pointer<ffi.Int> instrumentIds,
+    ffi.Pointer<ffi.Float> velocities,
+    ffi.Pointer<ffi.Float> params,
+    int numTriggers,
+    double baseFreq,
+    double sampleRate,
+    int totalSamples,
+    ffi.Pointer<ffi.Float> outputBuffer,
+  ) {
+    return _render_sequenced_audio(
+      offsets,
+      instrumentIds,
+      velocities,
+      params,
+      numTriggers,
+      baseFreq,
+      sampleRate,
+      totalSamples,
+      outputBuffer,
+    );
+  }
+
+  late final _render_sequenced_audioPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<ffi.Int>,
+            ffi.Pointer<ffi.Int>,
+            ffi.Pointer<ffi.Float>,
+            ffi.Pointer<ffi.Float>,
+            ffi.Int,
+            ffi.Float,
+            ffi.Float,
+            ffi.Int,
+            ffi.Pointer<ffi.Float>,
+          )
+        >
+      >('render_sequenced_audio');
+  late final _render_sequenced_audio = _render_sequenced_audioPtr
+      .asFunction<
+        void Function(
+          ffi.Pointer<ffi.Int>,
+          ffi.Pointer<ffi.Int>,
+          ffi.Pointer<ffi.Float>,
+          ffi.Pointer<ffi.Float>,
+          int,
+          double,
+          double,
+          int,
+          ffi.Pointer<ffi.Float>,
+        )
+      >();
 }
 
 final class FaustFlute extends ffi.Opaque {}
@@ -778,6 +1052,8 @@ final class FaustDayan extends ffi.Opaque {}
 final class FaustBayan extends ffi.Opaque {}
 
 final class FaustSitar extends ffi.Opaque {}
+
+final class FaustBell extends ffi.Opaque {}
 
 final class FaustKick extends ffi.Opaque {}
 

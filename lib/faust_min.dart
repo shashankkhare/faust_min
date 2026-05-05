@@ -35,8 +35,117 @@ class _NativeAudioBuffer {
     }
   }
 
+  void copyFrom(Float32List list) {
+    for (int i = 0; i < size; i++) {
+      pointer[i] = list[i];
+    }
+  }
+
   void dispose() {
     calloc.free(pointer);
+  }
+}
+
+/// Configuration for a single audio track layer in the mixer.
+class MixLayer {
+  final Float32List buffer;
+  final double amplitudeScale; // Defines mix weight relative to other tracks
+  final int fadeInSamples;
+  final int fadeOutSamples;
+  final int curveType;
+  final int offsetSamples; // Number of silence samples at the start of the buffer
+  final double pan; // -1.0 (Left) to 1.0 (Right). 0.0 is Center.
+
+  MixLayer({
+    required this.buffer,
+    required this.amplitudeScale,
+    this.fadeInSamples = 0,
+    this.fadeOutSamples = 0,
+    this.curveType = 3, // 2=quadratic, 3=cubic, 4=quartic
+    this.offsetSamples = 0,
+    this.pan = 0.0,
+  });
+}
+
+/// DSP Utility for fast native post-processing and mixing
+class FaustAudioDSP {
+  /// Unifies all track normalization, fades, panning, and mixing into a single high-speed native pass.
+  /// Note: The `outputBuffer` must be sized at exactly `(buffer.length * 2)` to accommodate stereo interleaving.
+  static void mixSignals({
+    required List<MixLayer> layers,
+    required Float32List stereoOutputBuffer,
+    double masterGain = 1.0,
+  }) {
+    final int numTracks = layers.length;
+    if (numTracks == 0) return;
+    
+    // numSamples is the length of ONE mono track (e.g. the first layer's buffer)
+    final int numSamples = layers[0].buffer.length;
+    final int stereoSamples = numSamples * 2;
+    
+    if (stereoOutputBuffer.length < stereoSamples) {
+      throw Exception("FaustAudioDSP: stereoOutputBuffer must be exactly 2x the size of the input tracks.");
+    }
+    
+    // Allocate config arrays for C++
+    final Pointer<Pointer<Float>> trackPointers = calloc<Pointer<Float>>(numTracks);
+    final Pointer<Float> amplitudeScales = calloc<Float>(numTracks);
+    final Pointer<Int> fadeInSamples = calloc<Int>(numTracks);
+    final Pointer<Int> fadeOutSamples = calloc<Int>(numTracks);
+    final Pointer<Int> curveTypes = calloc<Int>(numTracks);
+    final Pointer<Int> offsetSamples = calloc<Int>(numTracks);
+    final Pointer<Float> pans = calloc<Float>(numTracks);
+    
+    final nativeOutput = _NativeAudioBuffer(stereoSamples);
+    final List<_NativeAudioBuffer> nativeTracks = [];
+    
+    for (int i = 0; i < numTracks; i++) {
+      final layer = layers[i];
+      final nativeTrack = _NativeAudioBuffer(layer.buffer.length);
+      nativeTrack.copyFrom(layer.buffer);
+      nativeTracks.add(nativeTrack);
+      
+      trackPointers[i] = nativeTrack.pointer;
+      amplitudeScales[i] = layer.amplitudeScale;
+      fadeInSamples[i] = layer.fadeInSamples;
+      fadeOutSamples[i] = layer.fadeOutSamples;
+      curveTypes[i] = layer.curveType;
+      offsetSamples[i] = layer.offsetSamples;
+      pans[i] = layer.pan;
+    }
+    
+    try {
+      // Run single unified stereo pass natively
+      _bindings.mix_raw_signals(
+        trackPointers,
+        amplitudeScales,
+        fadeInSamples,
+        fadeOutSamples,
+        curveTypes,
+        offsetSamples,
+        pans,
+        numTracks,
+        numSamples,
+        nativeOutput.pointer,
+        masterGain,
+      );
+      
+      // Copy stereo interleaved output back to Dart
+      nativeOutput.copyTo(stereoOutputBuffer);
+    } finally {
+      // Guaranteed Cleanup of native allocations to prevent memory leaks
+      for (var nt in nativeTracks) {
+        nt.dispose();
+      }
+      nativeOutput.dispose();
+      calloc.free(trackPointers);
+      calloc.free(amplitudeScales);
+      calloc.free(fadeInSamples);
+      calloc.free(fadeOutSamples);
+      calloc.free(curveTypes);
+      calloc.free(offsetSamples);
+      calloc.free(pans);
+    }
   }
 }
 
@@ -111,6 +220,11 @@ class FaustBowlInstrument implements FaustInstrument {
     _bindings.bowl_set_frequency(_nativeHandle, freq);
   }
 
+  void setDuration(double seconds) {
+    if (_isDisposed) return;
+    _bindings.bowl_set_duration(_nativeHandle, seconds);
+  }
+
   void setRub(double rub) {
     if (_isDisposed) return;
     _bindings.bowl_set_rub(_nativeHandle, rub);
@@ -147,6 +261,57 @@ class FaustBowlInstrument implements FaustInstrument {
   }
 }
 
+/// A High-Fidelity physical modeling synthesizer of a Meditative Bell.
+class FaustBellInstrument implements FaustInstrument {
+  late Pointer<FaustBell> _nativeHandle;
+  _NativeAudioBuffer? _renderBuffer;
+  bool _isDisposed = false;
+
+  FaustBellInstrument({double sampleRate = 44100.0}) {
+    _nativeHandle = _bindings.bell_create(sampleRate);
+  }
+
+  void setFrequency(double freq) {
+    if (_isDisposed) return;
+    _bindings.bell_set_frequency(_nativeHandle, freq);
+  }
+
+  void setDuration(double seconds) {
+    if (_isDisposed) return;
+    _bindings.bell_set_duration(_nativeHandle, seconds);
+  }
+
+  void setDamping(double damping) {
+    if (_isDisposed) return;
+    _bindings.bell_set_damping(_nativeHandle, damping);
+  }
+
+  void strike(double velocity) {
+    if (_isDisposed) return;
+    _bindings.bell_strike(_nativeHandle, velocity);
+  }
+
+  @override
+  void render(Float32List buffer) {
+    if (_isDisposed) return;
+    if (_renderBuffer == null || _renderBuffer!.size != buffer.length) {
+      _renderBuffer?.dispose();
+      _renderBuffer = _NativeAudioBuffer(buffer.length);
+    }
+    _bindings.bell_render(_nativeHandle, buffer.length, _renderBuffer!.pointer);
+    _renderBuffer!.copyTo(buffer);
+  }
+
+  @override
+  void dispose() {
+    if (!_isDisposed) {
+      _bindings.bell_destroy(_nativeHandle);
+      _renderBuffer?.dispose();
+      _isDisposed = true;
+    }
+  }
+}
+
 /// A High-Fidelity physical modeling synthesizer of a Tabla Dayan (Treble).
 class FaustDayanInstrument implements FaustInstrument {
   late Pointer<FaustDayan> _nativeHandle;
@@ -160,6 +325,11 @@ class FaustDayanInstrument implements FaustInstrument {
   void setFrequency(double freq) {
     if (_isDisposed) return;
     _bindings.dayan_set_frequency(_nativeHandle, freq);
+  }
+
+  void setMute(bool muted) {
+    if (_isDisposed) return;
+    _bindings.dayan_set_mute(_nativeHandle, muted ? 1 : 0);
   }
 
   void strike(double velocity) {
@@ -210,6 +380,11 @@ class FaustBayanInstrument implements FaustInstrument {
   void setMeend(double multiplier) {
     if (_isDisposed) return;
     _bindings.bayan_set_meend(_nativeHandle, multiplier);
+  }
+
+  void setMute(bool muted) {
+    if (_isDisposed) return;
+    _bindings.bayan_set_mute(_nativeHandle, muted ? 1 : 0);
   }
 
   void strike(double velocity) {
@@ -493,4 +668,68 @@ class FaustRideInstrument implements FaustInstrument {
       _isDisposed = true;
     }
   }
+}
+
+class FaustMin {
+  static void normalizeSignal(Pointer<Float> buffer, int numSamples, double targetPeak) {
+    _bindings.normalize_signal(buffer, numSamples, targetPeak);
+  }
+
+  static void renderSequencedAudio({
+    required List<FaustTriggerData> triggers,
+    required double baseFreq,
+    required double sampleRate,
+    required int totalSamples,
+    required Pointer<Float> outputBuffer,
+  }) {
+    if (triggers.isEmpty) {
+        _bindings.normalize_signal(outputBuffer, totalSamples, 0.0); // Clear
+        return;
+    }
+
+    final offsets = malloc<Int>(triggers.length);
+    final ids = malloc<Int>(triggers.length);
+    final vels = malloc<Float>(triggers.length);
+    final params = malloc<Float>(triggers.length);
+
+    for (int i = 0; i < triggers.length; i++) {
+      offsets[i] = triggers[i].sampleOffset;
+      ids[i] = triggers[i].instrumentId;
+      vels[i] = triggers[i].velocity;
+      params[i] = triggers[i].param;
+    }
+
+    try {
+      _bindings.render_sequenced_audio(
+        offsets,
+        ids,
+        vels,
+        params,
+        triggers.length,
+        baseFreq,
+        sampleRate,
+        totalSamples,
+        outputBuffer,
+      );
+    } finally {
+      malloc.free(offsets);
+      malloc.free(ids);
+      malloc.free(vels);
+      malloc.free(params);
+    }
+  }
+}
+
+class FaustTriggerData {
+  final int sampleOffset;
+  final int instrumentId;
+  final double velocity;
+  final double param;
+
+  FaustTriggerData({
+    required this.sampleOffset,
+    required this.instrumentId,
+    required this.velocity,
+    this.param = 0.0,
+  });
 }

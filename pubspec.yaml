@@ -1,6 +1,6 @@
 name: faust_min
-description: "High-fidelity physical modeling synthesis of a flute, powered by Faust. Lightweight, cross-platform, and high-performance PCM generation."
-version: 0.1.0
+description: "High-fidelity physical modeling synthesis (Flute, Bell, Singing Bowl, Tabla, Sitar), powered by Faust. Lightweight, cross-platform, and high-performance PCM generation."
+version: 0.2.0
 homepage: https://github.com/shashankkhare/faust_min
 repository: https://github.com/shashankkhare/faust_min
 issue_tracker: https://github.com/shashankkhare/faust_min/issues

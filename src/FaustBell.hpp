@@ -1,27 +1,28 @@
-#include "FaustCommon.hpp"
-#include <vector>
+#ifndef FAUST_BELL_HPP
+#define FAUST_BELL_HPP
 
-class FaustBowl {
+#include <vector>
+#include "FaustCommon.hpp"
+
+class FaustBell {
 public:
-    FaustBowl(float sampleRate);
+    FaustBell(float sampleRate);
     void setFrequency(float freq);
     void setDuration(float seconds);
+    void setDamping(float damping);
     void strike(float velocity);
-    void setRub(float rub);
-    void setWaver(float waver);
     void render(int numFrames, float* buffer);
-    void dispose() {}
 
 private:
+    void updateInternal();
     float _sampleRate;
     float _baseFreq;
     float _duration;
-    float _rub;
-    float _waver;
+    float _damping;
     float _excitation;
     float _strikeEnv;
     std::vector<float> _baseT60s;
     std::vector<Faust::Resonator> _modes;
-
-    void updateInternal();
 };
+
+#endif

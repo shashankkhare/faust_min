@@ -50,7 +50,8 @@ float FaustFlute::tick() {
     mPhase += 2.0f * (float)M_PI * mVibratoRate / mSampleRate;
     if (mPhase > 2.0f * (float)M_PI) mPhase -= 2.0f * (float)M_PI;
     float vibrato = sinf(mPhase) * mVibratoDepth;
-    float noise = mDist(mPRNG) * 0.1f * mPressure;
+    // INCREASED: Adjusted from 0.005f to 0.01f to bring back a touch of breath character
+    float noise = mDist(mPRNG) * 0.01f * mPressure;
     float currentPressure = mPressure + vibrato + noise;
 
     // 2. Fractional Delay Read (Bore)

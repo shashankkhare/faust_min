@@ -1,0 +1,81 @@
+#include "FaustBell.hpp"
+#include <random>
+
+FaustBell::FaustBell(float sampleRate) : _sampleRate(sampleRate), _baseFreq(440.0f), _duration(6.0f), _damping(0.0f), _excitation(0.0f), _strikeEnv(0.0f) {
+    // Mode data for a high-quality meditative bell (Tuned Bell)
+    // Ratios: Hum, Fundamental, Tierce, Quint, Nominal, Superquint, Octave Nominal
+    struct ModeData { float ratio; float t60; float gain; };
+    std::vector<ModeData> data = {
+        {0.500f, 8.0f, 0.8f},  // Hum
+        {1.000f, 6.0f, 1.0f},  // Fundamental
+        {1.200f, 4.0f, 0.6f},  // Tierce (Minor Third)
+        {1.500f, 3.5f, 0.5f},  // Quint (Perfect Fifth)
+        {2.000f, 2.5f, 0.4f},  // Nominal (Octave)
+        {2.511f, 1.5f, 0.3f},  // Superquint
+        {4.000f, 1.0f, 0.2f}   // Octave Nominal
+    };
+
+    for (const auto& d : data) {
+        Faust::Resonator m;
+        m.ratio = d.ratio;
+        m.t60 = d.t60;
+        m.gain = d.gain;
+        m.y1 = m.y2 = 0.0f;
+        _baseT60s.push_back(d.t60);
+        _modes.push_back(m);
+    }
+    updateInternal();
+}
+
+void FaustBell::setFrequency(float freq) {
+    _baseFreq = freq;
+    updateInternal();
+}
+
+void FaustBell::setDuration(float seconds) {
+    _duration = seconds;
+    if (_duration < 0.1f) _duration = 0.1f;
+    updateInternal();
+}
+
+void FaustBell::setDamping(float damping) {
+    _damping = damping; // 0.0 to 1.0 or more
+    updateInternal();
+}
+
+void FaustBell::strike(float velocity) {
+    _excitation = velocity * 0.15f; 
+    _strikeEnv = 1.0f; // Start noise burst for "clapper" impact
+}
+
+void FaustBell::updateInternal() {
+    for (size_t i = 0; i < _modes.size(); ++i) {
+        // High frequency harmonics (higher ratio) decay faster if damping > 0
+        float frequencyDamping = std::pow(_modes[i].ratio, -_damping);
+        // Normalize against the fundamental (mode 1, which has baseT60=6.0s)
+        _modes[i].t60 = _duration * (_baseT60s[i] / 6.0f) * frequencyDamping;
+        _modes[i].update(_baseFreq, _sampleRate);
+    }
+}
+
+void FaustBell::render(int numFrames, float* buffer) {
+    static std::mt19937 gen(42);
+    static std::uniform_real_distribution<float> dis(-1.0, 1.0);
+    for (int i = 0; i < numFrames; ++i) {
+        float noise = dis(gen);
+        
+        // Clapper impact: sharp noise burst
+        float impactNoise = noise * _strikeEnv * 0.02f;
+        _strikeEnv *= 0.99f; // Very fast decay
+
+        float x = _excitation + impactNoise;
+        _excitation = 0.0f;
+
+        float out = 0.0f;
+        for (auto& m : _modes) {
+            out += m.process(x) * m.gain;
+        }
+        
+        buffer[i] = out * 0.5f;
+    }
+}

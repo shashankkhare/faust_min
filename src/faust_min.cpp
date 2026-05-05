@@ -1,3 +1,5 @@
+#include <cmath>
+#include <algorithm>
 #include "faust_min.h"
 #include "FaustFlute.hpp"
 #include "FaustBowl.hpp"
@@ -9,6 +11,7 @@
 #include "FaustTom.hpp"
 #include "FaustHiHat.hpp"
 #include "FaustRide.hpp"
+#include "FaustBell.hpp"
 
 extern "C" {
 
@@ -24,6 +27,7 @@ void flute_render(FaustFlute* flute, int numFrames, float* buffer) { flute->rend
 FaustBowl* bowl_create(float sampleRate) { return new FaustBowl(sampleRate); }
 void bowl_destroy(FaustBowl* bowl) { delete bowl; }
 void bowl_set_frequency(FaustBowl* bowl, float freq) { bowl->setFrequency(freq); }
+void bowl_set_duration(FaustBowl* bowl, float seconds) { bowl->setDuration(seconds); }
 void bowl_set_rub(FaustBowl* bowl, float rub) { bowl->setRub(rub); }
 void bowl_set_waver(FaustBowl* bowl, float waver) { bowl->setWaver(waver); }
 void bowl_strike(FaustBowl* bowl, float velocity) { bowl->strike(velocity); }
@@ -33,6 +37,7 @@ void bowl_render(FaustBowl* bowl, int numFrames, float* buffer) { bowl->render(n
 FaustDayan* dayan_create(float sampleRate) { return new FaustDayan(sampleRate); }
 void dayan_destroy(FaustDayan* dayan) { delete dayan; }
 void dayan_set_frequency(FaustDayan* dayan, float freq) { dayan->setFrequency(freq); }
+void dayan_set_mute(FaustDayan* dayan, int muted) { dayan->setMute(muted != 0); }
 void dayan_strike(FaustDayan* dayan, float velocity) { dayan->strike(velocity); }
 void dayan_render(FaustDayan* dayan, int numFrames, float* buffer) { dayan->render(numFrames, buffer); }
 
@@ -41,6 +46,7 @@ FaustBayan* bayan_create(float sampleRate) { return new FaustBayan(sampleRate); 
 void bayan_destroy(FaustBayan* bayan) { delete bayan; }
 void bayan_set_frequency(FaustBayan* bayan, float freq) { bayan->setFrequency(freq); }
 void bayan_set_meend(FaustBayan* bayan, float multiplier) { bayan->setMeend(multiplier); }
+void bayan_set_mute(FaustBayan* bayan, int muted) { bayan->setMute(muted != 0); }
 void bayan_strike(FaustBayan* bayan, float velocity) { bayan->strike(velocity); }
 void bayan_render(FaustBayan* bayan, int numFrames, float* buffer) { bayan->render(numFrames, buffer); }
 
@@ -52,6 +58,15 @@ void sitar_set_jivari(FaustSitar* sitar, float amount) { sitar->setJivari(amount
 void sitar_set_sympathetic_gain(FaustSitar* sitar, float gain) { sitar->setSympatheticGain(gain); }
 void sitar_pluck(FaustSitar* sitar, float velocity) { sitar->pluck(velocity); }
 void sitar_render(FaustSitar* sitar, int numFrames, float* buffer) { sitar->render(numFrames, buffer); }
+
+// --- Bell ---
+FaustBell* bell_create(float sampleRate) { return new FaustBell(sampleRate); }
+void bell_destroy(FaustBell* bell) { delete bell; }
+void bell_set_frequency(FaustBell* bell, float freq) { bell->setFrequency(freq); }
+void bell_set_duration(FaustBell* bell, float seconds) { bell->setDuration(seconds); }
+void bell_set_damping(FaustBell* bell, float damping) { bell->setDamping(damping); }
+void bell_strike(FaustBell* bell, float velocity) { bell->strike(velocity); }
+void bell_render(FaustBell* bell, int numFrames, float* buffer) { bell->render(numFrames, buffer); }
 
 // --- Drum Kit ---
 FaustKick* kick_create(float sampleRate) { return new FaustKick(sampleRate); }
@@ -80,5 +95,254 @@ FaustRide* ride_create(float sampleRate) { return new FaustRide(sampleRate); }
 void ride_destroy(FaustRide* ride) { delete ride; }
 void ride_strike(FaustRide* ride, float velocity) { ride->strike(velocity); }
 void ride_render(FaustRide* ride, int numFrames, float* buffer) { ride->render(numFrames, buffer); }
+
+// --- Audio Mixer & DSP ---
+
+void normalize_signal(float* signal, int numSamples, float targetPeak);
+void mix_raw_signals(
+    float** inputBuffers,
+    float* amplitudeScales,
+    int* fadeInSamples,
+    int* fadeOutSamples,
+    int* curveTypes,
+    int* offsetSamples,
+    float* pans,
+    int numTracks,
+    int numSamples,
+    float* outputBuffer,
+    float masterGain
+) {
+    // 1. Clear stereo output buffer (size is numSamples * 2)
+    int totalStereoSamples = numSamples * 2;
+    for (int i = 0; i < totalStereoSamples; i++) {
+        outputBuffer[i] = 0.0f;
+    }
+    
+    // 2. Auto-balance weights (amplitudeScales) so they don't exceed 1.0
+    float totalWeight = 0.0f;
+    for (int t = 0; t < numTracks; t++) {
+        totalWeight += amplitudeScales[t];
+    }
+    float balanceMultiplier = 1.0f;
+    if (totalWeight > 1.0f) {
+        balanceMultiplier = 1.0f / totalWeight;
+    }
+    
+    // 3. Process each track
+    for (int t = 0; t < numTracks; t++) {
+        float* track = inputBuffers[t];
+        if (track == nullptr) continue;
+        
+        int offset = offsetSamples[t];
+        
+        // Find peak to normalize this specific track (starting from offset)
+        float maxAmp = 0.0f;
+        for (int i = offset; i < numSamples; i++) {
+            float absVal = std::abs(track[i]);
+            if (absVal > maxAmp) maxAmp = absVal;
+        }
+        
+        if (maxAmp == 0.0f) continue;
+        
+        // Use normalized weight: (amplitudeScale * balanceMultiplier) / maxAmp
+        float effectiveWeight = (amplitudeScales[t] * balanceMultiplier) / maxAmp;
+        
+        int fIn = fadeInSamples[t];
+        int fOut = fadeOutSamples[t];
+        int curve = curveTypes[t];
+        int fadeOutStart = (numSamples > fOut) ? (numSamples - fOut) : 0;
+        
+        // Linear Panning logic (-1.0 to 1.0)
+        float pan = pans[t];
+        float leftGain = pan < 0.0f ? 1.0f : 1.0f - pan;
+        float rightGain = pan > 0.0f ? 1.0f : 1.0f + pan;
+        
+        // Single pass per track: Scale, Fade, Pan, and Accumulate into Stereo Output
+        for (int i = 0; i < numSamples; i++) {
+            if (i < offset) continue; // Skip warmup silence
+            
+            float val = track[i] * effectiveWeight;
+            float envelope = 1.0f;
+            
+            // Fade In (starts at offset)
+            if (i < offset + fIn && fIn > 0) {
+                float k = (float)(i - offset) / (float)fIn;
+                envelope = k * k; // Quadratic fade in
+            } 
+            // Fade Out
+            else if (i >= fadeOutStart && fOut > 0) {
+                float k = 1.0f - ((float)(i - fadeOutStart) / (float)fOut);
+                if (k < 0.0f) k = 0.0f;
+                if (curve == 4) envelope = k * k * k * k; // Quartic
+                else if (curve == 2) envelope = k * k;    // Quadratic
+                else envelope = k * k * k;                // Cubic (default)
+            }
+            
+            float finalVal = val * envelope;
+            
+            // Interleaved Stereo Accumulation
+            outputBuffer[i * 2] += finalVal * leftGain;       // Left Channel
+            outputBuffer[i * 2 + 1] += finalVal * rightGain;  // Right Channel
+        }
+    }
+    
+    // 4. Master Peak Protection (Normalize only if clipping)
+    float globalMax = 0.0f;
+    for (int i = 0; i < totalStereoSamples; i++) {
+        float absVal = std::abs(outputBuffer[i]);
+        if (absVal > globalMax) globalMax = absVal;
+    }
+
+    float finalScale = masterGain;
+    if (globalMax > 1.0f) {
+        finalScale *= (1.0f / globalMax);
+    }
+
+    if (finalScale != 1.0f) {
+        for (int i = 0; i < totalStereoSamples; i++) {
+            outputBuffer[i] *= finalScale;
+        }
+    }
+}
+
+void normalize_signal(float* signal, int numSamples, float targetPeak) {
+    if (numSamples <= 0 || targetPeak <= 0.0f) return;
+    
+    float maxAmp = 0.0f;
+    for (int i = 0; i < numSamples; i++) {
+        float absVal = std::abs(signal[i]);
+        if (absVal > maxAmp) maxAmp = absVal;
+    }
+    
+    if (maxAmp > 0.0f) {
+        float scale = targetPeak / maxAmp;
+        for (int i = 0; i < numSamples; i++) {
+            signal[i] *= scale;
+        }
+    }
+}
+
+void render_sequenced_audio(
+    int* offsets,
+    int* instrumentIds,
+    float* velocities,
+    float* params,
+    int numTriggers,
+    float baseFreq,
+    float sampleRate,
+    int totalSamples,
+    float* outputBuffer
+) {
+    if (totalSamples <= 0 || sampleRate <= 0) return;
+    std::fill(outputBuffer, outputBuffer + totalSamples, 0.0f);
+
+    // Track which instruments are actually present in this sequence
+    bool useDayan = false, useBayan = false, useKick = false, useSnare = false;
+    bool useHiHat = false, useTom = false, useRide = false, useBell = false, useBowl = false;
+    for (int i = 0; i < numTriggers; i++) {
+        switch (instrumentIds[i]) {
+            case 0: useDayan = true; break;
+            case 1: useBayan = true; break;
+            case 2: useKick = true; break;
+            case 3: useSnare = true; break;
+            case 4: useHiHat = true; break;
+            case 5: useTom = true; break;
+            case 6: useRide = true; break;
+            case 7: useBell = true; break;
+            case 8: useBowl = true; break;
+        }
+    }
+
+    // Initialize ONLY needed instruments
+    FaustDayan* dayan = useDayan ? new FaustDayan(sampleRate) : nullptr;
+    FaustBayan* bayan = useBayan ? new FaustBayan(sampleRate) : nullptr;
+    FaustKick* kick = useKick ? new FaustKick(sampleRate) : nullptr;
+    FaustSnare* snare = useSnare ? new FaustSnare(sampleRate) : nullptr;
+    FaustHiHat* hihat = useHiHat ? new FaustHiHat(sampleRate) : nullptr;
+    FaustTom* tom = useTom ? new FaustTom(sampleRate) : nullptr;
+    FaustRide* ride = useRide ? new FaustRide(sampleRate) : nullptr;
+    FaustBell* bell = useBell ? new FaustBell(sampleRate) : nullptr;
+    FaustBowl* bowl = useBowl ? new FaustBowl(sampleRate) : nullptr;
+
+    if (dayan) dayan->setFrequency(baseFreq);
+    if (bayan) bayan->setFrequency(baseFreq);
+    if (bell) bell->setFrequency(baseFreq);
+    if (bowl) bowl->setFrequency(baseFreq);
+
+    int currentSample = 0;
+    int triggerIdx = 0;
+    float* temp = new float[4096]; // Reuse a reasonably sized block
+    int tempSize = 4096;
+
+    while (currentSample < totalSamples) {
+        while (triggerIdx < numTriggers && offsets[triggerIdx] <= currentSample) {
+            int instId = instrumentIds[triggerIdx];
+            float vel = velocities[triggerIdx];
+            float p = params[triggerIdx];
+
+            if (instId == 0 && dayan) { dayan->setMute(p > 0.5f); dayan->strike(vel); }
+            else if (instId == 1 && bayan) { 
+                bayan->setMute(p > 0.5f && p < 1.0f); // Fix: Mute only if specifically 1.0, not for meend > 1.0
+                if (p >= 1.0f) bayan->setMeend(p); 
+                bayan->strike(vel); 
+            }
+            else if (instId == 2 && kick) kick->strike(vel);
+            else if (instId == 3 && snare) snare->strike(vel);
+            else if (instId == 4 && hihat) hihat->strike(vel);
+            else if (instId == 5 && tom) tom->strike(vel);
+            else if (instId == 6 && ride) ride->strike(vel);
+            else if (instId == 7 && bell) {
+                if (p > 20.0f) bell->setFrequency(p); // Optional: param as frequency override
+                bell->strike(vel);
+            }
+            else if (instId == 8 && bowl) {
+                if (p > 20.0f) bowl->setFrequency(p);
+                bowl->strike(vel);
+            }
+            triggerIdx++;
+        }
+
+        int nextTrigger = (triggerIdx < numTriggers) ? offsets[triggerIdx] : totalSamples;
+        int chunkLen = nextTrigger - currentSample;
+        if (chunkLen <= 0) chunkLen = 1;
+        if (currentSample + chunkLen > totalSamples) chunkLen = totalSamples - currentSample;
+
+        if (chunkLen > 0) {
+            if (chunkLen > tempSize) {
+                delete[] temp;
+                temp = new float[chunkLen];
+                tempSize = chunkLen;
+            }
+            
+            // Render and accumulate ONLY active instruments
+            if (dayan) { dayan->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
+            if (bayan) { bayan->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
+            if (kick) { kick->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
+            if (snare) { snare->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
+            if (hihat) { hihat->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
+            if (tom) { tom->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
+            if (ride) { ride->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
+            if (bell) { bell->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
+            if (bowl) { bowl->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
+        }
+        currentSample += chunkLen;
+    }
+
+    delete[] temp;
+    if (dayan) delete dayan; if (bayan) delete bayan;
+    if (kick) delete kick; if (snare) delete snare; if (hihat) delete hihat; if (tom) delete tom; if (ride) delete ride;
+    if (bell) delete bell; if (bowl) delete bowl;
+
+    // Normalization
+    float maxAmp = 0.0f;
+    for (int i = 0; i < totalSamples; i++) {
+        float a = std::abs(outputBuffer[i]);
+        if (a > maxAmp) maxAmp = a;
+    }
+    if (maxAmp > 0.0f) {
+        float scale = 1.0f / maxAmp;
+        for (int i = 0; i < totalSamples; i++) outputBuffer[i] *= scale;
+    }
+}
 
 }
