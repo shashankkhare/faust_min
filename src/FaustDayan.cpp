@@ -61,6 +61,7 @@ void FaustDayan::render(int numFrames, float* buffer) {
         for (auto& m : _modes) {
             out += m.process(x) * m.gain;
         }
-        buffer[i] = out * 0.4f;
+        // Master Output Limiter & Saturator for consistent 0.95 peak
+        buffer[i] = std::tanh(out * 2.5f); 
     }
 }

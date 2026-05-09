@@ -3,7 +3,7 @@
 #include <algorithm>
 
  FaustSitar::FaustSitar(float sampleRate) 
-    : _sampleRate(sampleRate), _baseFreq(146.83f), _jivari(0.5f), _sympGain(0.3f), _writePtr(0), _lpState(0.0f), _dcState(0.0f), _prevIn(0.0f) {
+    : _sampleRate(sampleRate), _baseFreq(146.83f), _jivari(0.5f), _sympGain(0.20f), _writePtr(0), _lpState(0.0f), _dcState(0.0f), _prevIn(0.0f) {
     
     for (int i = 0; i < 4; i++) {
         _apX[i] = _apY[i] = 0.0f;
@@ -14,9 +14,10 @@
     for (float r : ratios) {
         Faust::Resonator m;
         m.ratio = r;
-        m.t60 = 6.0f;
+        m.t60 = 1.0f; // Default to long decay, will be scaled in update
         m.gain = 1.0f;
         m.init();
+        m.update(146.83f, _sampleRate); 
         _sympModes.push_back(m);
     }
 
@@ -26,6 +27,10 @@
 
 void FaustSitar::setFrequency(float freq) {
     _baseFreq = std::max(20.0f, freq);
+    // Re-tune sympathetic strings to match the new key
+    for (auto& m : _sympModes) {
+        m.update(_baseFreq, _sampleRate);
+    }
     updateInternal();
 }
 
@@ -38,38 +43,52 @@ void FaustSitar::setSympatheticGain(float gain) {
 }
 
 void FaustSitar::pluck(float velocity) {
-    // Reset seed for perfect consistency as requested
-    static std::mt19937 gen;
-    gen.seed(45); 
-    static std::uniform_real_distribution<float> dis(-1.0, 1.0);
-    
-    // Total clear to avoid old artifacts
-    std::fill(_delayLine.begin(), _delayLine.end(), 0.0f);
-    
-    // Clear sympathetic resonance buildup
-    for (auto& m : _sympModes) {
-        m.init();
-    }
-    
     float period = _sampleRate / _baseFreq;
-    int iPeriod = (int)period;
-    if (iPeriod > (int)_delayLine.size()) iPeriod = _delayLine.size();
-
-    // Fill the buffer with excitation noise
-    // But we start the noise at index 0
-    for (int i = 0; i < iPeriod; i++) {
-        _delayLine[i] = dis(gen) * velocity;
-    }
+    // Micro-strike (24 samples) to kill "trumpety" low-frequency energy
+    int exciteLen = std::min(24, (int)period);
     
-    // Start writing at the end of the noise burst
-    _writePtr = iPeriod % _delayLine.size();
+    static std::mt19937 gen(54);
+    static std::uniform_real_distribution<float> dis(-0.9f, 0.9f);
+    
+    for (int i = 0; i < exciteLen; i++) {
+        int idx = (_writePtr - exciteLen + i + (int)_delayLine.size()) % _delayLine.size();
+        float phase = (float)i / exciteLen;
+        float pulse = std::sin(2.0f * M_PI * phase);
+        float noise = dis(gen) - dis(gen); 
+        
+        // High intensity (0.9f) to force bridge interaction
+        _delayLine[idx] = (pulse * 0.5f + noise * 0.5f) * velocity * _dynStrikeScale;
+    }
 }
 
 void FaustSitar::updateInternal() {
-    _feedback = 0.997f; // High sustain for bloom
-    for (auto& m : _sympModes) {
-        m.update(_baseFreq, _sampleRate);
-    }
+    float period = _sampleRate / _baseFreq;
+    
+    // 2. Multi-Band Physics Mapping (Extended to 80Hz for E2 support)
+    float normFreq = (_baseFreq - 80.0f) / (600.0f - 80.0f); // Map E2-D5 to 0-1
+    normFreq = std::max(0.0f, std::min(1.0f, normFreq));
+
+    // 1. Dynamic Sustain (T60 Scaling): Long (6s) for bass, shorter (3s) for treble
+    float dynSustain = 6.0f - (normFreq * 3.0f);
+    _feedback = std::pow(0.001f, 1.0f / (dynSustain * _sampleRate / period));
+    
+    // Jivari Threshold: Kept very low (0.08 - 0.12) so even tiny vibrations hit the bridge
+    _dynThreshold = 0.08f + (normFreq * 0.04f);
+    
+    _dynDispersion = 0.35f - (normFreq * 0.20f);
+    
+    // Strike Intensity: Normalized to prevent F#3 volume spikes
+    _dynStrikeScale = 0.25f - (normFreq * 0.05f);
+    
+    // 3. Dynamic Taraf Decay
+    float dynTarafT60 = 1.2f - (normFreq * 0.6f);
+    for (auto& m : _sympModes) { m.t60 = dynTarafT60; }
+
+    // 4. Full-Band Parameters
+    _dynDamping = 0.97f + (normFreq * 0.01f); // Capped at ~0.98 for natural decay
+    _dynDC = 0.985f + (normFreq * 0.01f);
+    _dynFold = 0.85f - (normFreq * 0.25f);
+    _dynOutputGain = 1.0f + (normFreq * 1.5f); 
 }
 
 void FaustSitar::render(int numFrames, float* buffer) {
@@ -77,7 +96,6 @@ void FaustSitar::render(int numFrames, float* buffer) {
     if (period < 2.0f) period = 2.0f;
 
     for (int i = 0; i < numFrames; i++) {
-        // 1. Read Pointer is exactly one period behind Write Pointer
         float readPos = (float)_writePtr - period;
         while (readPos < 0) readPos += (float)_delayLine.size();
         
@@ -87,32 +105,27 @@ void FaustSitar::render(int numFrames, float* buffer) {
         
         float sig = _delayLine[idx1] * (1.0f - frac) + _delayLine[idx2] * frac;
 
-        // 2. Jivari Bridge - Unilateral Nonlinearity (The Buzz)
-        // A real bridge only obstructs the string on ONE side.
-        // We simulate this by "baking" the string displacement against a curved boundary.
+        // 2. Jivari Bridge - Dynamic Wave-Folding
         float jivariReflection = sig;
         if (_jivari > 0.01f) {
-            float threshold = 1.0f - (_jivari * 0.7f); // How close the string is to bridge
+            float threshold = _dynThreshold; 
             if (sig > threshold) {
-                // Wave-wrapping: the string "bounces" back from the bridge
                 float delta = sig - threshold;
-                jivariReflection = threshold - delta * (0.5f + _jivari * 0.4f); 
+                jivariReflection = threshold - delta * (_dynFold + _jivari * _dynFold); 
             }
         }
 
-        // Safety Clip to Michon safety zone [-1.5, 1.5]
-        if (jivariReflection > 1.5f) jivariReflection = 1.5f;
-        if (jivariReflection < -1.5f) jivariReflection = -1.5f;
+        // Multi-Band Stability: Hard clip for sustain and "zing"
+        if (jivariReflection > 1.2f) jivariReflection = 1.2f;
+        if (jivariReflection < -1.2f) jivariReflection = -1.2f;
 
-        // 3. String Loop Filter (Damping)
-        // High-shelf like damping to keep buzz in check
-        _lpState = jivariReflection * 0.4f + _lpState * 0.6f;
+        // 3. String Loop Filter (Dynamic Damping)
+        _lpState = jivariReflection * _dynDamping + _lpState * (1.0f - _dynDamping);
         float feedbackSig = _lpState * _feedback;
 
-        // 4. Dispersion (The Growl)
-        // Cascade of all-pass filters to simulate string stiffness
+        // 4. Dynamic Dispersion (The Growl)
         float apIn = feedbackSig;
-        const float a = 0.5f; // Dispersion coefficient
+        const float a = _dynDispersion; 
         for (int j = 0; j < 4; j++) {
             float out = a * apIn + _apX[j] - a * _apY[j];
             _apX[j] = apIn;
@@ -121,29 +134,25 @@ void FaustSitar::render(int numFrames, float* buffer) {
         }
         float dispSig = apIn;
 
-        // 5. DC Blocker
-        float dcBlockOut = dispSig - _prevIn + 0.995f * _dcState;
+        // 5. Dynamic DC Blocker
+        float dcBlockOut = dispSig - _prevIn + _dynDC * _dcState;
         _prevIn = dispSig;
         _dcState = dcBlockOut;
 
-        // Smooth Soft-Clipping (S-Curve) to prevent blow-ups
-        float saturated = dcBlockOut / (1.0f + std::abs(dcBlockOut));
+        float saturated = dcBlockOut;
+        if (saturated > 1.0f) saturated = 1.0f;
+        if (saturated < -1.0f) saturated = -1.0f;
         
-        // 4. Update Delay Line
         _delayLine[_writePtr] = saturated;
         _writePtr = (_writePtr + 1) % _delayLine.size();
 
-        // 5. Sympathetic Strings
+        // 6. Sympathetic Resonance (The Aura)
         float symp = 0.0f;
-        if (_sympGain > 0.01f) {
-            for (auto& m : _sympModes) {
-                symp += m.process(sig);
-            }
+        for (auto& m : _sympModes) {
+            symp += m.process(saturated);
         }
 
-        // Final Mix (Normalized and safe)
-        // Use a slightly smaller gain to be extra safe
-        float finalOut = (sig + symp * _sympGain) * 0.12f; 
-        buffer[i] = finalOut / (1.0f + std::abs(finalOut)); // Final smooth safety
+        float mixed = (saturated + symp * _sympGain);
+        buffer[i] = std::tanh(mixed * _dynOutputGain);
     }
 }

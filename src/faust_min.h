@@ -18,6 +18,16 @@ typedef struct FaustDayan FaustDayan;
 typedef struct FaustBayan FaustBayan;
 typedef struct FaustSitar FaustSitar;
 typedef struct FaustBell FaustBell;
+typedef struct FaustTanpura FaustTanpura;
+
+// --- High-Res Automation Event ---
+typedef struct {
+    int sampleOffset;
+    int instrumentId;
+    int eventType;  // 0 = Strike, 1 = SetFreq, 2 = SetParam
+    int paramId;    // Context-dependent (e.g. 0 = Mute, 1 = Damping)
+    float value;    // Exact value (Velocity, Hz, or generic float)
+} FaustEvent;
 
 // --- Flute ---
 DART_EXPORT FaustFlute* flute_create(float sampleRate);
@@ -62,6 +72,14 @@ DART_EXPORT void sitar_set_jivari(FaustSitar* sitar, float amount);
 DART_EXPORT void sitar_set_sympathetic_gain(FaustSitar* sitar, float gain);
 DART_EXPORT void sitar_pluck(FaustSitar* sitar, float velocity);
 DART_EXPORT void sitar_render(FaustSitar* sitar, int numFrames, float* buffer);
+
+// --- Tanpura ---
+DART_EXPORT FaustTanpura* tanpura_create(float sampleRate);
+DART_EXPORT void tanpura_destroy(FaustTanpura* tanpura);
+DART_EXPORT void tanpura_set_params(FaustTanpura* tanpura, float f1, float f2, float f3, float f4, float decay, float delay);
+DART_EXPORT void tanpura_set_jivari(FaustTanpura* tanpura, float amount);
+DART_EXPORT void tanpura_set_playing(FaustTanpura* tanpura, int playing);
+DART_EXPORT void tanpura_render(FaustTanpura* tanpura, int numFrames, float* buffer);
 
 // --- Bell ---
 DART_EXPORT FaustBell* bell_create(float sampleRate);
@@ -148,6 +166,14 @@ DART_EXPORT void render_sequenced_audio(
     float* params,
     int numTriggers,
     float baseFreq,
+    float sampleRate,
+    int totalSamples,
+    float* outputBuffer
+);
+
+DART_EXPORT void render_automation_sequence(
+    FaustEvent* events,
+    int numEvents,
     float sampleRate,
     int totalSamples,
     float* outputBuffer

@@ -27,6 +27,6 @@ void FaustHiHat::render(int numFrames, float* buffer) {
         float filtered = noise - _filterState;
         _filterState = noise;
         
-        buffer[i] = filtered * 0.5f;
+        buffer[i] = std::tanh(filtered * 2.0f); 
     }
 }

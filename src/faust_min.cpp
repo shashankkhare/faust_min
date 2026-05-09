@@ -12,6 +12,7 @@
 #include "FaustHiHat.hpp"
 #include "FaustRide.hpp"
 #include "FaustBell.hpp"
+#include "FaustTanpura.hpp"
 
 extern "C" {
 
@@ -58,6 +59,23 @@ void sitar_set_jivari(FaustSitar* sitar, float amount) { sitar->setJivari(amount
 void sitar_set_sympathetic_gain(FaustSitar* sitar, float gain) { sitar->setSympatheticGain(gain); }
 void sitar_pluck(FaustSitar* sitar, float velocity) { sitar->pluck(velocity); }
 void sitar_render(FaustSitar* sitar, int numFrames, float* buffer) { sitar->render(numFrames, buffer); }
+
+// --- Tanpura ---
+FaustTanpura* tanpura_create(float sampleRate) { return new FaustTanpura(sampleRate); }
+void tanpura_destroy(FaustTanpura* tanpura) { if (tanpura) delete tanpura; }
+void tanpura_set_params(FaustTanpura* tanpura, float f1, float f2, float f3, float f4, float decay, float delay) {
+    if (tanpura) tanpura->setParams(f1, f2, f3, f4, decay, delay);
+}
+void tanpura_set_jivari(FaustTanpura* tanpura, float amount) {
+    if (tanpura) tanpura->setJivari(amount);
+}
+void tanpura_set_playing(FaustTanpura* tanpura, int playing) {
+    if (tanpura) tanpura->setPlaying(playing != 0);
+}
+void tanpura_render(FaustTanpura* tanpura, int numFrames, float* buffer) {
+    if (tanpura) tanpura->render(numFrames, buffer);
+}
+
 
 // --- Bell ---
 FaustBell* bell_create(float sampleRate) { return new FaustBell(sampleRate); }
@@ -332,6 +350,164 @@ void render_sequenced_audio(
     if (dayan) delete dayan; if (bayan) delete bayan;
     if (kick) delete kick; if (snare) delete snare; if (hihat) delete hihat; if (tom) delete tom; if (ride) delete ride;
     if (bell) delete bell; if (bowl) delete bowl;
+
+    // Normalization
+    float maxAmp = 0.0f;
+    for (int i = 0; i < totalSamples; i++) {
+        float a = std::abs(outputBuffer[i]);
+        if (a > maxAmp) maxAmp = a;
+    }
+    if (maxAmp > 0.0f) {
+        float scale = 1.0f / maxAmp;
+        for (int i = 0; i < totalSamples; i++) outputBuffer[i] *= scale;
+    }
+}
+
+void render_automation_sequence(
+    FaustEvent* events,
+    int numEvents,
+    float sampleRate,
+    int totalSamples,
+    float* outputBuffer
+) {
+    if (totalSamples <= 0 || sampleRate <= 0) return;
+    std::fill(outputBuffer, outputBuffer + totalSamples, 0.0f);
+
+    // Track which instruments are present
+    bool useDayan = false, useBayan = false, useKick = false, useSnare = false;
+    bool useHiHat = false, useTom = false, useRide = false, useBell = false, useBowl = false;
+    bool useSitar = false, useFlute = false, useTanpura = false;
+    for (int i = 0; i < numEvents; i++) {
+        switch (events[i].instrumentId) {
+            case 0: useDayan = true; break;
+            case 1: useBayan = true; break;
+            case 2: useKick = true; break;
+            case 3: useSnare = true; break;
+            case 4: useHiHat = true; break;
+            case 5: useTom = true; break;
+            case 6: useRide = true; break;
+            case 7: useBell = true; break;
+            case 8: useBowl = true; break;
+            case 9: useSitar = true; break;
+            case 10: useFlute = true; break;
+            case 11: useTanpura = true; break;
+        }
+    }
+
+    FaustDayan* dayan = useDayan ? new FaustDayan(sampleRate) : nullptr;
+    FaustBayan* bayan = useBayan ? new FaustBayan(sampleRate) : nullptr;
+    FaustKick* kick = useKick ? new FaustKick(sampleRate) : nullptr;
+    FaustSnare* snare = useSnare ? new FaustSnare(sampleRate) : nullptr;
+    FaustHiHat* hihat = useHiHat ? new FaustHiHat(sampleRate) : nullptr;
+    FaustTom* tom = useTom ? new FaustTom(sampleRate) : nullptr;
+    FaustRide* ride = useRide ? new FaustRide(sampleRate) : nullptr;
+    FaustBell* bell = useBell ? new FaustBell(sampleRate) : nullptr;
+    FaustBowl* bowl = useBowl ? new FaustBowl(sampleRate) : nullptr;
+    FaustSitar* sitar = useSitar ? new FaustSitar(sampleRate) : nullptr;
+    FaustFlute* flute = useFlute ? new FaustFlute(sampleRate) : nullptr;
+    FaustTanpura* tanpura = useTanpura ? new FaustTanpura(sampleRate) : nullptr;
+
+    int currentSample = 0;
+    int eventIdx = 0;
+    float* temp = new float[4096];
+    int tempSize = 4096;
+
+    while (currentSample < totalSamples) {
+        while (eventIdx < numEvents && events[eventIdx].sampleOffset <= currentSample) {
+            FaustEvent& ev = events[eventIdx];
+            int instId = ev.instrumentId;
+            float val = ev.value;
+            
+            if (ev.eventType == 0) { // Strike
+                if (instId == 0 && dayan) dayan->strike(val);
+                else if (instId == 1 && bayan) bayan->strike(val);
+                else if (instId == 2 && kick) kick->strike(val);
+                else if (instId == 3 && snare) snare->strike(val);
+                else if (instId == 4 && hihat) hihat->strike(val);
+                else if (instId == 5 && tom) tom->strike(val);
+                else if (instId == 6 && ride) ride->strike(val);
+                else if (instId == 7 && bell) bell->strike(val);
+                else if (instId == 8 && bowl) bowl->strike(val);
+                else if (instId == 9 && sitar) sitar->pluck(val);
+                else if (instId == 11 && tanpura) {
+                    // Tanpura strike uses val as string index (0-3)
+                    int sIdx = (int)val;
+                    tanpura->pluck(sIdx, 0.8f); 
+                }
+            } 
+            else if (ev.eventType == 1) { // SetFreq
+                if (instId == 0 && dayan) dayan->setFrequency(val);
+                else if (instId == 1 && bayan) bayan->setFrequency(val);
+                else if (instId == 5 && tom) tom->setFrequency(val);
+                else if (instId == 7 && bell) bell->setFrequency(val);
+                else if (instId == 8 && bowl) bowl->setFrequency(val);
+                else if (instId == 9 && sitar) sitar->setFrequency(val);
+                else if (instId == 10 && flute) flute->setFrequency(val);
+                else if (instId == 11 && tanpura) {
+                    // For Tanpura, we use paramId as string index in SetFreq too?
+                    // Let's use a convention: if eventType 1 and paramId is 0-3
+                    tanpura->setFrequency(ev.paramId, val);
+                }
+            }
+            else if (ev.eventType == 2) { // SetParam
+                if (instId == 0 && dayan) {
+                    if (ev.paramId == 0) dayan->setMute(val > 0.5f);
+                } else if (instId == 1 && bayan) {
+                    if (ev.paramId == 0) bayan->setMute(val > 0.5f);
+                    else if (ev.paramId == 1) bayan->setMeend(val);
+                } else if (instId == 4 && hihat) {
+                    if (ev.paramId == 0) hihat->setOpenness(val);
+                } else if (instId == 7 && bell) {
+                    if (ev.paramId == 0) bell->setDamping(val);
+                } else if (instId == 8 && bowl) {
+                    if (ev.paramId == 0) bowl->setRub(val);
+                    else if (ev.paramId == 1) bowl->setWaver(val);
+                } else if (instId == 9 && sitar) {
+                    if (ev.paramId == 0) sitar->setJivari(val);
+                } else if (instId == 10 && flute) {
+                    if (ev.paramId == 0) flute->setPressure(val);
+                    else if (ev.paramId == 1) flute->setVibrato(5.5f, val);
+                } else if (instId == 11 && tanpura) {
+                    if (ev.paramId == 10) tanpura->setJivari(val); // Global Jivari
+                }
+            }
+            eventIdx++;
+        }
+
+        int nextEventOffset = (eventIdx < numEvents) ? events[eventIdx].sampleOffset : totalSamples;
+        int chunkLen = nextEventOffset - currentSample;
+        if (chunkLen <= 0) chunkLen = 1;
+        if (currentSample + chunkLen > totalSamples) chunkLen = totalSamples - currentSample;
+
+        if (chunkLen > 0) {
+            if (chunkLen > tempSize) {
+                delete[] temp;
+                temp = new float[chunkLen];
+                tempSize = chunkLen;
+            }
+            
+            if (dayan) { dayan->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
+            if (bayan) { bayan->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
+            if (kick) { kick->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
+            if (snare) { snare->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
+            if (hihat) { hihat->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
+            if (tom) { tom->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
+            if (ride) { ride->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
+            if (bell) { bell->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
+            if (bowl) { bowl->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
+            if (sitar) { sitar->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
+            if (flute) { flute->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
+            if (tanpura) { tanpura->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
+        }
+        currentSample += chunkLen;
+    }
+
+    delete[] temp;
+    if (dayan) delete dayan; if (bayan) delete bayan;
+    if (kick) delete kick; if (snare) delete snare; if (hihat) delete hihat; if (tom) delete tom; if (ride) delete ride;
+    if (bell) delete bell; if (bowl) delete bowl;
+    if (sitar) delete sitar; if (flute) delete flute;
+    if (tanpura) delete tanpura;
 
     // Normalization
     float maxAmp = 0.0f;

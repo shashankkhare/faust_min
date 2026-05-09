@@ -15,6 +15,7 @@ add_library(faust_min SHARED
   "FaustHiHat.cpp"
   "FaustRide.cpp"
   "FaustBell.cpp"
+  "FaustTanpura.cpp"
 )
 
 set_target_properties(faust_min PROPERTIES

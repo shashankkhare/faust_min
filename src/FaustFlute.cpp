@@ -50,7 +50,7 @@ float FaustFlute::tick() {
     mPhase += 2.0f * (float)M_PI * mVibratoRate / mSampleRate;
     if (mPhase > 2.0f * (float)M_PI) mPhase -= 2.0f * (float)M_PI;
     float vibrato = sinf(mPhase) * mVibratoDepth;
-    // INCREASED: Adjusted from 0.005f to 0.01f to bring back a touch of breath character
+    // REVERTED: Restoring stable original breath level
     float noise = mDist(mPRNG) * 0.01f * mPressure;
     float currentPressure = mPressure + vibrato + noise;
 

@@ -472,6 +472,56 @@ class FaustSitarInstrument implements FaustInstrument {
   }
 }
 
+/// A High-Fidelity physical modeling synthesizer of a 4-string Tanpura.
+class FaustTanpuraInstrument implements FaustInstrument {
+  late Pointer<FaustTanpura> _nativeHandle;
+  _NativeAudioBuffer? _renderBuffer;
+  bool _isDisposed = false;
+
+  FaustTanpuraInstrument({double sampleRate = 44100.0}) {
+    _nativeHandle = _bindings.tanpura_create(sampleRate);
+  }
+
+  void setParams(double f1, double f2, double f3, double f4, double decay, double delay) {
+    if (_isDisposed) return;
+    _bindings.tanpura_set_params(_nativeHandle, f1, f2, f3, f4, decay, delay);
+  }
+
+  void setJivari(double amount) {
+    if (_isDisposed) return;
+    _bindings.tanpura_set_jivari(_nativeHandle, amount);
+  }
+
+  void setPlaying(bool playing) {
+    if (_isDisposed) return;
+    _bindings.tanpura_set_playing(_nativeHandle, playing ? 1 : 0);
+  }
+
+  @override
+  void render(Float32List buffer) {
+    if (_isDisposed) return;
+    if (_renderBuffer == null || _renderBuffer!.size != buffer.length) {
+      _renderBuffer?.dispose();
+      _renderBuffer = _NativeAudioBuffer(buffer.length);
+    }
+    _bindings.tanpura_render(
+      _nativeHandle,
+      buffer.length,
+      _renderBuffer!.pointer,
+    );
+    _renderBuffer!.copyTo(buffer);
+  }
+
+  @override
+  void dispose() {
+    if (!_isDisposed) {
+      _bindings.tanpura_destroy(_nativeHandle);
+      _renderBuffer?.dispose();
+      _isDisposed = true;
+    }
+  }
+}
+
 /// A High-Fidelity physical modeling synthesizer of a Kick Drum.
 class FaustKickInstrument implements FaustInstrument {
   late Pointer<FaustKick> _nativeHandle;
@@ -718,6 +768,39 @@ class FaustMin {
       malloc.free(params);
     }
   }
+
+  static void renderAutomationSequence({
+    required List<FaustEventData> events,
+    required double sampleRate,
+    required int totalSamples,
+    required Pointer<Float> outputBuffer,
+  }) {
+    if (events.isEmpty) {
+      _bindings.normalize_signal(outputBuffer, totalSamples, 0.0);
+      return;
+    }
+
+    final nativeEvents = malloc<FaustEvent>(events.length);
+    for (int i = 0; i < events.length; i++) {
+      nativeEvents[i].sampleOffset = events[i].sampleOffset;
+      nativeEvents[i].instrumentId = events[i].instrumentId;
+      nativeEvents[i].eventType = events[i].eventType;
+      nativeEvents[i].paramId = events[i].paramId;
+      nativeEvents[i].value = events[i].value;
+    }
+
+    try {
+      _bindings.render_automation_sequence(
+        nativeEvents,
+        events.length,
+        sampleRate,
+        totalSamples,
+        outputBuffer,
+      );
+    } finally {
+      malloc.free(nativeEvents);
+    }
+  }
 }
 
 class FaustTriggerData {
@@ -731,5 +814,21 @@ class FaustTriggerData {
     required this.instrumentId,
     required this.velocity,
     this.param = 0.0,
+  });
+}
+
+class FaustEventData {
+  final int sampleOffset;
+  final int instrumentId;
+  final int eventType; // 0=Strike, 1=SetFreq, 2=SetParam
+  final int paramId;
+  final double value;
+
+  FaustEventData({
+    required this.sampleOffset,
+    required this.instrumentId,
+    required this.eventType,
+    this.paramId = 0,
+    required this.value,
   });
 }

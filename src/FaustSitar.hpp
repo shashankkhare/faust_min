@@ -31,5 +31,13 @@ private:
     // Sympathetic Resonators
     std::vector<Faust::Resonator> _sympModes;
 
+    float _dynThreshold;
+    float _dynDispersion;
+    float _dynStrikeScale;
+    float _dynDamping;
+    float _dynDC;
+    float _dynFold;
+    float _dynOutputGain;
+
     void updateInternal();
 };

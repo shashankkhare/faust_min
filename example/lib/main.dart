@@ -42,7 +42,7 @@ class _FaustExampleHomeState extends State<FaustExampleHome> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 8,
+      length: 9,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Faust Classical Suite'),
@@ -54,6 +54,7 @@ class _FaustExampleHomeState extends State<FaustExampleHome> {
               Tab(icon: Icon(Icons.circle), text: "Dayan"),
               Tab(icon: Icon(Icons.lens), text: "Bayan"),
               Tab(icon: Icon(Icons.music_note), text: "Sitar"),
+              Tab(icon: Icon(Icons.line_weight), text: "Tanpura"),
               Tab(icon: Icon(Icons.grid_view), text: "Drums"),
               Tab(icon: Icon(Icons.notifications), text: "Bell"),
               Tab(icon: Icon(Icons.playlist_play), text: "Patterns"),
@@ -67,6 +68,7 @@ class _FaustExampleHomeState extends State<FaustExampleHome> {
             DayanSection(),
             BayanSection(),
             SitarSection(),
+            TanpuraSection(),
             DrumKitSection(),
             BellSection(),
             SequencerSection(),
@@ -238,9 +240,8 @@ String getNoteName(double midi) {
   return "${names[imidi % 12]}$octave";
 }
 
-Uint8List createWavFile(Float32List samples, int sampleRate) {
-  final numSamples = samples.length;
-  final dataSize = numSamples * 2;
+Uint8List createWavFile(Float32List samples, int sampleRate, {int channels = 1}) {
+  final dataSize = samples.length * 2;
   final buffer = ByteData(44 + dataSize);
   buffer.setUint32(0, 0x52494646, Endian.big);
   buffer.setUint32(4, 36 + dataSize, Endian.little);
@@ -248,10 +249,10 @@ Uint8List createWavFile(Float32List samples, int sampleRate) {
   buffer.setUint32(12, 0x666D7420, Endian.big);
   buffer.setUint32(16, 16, Endian.little);
   buffer.setUint16(20, 1, Endian.little);
-  buffer.setUint16(22, 1, Endian.little);
+  buffer.setUint16(22, channels, Endian.little);
   buffer.setUint32(24, sampleRate, Endian.little);
-  buffer.setUint32(28, sampleRate * 2, Endian.little);
-  buffer.setUint16(32, 2, Endian.little);
+  buffer.setUint32(28, sampleRate * 2 * channels, Endian.little);
+  buffer.setUint16(32, 2 * channels, Endian.little);
   buffer.setUint16(34, 16, Endian.little);
   buffer.setUint32(36, 0x64617461, Endian.big);
   buffer.setUint32(40, dataSize, Endian.little);
@@ -695,6 +696,111 @@ class _SitarSectionState extends State<SitarSection> {
     );
   }
 }
+
+class TanpuraSection extends StatefulWidget {
+  const TanpuraSection({super.key});
+  @override
+  State<TanpuraSection> createState() => _TanpuraSectionState();
+}
+
+class _TanpuraSectionState extends State<TanpuraSection> {
+  late FaustTanpuraInstrument _inst;
+  double _f1 = 196.00; // Pa (G3)
+  double _f2 = 261.63; // Sa (C4)
+  double _f3 = 261.63; // Sa (C4)
+  double _f4 = 130.81; // Low Sa (C3)
+  double _decay = 6.0;
+  double _delay = 0.7;
+  double _jivari = 0.85;
+  bool _isPlaying = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _inst = FaustTanpuraInstrument();
+  }
+
+  @override
+  void dispose() {
+    _inst.dispose();
+    super.dispose();
+  }
+
+  void _playContinuousLoop() async {
+    if (_isPlaying) return;
+    setState(() => _isPlaying = true);
+    
+    _inst.setParams(_f1, _f2, _f3, _f4, _decay, _delay);
+    _inst.setJivari(_jivari);
+    _inst.setPlaying(true);
+
+    // We will render 8 seconds of continuous playing
+    int totalSamples = 44100 * 8;
+    final pcm = Float32List(totalSamples);
+    
+    // The native Faust engine handles the loop sequencing internally!
+    _inst.render(pcm);
+
+    final source = await SoLoud.instance.loadMem(
+      'tanpura_loop_${DateTime.now().microsecondsSinceEpoch}',
+      createWavFile(pcm, 44100),
+    );
+    await SoLoud.instance.play(source);
+    await Future.delayed(const Duration(seconds: 8));
+    await SoLoud.instance.disposeSource(source);
+    
+    _inst.setPlaying(false);
+    if (mounted) setState(() => _isPlaying = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(30),
+      child: Column(
+        children: [
+          const Text(
+            "Tanpura (Continuous Drone)",
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 10),
+          Expanded(
+            child: ListView(
+              children: [
+                _buildSlider("String 1 Freq", _f1, 98.0, 523.0, (v) => setState(() => _f1 = v)),
+                _buildSlider("String 2 Freq", _f2, 98.0, 523.0, (v) => setState(() => _f2 = v)),
+                _buildSlider("String 3 Freq", _f3, 98.0, 523.0, (v) => setState(() => _f3 = v)),
+                _buildSlider("String 4 Freq", _f4, 98.0, 523.0, (v) => setState(() => _f4 = v)),
+                _buildSlider("Decay (t60) sec", _decay, 1.0, 15.0, (v) => setState(() => _decay = v)),
+                _buildSlider("Delay (sec)", _delay, 0.2, 2.0, (v) => setState(() => _delay = v)),
+                _buildSlider("Jivari (Buzz)", _jivari, 0.0, 1.0, (v) => setState(() => _jivari = v)),
+              ],
+            ),
+          ),
+          SizedBox(
+            width: double.infinity,
+            height: 80,
+            child: ElevatedButton.icon(
+              onPressed: _isPlaying ? null : _playContinuousLoop,
+              icon: const Icon(Icons.loop),
+              label: const Text("Play 8s Loop"),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSlider(String label, double val, double min, double max, Function(double) onChanged) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("$label: ${val.toStringAsFixed(2)}"),
+        Slider(value: val, min: min, max: max, onChanged: onChanged),
+      ],
+    );
+  }
+}
 class SequencerSection extends StatefulWidget {
   const SequencerSection({super.key});
 
@@ -704,110 +810,229 @@ class SequencerSection extends StatefulWidget {
 
 class _SequencerSectionState extends State<SequencerSection> {
   bool _isPlaying = false;
-  String _status = "Ready to play patterns";
+  String _status = "Ready to Mix";
+  double _track1Volume = 0.8; // Tabla
+  double _track2Volume = 0.8; // Flute
+  double _track3Volume = 0.6; // Tanpura
+  // Syncopated Classical Tabla Pattern from Slumber App
+  // Original: "D n t . G k . n D g n . T . n t"
+  // Mapped: D(Dha) N(Na) T(Tin) I(Ge) e(Ke) N(Na) D(Dha) I(Ge) N(Na) I(Tun) N(Na) T(Tin)
+  // Classic Teental-style pattern for testing
+  final String _tablaSeq = 
+      "D.N.T.I.D.N.T.I"
+      "D.N.T.I.D.N.T.I"
+      "D.N.T.I.D.N.T.I"
+      "D.N.T.I.D.N.T.I";
+  final String _fluteSeq = "E...........F.......E...F...A...B...G.......D.......C...E...D...";
+  final String _tanpuraSeq = "1234123412341234123412341234123412341234123412341234123412341234";
 
-  Future<void> _playPattern(String type) async {
+  double _calculateOptimalPressure(double freq) {
+    // Dynamic compensation: Higher frequencies require more blowing pressure
+    // to oscillate effectively in shorter virtual air columns.
+    const double minFreq = 440.0;
+    const double maxFreq = 1100.0;
+    const double minP = 0.78;
+    const double maxP = 0.96;
+    
+    double t = (freq - minFreq) / (maxFreq - minFreq);
+    t = t.clamp(0.0, 1.0);
+    return minP + (maxP - minP) * t;
+  }
+
+  Future<void> _playPattern() async {
     if (_isPlaying) return;
     setState(() {
       _isPlaying = true;
-      _status = "Rendering $type...";
+      _status = "Rendering tracks & mixing...";
     });
 
     try {
       const double sampleRate = 44100.0;
-      const double tempoBpm = 120.0;
-      const double durationSec = 4.0;
+      const double tempoBpm = 100.0;
+      const double durationSec = 10.0;
       final int totalSamples = (durationSec * sampleRate).toInt();
 
-      final List<FaustTriggerData> triggers = [];
       final double secondsPerBeat = 60.0 / tempoBpm;
       final double secondsPerStep = secondsPerBeat / 4.0;
       final int samplesPerStep = (secondsPerStep * sampleRate).floor();
 
-      if (type == "Tabla") {
-        const String pattern = "D . n t G . k . D n t . G k . .";
-        for (int i = 0; i < pattern.length; i++) {
-          int offset = i * samplesPerStep;
-          String stroke = pattern[i];
-          if (stroke == ' ' || stroke == '.') continue;
-          double vel = (stroke == stroke.toUpperCase()) ? 1.0 : 0.6;
-          String s = stroke.toLowerCase();
-          if (s == 'd') {
-            triggers.add(FaustTriggerData(sampleOffset: offset, instrumentId: 0, velocity: vel * 0.8, param: 0.0));
-            triggers.add(FaustTriggerData(sampleOffset: offset, instrumentId: 1, velocity: vel, param: 1.1));
-          } else if (s == 'n') {
-            triggers.add(FaustTriggerData(sampleOffset: offset, instrumentId: 0, velocity: vel, param: 0.0));
-          } else if (s == 't') {
-            triggers.add(FaustTriggerData(sampleOffset: offset, instrumentId: 0, velocity: vel, param: 1.0));
-          } else if (s == 'g') {
-            triggers.add(FaustTriggerData(sampleOffset: offset, instrumentId: 1, velocity: vel, param: 1.2));
-          } else if (s == 'k') {
-            triggers.add(FaustTriggerData(sampleOffset: offset, instrumentId: 1, velocity: vel, param: 1.0));
-          }
-        }
-      } else if (type == "Zen") {
-        const String bowlPattern = "B . . . . . . . B . . . . . . .";
-        const String bellPattern = ". . . . . . . . . . . . . . . L";
-        for (int i = 0; i < bowlPattern.length; i++) {
-          int offset = i * samplesPerStep;
-          if (bowlPattern[i] == 'B') {
-            triggers.add(FaustTriggerData(sampleOffset: offset, instrumentId: 8, velocity: 0.8)); // Bowl
-          }
-          if (bellPattern[i] == 'L') {
-            triggers.add(FaustTriggerData(sampleOffset: offset, instrumentId: 7, velocity: 1.0, param: 880.0)); // Bell
-          }
-        }
-      } else {
-        const String pattern = "K . H . S . H . K K H . S . H R";
-        for (int i = 0; i < pattern.length; i++) {
-          int offset = i * samplesPerStep;
-          String stroke = pattern[i];
-          if (stroke == ' ' || stroke == '.') continue;
-          double vel = (stroke == stroke.toUpperCase()) ? 1.0 : 0.5;
-          String s = stroke.toLowerCase();
-          if (s == 'k') triggers.add(FaustTriggerData(sampleOffset: offset, instrumentId: 2, velocity: vel));
-          else if (s == 's') triggers.add(FaustTriggerData(sampleOffset: offset, instrumentId: 3, velocity: vel));
-          else if (s == 'h') triggers.add(FaustTriggerData(sampleOffset: offset, instrumentId: 4, velocity: vel, param: 0.2));
-          else if (s == 'r') triggers.add(FaustTriggerData(sampleOffset: offset, instrumentId: 6, velocity: vel));
-        }
-        // Snare roll
-        int lastBarStart = 12 * samplesPerStep;
-        for (int i = 0; i < 4; i++) {
-          int microOffset = lastBarStart + (i * (samplesPerStep ~/ 2));
-          triggers.add(FaustTriggerData(sampleOffset: microOffset, instrumentId: 3, velocity: 0.4 + (i * 0.1)));
+      final List<FaustEventData> track1Events = []; // Tabla (Dayan 0, Bayan 1)
+      final List<FaustEventData> track2Events = []; // Flute (10)
+      final List<FaustEventData> track3Events = []; // Tanpura (11)
+
+      // --- Parse Track 1 (Tabla) ---
+      final double bayanFreq = 110.0;
+      final double dayanFreq = 220.0;
+      
+      track1Events.add(FaustEventData(sampleOffset: 0, instrumentId: 0, eventType: 1, value: dayanFreq));
+      track1Events.add(FaustEventData(sampleOffset: 0, instrumentId: 1, eventType: 1, value: bayanFreq));
+
+      for (int i = 0; i < _tablaSeq.length; i++) {
+        int offset = i * samplesPerStep;
+        String s = _tablaSeq[i];
+        if (s == '.') continue;
+        
+        if (s == 'D') { 
+           track1Events.add(FaustEventData(sampleOffset: offset, instrumentId: 0, eventType: 2, paramId: 0, value: 0.0));
+           track1Events.add(FaustEventData(sampleOffset: offset, instrumentId: 0, eventType: 1, value: dayanFreq));
+           track1Events.add(FaustEventData(sampleOffset: offset, instrumentId: 0, eventType: 0, value: 0.9));
+           track1Events.add(FaustEventData(sampleOffset: offset, instrumentId: 1, eventType: 2, paramId: 0, value: 0.0));
+           track1Events.add(FaustEventData(sampleOffset: offset, instrumentId: 1, eventType: 2, paramId: 1, value: 1.0));
+           track1Events.add(FaustEventData(sampleOffset: offset, instrumentId: 1, eventType: 0, value: 1.0));
+           track1Events.add(FaustEventData(sampleOffset: offset + 5000, instrumentId: 1, eventType: 2, paramId: 1, value: 1.2));
+        } else if (s == 'I') {
+           track1Events.add(FaustEventData(sampleOffset: offset, instrumentId: 0, eventType: 2, paramId: 0, value: 0.0));
+           track1Events.add(FaustEventData(sampleOffset: offset, instrumentId: 0, eventType: 1, value: dayanFreq * 0.95)); // Tun slightly lower
+           track1Events.add(FaustEventData(sampleOffset: offset, instrumentId: 0, eventType: 0, value: 0.7));
+           track1Events.add(FaustEventData(sampleOffset: offset, instrumentId: 1, eventType: 2, paramId: 0, value: 0.0));
+           track1Events.add(FaustEventData(sampleOffset: offset, instrumentId: 1, eventType: 2, paramId: 1, value: 1.3));
+           track1Events.add(FaustEventData(sampleOffset: offset, instrumentId: 1, eventType: 0, value: 0.8));
+        } else if (s == 'N') {
+           track1Events.add(FaustEventData(sampleOffset: offset, instrumentId: 0, eventType: 2, paramId: 0, value: 0.0));
+           track1Events.add(FaustEventData(sampleOffset: offset, instrumentId: 0, eventType: 1, value: dayanFreq));
+           track1Events.add(FaustEventData(sampleOffset: offset, instrumentId: 0, eventType: 0, value: 1.0));
+        } else if (s == 'T') {
+           track1Events.add(FaustEventData(sampleOffset: offset, instrumentId: 0, eventType: 2, paramId: 0, value: 0.0));
+           track1Events.add(FaustEventData(sampleOffset: offset, instrumentId: 0, eventType: 1, value: dayanFreq * 0.95));
+           track1Events.add(FaustEventData(sampleOffset: offset, instrumentId: 0, eventType: 0, value: 0.6));
+        } else if (s == 'e') {
+           track1Events.add(FaustEventData(sampleOffset: offset, instrumentId: 0, eventType: 2, paramId: 0, value: 1.0)); // Dayan Muted
+           track1Events.add(FaustEventData(sampleOffset: offset, instrumentId: 0, eventType: 1, value: dayanFreq));
+           track1Events.add(FaustEventData(sampleOffset: offset, instrumentId: 0, eventType: 0, value: 0.7));
         }
       }
 
-      final Pointer<Float> outputBuffer = calloc<Float>(totalSamples);
+      // --- Parse Track 2 (Flute) ---
+      bool isBlowing = false;
+      for (int i = 0; i < _fluteSeq.length; i++) {
+        int offset = i * samplesPerStep;
+        String s = _fluteSeq[i];
+        
+        if (s == '-') {
+          if (isBlowing) {
+             track2Events.add(FaustEventData(sampleOffset: offset, instrumentId: 10, eventType: 2, paramId: 0, value: 0.0)); // Stop pressure
+             isBlowing = false;
+          }
+        } else if (s != '.') {
+          double freq = 523.25;
+          if (s == 'B') freq = 493.88; // B4 (Ni)
+          if (s == 'C') freq = 523.25; // C5 (Sa)
+          if (s == 'D') freq = 587.33; // D5 (Re)
+          if (s == 'E') freq = 659.25; // E5 (Ga)
+          if (s == 'F') freq = 739.99; // F#5 (Teevra Ma for Yaman)
+          if (s == 'G') freq = 783.99; // G5 (Pa)
+          if (s == 'A') freq = 880.00; // A5 (Dha)
+          if (s == 'c') freq = 1046.50; // C6 (Sa upper)
+          
+          if (!isBlowing) {
+             double p = _calculateOptimalPressure(freq);
+             // Tongue the first note of a phrase with dynamic pressure
+             track2Events.add(FaustEventData(sampleOffset: offset, instrumentId: 10, eventType: 2, paramId: 0, value: (p + 0.1).clamp(0.0, 1.0))); // Peak Attack
+             track2Events.add(FaustEventData(sampleOffset: offset + 1500, instrumentId: 10, eventType: 2, paramId: 0, value: p)); // Dynamic Sustain
+             track2Events.add(FaustEventData(sampleOffset: offset + 1500, instrumentId: 10, eventType: 2, paramId: 1, value: 0.03)); // Subtle Vibrato
+             isBlowing = true;
+          }
+          
+          track2Events.add(FaustEventData(sampleOffset: offset, instrumentId: 10, eventType: 1, value: freq)); // Slur to new frequency
+        }
+      }
+      track2Events.add(FaustEventData(sampleOffset: totalSamples - 100, instrumentId: 10, eventType: 2, paramId: 0, value: 0.0)); // Ensure stop
+
+      // --- Track 3: Tanpura (Instrument 11) ---
+      track3Events.add(FaustEventData(sampleOffset: 0, instrumentId: 11, eventType: 1, paramId: 0, value: 196.00)); // G3
+      track3Events.add(FaustEventData(sampleOffset: 0, instrumentId: 11, eventType: 1, paramId: 1, value: 261.63)); // C4
+      track3Events.add(FaustEventData(sampleOffset: 0, instrumentId: 11, eventType: 1, paramId: 2, value: 261.63)); // C4
+      track3Events.add(FaustEventData(sampleOffset: 0, instrumentId: 11, eventType: 1, paramId: 3, value: 130.81)); // C3
+      track3Events.add(FaustEventData(sampleOffset: 0, instrumentId: 11, eventType: 2, paramId: 10, value: 0.85)); // Jivari
+
+      for (int i = 0; i < _tanpuraSeq.length; i++) {
+        int offset = i * samplesPerStep;
+        String s = _tanpuraSeq[i];
+        if (s != '.') {
+           int sIdx = int.tryParse(s) ?? 1;
+           track3Events.add(FaustEventData(sampleOffset: offset, instrumentId: 11, eventType: 0, value: (sIdx - 1).toDouble()));
+        }
+      }
+
+      track1Events.sort((a, b) => a.sampleOffset.compareTo(b.sampleOffset));
+      track2Events.sort((a, b) => a.sampleOffset.compareTo(b.sampleOffset));
+      track3Events.sort((a, b) => a.sampleOffset.compareTo(b.sampleOffset));
+
+      // --- Render Tracks ---
+      final Pointer<Float> track1Buf = calloc<Float>(totalSamples);
+      final Pointer<Float> track2Buf = calloc<Float>(totalSamples);
+      final Pointer<Float> track3Buf = calloc<Float>(totalSamples);
+      
       try {
-        FaustMin.renderSequencedAudio(
-          triggers: triggers,
-          baseFreq: 140.0,
+        FaustMin.renderAutomationSequence(
+          events: track1Events,
           sampleRate: sampleRate,
           totalSamples: totalSamples,
-          outputBuffer: outputBuffer,
-        );
-
-        final pcm = outputBuffer.asTypedList(totalSamples);
-        final source = await SoLoud.instance.loadMem(
-          'pattern_${DateTime.now().microsecondsSinceEpoch}',
-          createWavFile(pcm, 44100),
+          outputBuffer: track1Buf,
         );
         
-        setState(() => _status = "Playing $type...");
-        await SoLoud.instance.play(source);
-        await Future.delayed(const Duration(seconds: 4));
-        await SoLoud.instance.disposeSource(source);
+        FaustMin.renderAutomationSequence(
+          events: track2Events,
+          sampleRate: sampleRate,
+          totalSamples: totalSamples,
+          outputBuffer: track2Buf,
+        );
+
+        FaustMin.renderAutomationSequence(
+          events: track3Events,
+          sampleRate: sampleRate,
+          totalSamples: totalSamples,
+          outputBuffer: track3Buf,
+        );
+
+        // --- Mix Tracks ---
+        List<MixLayer> layers = [
+          MixLayer(
+            buffer: track1Buf.asTypedList(totalSamples),
+            amplitudeScale: _track1Volume,
+            pan: -0.2, // Tabla slightly left
+          ),
+          MixLayer(
+            buffer: track2Buf.asTypedList(totalSamples),
+            amplitudeScale: _track2Volume * 2.0, // Flute boosted
+            pan: 0.2, // Flute slightly right
+          ),
+          MixLayer(
+            buffer: track3Buf.asTypedList(totalSamples),
+            amplitudeScale: _track3Volume,
+            pan: 0.0, // Tanpura center
+          ),
+        ];
+
+      final Float32List stereoMaster = Float32List(totalSamples * 2);
+      
+      FaustAudioDSP.mixSignals(
+        layers: layers,
+        stereoOutputBuffer: stereoMaster,
+      );
+
+      final source = await SoLoud.instance.loadMem(
+        'mix_${DateTime.now().microsecondsSinceEpoch}',
+        createWavFile(stereoMaster, 44100, channels: 2),
+      );
+      
+      setState(() => _status = "Playing Mix...");
+      await SoLoud.instance.play(source);
+      await Future.delayed(const Duration(seconds: 10));
+      await SoLoud.instance.disposeSource(source);
+      
       } finally {
-        calloc.free(outputBuffer);
+        calloc.free(track1Buf);
+        calloc.free(track2Buf);
       }
+
     } catch (e) {
       setState(() => _status = "Error: $e");
     } finally {
       if (mounted) {
         setState(() {
           _isPlaying = false;
-          _status = "Finished playing $type";
+          _status = "Finished";
         });
       }
     }
@@ -816,54 +1041,71 @@ class _SequencerSectionState extends State<SequencerSection> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(30),
+      padding: const EdgeInsets.all(20),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.queue_music, size: 80, color: Colors.blue),
-          const SizedBox(height: 20),
-          Text(
-            "Native Sequencer Demo",
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
+          const Icon(Icons.queue_music, size: 60, color: Colors.blue),
           const SizedBox(height: 10),
-          Text(
-            _status,
-            style: const TextStyle(color: Colors.grey),
+          Text("2-Track Sequence Mixer", style: Theme.of(context).textTheme.headlineMedium),
+          Text(_status, style: const TextStyle(color: Colors.grey)),
+          const SizedBox(height: 20),
+          
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  _trackControl("Track 1: Tabla (Dayan + Bayan)", _tablaSeq, _track1Volume, (v) => setState(() => _track1Volume = v)),
+                  const Divider(height: 30),
+                  _trackControl("Track 2: Flute", _fluteSeq, _track2Volume, (v) => setState(() => _track2Volume = v)),
+                  const Divider(height: 30),
+                  _trackControl("Track 3: Tanpura", _tanpuraSeq, _track3Volume, (v) => setState(() => _track3Volume = v)),
+                ],
+              ),
+            ),
           ),
-          const SizedBox(height: 40),
-          _patternButton("Tabla: Teental Variation", "Tabla", Colors.orange),
-          const SizedBox(height: 15),
-          _patternButton("Rock: Classic 4/4 Groove", "Rock", Colors.blueGrey),
-          const SizedBox(height: 15),
-          _patternButton("Zen: Meditative Chime", "Zen", Colors.amber),
-          const SizedBox(height: 40),
-          const Text(
-            "Patterns are rendered in a single sample-accurate native pass for zero jitter and maximum efficiency.",
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+          
+
+          SizedBox(
+            width: double.infinity,
+            height: 60,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue.withOpacity(0.3)),
+              onPressed: _isPlaying ? null : _playPattern,
+              icon: const Icon(Icons.play_arrow),
+              label: const Text("Render & Play Mix", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _patternButton(String label, String type, Color color) {
-    return SizedBox(
-      width: double.infinity,
-      height: 60,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color.withOpacity(0.2),
-          foregroundColor: color,
-          side: BorderSide(color: color),
+  Widget _trackControl(String title, String seq, double vol, ValueChanged<double> onVolChanged) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.amber)),
+        const SizedBox(height: 5),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(5)),
+          child: Text(seq, style: const TextStyle(fontFamily: 'monospace', fontSize: 14, letterSpacing: 2.0)),
         ),
-        onPressed: _isPlaying ? null : () => _playPattern(type),
-        child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-      ),
+        Row(
+          children: [
+            const Icon(Icons.volume_up, size: 16),
+            Expanded(
+              child: Slider(value: vol, min: 0.0, max: 1.0, onChanged: onVolChanged),
+            ),
+            Text((vol * 10).toStringAsFixed(1)),
+          ],
+        ),
+      ],
     );
   }
 }
+
 
 class BellSection extends StatefulWidget {
   const BellSection({super.key});

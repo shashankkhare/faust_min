@@ -33,6 +33,6 @@ void FaustSnare::render(int numFrames, float* buffer) {
         float noise = dis(gen) * _snareEnv;
         _snareEnv *= 0.999f; // Snare decay
 
-        buffer[i] = head * 0.5f + noise * 0.5f;
+        buffer[i] = std::tanh((head + noise) * 1.5f); 
     }
 }

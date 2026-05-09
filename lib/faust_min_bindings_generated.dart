@@ -1041,6 +1041,129 @@ class FaustMinBindings {
           ffi.Pointer<ffi.Float>,
         )
       >();
+
+  void render_automation_sequence(
+    ffi.Pointer<FaustEvent> events,
+    int numEvents,
+    double sampleRate,
+    int totalSamples,
+    ffi.Pointer<ffi.Float> outputBuffer,
+  ) {
+    return _render_automation_sequence(
+      events,
+      numEvents,
+      sampleRate,
+      totalSamples,
+      outputBuffer,
+    );
+  }
+
+  late final _render_automation_sequencePtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<FaustEvent>,
+            ffi.Int,
+            ffi.Float,
+            ffi.Int,
+            ffi.Pointer<ffi.Float>,
+          )
+        >
+      >('render_automation_sequence');
+  late final _render_automation_sequence = _render_automation_sequencePtr
+      .asFunction<
+        void Function(
+          ffi.Pointer<FaustEvent>,
+          int,
+          double,
+          int,
+          ffi.Pointer<ffi.Float>,
+        )
+      >();
+  /// --- Tanpura ---
+  ffi.Pointer<FaustTanpura> tanpura_create(double sampleRate) {
+    return _tanpura_create(sampleRate);
+  }
+
+  late final _tanpura_createPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<FaustTanpura> Function(ffi.Float)>>(
+        'tanpura_create',
+      );
+  late final _tanpura_create = _tanpura_createPtr
+      .asFunction<ffi.Pointer<FaustTanpura> Function(double)>();
+
+  void tanpura_destroy(ffi.Pointer<FaustTanpura> tanpura) {
+    return _tanpura_destroy(tanpura);
+  }
+
+  late final _tanpura_destroyPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<FaustTanpura>)>>(
+        'tanpura_destroy',
+      );
+  late final _tanpura_destroy = _tanpura_destroyPtr
+      .asFunction<void Function(ffi.Pointer<FaustTanpura>)>();
+
+  void tanpura_set_params(ffi.Pointer<FaustTanpura> tanpura, double f1, double f2, double f3, double f4, double decay, double delay) {
+    return _tanpura_set_params(tanpura, f1, f2, f3, f4, decay, delay);
+  }
+
+  late final _tanpura_set_paramsPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<FaustTanpura>, ffi.Float, ffi.Float, ffi.Float, ffi.Float, ffi.Float, ffi.Float)
+        >
+      >('tanpura_set_params');
+  late final _tanpura_set_params = _tanpura_set_paramsPtr
+      .asFunction<void Function(ffi.Pointer<FaustTanpura>, double, double, double, double, double, double)>();
+
+  void tanpura_set_jivari(ffi.Pointer<FaustTanpura> tanpura, double amount) {
+    return _tanpura_set_jivari(tanpura, amount);
+  }
+
+  late final _tanpura_set_jivariPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<FaustTanpura>, ffi.Float)
+        >
+      >('tanpura_set_jivari');
+  late final _tanpura_set_jivari = _tanpura_set_jivariPtr
+      .asFunction<void Function(ffi.Pointer<FaustTanpura>, double)>();
+
+  void tanpura_set_playing(ffi.Pointer<FaustTanpura> tanpura, int playing) {
+    return _tanpura_set_playing(tanpura, playing);
+  }
+
+  late final _tanpura_set_playingPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<FaustTanpura>, ffi.Int)
+        >
+      >('tanpura_set_playing');
+  late final _tanpura_set_playing = _tanpura_set_playingPtr
+      .asFunction<void Function(ffi.Pointer<FaustTanpura>, int)>();
+
+  void tanpura_render(
+    ffi.Pointer<FaustTanpura> tanpura,
+    int numFrames,
+    ffi.Pointer<ffi.Float> buffer,
+  ) {
+    return _tanpura_render(tanpura, numFrames, buffer);
+  }
+
+  late final _tanpura_renderPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<FaustTanpura>,
+            ffi.Int,
+            ffi.Pointer<ffi.Float>,
+          )
+        >
+      >('tanpura_render');
+  late final _tanpura_render = _tanpura_renderPtr
+      .asFunction<
+        void Function(ffi.Pointer<FaustTanpura>, int, ffi.Pointer<ffi.Float>)
+      >();
 }
 
 final class FaustFlute extends ffi.Opaque {}
@@ -1054,6 +1177,29 @@ final class FaustBayan extends ffi.Opaque {}
 final class FaustSitar extends ffi.Opaque {}
 
 final class FaustBell extends ffi.Opaque {}
+
+final class FaustTanpura extends ffi.Opaque {}
+
+/// --- High-Res Automation Event ---
+final class FaustEvent extends ffi.Struct {
+  @ffi.Int()
+  external int sampleOffset;
+
+  @ffi.Int()
+  external int instrumentId;
+
+  /// 0 = Strike, 1 = SetFreq, 2 = SetParam
+  @ffi.Int()
+  external int eventType;
+
+  /// Context-dependent (e.g. 0 = Mute, 1 = Damping)
+  @ffi.Int()
+  external int paramId;
+
+  /// Exact value (Velocity, Hz, or generic float)
+  @ffi.Float()
+  external double value;
+}
 
 final class FaustKick extends ffi.Opaque {}
 
