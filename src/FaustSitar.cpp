@@ -3,7 +3,7 @@
 #include <algorithm>
 
  FaustSitar::FaustSitar(float sampleRate) 
-    : _sampleRate(sampleRate), _baseFreq(146.83f), _jivari(0.5f), _sympGain(0.20f), _writePtr(0), _lpState(0.0f), _dcState(0.0f), _prevIn(0.0f) {
+    : _sampleRate(sampleRate), _baseFreq(146.83f), _jivari(0.5f), _sympGain(0.20f), _writePtr(0), _lpState(0.0f), _dcState(0.0f), _prevIn(0.0f), _seed(54) {
     
     for (int i = 0; i < 4; i++) {
         _apX[i] = _apY[i] = 0.0f;
@@ -47,14 +47,14 @@ void FaustSitar::pluck(float velocity) {
     // Micro-strike (24 samples) to kill "trumpety" low-frequency energy
     int exciteLen = std::min(24, (int)period);
     
-    static std::mt19937 gen(54);
-    static std::uniform_real_distribution<float> dis(-0.9f, 0.9f);
-    
     for (int i = 0; i < exciteLen; i++) {
         int idx = (_writePtr - exciteLen + i + (int)_delayLine.size()) % _delayLine.size();
         float phase = (float)i / exciteLen;
         float pulse = std::sin(2.0f * M_PI * phase);
-        float noise = dis(gen) - dis(gen); 
+        
+        // Fast LCG random for pluck noise
+        _seed = _seed * 1103515245 + 12345;
+        float noise = (float)(_seed / 65536 % 32768) / 32768.0f * 2.0f - 1.0f;
         
         // High intensity (0.9f) to force bridge interaction
         _delayLine[idx] = (pulse * 0.5f + noise * 0.5f) * velocity * _dynStrikeScale;

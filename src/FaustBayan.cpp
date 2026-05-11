@@ -1,4 +1,7 @@
 #include "FaustBayan.hpp"
+#include <vector>
+#include <cmath>
+#include <algorithm>
 
 FaustBayan::FaustBayan(float sampleRate) : _sampleRate(sampleRate), _baseFreq(110.0f), _meend(1.0f), _currentFreq(110.0f), _excitation(0.0f), _muted(false) {
     struct ModeData { float ratio; float t60; float gain; };
@@ -31,11 +34,8 @@ void FaustBayan::setMeend(float multiplier) {
 void FaustBayan::setMute(bool muted) {
     _muted = muted;
     struct ModeData { float t60; };
-    std::vector<ModeData> baseT60 = {
-        {1.8f}, {1.0f}, {0.5f}
-    };
-    
-    float scale = _muted ? 0.1f : 1.0f; // Damping for "Ka"
+    std::vector<ModeData> baseT60 = { {1.8f}, {1.0f}, {0.5f} };
+    float scale = _muted ? 0.1f : 1.0f;
     for (size_t i = 0; i < _modes.size() && i < baseT60.size(); ++i) {
         _modes[i].t60 = baseT60[i].t60 * scale;
     }
@@ -43,7 +43,7 @@ void FaustBayan::setMute(bool muted) {
 }
 
 void FaustBayan::strike(float velocity) {
-    _excitation = velocity * 0.2f;
+    _excitation = velocity * 0.5f;
 }
 
 void FaustBayan::updateInternal() {
@@ -54,22 +54,17 @@ void FaustBayan::updateInternal() {
 
 void FaustBayan::render(int numFrames, float* buffer) {
     float targetFreq = _baseFreq * _meend;
-    
     for (int i = 0; i < numFrames; ++i) {
-        // Smooth frequency slide (meend)
         if (std::abs(_currentFreq - targetFreq) > 0.01f) {
-            _currentFreq += (targetFreq - _currentFreq) * 0.005f; // Exponential smoothing
+            _currentFreq += (targetFreq - _currentFreq) * 0.005f;
             updateInternal();
         }
-
         float x = _excitation;
         _excitation = 0.0f;
-
         float out = 0.0f;
         for (auto& m : _modes) {
             out += m.process(x) * m.gain;
         }
-        // Master Output Limiter & Saturator for consistent 0.95 peak
-        buffer[i] = std::tanh(out * 2.5f); 
+        buffer[i] = std::tanh(out * 8.0f) * 0.9f;
     }
 }

@@ -493,6 +493,134 @@ class FaustMinBindings {
         void Function(ffi.Pointer<FaustSitar>, int, ffi.Pointer<ffi.Float>)
       >();
 
+  /// --- Tanpura ---
+  ffi.Pointer<FaustTanpura> tanpura_create(double sampleRate) {
+    return _tanpura_create(sampleRate);
+  }
+
+  late final _tanpura_createPtr =
+      _lookup<
+        ffi.NativeFunction<ffi.Pointer<FaustTanpura> Function(ffi.Float)>
+      >('tanpura_create');
+  late final _tanpura_create = _tanpura_createPtr
+      .asFunction<ffi.Pointer<FaustTanpura> Function(double)>();
+
+  void tanpura_destroy(ffi.Pointer<FaustTanpura> tanpura) {
+    return _tanpura_destroy(tanpura);
+  }
+
+  late final _tanpura_destroyPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<FaustTanpura>)>>(
+        'tanpura_destroy',
+      );
+  late final _tanpura_destroy = _tanpura_destroyPtr
+      .asFunction<void Function(ffi.Pointer<FaustTanpura>)>();
+
+  void tanpura_set_params(
+    ffi.Pointer<FaustTanpura> tanpura,
+    double f1,
+    double f2,
+    double f3,
+    double f4,
+    double decay,
+    double delay,
+  ) {
+    return _tanpura_set_params(tanpura, f1, f2, f3, f4, decay, delay);
+  }
+
+  late final _tanpura_set_paramsPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<FaustTanpura>,
+            ffi.Float,
+            ffi.Float,
+            ffi.Float,
+            ffi.Float,
+            ffi.Float,
+            ffi.Float,
+          )
+        >
+      >('tanpura_set_params');
+  late final _tanpura_set_params = _tanpura_set_paramsPtr
+      .asFunction<
+        void Function(
+          ffi.Pointer<FaustTanpura>,
+          double,
+          double,
+          double,
+          double,
+          double,
+          double,
+        )
+      >();
+
+  void tanpura_set_jivari(ffi.Pointer<FaustTanpura> tanpura, double amount) {
+    return _tanpura_set_jivari(tanpura, amount);
+  }
+
+  late final _tanpura_set_jivariPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<FaustTanpura>, ffi.Float)
+        >
+      >('tanpura_set_jivari');
+  late final _tanpura_set_jivari = _tanpura_set_jivariPtr
+      .asFunction<void Function(ffi.Pointer<FaustTanpura>, double)>();
+
+  void tanpura_set_playing(ffi.Pointer<FaustTanpura> tanpura, int playing) {
+    return _tanpura_set_playing(tanpura, playing);
+  }
+
+  late final _tanpura_set_playingPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<FaustTanpura>, ffi.Int)
+        >
+      >('tanpura_set_playing');
+  late final _tanpura_set_playing = _tanpura_set_playingPtr
+      .asFunction<void Function(ffi.Pointer<FaustTanpura>, int)>();
+
+  void tanpura_pluck(
+    ffi.Pointer<FaustTanpura> tanpura,
+    int stringIndex,
+    double velocity,
+  ) {
+    return _tanpura_pluck(tanpura, stringIndex, velocity);
+  }
+
+  late final _tanpura_pluckPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<FaustTanpura>, ffi.Int, ffi.Float)
+        >
+      >('tanpura_pluck');
+  late final _tanpura_pluck = _tanpura_pluckPtr
+      .asFunction<void Function(ffi.Pointer<FaustTanpura>, int, double)>();
+
+  void tanpura_render(
+    ffi.Pointer<FaustTanpura> tanpura,
+    int numFrames,
+    ffi.Pointer<ffi.Float> buffer,
+  ) {
+    return _tanpura_render(tanpura, numFrames, buffer);
+  }
+
+  late final _tanpura_renderPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<FaustTanpura>,
+            ffi.Int,
+            ffi.Pointer<ffi.Float>,
+          )
+        >
+      >('tanpura_render');
+  late final _tanpura_render = _tanpura_renderPtr
+      .asFunction<
+        void Function(ffi.Pointer<FaustTanpura>, int, ffi.Pointer<ffi.Float>)
+      >();
+
   /// --- Bell ---
   ffi.Pointer<FaustBell> bell_create(double sampleRate) {
     return _bell_create(sampleRate);
@@ -891,6 +1019,189 @@ class FaustMinBindings {
         void Function(ffi.Pointer<FaustRide>, int, ffi.Pointer<ffi.Float>)
       >();
 
+  /// --- Piano ---
+  ffi.Pointer<FaustPiano> piano_create(double sampleRate) {
+    return _piano_create(sampleRate);
+  }
+
+  late final _piano_createPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<FaustPiano> Function(ffi.Float)>>(
+        'piano_create',
+      );
+  late final _piano_create = _piano_createPtr
+      .asFunction<ffi.Pointer<FaustPiano> Function(double)>();
+
+  void piano_destroy(ffi.Pointer<FaustPiano> piano) {
+    return _piano_destroy(piano);
+  }
+
+  late final _piano_destroyPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<FaustPiano>)>>(
+        'piano_destroy',
+      );
+  late final _piano_destroy = _piano_destroyPtr
+      .asFunction<void Function(ffi.Pointer<FaustPiano>)>();
+
+  void piano_set_frequency(ffi.Pointer<FaustPiano> piano, double freq) {
+    return _piano_set_frequency(piano, freq);
+  }
+
+  late final _piano_set_frequencyPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<FaustPiano>, ffi.Float)
+        >
+      >('piano_set_frequency');
+  late final _piano_set_frequency = _piano_set_frequencyPtr
+      .asFunction<void Function(ffi.Pointer<FaustPiano>, double)>();
+
+  void piano_set_sustain(ffi.Pointer<FaustPiano> piano, double level) {
+    return _piano_set_sustain(piano, level);
+  }
+
+  late final _piano_set_sustainPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<FaustPiano>, ffi.Float)
+        >
+      >('piano_set_sustain');
+  late final _piano_set_sustain = _piano_set_sustainPtr
+      .asFunction<void Function(ffi.Pointer<FaustPiano>, double)>();
+
+  void piano_set_stiffness(ffi.Pointer<FaustPiano> piano, double stiffness) {
+    return _piano_set_stiffness(piano, stiffness);
+  }
+
+  late final _piano_set_stiffnessPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<FaustPiano>, ffi.Float)
+        >
+      >('piano_set_stiffness');
+  late final _piano_set_stiffness = _piano_set_stiffnessPtr
+      .asFunction<void Function(ffi.Pointer<FaustPiano>, double)>();
+
+  void piano_strike(
+    ffi.Pointer<FaustPiano> piano,
+    double velocity,
+    double hardness,
+  ) {
+    return _piano_strike(piano, velocity, hardness);
+  }
+
+  late final _piano_strikePtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<FaustPiano>, ffi.Float, ffi.Float)
+        >
+      >('piano_strike');
+  late final _piano_strike = _piano_strikePtr
+      .asFunction<void Function(ffi.Pointer<FaustPiano>, double, double)>();
+
+  void piano_render(
+    ffi.Pointer<FaustPiano> piano,
+    int numFrames,
+    ffi.Pointer<ffi.Float> buffer,
+  ) {
+    return _piano_render(piano, numFrames, buffer);
+  }
+
+  late final _piano_renderPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<FaustPiano>,
+            ffi.Int,
+            ffi.Pointer<ffi.Float>,
+          )
+        >
+      >('piano_render');
+  late final _piano_render = _piano_renderPtr
+      .asFunction<
+        void Function(ffi.Pointer<FaustPiano>, int, ffi.Pointer<ffi.Float>)
+      >();
+
+  /// --- Saxophone ---
+  ffi.Pointer<FaustSax> sax_create(double sampleRate) {
+    return _sax_create(sampleRate);
+  }
+
+  late final _sax_createPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<FaustSax> Function(ffi.Float)>>(
+        'sax_create',
+      );
+  late final _sax_create = _sax_createPtr
+      .asFunction<ffi.Pointer<FaustSax> Function(double)>();
+
+  void sax_destroy(ffi.Pointer<FaustSax> sax) {
+    return _sax_destroy(sax);
+  }
+
+  late final _sax_destroyPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<FaustSax>)>>(
+        'sax_destroy',
+      );
+  late final _sax_destroy = _sax_destroyPtr
+      .asFunction<void Function(ffi.Pointer<FaustSax>)>();
+
+  void sax_set_frequency(ffi.Pointer<FaustSax> sax, double freq) {
+    return _sax_set_frequency(sax, freq);
+  }
+
+  late final _sax_set_frequencyPtr =
+      _lookup<
+        ffi.NativeFunction<ffi.Void Function(ffi.Pointer<FaustSax>, ffi.Float)>
+      >('sax_set_frequency');
+  late final _sax_set_frequency = _sax_set_frequencyPtr
+      .asFunction<void Function(ffi.Pointer<FaustSax>, double)>();
+
+  void sax_set_vibrato(ffi.Pointer<FaustSax> sax, double rate, double depth) {
+    return _sax_set_vibrato(sax, rate, depth);
+  }
+
+  late final _sax_set_vibratoPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<FaustSax>, ffi.Float, ffi.Float)
+        >
+      >('sax_set_vibrato');
+  late final _sax_set_vibrato = _sax_set_vibratoPtr
+      .asFunction<void Function(ffi.Pointer<FaustSax>, double, double)>();
+
+  void sax_strike(ffi.Pointer<FaustSax> sax, double velocity) {
+    return _sax_strike(sax, velocity);
+  }
+
+  late final _sax_strikePtr =
+      _lookup<
+        ffi.NativeFunction<ffi.Void Function(ffi.Pointer<FaustSax>, ffi.Float)>
+      >('sax_strike');
+  late final _sax_strike = _sax_strikePtr
+      .asFunction<void Function(ffi.Pointer<FaustSax>, double)>();
+
+  void sax_render(
+    ffi.Pointer<FaustSax> sax,
+    int numFrames,
+    ffi.Pointer<ffi.Float> buffer,
+  ) {
+    return _sax_render(sax, numFrames, buffer);
+  }
+
+  late final _sax_renderPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<FaustSax>,
+            ffi.Int,
+            ffi.Pointer<ffi.Float>,
+          )
+        >
+      >('sax_render');
+  late final _sax_render = _sax_renderPtr
+      .asFunction<
+        void Function(ffi.Pointer<FaustSax>, int, ffi.Pointer<ffi.Float>)
+      >();
+
   /// High-Fidelity Stereo Mixer Algorithm:
   ///
   /// 1. Track Normalization: Each input track is pre-scanned to find its peak amplitude.
@@ -1080,90 +1391,6 @@ class FaustMinBindings {
           ffi.Pointer<ffi.Float>,
         )
       >();
-  /// --- Tanpura ---
-  ffi.Pointer<FaustTanpura> tanpura_create(double sampleRate) {
-    return _tanpura_create(sampleRate);
-  }
-
-  late final _tanpura_createPtr =
-      _lookup<ffi.NativeFunction<ffi.Pointer<FaustTanpura> Function(ffi.Float)>>(
-        'tanpura_create',
-      );
-  late final _tanpura_create = _tanpura_createPtr
-      .asFunction<ffi.Pointer<FaustTanpura> Function(double)>();
-
-  void tanpura_destroy(ffi.Pointer<FaustTanpura> tanpura) {
-    return _tanpura_destroy(tanpura);
-  }
-
-  late final _tanpura_destroyPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<FaustTanpura>)>>(
-        'tanpura_destroy',
-      );
-  late final _tanpura_destroy = _tanpura_destroyPtr
-      .asFunction<void Function(ffi.Pointer<FaustTanpura>)>();
-
-  void tanpura_set_params(ffi.Pointer<FaustTanpura> tanpura, double f1, double f2, double f3, double f4, double decay, double delay) {
-    return _tanpura_set_params(tanpura, f1, f2, f3, f4, decay, delay);
-  }
-
-  late final _tanpura_set_paramsPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Void Function(ffi.Pointer<FaustTanpura>, ffi.Float, ffi.Float, ffi.Float, ffi.Float, ffi.Float, ffi.Float)
-        >
-      >('tanpura_set_params');
-  late final _tanpura_set_params = _tanpura_set_paramsPtr
-      .asFunction<void Function(ffi.Pointer<FaustTanpura>, double, double, double, double, double, double)>();
-
-  void tanpura_set_jivari(ffi.Pointer<FaustTanpura> tanpura, double amount) {
-    return _tanpura_set_jivari(tanpura, amount);
-  }
-
-  late final _tanpura_set_jivariPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Void Function(ffi.Pointer<FaustTanpura>, ffi.Float)
-        >
-      >('tanpura_set_jivari');
-  late final _tanpura_set_jivari = _tanpura_set_jivariPtr
-      .asFunction<void Function(ffi.Pointer<FaustTanpura>, double)>();
-
-  void tanpura_set_playing(ffi.Pointer<FaustTanpura> tanpura, int playing) {
-    return _tanpura_set_playing(tanpura, playing);
-  }
-
-  late final _tanpura_set_playingPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Void Function(ffi.Pointer<FaustTanpura>, ffi.Int)
-        >
-      >('tanpura_set_playing');
-  late final _tanpura_set_playing = _tanpura_set_playingPtr
-      .asFunction<void Function(ffi.Pointer<FaustTanpura>, int)>();
-
-  void tanpura_render(
-    ffi.Pointer<FaustTanpura> tanpura,
-    int numFrames,
-    ffi.Pointer<ffi.Float> buffer,
-  ) {
-    return _tanpura_render(tanpura, numFrames, buffer);
-  }
-
-  late final _tanpura_renderPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Void Function(
-            ffi.Pointer<FaustTanpura>,
-            ffi.Int,
-            ffi.Pointer<ffi.Float>,
-          )
-        >
-      >('tanpura_render');
-  late final _tanpura_render = _tanpura_renderPtr
-      .asFunction<
-        void Function(ffi.Pointer<FaustTanpura>, int, ffi.Pointer<ffi.Float>)
-      >();
 }
 
 final class FaustFlute extends ffi.Opaque {}
@@ -1179,6 +1406,10 @@ final class FaustSitar extends ffi.Opaque {}
 final class FaustBell extends ffi.Opaque {}
 
 final class FaustTanpura extends ffi.Opaque {}
+
+final class FaustPiano extends ffi.Opaque {}
+
+final class FaustSax extends ffi.Opaque {}
 
 /// --- High-Res Automation Event ---
 final class FaustEvent extends ffi.Struct {

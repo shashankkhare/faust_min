@@ -19,6 +19,8 @@ typedef struct FaustBayan FaustBayan;
 typedef struct FaustSitar FaustSitar;
 typedef struct FaustBell FaustBell;
 typedef struct FaustTanpura FaustTanpura;
+typedef struct FaustPiano FaustPiano;
+typedef struct FaustSax FaustSax;
 
 // --- High-Res Automation Event ---
 typedef struct {
@@ -124,6 +126,23 @@ DART_EXPORT void ride_destroy(FaustRide* ride);
 DART_EXPORT void ride_strike(FaustRide* ride, float velocity);
 DART_EXPORT void ride_render(FaustRide* ride, int numFrames, float* buffer);
 
+// --- Piano ---
+DART_EXPORT FaustPiano* piano_create(float sampleRate);
+DART_EXPORT void piano_destroy(FaustPiano* piano);
+DART_EXPORT void piano_set_frequency(FaustPiano* piano, float freq);
+DART_EXPORT void piano_set_sustain(FaustPiano* piano, float level);
+DART_EXPORT void piano_set_stiffness(FaustPiano* piano, float stiffness);
+DART_EXPORT void piano_strike(FaustPiano* piano, float velocity, float hardness);
+DART_EXPORT void piano_render(FaustPiano* piano, int numFrames, float* buffer);
+
+// --- Saxophone ---
+DART_EXPORT FaustSax* sax_create(float sampleRate);
+DART_EXPORT void sax_destroy(FaustSax* sax);
+DART_EXPORT void sax_set_frequency(FaustSax* sax, float freq);
+DART_EXPORT void sax_set_vibrato(FaustSax* sax, float rate, float depth);
+DART_EXPORT void sax_strike(FaustSax* sax, float velocity);
+DART_EXPORT void sax_render(FaustSax* sax, int numFrames, float* buffer);
+
 // --- Audio Mixer & DSP ---
 DART_EXPORT /**
  * High-Fidelity Stereo Mixer Algorithm:
@@ -178,6 +197,19 @@ DART_EXPORT void render_automation_sequence(
     int totalSamples,
     float* outputBuffer
 );
+
+// --- Real-time Sequence Orchestrator (Singleton) ---
+DART_EXPORT void orchestrator_init(float sampleRate);
+DART_EXPORT void orchestrator_load_sequence(const char* name, const char* data);
+DART_EXPORT void orchestrator_play(const char* name);
+DART_EXPORT void orchestrator_stop();
+DART_EXPORT void orchestrator_pause();
+DART_EXPORT void orchestrator_resume();
+DART_EXPORT void orchestrator_set_weight(const char* name, float weight);
+DART_EXPORT void orchestrator_set_parameter(const char* name, const char* param, float value);
+DART_EXPORT void orchestrator_set_finished_callback(void (*callback)(const char*));
+DART_EXPORT void orchestrator_render_pcm(const char* name, float* buffer, int numFrames);
+DART_EXPORT void orchestrator_render_master(float* buffer, int numFrames);
 
 #ifdef __cplusplus
 }

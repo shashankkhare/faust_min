@@ -5,7 +5,7 @@
 
 TanpuraString::TanpuraString() 
     : mSampleRate(44100.0f), mFreq(110.0f), mJivari(0.7f), 
-      mWritePtr(0), mLpState(0.0f), mDCState(0.0f), mPrevIn(0.0f) {
+      mWritePtr(0), mLpState(0.0f), mDCState(0.0f), mPrevIn(0.0f), mSeed(42) {
     for(int i=0; i<4; i++) {
         mApX[i] = mApY[i] = 0.0f;
     }
@@ -32,9 +32,6 @@ void TanpuraString::setDecay(float t60) {
 }
 
 void TanpuraString::pluck(float velocity) {
-    static std::mt19937 gen(42);
-    std::uniform_real_distribution<float> dis(-1.0f, 1.0f);
-    
     float period = mSampleRate / mFreq;
     int iPeriod = (int)period;
     if (iPeriod > (int)mDelayLine.size()) iPeriod = mDelayLine.size();
@@ -44,7 +41,12 @@ void TanpuraString::pluck(float velocity) {
         int idx = (int)((float)mWritePtr - period + (float)i);
         while (idx < 0) idx += mDelayLine.size();
         idx = idx % mDelayLine.size();
-        mDelayLine[idx] += dis(gen) * velocity;
+        
+        // Fast LCG random for pluck
+        mSeed = mSeed * 1103515245 + 12345;
+        float noise = (float)(mSeed / 65536 % 32768) / 32768.0f * 2.0f - 1.0f;
+        
+        mDelayLine[idx] += noise * velocity;
     }
 }
 

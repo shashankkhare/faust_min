@@ -1,14 +1,16 @@
 #include "FaustDayan.hpp"
+#include <vector>
+#include <cmath>
+#include <algorithm>
 
 FaustDayan::FaustDayan(float sampleRate) : _sampleRate(sampleRate), _baseFreq(293.66f), _excitation(0.0f), _muted(false) {
-    // Tuned harmonic modes for Dayan (Sa, Pa, Sa...)
     struct ModeData { float ratio; float t60; float gain; };
     std::vector<ModeData> data = {
-        {1.0f, 3.5f, 1.0f}, // Sa
-        {1.5f, 2.8f, 0.8f}, // Pa
-        {2.0f, 2.0f, 0.6f}, // Sa+1
-        {2.5f, 1.4f, 0.4f}, // Ga/Pa
-        {3.0f, 0.9f, 0.2f}  // Sa+2
+        {1.0f, 3.5f, 1.0f},
+        {1.5f, 2.8f, 0.8f},
+        {2.0f, 2.0f, 0.6f},
+        {2.5f, 1.4f, 0.4f},
+        {3.0f, 0.9f, 0.2f}
     };
 
     for (const auto& d : data) {
@@ -29,13 +31,9 @@ void FaustDayan::setFrequency(float freq) {
 
 void FaustDayan::setMute(bool muted) {
     _muted = muted;
-    // We update T60 of resonators based on mute state
     struct ModeData { float t60; };
-    std::vector<ModeData> baseT60 = {
-        {3.5f}, {2.8f}, {2.0f}, {1.4f}, {0.9f}
-    };
-    
-    float scale = _muted ? 0.05f : 1.0f; // Aggressive damping for "Tak"
+    std::vector<ModeData> baseT60 = { {3.5f}, {2.8f}, {2.0f}, {1.4f}, {0.9f} };
+    float scale = _muted ? 0.05f : 1.0f;
     for (size_t i = 0; i < _modes.size() && i < baseT60.size(); ++i) {
         _modes[i].t60 = baseT60[i].t60 * scale;
     }
@@ -56,12 +54,10 @@ void FaustDayan::render(int numFrames, float* buffer) {
     for (int i = 0; i < numFrames; ++i) {
         float x = _excitation;
         _excitation = 0.0f;
-
         float out = 0.0f;
         for (auto& m : _modes) {
             out += m.process(x) * m.gain;
         }
-        // Master Output Limiter & Saturator for consistent 0.95 peak
-        buffer[i] = std::tanh(out * 2.5f); 
+        buffer[i] = std::tanh(out * 10.0f) * 0.8f;
     }
 }

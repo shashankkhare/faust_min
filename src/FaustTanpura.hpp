@@ -28,6 +28,7 @@ private:
     // Dispersion
     float mApX[4];
     float mApY[4];
+    unsigned int mSeed;
 };
 
 class FaustTanpura {

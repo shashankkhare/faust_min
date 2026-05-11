@@ -1,6 +1,7 @@
+#include "faust_min.h"
 #include <cmath>
 #include <algorithm>
-#include "faust_min.h"
+#include <cstdio>
 #include "FaustFlute.hpp"
 #include "FaustBowl.hpp"
 #include "FaustDayan.hpp"
@@ -13,16 +14,39 @@
 #include "FaustRide.hpp"
 #include "FaustBell.hpp"
 #include "FaustTanpura.hpp"
+#include "FaustPiano.hpp"
+#include "FaustSax.hpp"
+#include "SequenceOrchestrator.hpp"
 
 extern "C" {
+__attribute__((constructor)) void faust_min_init() {
+    printf("FaustMin: Native Library Loaded Successfully\n");
+    fflush(stdout);
+}
 
 // --- Flute ---
-FaustFlute* flute_create(float sampleRate) { return new FaustFlute(sampleRate); }
-void flute_destroy(FaustFlute* flute) { delete flute; }
-void flute_set_frequency(FaustFlute* flute, float freq) { flute->setFrequency(freq); }
-void flute_set_pressure(FaustFlute* flute, float pressure) { flute->setPressure(pressure); }
-void flute_set_vibrato(FaustFlute* flute, float rate, float depth) { flute->setVibrato(rate, depth); }
-void flute_render(FaustFlute* flute, int numFrames, float* buffer) { flute->render(numFrames, buffer); }
+FaustFlute* flute_create(float sampleRate) { 
+    printf("FaustBridge: Creating Flute at %f Hz\n", sampleRate);
+    fflush(stdout);
+    return new FaustFlute(sampleRate); 
+}
+void flute_destroy(FaustFlute* flute) { 
+    printf("FaustBridge: Destroying Flute\n");
+    fflush(stdout);
+    delete flute; 
+}
+void flute_set_frequency(FaustFlute* flute, float freq) { 
+    if (flute) flute->setFrequency(freq); 
+}
+void flute_set_pressure(FaustFlute* flute, float pressure) { 
+    if (flute) flute->setPressure(pressure); 
+}
+void flute_set_vibrato(FaustFlute* flute, float rate, float depth) { 
+    if (flute) flute->setVibrato(rate, depth); 
+}
+void flute_render(FaustFlute* flute, int numFrames, float* buffer) { 
+    if (flute) flute->render(numFrames, buffer); 
+}
 
 // --- Singing Bowl ---
 FaustBowl* bowl_create(float sampleRate) { return new FaustBowl(sampleRate); }
@@ -114,6 +138,25 @@ void ride_destroy(FaustRide* ride) { delete ride; }
 void ride_strike(FaustRide* ride, float velocity) { ride->strike(velocity); }
 void ride_render(FaustRide* ride, int numFrames, float* buffer) { ride->render(numFrames, buffer); }
 
+// --- Piano ---
+FaustPiano* piano_create(float sampleRate) { return new FaustPiano(sampleRate); }
+void piano_destroy(FaustPiano* piano) { delete piano; }
+void piano_set_frequency(FaustPiano* piano, float freq) { if (piano) piano->setFrequency(freq); }
+void piano_set_sustain(FaustPiano* piano, float level) { if (piano) piano->setSustain(level); }
+void piano_set_stiffness(FaustPiano* piano, float stiffness) { if (piano) piano->setStiffness(stiffness); }
+void piano_strike(FaustPiano* piano, float velocity, float hardness) {
+    if (piano) piano->strike(velocity, hardness);
+}
+void piano_render(FaustPiano* piano, int numFrames, float* buffer) { if (piano) piano->render(numFrames, buffer); }
+
+// --- Saxophone ---
+FaustSax* sax_create(float sampleRate) { return new FaustSax(sampleRate); }
+void sax_destroy(FaustSax* sax) { delete sax; }
+void sax_set_frequency(FaustSax* sax, float freq) { sax->setFrequency(freq); }
+void sax_set_vibrato(FaustSax* sax, float rate, float depth) { sax->setVibrato(rate, depth); }
+void sax_strike(FaustSax* sax, float velocity) { sax->strike(velocity); }
+void sax_render(FaustSax* sax, int numFrames, float* buffer) { sax->render(numFrames, buffer); }
+
 // --- Audio Mixer & DSP ---
 
 void normalize_signal(float* signal, int numSamples, float targetPeak);
@@ -130,13 +173,10 @@ void mix_raw_signals(
     float* outputBuffer,
     float masterGain
 ) {
-    // 1. Clear stereo output buffer (size is numSamples * 2)
     int totalStereoSamples = numSamples * 2;
     for (int i = 0; i < totalStereoSamples; i++) {
         outputBuffer[i] = 0.0f;
     }
-    
-    // 2. Auto-balance weights (amplitudeScales) so they don't exceed 1.0
     float totalWeight = 0.0f;
     for (int t = 0; t < numTracks; t++) {
         totalWeight += amplitudeScales[t];
@@ -145,77 +185,53 @@ void mix_raw_signals(
     if (totalWeight > 1.0f) {
         balanceMultiplier = 1.0f / totalWeight;
     }
-    
-    // 3. Process each track
     for (int t = 0; t < numTracks; t++) {
         float* track = inputBuffers[t];
         if (track == nullptr) continue;
-        
         int offset = offsetSamples[t];
-        
-        // Find peak to normalize this specific track (starting from offset)
         float maxAmp = 0.0f;
         for (int i = offset; i < numSamples; i++) {
             float absVal = std::abs(track[i]);
             if (absVal > maxAmp) maxAmp = absVal;
         }
-        
         if (maxAmp == 0.0f) continue;
-        
-        // Use normalized weight: (amplitudeScale * balanceMultiplier) / maxAmp
         float effectiveWeight = (amplitudeScales[t] * balanceMultiplier) / maxAmp;
-        
         int fIn = fadeInSamples[t];
         int fOut = fadeOutSamples[t];
         int curve = curveTypes[t];
         int fadeOutStart = (numSamples > fOut) ? (numSamples - fOut) : 0;
-        
-        // Linear Panning logic (-1.0 to 1.0)
         float pan = pans[t];
         float leftGain = pan < 0.0f ? 1.0f : 1.0f - pan;
         float rightGain = pan > 0.0f ? 1.0f : 1.0f + pan;
-        
-        // Single pass per track: Scale, Fade, Pan, and Accumulate into Stereo Output
         for (int i = 0; i < numSamples; i++) {
-            if (i < offset) continue; // Skip warmup silence
-            
+            if (i < offset) continue;
             float val = track[i] * effectiveWeight;
             float envelope = 1.0f;
-            
-            // Fade In (starts at offset)
             if (i < offset + fIn && fIn > 0) {
                 float k = (float)(i - offset) / (float)fIn;
-                envelope = k * k; // Quadratic fade in
+                envelope = k * k; 
             } 
-            // Fade Out
             else if (i >= fadeOutStart && fOut > 0) {
                 float k = 1.0f - ((float)(i - fadeOutStart) / (float)fOut);
                 if (k < 0.0f) k = 0.0f;
-                if (curve == 4) envelope = k * k * k * k; // Quartic
-                else if (curve == 2) envelope = k * k;    // Quadratic
-                else envelope = k * k * k;                // Cubic (default)
+                if (curve == 4) envelope = k * k * k * k;
+                else if (curve == 2) envelope = k * k;
+                else envelope = k * k * k;
             }
-            
             float finalVal = val * envelope;
-            
-            // Interleaved Stereo Accumulation
-            outputBuffer[i * 2] += finalVal * leftGain;       // Left Channel
-            outputBuffer[i * 2 + 1] += finalVal * rightGain;  // Right Channel
+            outputBuffer[i * 2] += finalVal * leftGain;
+            outputBuffer[i * 2 + 1] += finalVal * rightGain;
         }
     }
-    
-    // 4. Master Peak Protection (Normalize only if clipping)
     float globalMax = 0.0f;
     for (int i = 0; i < totalStereoSamples; i++) {
         float absVal = std::abs(outputBuffer[i]);
         if (absVal > globalMax) globalMax = absVal;
     }
-
     float finalScale = masterGain;
     if (globalMax > 1.0f) {
         finalScale *= (1.0f / globalMax);
     }
-
     if (finalScale != 1.0f) {
         for (int i = 0; i < totalStereoSamples; i++) {
             outputBuffer[i] *= finalScale;
@@ -225,13 +241,11 @@ void mix_raw_signals(
 
 void normalize_signal(float* signal, int numSamples, float targetPeak) {
     if (numSamples <= 0 || targetPeak <= 0.0f) return;
-    
     float maxAmp = 0.0f;
     for (int i = 0; i < numSamples; i++) {
         float absVal = std::abs(signal[i]);
         if (absVal > maxAmp) maxAmp = absVal;
     }
-    
     if (maxAmp > 0.0f) {
         float scale = targetPeak / maxAmp;
         for (int i = 0; i < numSamples; i++) {
@@ -253,10 +267,9 @@ void render_sequenced_audio(
 ) {
     if (totalSamples <= 0 || sampleRate <= 0) return;
     std::fill(outputBuffer, outputBuffer + totalSamples, 0.0f);
-
-    // Track which instruments are actually present in this sequence
     bool useDayan = false, useBayan = false, useKick = false, useSnare = false;
     bool useHiHat = false, useTom = false, useRide = false, useBell = false, useBowl = false;
+    bool usePiano = false, useSax = false;
     for (int i = 0; i < numTriggers; i++) {
         switch (instrumentIds[i]) {
             case 0: useDayan = true; break;
@@ -268,10 +281,10 @@ void render_sequenced_audio(
             case 6: useRide = true; break;
             case 7: useBell = true; break;
             case 8: useBowl = true; break;
+            case 12: usePiano = true; break;
+            case 13: useSax = true; break;
         }
     }
-
-    // Initialize ONLY needed instruments
     FaustDayan* dayan = useDayan ? new FaustDayan(sampleRate) : nullptr;
     FaustBayan* bayan = useBayan ? new FaustBayan(sampleRate) : nullptr;
     FaustKick* kick = useKick ? new FaustKick(sampleRate) : nullptr;
@@ -281,26 +294,24 @@ void render_sequenced_audio(
     FaustRide* ride = useRide ? new FaustRide(sampleRate) : nullptr;
     FaustBell* bell = useBell ? new FaustBell(sampleRate) : nullptr;
     FaustBowl* bowl = useBowl ? new FaustBowl(sampleRate) : nullptr;
-
+    FaustPiano* piano = usePiano ? new FaustPiano(sampleRate) : nullptr;
+    FaustSax* sax = useSax ? new FaustSax(sampleRate) : nullptr;
     if (dayan) dayan->setFrequency(baseFreq);
     if (bayan) bayan->setFrequency(baseFreq);
     if (bell) bell->setFrequency(baseFreq);
     if (bowl) bowl->setFrequency(baseFreq);
-
     int currentSample = 0;
     int triggerIdx = 0;
-    float* temp = new float[4096]; // Reuse a reasonably sized block
+    float* temp = new float[4096];
     int tempSize = 4096;
-
     while (currentSample < totalSamples) {
         while (triggerIdx < numTriggers && offsets[triggerIdx] <= currentSample) {
             int instId = instrumentIds[triggerIdx];
             float vel = velocities[triggerIdx];
             float p = params[triggerIdx];
-
             if (instId == 0 && dayan) { dayan->setMute(p > 0.5f); dayan->strike(vel); }
             else if (instId == 1 && bayan) { 
-                bayan->setMute(p > 0.5f && p < 1.0f); // Fix: Mute only if specifically 1.0, not for meend > 1.0
+                bayan->setMute(p > 0.5f && p < 1.0f);
                 if (p >= 1.0f) bayan->setMeend(p); 
                 bayan->strike(vel); 
             }
@@ -310,29 +321,33 @@ void render_sequenced_audio(
             else if (instId == 5 && tom) tom->strike(vel);
             else if (instId == 6 && ride) ride->strike(vel);
             else if (instId == 7 && bell) {
-                if (p > 20.0f) bell->setFrequency(p); // Optional: param as frequency override
+                if (p > 20.0f) bell->setFrequency(p);
                 bell->strike(vel);
             }
             else if (instId == 8 && bowl) {
                 if (p > 20.0f) bowl->setFrequency(p);
                 bowl->strike(vel);
             }
+            else if (instId == 12 && piano) {
+                if (p > 20.0f) piano->setFrequency(p);
+                piano->strike(vel, 0.5f);
+            }
+            else if (instId == 13 && sax) {
+                if (p > 20.0f) sax->setFrequency(p);
+                sax->strike(vel);
+            }
             triggerIdx++;
         }
-
         int nextTrigger = (triggerIdx < numTriggers) ? offsets[triggerIdx] : totalSamples;
         int chunkLen = nextTrigger - currentSample;
         if (chunkLen <= 0) chunkLen = 1;
         if (currentSample + chunkLen > totalSamples) chunkLen = totalSamples - currentSample;
-
         if (chunkLen > 0) {
             if (chunkLen > tempSize) {
                 delete[] temp;
                 temp = new float[chunkLen];
                 tempSize = chunkLen;
             }
-            
-            // Render and accumulate ONLY active instruments
             if (dayan) { dayan->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
             if (bayan) { bayan->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
             if (kick) { kick->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
@@ -342,16 +357,16 @@ void render_sequenced_audio(
             if (ride) { ride->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
             if (bell) { bell->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
             if (bowl) { bowl->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
+            if (piano) { piano->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
+            if (sax) { sax->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
         }
         currentSample += chunkLen;
     }
-
     delete[] temp;
     if (dayan) delete dayan; if (bayan) delete bayan;
     if (kick) delete kick; if (snare) delete snare; if (hihat) delete hihat; if (tom) delete tom; if (ride) delete ride;
     if (bell) delete bell; if (bowl) delete bowl;
-
-    // Normalization
+    if (piano) delete piano; if (sax) delete sax;
     float maxAmp = 0.0f;
     for (int i = 0; i < totalSamples; i++) {
         float a = std::abs(outputBuffer[i]);
@@ -372,11 +387,10 @@ void render_automation_sequence(
 ) {
     if (totalSamples <= 0 || sampleRate <= 0) return;
     std::fill(outputBuffer, outputBuffer + totalSamples, 0.0f);
-
-    // Track which instruments are present
     bool useDayan = false, useBayan = false, useKick = false, useSnare = false;
     bool useHiHat = false, useTom = false, useRide = false, useBell = false, useBowl = false;
     bool useSitar = false, useFlute = false, useTanpura = false;
+    bool usePiano = false, useSax = false;
     for (int i = 0; i < numEvents; i++) {
         switch (events[i].instrumentId) {
             case 0: useDayan = true; break;
@@ -391,9 +405,10 @@ void render_automation_sequence(
             case 9: useSitar = true; break;
             case 10: useFlute = true; break;
             case 11: useTanpura = true; break;
+            case 12: usePiano = true; break;
+            case 13: useSax = true; break;
         }
     }
-
     FaustDayan* dayan = useDayan ? new FaustDayan(sampleRate) : nullptr;
     FaustBayan* bayan = useBayan ? new FaustBayan(sampleRate) : nullptr;
     FaustKick* kick = useKick ? new FaustKick(sampleRate) : nullptr;
@@ -406,19 +421,18 @@ void render_automation_sequence(
     FaustSitar* sitar = useSitar ? new FaustSitar(sampleRate) : nullptr;
     FaustFlute* flute = useFlute ? new FaustFlute(sampleRate) : nullptr;
     FaustTanpura* tanpura = useTanpura ? new FaustTanpura(sampleRate) : nullptr;
-
+    FaustPiano* piano = usePiano ? new FaustPiano(sampleRate) : nullptr;
+    FaustSax* sax = useSax ? new FaustSax(sampleRate) : nullptr;
     int currentSample = 0;
     int eventIdx = 0;
     float* temp = new float[4096];
     int tempSize = 4096;
-
     while (currentSample < totalSamples) {
         while (eventIdx < numEvents && events[eventIdx].sampleOffset <= currentSample) {
             FaustEvent& ev = events[eventIdx];
             int instId = ev.instrumentId;
             float val = ev.value;
-            
-            if (ev.eventType == 0) { // Strike
+            if (ev.eventType == 0) {
                 if (instId == 0 && dayan) dayan->strike(val);
                 else if (instId == 1 && bayan) bayan->strike(val);
                 else if (instId == 2 && kick) kick->strike(val);
@@ -429,13 +443,15 @@ void render_automation_sequence(
                 else if (instId == 7 && bell) bell->strike(val);
                 else if (instId == 8 && bowl) bowl->strike(val);
                 else if (instId == 9 && sitar) sitar->pluck(val);
+                else if (instId == 10 && flute) flute->setPressure(val);
                 else if (instId == 11 && tanpura) {
-                    // Tanpura strike uses val as string index (0-3)
-                    int sIdx = (int)val;
+                    int sIdx = (ev.paramId >= 0 && ev.paramId < 4) ? ev.paramId : (int)val;
                     tanpura->pluck(sIdx, 0.8f); 
                 }
+                else if (instId == 12 && piano) piano->strike(val, 0.5f);
+                else if (instId == 13 && sax) sax->strike(val);
             } 
-            else if (ev.eventType == 1) { // SetFreq
+            else if (ev.eventType == 1) {
                 if (instId == 0 && dayan) dayan->setFrequency(val);
                 else if (instId == 1 && bayan) bayan->setFrequency(val);
                 else if (instId == 5 && tom) tom->setFrequency(val);
@@ -443,13 +459,13 @@ void render_automation_sequence(
                 else if (instId == 8 && bowl) bowl->setFrequency(val);
                 else if (instId == 9 && sitar) sitar->setFrequency(val);
                 else if (instId == 10 && flute) flute->setFrequency(val);
+                else if (instId == 12 && piano) piano->setFrequency(val);
+                else if (instId == 13 && sax) sax->setFrequency(val);
                 else if (instId == 11 && tanpura) {
-                    // For Tanpura, we use paramId as string index in SetFreq too?
-                    // Let's use a convention: if eventType 1 and paramId is 0-3
                     tanpura->setFrequency(ev.paramId, val);
                 }
             }
-            else if (ev.eventType == 2) { // SetParam
+            else if (ev.eventType == 2) {
                 if (instId == 0 && dayan) {
                     if (ev.paramId == 0) dayan->setMute(val > 0.5f);
                 } else if (instId == 1 && bayan) {
@@ -468,24 +484,26 @@ void render_automation_sequence(
                     if (ev.paramId == 0) flute->setPressure(val);
                     else if (ev.paramId == 1) flute->setVibrato(5.5f, val);
                 } else if (instId == 11 && tanpura) {
-                    if (ev.paramId == 10) tanpura->setJivari(val); // Global Jivari
+                    if (ev.paramId == 10) tanpura->setJivari(val);
+                } else if (instId == 12 && piano) {
+                    if (ev.paramId == 0) piano->setSustain(val);
+                } else if (instId == 13 && sax) {
+                    if (ev.paramId == 0) sax->setVibrato(5.5f, val);
+                    else if (ev.paramId == 1) sax->setVibrato(val, 0.05f);
                 }
             }
             eventIdx++;
         }
-
         int nextEventOffset = (eventIdx < numEvents) ? events[eventIdx].sampleOffset : totalSamples;
         int chunkLen = nextEventOffset - currentSample;
         if (chunkLen <= 0) chunkLen = 1;
         if (currentSample + chunkLen > totalSamples) chunkLen = totalSamples - currentSample;
-
         if (chunkLen > 0) {
             if (chunkLen > tempSize) {
                 delete[] temp;
                 temp = new float[chunkLen];
                 tempSize = chunkLen;
             }
-            
             if (dayan) { dayan->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
             if (bayan) { bayan->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
             if (kick) { kick->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
@@ -498,18 +516,18 @@ void render_automation_sequence(
             if (sitar) { sitar->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
             if (flute) { flute->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
             if (tanpura) { tanpura->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
+            if (piano) { piano->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
+            if (sax) { sax->render(chunkLen, temp); for(int i=0; i<chunkLen; i++) outputBuffer[currentSample + i] += temp[i]; }
         }
         currentSample += chunkLen;
     }
-
     delete[] temp;
     if (dayan) delete dayan; if (bayan) delete bayan;
     if (kick) delete kick; if (snare) delete snare; if (hihat) delete hihat; if (tom) delete tom; if (ride) delete ride;
     if (bell) delete bell; if (bowl) delete bowl;
     if (sitar) delete sitar; if (flute) delete flute;
     if (tanpura) delete tanpura;
-
-    // Normalization
+    if (piano) delete piano; if (sax) delete sax;
     float maxAmp = 0.0f;
     for (int i = 0; i < totalSamples; i++) {
         float a = std::abs(outputBuffer[i]);
@@ -521,4 +539,50 @@ void render_automation_sequence(
     }
 }
 
+// --- Real-time Sequence Orchestrator (Singleton Bridge) ---
+
+DART_EXPORT void orchestrator_init(float sampleRate) {
+    SequenceOrchestrator::getInstance().init(sampleRate);
 }
+
+DART_EXPORT void orchestrator_load_sequence(const char* name, const char* data) {
+    SequenceOrchestrator::getInstance().loadSequence(name, data);
+}
+
+DART_EXPORT void orchestrator_play(const char* name) {
+    SequenceOrchestrator::getInstance().play(name);
+}
+
+DART_EXPORT void orchestrator_stop() {
+    SequenceOrchestrator::getInstance().stop();
+}
+
+DART_EXPORT void orchestrator_pause() {
+    SequenceOrchestrator::getInstance().pause();
+}
+
+DART_EXPORT void orchestrator_resume() {
+    SequenceOrchestrator::getInstance().resume();
+}
+
+DART_EXPORT void orchestrator_set_weight(const char* name, float weight) {
+    SequenceOrchestrator::getInstance().setWeight(name, weight);
+}
+
+DART_EXPORT void orchestrator_set_parameter(const char* name, const char* param, float value) {
+    SequenceOrchestrator::getInstance().setParameter(name, param, value);
+}
+
+DART_EXPORT void orchestrator_set_finished_callback(void (*callback)(const char*)) {
+    SequenceOrchestrator::getInstance().setOnFinishedCallback(callback);
+}
+
+DART_EXPORT void orchestrator_render_pcm(const char* name, float* buffer, int numFrames) {
+    SequenceOrchestrator::getInstance().renderToBuffer(name, buffer, numFrames);
+}
+
+DART_EXPORT void orchestrator_render_master(float* buffer, int numFrames) {
+    SequenceOrchestrator::getInstance().renderMaster(buffer, numFrames);
+}
+
+} // extern "C"

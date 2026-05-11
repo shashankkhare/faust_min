@@ -1,16 +1,18 @@
 #include "FaustKick.hpp"
 #include <cmath>
 
-FaustKick::FaustKick(float sampleRate) : _sampleRate(sampleRate), _currentFreq(150.0f), _targetFreq(60.0f), _excitation(0.0f) {
+FaustKick::FaustKick(float sampleRate) 
+    : _sampleRate(sampleRate), _currentFreq(150.0f), _targetFreq(60.0f), _excitation(0.0f), _lpState(0.0f) {
     _body.ratio = 1.0f;
-    _body.t60 = 0.5f; // Fast decay for kick
+    _body.t60 = 0.4f; 
     _body.gain = 1.0f;
     _body.init();
 
-    _click.ratio = 28.0f; // High frequency click (ratio to base)
-    _click.t60 = 0.02f;   // Ultra-fast decay
-    _click.gain = 0.4f;
+    _click.ratio = 1.0f; 
+    _click.t60 = 0.01f;   // Ultra-tight beater hit
+    _click.gain = 0.3f;
     _click.init();
+    _click.update(3000.0f, _sampleRate); // Fixed beater frequency (Acoustic)
 
     updateInternal();
 }
@@ -22,7 +24,6 @@ void FaustKick::strike(float velocity) {
 
 void FaustKick::updateInternal() {
     _body.update(_currentFreq, _sampleRate);
-    _click.update(_currentFreq, _sampleRate);
 }
 
 void FaustKick::render(int numFrames, float* buffer) {
@@ -40,7 +41,10 @@ void FaustKick::render(int numFrames, float* buffer) {
         float body = _body.process(x);
         float click = _click.process(x);
         
-        // Add subtle saturation (tanh) to the kick body for warmth
-        buffer[i] = std::tanh(body * 1.2f + click);
+        // Final Mix with Low-Pass for warmth (Rock/Jazz feel)
+        float mixed = body * 1.2f + click;
+        _lpState = mixed * 0.4f + _lpState * 0.6f;
+        
+        buffer[i] = std::tanh(_lpState);
     }
 }

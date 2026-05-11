@@ -38,6 +38,7 @@ private:
     float _dynDC;
     float _dynFold;
     float _dynOutputGain;
+    unsigned int _seed;
 
     void updateInternal();
 };

@@ -14,6 +14,7 @@ private:
     Faust::Resonator _body;
     Faust::Resonator _click;
     float _excitation;
+    float _lpState;
 
     void updateInternal();
 };

@@ -22,6 +22,12 @@ final DynamicLibrary _dylib = () {
 
 final FaustMinBindings _bindings = FaustMinBindings(_dylib);
 
+// Top-level FFI function pointers for the Orchestrator
+final _funcSetWeight = _dylib.lookupFunction<Void Function(Pointer<Utf8>, Float), void Function(Pointer<Utf8>, double)>('orchestrator_set_weight');
+final _funcSetParameter = _dylib.lookupFunction<Void Function(Pointer<Utf8>, Pointer<Utf8>, Float), void Function(Pointer<Utf8>, Pointer<Utf8>, double)>('orchestrator_set_parameter');
+final _funcRenderMaster = _dylib.lookupFunction<Void Function(Pointer<Float>, Int), void Function(Pointer<Float>, int)>('orchestrator_render_master');
+final _funcSetFinishedCallback = _dylib.lookupFunction<Void Function(Pointer<NativeFunction<Void Function(Pointer<Utf8>)>>), void Function(Pointer<NativeFunction<Void Function(Pointer<Utf8>)>>)>('orchestrator_set_finished_callback');
+
 /// Utility to manage a persistent native buffer for audio rendering.
 class _NativeAudioBuffer {
   final int size;
@@ -49,19 +55,19 @@ class _NativeAudioBuffer {
 /// Configuration for a single audio track layer in the mixer.
 class MixLayer {
   final Float32List buffer;
-  final double amplitudeScale; // Defines mix weight relative to other tracks
+  final double amplitudeScale; 
   final int fadeInSamples;
   final int fadeOutSamples;
   final int curveType;
-  final int offsetSamples; // Number of silence samples at the start of the buffer
-  final double pan; // -1.0 (Left) to 1.0 (Right). 0.0 is Center.
+  final int offsetSamples; 
+  final double pan; 
 
   MixLayer({
     required this.buffer,
     required this.amplitudeScale,
     this.fadeInSamples = 0,
     this.fadeOutSamples = 0,
-    this.curveType = 3, // 2=quadratic, 3=cubic, 4=quartic
+    this.curveType = 3,
     this.offsetSamples = 0,
     this.pan = 0.0,
   });
@@ -69,8 +75,6 @@ class MixLayer {
 
 /// DSP Utility for fast native post-processing and mixing
 class FaustAudioDSP {
-  /// Unifies all track normalization, fades, panning, and mixing into a single high-speed native pass.
-  /// Note: The `outputBuffer` must be sized at exactly `(buffer.length * 2)` to accommodate stereo interleaving.
   static void mixSignals({
     required List<MixLayer> layers,
     required Float32List stereoOutputBuffer,
@@ -79,15 +83,9 @@ class FaustAudioDSP {
     final int numTracks = layers.length;
     if (numTracks == 0) return;
     
-    // numSamples is the length of ONE mono track (e.g. the first layer's buffer)
     final int numSamples = layers[0].buffer.length;
     final int stereoSamples = numSamples * 2;
     
-    if (stereoOutputBuffer.length < stereoSamples) {
-      throw Exception("FaustAudioDSP: stereoOutputBuffer must be exactly 2x the size of the input tracks.");
-    }
-    
-    // Allocate config arrays for C++
     final Pointer<Pointer<Float>> trackPointers = calloc<Pointer<Float>>(numTracks);
     final Pointer<Float> amplitudeScales = calloc<Float>(numTracks);
     final Pointer<Int> fadeInSamples = calloc<Int>(numTracks);
@@ -115,7 +113,6 @@ class FaustAudioDSP {
     }
     
     try {
-      // Run single unified stereo pass natively
       _bindings.mix_raw_signals(
         trackPointers,
         amplitudeScales,
@@ -129,11 +126,8 @@ class FaustAudioDSP {
         nativeOutput.pointer,
         masterGain,
       );
-      
-      // Copy stereo interleaved output back to Dart
       nativeOutput.copyTo(stereoOutputBuffer);
     } finally {
-      // Guaranteed Cleanup of native allocations to prevent memory leaks
       for (var nt in nativeTracks) {
         nt.dispose();
       }
@@ -149,13 +143,11 @@ class FaustAudioDSP {
   }
 }
 
-/// Base class for all Faust-based instruments.
 abstract class FaustInstrument {
   void dispose();
   void render(Float32List buffer);
 }
 
-/// A High-Fidelity physical modeling synthesizer of a Flute.
 class FaustFluteInstrument implements FaustInstrument {
   late Pointer<FaustFlute> _nativeHandle;
   _NativeAudioBuffer? _renderBuffer;
@@ -187,11 +179,7 @@ class FaustFluteInstrument implements FaustInstrument {
       _renderBuffer?.dispose();
       _renderBuffer = _NativeAudioBuffer(buffer.length);
     }
-    _bindings.flute_render(
-      _nativeHandle,
-      buffer.length,
-      _renderBuffer!.pointer,
-    );
+    _bindings.flute_render(_nativeHandle, buffer.length, _renderBuffer!.pointer);
     _renderBuffer!.copyTo(buffer);
   }
 
@@ -205,7 +193,6 @@ class FaustFluteInstrument implements FaustInstrument {
   }
 }
 
-/// A High-Fidelity physical modeling synthesizer of a Tibetan Singing Bowl.
 class FaustBowlInstrument implements FaustInstrument {
   late Pointer<FaustBowl> _nativeHandle;
   _NativeAudioBuffer? _renderBuffer;
@@ -261,7 +248,6 @@ class FaustBowlInstrument implements FaustInstrument {
   }
 }
 
-/// A High-Fidelity physical modeling synthesizer of a Meditative Bell.
 class FaustBellInstrument implements FaustInstrument {
   late Pointer<FaustBell> _nativeHandle;
   _NativeAudioBuffer? _renderBuffer;
@@ -312,7 +298,6 @@ class FaustBellInstrument implements FaustInstrument {
   }
 }
 
-/// A High-Fidelity physical modeling synthesizer of a Tabla Dayan (Treble).
 class FaustDayanInstrument implements FaustInstrument {
   late Pointer<FaustDayan> _nativeHandle;
   _NativeAudioBuffer? _renderBuffer;
@@ -344,11 +329,7 @@ class FaustDayanInstrument implements FaustInstrument {
       _renderBuffer?.dispose();
       _renderBuffer = _NativeAudioBuffer(buffer.length);
     }
-    _bindings.dayan_render(
-      _nativeHandle,
-      buffer.length,
-      _renderBuffer!.pointer,
-    );
+    _bindings.dayan_render(_nativeHandle, buffer.length, _renderBuffer!.pointer);
     _renderBuffer!.copyTo(buffer);
   }
 
@@ -362,7 +343,6 @@ class FaustDayanInstrument implements FaustInstrument {
   }
 }
 
-/// A High-Fidelity physical modeling synthesizer of a Tabla Bayan (Bass).
 class FaustBayanInstrument implements FaustInstrument {
   late Pointer<FaustBayan> _nativeHandle;
   _NativeAudioBuffer? _renderBuffer;
@@ -399,11 +379,7 @@ class FaustBayanInstrument implements FaustInstrument {
       _renderBuffer?.dispose();
       _renderBuffer = _NativeAudioBuffer(buffer.length);
     }
-    _bindings.bayan_render(
-      _nativeHandle,
-      buffer.length,
-      _renderBuffer!.pointer,
-    );
+    _bindings.bayan_render(_nativeHandle, buffer.length, _renderBuffer!.pointer);
     _renderBuffer!.copyTo(buffer);
   }
 
@@ -417,7 +393,6 @@ class FaustBayanInstrument implements FaustInstrument {
   }
 }
 
-/// A High-Fidelity physical modeling synthesizer of a Sitar.
 class FaustSitarInstrument implements FaustInstrument {
   late Pointer<FaustSitar> _nativeHandle;
   _NativeAudioBuffer? _renderBuffer;
@@ -454,11 +429,7 @@ class FaustSitarInstrument implements FaustInstrument {
       _renderBuffer?.dispose();
       _renderBuffer = _NativeAudioBuffer(buffer.length);
     }
-    _bindings.sitar_render(
-      _nativeHandle,
-      buffer.length,
-      _renderBuffer!.pointer,
-    );
+    _bindings.sitar_render(_nativeHandle, buffer.length, _renderBuffer!.pointer);
     _renderBuffer!.copyTo(buffer);
   }
 
@@ -472,7 +443,6 @@ class FaustSitarInstrument implements FaustInstrument {
   }
 }
 
-/// A High-Fidelity physical modeling synthesizer of a 4-string Tanpura.
 class FaustTanpuraInstrument implements FaustInstrument {
   late Pointer<FaustTanpura> _nativeHandle;
   _NativeAudioBuffer? _renderBuffer;
@@ -497,6 +467,11 @@ class FaustTanpuraInstrument implements FaustInstrument {
     _bindings.tanpura_set_playing(_nativeHandle, playing ? 1 : 0);
   }
 
+  void pluck(int stringIndex, double velocity) {
+    if (_isDisposed) return;
+    _bindings.tanpura_pluck(_nativeHandle, stringIndex, velocity);
+  }
+
   @override
   void render(Float32List buffer) {
     if (_isDisposed) return;
@@ -504,11 +479,7 @@ class FaustTanpuraInstrument implements FaustInstrument {
       _renderBuffer?.dispose();
       _renderBuffer = _NativeAudioBuffer(buffer.length);
     }
-    _bindings.tanpura_render(
-      _nativeHandle,
-      buffer.length,
-      _renderBuffer!.pointer,
-    );
+    _bindings.tanpura_render(_nativeHandle, buffer.length, _renderBuffer!.pointer);
     _renderBuffer!.copyTo(buffer);
   }
 
@@ -522,7 +493,6 @@ class FaustTanpuraInstrument implements FaustInstrument {
   }
 }
 
-/// A High-Fidelity physical modeling synthesizer of a Kick Drum.
 class FaustKickInstrument implements FaustInstrument {
   late Pointer<FaustKick> _nativeHandle;
   _NativeAudioBuffer? _renderBuffer;
@@ -558,7 +528,6 @@ class FaustKickInstrument implements FaustInstrument {
   }
 }
 
-/// A High-Fidelity physical modeling synthesizer of a Snare Drum.
 class FaustSnareInstrument implements FaustInstrument {
   late Pointer<FaustSnare> _nativeHandle;
   _NativeAudioBuffer? _renderBuffer;
@@ -580,11 +549,7 @@ class FaustSnareInstrument implements FaustInstrument {
       _renderBuffer?.dispose();
       _renderBuffer = _NativeAudioBuffer(buffer.length);
     }
-    _bindings.snare_render(
-      _nativeHandle,
-      buffer.length,
-      _renderBuffer!.pointer,
-    );
+    _bindings.snare_render(_nativeHandle, buffer.length, _renderBuffer!.pointer);
     _renderBuffer!.copyTo(buffer);
   }
 
@@ -598,7 +563,6 @@ class FaustSnareInstrument implements FaustInstrument {
   }
 }
 
-/// A Tunable High-Fidelity physical modeling Tom Drum.
 class FaustTomInstrument implements FaustInstrument {
   late Pointer<FaustTom> _nativeHandle;
   _NativeAudioBuffer? _renderBuffer;
@@ -639,7 +603,6 @@ class FaustTomInstrument implements FaustInstrument {
   }
 }
 
-/// A High-Fidelity physical modeling Hi-Hat with Open/Closed control.
 class FaustHiHatInstrument implements FaustInstrument {
   late Pointer<FaustHiHat> _nativeHandle;
   _NativeAudioBuffer? _renderBuffer;
@@ -666,11 +629,7 @@ class FaustHiHatInstrument implements FaustInstrument {
       _renderBuffer?.dispose();
       _renderBuffer = _NativeAudioBuffer(buffer.length);
     }
-    _bindings.hihat_render(
-      _nativeHandle,
-      buffer.length,
-      _renderBuffer!.pointer,
-    );
+    _bindings.hihat_render(_nativeHandle, buffer.length, _renderBuffer!.pointer);
     _renderBuffer!.copyTo(buffer);
   }
 
@@ -684,7 +643,6 @@ class FaustHiHatInstrument implements FaustInstrument {
   }
 }
 
-/// A High-Fidelity physical modeling Ride Cymbal.
 class FaustRideInstrument implements FaustInstrument {
   late Pointer<FaustRide> _nativeHandle;
   _NativeAudioBuffer? _renderBuffer;
@@ -720,107 +678,185 @@ class FaustRideInstrument implements FaustInstrument {
   }
 }
 
-class FaustMin {
-  static void normalizeSignal(Pointer<Float> buffer, int numSamples, double targetPeak) {
-    _bindings.normalize_signal(buffer, numSamples, targetPeak);
+class FaustPianoInstrument implements FaustInstrument {
+  late Pointer<FaustPiano> _nativeHandle;
+  _NativeAudioBuffer? _renderBuffer;
+  bool _isDisposed = false;
+
+  FaustPianoInstrument({double sampleRate = 44100.0}) {
+    _nativeHandle = _bindings.piano_create(sampleRate);
   }
 
-  static void renderSequencedAudio({
-    required List<FaustTriggerData> triggers,
-    required double baseFreq,
-    required double sampleRate,
-    required int totalSamples,
-    required Pointer<Float> outputBuffer,
-  }) {
-    if (triggers.isEmpty) {
-        _bindings.normalize_signal(outputBuffer, totalSamples, 0.0); // Clear
-        return;
-    }
-
-    final offsets = malloc<Int>(triggers.length);
-    final ids = malloc<Int>(triggers.length);
-    final vels = malloc<Float>(triggers.length);
-    final params = malloc<Float>(triggers.length);
-
-    for (int i = 0; i < triggers.length; i++) {
-      offsets[i] = triggers[i].sampleOffset;
-      ids[i] = triggers[i].instrumentId;
-      vels[i] = triggers[i].velocity;
-      params[i] = triggers[i].param;
-    }
-
-    try {
-      _bindings.render_sequenced_audio(
-        offsets,
-        ids,
-        vels,
-        params,
-        triggers.length,
-        baseFreq,
-        sampleRate,
-        totalSamples,
-        outputBuffer,
-      );
-    } finally {
-      malloc.free(offsets);
-      malloc.free(ids);
-      malloc.free(vels);
-      malloc.free(params);
-    }
+  void setFrequency(double freq) {
+    if (_isDisposed) return;
+    _bindings.piano_set_frequency(_nativeHandle, freq);
   }
 
-  static void renderAutomationSequence({
-    required List<FaustEventData> events,
-    required double sampleRate,
-    required int totalSamples,
-    required Pointer<Float> outputBuffer,
-  }) {
-    if (events.isEmpty) {
-      _bindings.normalize_signal(outputBuffer, totalSamples, 0.0);
-      return;
-    }
+  void setSustain(double level) {
+    if (_isDisposed) return;
+    _bindings.piano_set_sustain(_nativeHandle, level);
+  }
 
-    final nativeEvents = malloc<FaustEvent>(events.length);
-    for (int i = 0; i < events.length; i++) {
-      nativeEvents[i].sampleOffset = events[i].sampleOffset;
-      nativeEvents[i].instrumentId = events[i].instrumentId;
-      nativeEvents[i].eventType = events[i].eventType;
-      nativeEvents[i].paramId = events[i].paramId;
-      nativeEvents[i].value = events[i].value;
-    }
+  void setStiffness(double stiffness) {
+    if (_isDisposed) return;
+    _bindings.piano_set_stiffness(_nativeHandle, stiffness);
+  }
 
-    try {
-      _bindings.render_automation_sequence(
-        nativeEvents,
-        events.length,
-        sampleRate,
-        totalSamples,
-        outputBuffer,
-      );
-    } finally {
-      malloc.free(nativeEvents);
+  void strike(double velocity, {double hardness = 0.5}) {
+    if (_isDisposed) return;
+    _bindings.piano_strike(_nativeHandle, velocity, hardness);
+  }
+
+  @override
+  void render(Float32List buffer) {
+    if (_isDisposed) return;
+    if (_renderBuffer == null || _renderBuffer!.size != buffer.length) {
+      _renderBuffer?.dispose();
+      _renderBuffer = _NativeAudioBuffer(buffer.length);
+    }
+    _bindings.piano_render(_nativeHandle, buffer.length, _renderBuffer!.pointer);
+    _renderBuffer!.copyTo(buffer);
+  }
+
+  @override
+  void dispose() {
+    if (!_isDisposed) {
+      _bindings.piano_destroy(_nativeHandle);
+      _renderBuffer?.dispose();
+      _isDisposed = true;
     }
   }
 }
 
-class FaustTriggerData {
-  final int sampleOffset;
-  final int instrumentId;
-  final double velocity;
-  final double param;
+class FaustSaxInstrument implements FaustInstrument {
+  late Pointer<FaustSax> _nativeHandle;
+  _NativeAudioBuffer? _renderBuffer;
+  bool _isDisposed = false;
 
-  FaustTriggerData({
-    required this.sampleOffset,
-    required this.instrumentId,
-    required this.velocity,
-    this.param = 0.0,
-  });
+  FaustSaxInstrument({double sampleRate = 44100.0}) {
+    _nativeHandle = _bindings.sax_create(sampleRate);
+  }
+
+  void setFrequency(double freq) {
+    if (_isDisposed) return;
+    _bindings.sax_set_frequency(_nativeHandle, freq);
+  }
+
+  void setVibrato(double rate, double depth) {
+    if (_isDisposed) return;
+    _bindings.sax_set_vibrato(_nativeHandle, rate, depth);
+  }
+
+  void strike(double velocity) {
+    if (_isDisposed) return;
+    _bindings.sax_strike(_nativeHandle, velocity);
+  }
+
+  @override
+  void render(Float32List buffer) {
+    if (_isDisposed) return;
+    if (_renderBuffer == null || _renderBuffer!.size != buffer.length) {
+      _renderBuffer?.dispose();
+      _renderBuffer = _NativeAudioBuffer(buffer.length);
+    }
+    _bindings.sax_render(_nativeHandle, buffer.length, _renderBuffer!.pointer);
+    _renderBuffer!.copyTo(buffer);
+  }
+
+  @override
+  void dispose() {
+    if (!_isDisposed) {
+      _bindings.sax_destroy(_nativeHandle);
+      _renderBuffer?.dispose();
+      _isDisposed = true;
+    }
+  }
+}
+
+class FaustOrchestrator {
+  static bool _isInitialized = false;
+
+  static void init({double sampleRate = 44100.0}) {
+    if (_isInitialized) return;
+    final func = _dylib.lookupFunction<Void Function(Float), void Function(double)>('orchestrator_init');
+    func(sampleRate);
+    _isInitialized = true;
+  }
+
+  static void loadSequence(String name, String umlData) {
+    final func = _dylib.lookupFunction<Void Function(Pointer<Utf8>, Pointer<Utf8>), void Function(Pointer<Utf8>, Pointer<Utf8>)>('orchestrator_load_sequence');
+    final namePtr = name.toNativeUtf8();
+    final dataPtr = umlData.toNativeUtf8();
+    try {
+      func(namePtr, dataPtr);
+    } finally {
+      malloc.free(namePtr);
+      malloc.free(dataPtr);
+    }
+  }
+
+  static void play(String name) {
+    final func = _dylib.lookupFunction<Void Function(Pointer<Utf8>), void Function(Pointer<Utf8>)>('orchestrator_play');
+    final namePtr = name.toNativeUtf8();
+    try {
+      func(namePtr);
+    } finally {
+      malloc.free(namePtr);
+    }
+  }
+
+  static void stop() {
+    final func = _dylib.lookupFunction<Void Function(), void Function()>('orchestrator_stop');
+    func();
+  }
+
+  static void pause() {
+    final func = _dylib.lookupFunction<Void Function(), void Function()>('orchestrator_pause');
+    func();
+  }
+
+  static void resume() {
+    final func = _dylib.lookupFunction<Void Function(), void Function()>('orchestrator_resume');
+    func();
+  }
+
+  static void setWeight(String name, double weight) {
+    final namePtr = name.toNativeUtf8();
+    _funcSetWeight(namePtr.cast(), weight);
+    malloc.free(namePtr);
+  }
+
+  static void setParameter(String sequenceName, String paramName, double value) {
+    final seqNamePtr = sequenceName.toNativeUtf8();
+    final paramNamePtr = paramName.toNativeUtf8();
+    _funcSetParameter(seqNamePtr.cast(), paramNamePtr.cast(), value);
+    malloc.free(seqNamePtr);
+    malloc.free(paramNamePtr);
+  }
+
+  static void renderMaster(Pointer<Float> buffer, int numFrames) {
+    _funcRenderMaster(buffer, numFrames);
+  }
+
+  static void renderPCM(String name, Pointer<Float> buffer, int numFrames) {
+    final namePtr = name.toNativeUtf8();
+    final func = _dylib.lookupFunction<Void Function(Pointer<Utf8>, Pointer<Float>, Int), void Function(Pointer<Utf8>, Pointer<Float>, int)>('orchestrator_render_pcm');
+    func(namePtr.cast(), buffer, numFrames);
+    malloc.free(namePtr);
+  }
+
+  static void setOnFinishedCallback(void Function(String) callback) {
+    final nativeCallable = NativeCallable<Void Function(Pointer<Utf8>)>.isolateLocal((Pointer<Utf8> namePtr) {
+      callback(namePtr.toDartString());
+    });
+    _funcSetFinishedCallback(nativeCallable.nativeFunction);
+  }
 }
 
 class FaustEventData {
   final int sampleOffset;
   final int instrumentId;
-  final int eventType; // 0=Strike, 1=SetFreq, 2=SetParam
+  final int eventType; 
   final int paramId;
   final double value;
 

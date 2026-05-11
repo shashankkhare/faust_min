@@ -2,13 +2,9 @@
 #define FAUST_FLUTE_HPP
 
 #include <cmath>
-#include <random>
 #include <vector>
+#include <random>
 
-/**
- * A High-Fidelity Physical Model of a Flute.
- * Based on the Smith/Michon waveguide synthesis logic.
- */
 class FaustFlute {
 public:
     FaustFlute(float sampleRate);
@@ -17,11 +13,25 @@ public:
     void setFrequency(float freq);
     void setPressure(float pressure);
     void setVibrato(float rate, float depth);
-    
-    // Renders float PCM data into the buffer
+    void reset();
     void render(int numFrames, float* buffer);
 
 private:
+    /**
+     * @brief Core synthesis engine for a single sample.
+     * Based on the STK (Synthesis Tool Kit) Digital Waveguide Flute model.
+     * 
+     * Algorithm Overview:
+     * 1. Excitation: Breath pressure + noise + vibrato.
+     * 2. Jet Delay: Simulates the time air takes to travel from lips to the flute edge.
+     * 3. Non-linearity: A cubic polynomial (x - x^3) simulates the "switching" 
+     *    behavior of the air jet across the flute's embouchure hole.
+     * 4. Bore Delay: Simulates the resonance of the flute's cylindrical tube.
+     * 5. Feedback: A double-loop system where the jet and bore interact to 
+     *    sustain oscillation.
+     */
+    float tick(float currentPressure);
+
     float mSampleRate;
     float mFreq;
     float mPressure;
@@ -29,25 +39,23 @@ private:
     float mVibratoDepth;
     float mPhase;
 
-    // Dual-Waveguide components
+    // Waveguide State (Double Delay Loop)
+    // The "Jet" delay represents the embouchure path, while "Bore" is the tube resonance.
     std::vector<float> mBoreDelay;
-    std::vector<float> mJetDelay;
-    int mBoreWriteIdx;
-    int mJetWriteIdx;
+    std::vector<float> mJetDelay; // Embouchure Delay
+    size_t mWriteIdxB;
+    size_t mWriteIdxJ;
     
-    // Nonlinearities
-    std::mt19937 mPRNG;
-    std::uniform_real_distribution<float> mDist;
-    
-    float mFilterState; // One-pole low-pass
+    float mFilterState; // Reflection filter (lowpass damping)
     float mDCState;     // DC blocker state
-    float mPrevIn;      // DC blocker previous input
+    float mBoreOut;     // Feedback signal from end of bore
     
-    // All-pass Fractional Delay state (for perfect C3/C4 phase)
+    // All-pass fractional delay states (for future pitch precision)
     float mBoreAP_X1, mBoreAP_Y1;
     float mJetAP_X1, mJetAP_Y1;
-    
-    float tick();
+
+    std::mt19937 mPRNG;
+    std::uniform_real_distribution<float> mDist;
 };
 
 #endif // FAUST_FLUTE_HPP
