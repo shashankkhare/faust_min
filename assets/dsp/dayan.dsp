@@ -25,9 +25,9 @@ actualT60 = t60Scale;
 // g1-g5: mode gains
 // strike 0: Na (Bright Edge Snap)
 // strike 0.1: tk (Dull Center Thud)
-g1 = (strike < 0.05) * 0.1 + ((strike >= 0.05) * (strike < 0.5)) * 0.5 + ((strike >= 0.5) * (strike < 1.5)) * 1.0 + (strike >= 1.5) * 1.5;
-g2 = (strike < 0.05) * 0.3 + ((strike >= 0.05) * (strike < 0.5)) * 1.0 + ((strike >= 0.5) * (strike < 1.5)) * 0.8 + (strike >= 1.5) * 0.5;
-g3 = (strike < 0.05) * 0.5 + ((strike >= 0.05) * (strike < 0.5)) * 0.5 + ((strike >= 0.5) * (strike < 1.5)) * 0.6 + (strike >= 1.5) * 0.2;
+g1 = (strike < 0.05) * 1.0 + ((strike >= 0.05) * (strike < 0.5)) * 0.5 + ((strike >= 0.5) * (strike < 1.5)) * 1.5 + (strike >= 1.5) * 1.5;
+g2 = (strike < 0.05) * 0.8 + ((strike >= 0.05) * (strike < 0.5)) * 1.0 + ((strike >= 0.5) * (strike < 1.5)) * 1.2 + (strike >= 1.5) * 0.8;
+g3 = (strike < 0.05) * 0.6 + ((strike >= 0.05) * (strike < 0.5)) * 0.5 + ((strike >= 0.5) * (strike < 1.5)) * 0.8 + (strike >= 1.5) * 0.4;
 g4 = (strike < 0.05) * 1.0 + ((strike >= 0.05) * (strike < 0.5)) * 0.1 + ((strike >= 0.5) * (strike < 1.5)) * 0.4 + (strike >= 1.5) * 0.1;
 g5 = (strike < 0.05) * 1.0 + ((strike >= 0.05) * (strike < 0.5)) * 0.05 + ((strike >= 0.5) * (strike < 1.5)) * 0.2 + (strike >= 1.5) * 0.05;
 

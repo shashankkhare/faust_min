@@ -68,9 +68,13 @@ class _FaustInstrumentsHomeState extends State<FaustInstrumentsHome> {
   final List<String> _patterns = ["Tanpura Drone", "Varanasi Dawn", "Dayan Strokes", "Bayan Strokes", "22 Shrutis Test"];
 
   Future<void> _playPattern(String genre) async {
-    if (_isPlayingPattern) return;
-    setState(() { _isPlayingPattern = true; _status = "Streaming $genre..."; });
+    setState(() { 
+      _isPlayingPattern = true; 
+      _status = "Streaming $genre..."; 
+    });
+    
     try {
+      FaustOrchestrator.stop(); // Stop any existing sequence first
       FaustOrchestrator.init();
       
       if (genre == "Tanpura Drone") {
@@ -86,7 +90,7 @@ basefreq: 130.81
 """;
         FaustOrchestrator.loadSequence("tanpura_solo", uml);
         FaustOrchestrator.play("tanpura_solo");
-        await Future.delayed(const Duration(seconds: 30));
+        Future.delayed(const Duration(seconds: 30));
       } else if (genre == "22 Shrutis Test") {
         final List<String> shrutis = [
           "Sa", "r1", "r2", "R1", "R2", "g1", "g2", "G1", "G2", "M1", "M2", 
@@ -110,9 +114,7 @@ basefreq: 130.81
           FaustOrchestrator.loadSequence(name, umplTracks[i]);
           FaustOrchestrator.play(name);
         }
-        await Future.delayed(const Duration(seconds: 30));
-      } else if (genre == "Dayan Strokes") {
-// ...
+        Future.delayed(const Duration(seconds: 30));
       } else if (genre == "Dayan Strokes") {
         // Authentic Bols: Na, Tin, Tun, tk
         final String uml = "notation: Indian\ninstrument: DA\nbpm: 120\ngrid: 4\nbasefreq: 150.0\n\n9Na. 9Na. 9Tin. 9Tin. 9Tun. 9Tun. 9tk. 9tk. 9Na. 9Tin. 9Tun. .S..";
@@ -136,11 +138,11 @@ basefreq: 130.81
         final String uml = "notation: Indian\ninstrument: FL\nbpm: 120\ngrid: 4\nbasefreq: 440.0\n\n9Sa. 9Re. 9Ga. 9Ma. 9Pa. 9Dh. 9Ni. 9Sa^ .S..";
         FaustOrchestrator.loadSequence("rt_scale", uml);
         FaustOrchestrator.play("rt_scale");
-        await Future.delayed(const Duration(seconds: 5));
       }
+    } catch (e) {
+      debugPrint("Playback Error: $e");
     } finally {
-      FaustOrchestrator.stop();
-      if (mounted) setState(() { _isPlayingPattern = false; _status = "Ready"; });
+      if (mounted) setState(() { _isPlayingPattern = false; });
     }
   }
 

@@ -282,10 +282,20 @@ void SequenceOrchestrator::processBuffer(std::shared_ptr<ActiveSequence> seq, fl
     for (int i = 0; i < numFrames; ++i) {
         long currentS = startS + i;
 
+        // 0. Handle Pending Gate-On (Smart Reset) - Done at start of tick
+        // to ensure the DSP saw the gate=0 from the previous tick.
+        if (seq->pendingGateOn) {
+            for (int p = 0; p < seq->ui->getParamsCount(); p++) {
+                std::string addr = seq->ui->getParamAddress(p);
+                if (addr.find("gate") != std::string::npos) {
+                    seq->ui->setParamValue(addr, 1.0f);
+                    break;
+                }
+            }
+            seq->pendingGateOn = false;
+        }
+
         // 1. Optimized Scheduler Logic
-        // We assume events are sorted by sampleOffset (which UMLParser ensures)
-        // We use an index stored in ActiveSequence if we want to be even faster,
-        // but for now, let's at least not scan events that are already passed.
         for (auto it = seq->data.events.begin(); it != seq->data.events.end(); ) {
             if (it->sampleOffset <= currentS) {
                 if (it->sampleOffset == currentS) {
@@ -309,9 +319,9 @@ void SequenceOrchestrator::processBuffer(std::shared_ptr<ActiveSequence> seq, fl
                         seq->glideEndVel = it->targetVelocity;
                     }
                 }
-                it = seq->data.events.erase(it); // Remove event once processed or passed
+                it = seq->data.events.erase(it);
             } else {
-                break; // Events are sorted, so we can stop searching
+                break;
             }
         }
 
@@ -323,18 +333,6 @@ void SequenceOrchestrator::processBuffer(std::shared_ptr<ActiveSequence> seq, fl
             float v = seq->glideStartVel + (seq->glideEndVel - seq->glideStartVel) * progress;
             updateDSPParams(seq, f, v);
             if (progress >= 1.0f) seq->inGlide = false;
-        }
-
-        // 2.5 Handle Pending Gate-On (Smart Reset)
-        if (seq->pendingGateOn) {
-            for (int p = 0; p < seq->ui->getParamsCount(); p++) {
-                std::string addr = seq->ui->getParamAddress(p);
-                if (addr.find("gate") != std::string::npos) {
-                    seq->ui->setParamValue(addr, 1.0f);
-                    break;
-                }
-            }
-            seq->pendingGateOn = false;
         }
 
         // 3. Render Sample
