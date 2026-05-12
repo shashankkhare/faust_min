@@ -21,8 +21,8 @@ pluckExcitation(t) = no.noise * en.ar(0.001, 0.01, t) : fi.lowpass(1, 400);
 smoothedBaseFreq = baseFreq : si.smoo;
 stringFreq(i) = smoothedBaseFreq * ((i == 0) * 1.5 + (i == 1) * 1.0 + (i == 2) * 1.0 + (i == 3) * 0.5);
 
-// Optimized Jivari String Waveguide with Fractional Delay
-jivariString(f, x) = pluckExcitation(x) : + ~ (de.fdelay(4096, ma.SR/f-2) : jivariBridge : dispersion : *(0.997) : fi.dcblocker)
+// Optimized Jivari String Waveguide with Fractional Delay (Guarded against div-by-zero)
+jivariString(f, x) = pluckExcitation(x) : + ~ (de.fdelay(4096, ma.SR/max(20.0, f)-2.0) : jivariBridge : dispersion : *(0.997) : fi.dcblocker)
 with {
     // Jivari bridge: Optimized soft-folding
     jivariBridge(y) = y - (y > 0.4) * (y - 0.4) * (0.2 + jivari * 0.3) : ma.tanh;
