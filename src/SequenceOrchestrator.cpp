@@ -65,7 +65,7 @@ void SequenceOrchestrator::init(float sampleRate) {
     printf("[Native] SequenceOrchestrator: Initializing miniaudio for Desktop/iOS...\n");
     ma_device_config config = ma_device_config_init(ma_device_type_playback);
     config.playback.format = ma_format_f32;
-    config.playback.channels = 1;
+    config.playback.channels = 2; // Stereo output ensures ALSA/PulseAudio shared connection stability
     config.sampleRate = (ma_uint32)sampleRate;
     config.dataCallback = maDataCallback;
     config.pUserData = this;
@@ -217,9 +217,9 @@ void SequenceOrchestrator::renderToBuffer(const std::string& name, float* buffer
 }
 
 void SequenceOrchestrator::renderMaster(float* buffer, int numFrames) {
-    auto start = std::chrono::high_resolution_clock::now();
     std::lock_guard<std::mutex> lock(mStateMutex);
-    std::fill(buffer, buffer + numFrames, 0.0f);
+    int totalStereoSamples = numFrames * 2;
+    std::fill(buffer, buffer + totalStereoSamples, 0.0f);
     
     if (numFrames > mMaxRenderFrames) {
         if (mRenderScratchBuffer) delete[] mRenderScratchBuffer;
@@ -234,26 +234,23 @@ void SequenceOrchestrator::renderMaster(float* buffer, int numFrames) {
         processBuffer(seq, mRenderScratchBuffer, numFrames);
         
         for (int i = 0; i < numFrames; i++) {
-            buffer[i] += mRenderScratchBuffer[i] * seq->weight;
+            float val = mRenderScratchBuffer[i] * seq->weight;
+            buffer[i * 2] += val;
+            buffer[i * 2 + 1] += val;
         }
     }
 
     // --- Peak Normalization ---
     float maxAmp = 0.0f;
-    for (int i = 0; i < numFrames; i++) {
+    for (int i = 0; i < totalStereoSamples; i++) {
         float absVal = std::abs(buffer[i]);
         if (absVal > maxAmp) maxAmp = absVal;
     }
     if (maxAmp > 0.0f) {
         float scale = 0.95f / maxAmp;
-        for (int i = 0; i < numFrames; i++) buffer[i] *= scale;
+        for (int i = 0; i < totalStereoSamples; i++) buffer[i] *= scale;
     }
-    
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    printf("[Native] renderMaster: (%d frames) took %lld ms. Peak: %f\n", 
-           numFrames, (long long)duration, maxAmp);
-    fflush(stdout);
+    // High-frequency console logs inside real-time callback removed to prevent pipe stalling
 }
 
 oboe::DataCallbackResult SequenceOrchestrator::onAudioReady(oboe::AudioStream *audioStream, void *audioData, int32_t numFrames) {

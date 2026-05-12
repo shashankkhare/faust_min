@@ -76,6 +76,7 @@ class _FaustInstrumentsHomeState extends State<FaustInstrumentsHome> {
     try {
       FaustOrchestrator.stop(); // Stop any existing sequence first
       FaustOrchestrator.init();
+      FaustOrchestrator.setAssetBasePath("../assets");
       
       if (genre == "Tanpura Drone") {
         // Single strike with 100 dots (25s) to allow for 8s natural decay
