@@ -16,7 +16,20 @@
 // Bridge function for miniaudio to call the orchestrator's onAudioReady
 void maDataCallback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount) {
     SequenceOrchestrator* orchestrator = (SequenceOrchestrator*)pDevice->pUserData;
-    orchestrator->onAudioReady(nullptr, pOutput, frameCount);
+    // We render into a static scratch buffer to support mono-to-stereo expansion cleanly
+    static float* monoScratch = nullptr;
+    static ma_uint32 maxFrames = 0;
+    if (frameCount > maxFrames) {
+        if (monoScratch) delete[] monoScratch;
+        maxFrames = frameCount;
+        monoScratch = new float[maxFrames];
+    }
+    orchestrator->onAudioReady(nullptr, monoScratch, frameCount);
+    float* outF = (float*)pOutput;
+    for (ma_uint32 i = 0; i < frameCount; i++) {
+        outF[i * 2] = monoScratch[i];
+        outF[i * 2 + 1] = monoScratch[i];
+    }
 }
 #endif
 
