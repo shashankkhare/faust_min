@@ -114,23 +114,25 @@ std::string readFileContent(const std::string& path) {
 }
 
 void SequenceOrchestrator::loadSequence(const std::string& name, const std::string& umlData) {
-    std::lock_guard<std::mutex> lock(mStateMutex);
     printf("[Native] Loading Sequence: %s\n", name.c_str());
     fflush(stdout);
     
+    // Parse UML and compile Faust factory bytecode OUTSIDE the audio thread lock
     auto data = UMLParser::parse(name, umlData, mSampleRate);
     printf("[Native] Parsed %lu events for %s. Instrument: %s\n", data.events.size(), name.c_str(), data.instrument.c_str());
     fflush(stdout);
     
     auto seq = std::make_shared<ActiveSequence>();
     seq->data = data;
-    seq->ui = new MapUI(); // Create MapUI
+    seq->ui = new MapUI(); 
     seq->dsp = createDSP(seq, data.instrument);
     seq->currentSample = 0;
     seq->weight = 1.0f;
     seq->inGlide = false;
     seq->pendingGateOn = false;
     
+    // Lock briefly only to insert the fully constructed sequence into the active map
+    std::lock_guard<std::mutex> lock(mStateMutex);
     mActiveSequences[name] = seq;
 }
 
