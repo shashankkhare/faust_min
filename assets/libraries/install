@@ -1,0 +1,3 @@
+#! /bin/bash
+
+cp *.lib old/*.lib dx7/*.lib `faust --dspdir`
