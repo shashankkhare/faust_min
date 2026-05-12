@@ -1,5 +1,10 @@
-#include "FaustCommon.hpp"
-#include <vector>
+#ifndef FAUST_DAYAN_HPP
+#define FAUST_DAYAN_HPP
+
+#include <memory>
+#include <faust/gui/MapUI.h>
+#include <faust/dsp/dsp.h>
+#include <faust/gui/meta.h>
 
 class FaustDayan {
 public:
@@ -10,11 +15,9 @@ public:
     void render(int numFrames, float* buffer);
 
 private:
-    float _sampleRate;
-    float _baseFreq;
-    std::vector<Faust::Resonator> _modes;
-    float _excitation;
-    bool _muted;
-
-    void updateInternal();
+    std::unique_ptr<dsp> mDSP;
+    std::unique_ptr<MapUI> mUI;
+    void setParam(const char* shortName, float val);
 };
+
+#endif

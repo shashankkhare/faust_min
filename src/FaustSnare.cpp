@@ -1,38 +1,31 @@
 #include "FaustSnare.hpp"
-#include <random>
+#include "FaustSnareDSP.hpp"
+#include <string>
 
-FaustSnare::FaustSnare(float sampleRate) : _sampleRate(sampleRate), _snareEnv(0.0f), _excitation(0.0f) {
-    _head.ratio = 1.0f;
-    _head.t60 = 0.2f; // Snappy head
-    _head.gain = 1.0f;
-    _head.init();
-    updateInternal();
+FaustSnare::FaustSnare(float sampleRate) {
+    mDSP.reset(new FaustSnareDSP());
+    mDSP->init((int)sampleRate);
+    mUI.reset(new MapUI());
+    mDSP->buildUserInterface(mUI.get());
+}
+
+void FaustSnare::setParam(const char* shortName, float val) {
+    for (int i = 0; i < mUI->getParamsCount(); i++) {
+        std::string addr = mUI->getParamAddress(i);
+        if (addr.find(shortName) != std::string::npos) {
+            mUI->setParamValue(addr, val);
+            break;
+        }
+    }
 }
 
 void FaustSnare::strike(float velocity) {
-    _excitation = velocity;
-    _snareEnv = velocity;
-}
-
-void FaustSnare::updateInternal() {
-    _head.update(210.0f, _sampleRate); // G3 snare tuning
+    setParam("gain", velocity);
+    setParam("gate", 1.0f);
 }
 
 void FaustSnare::render(int numFrames, float* buffer) {
-    static std::mt19937 gen(46);
-    static std::uniform_real_distribution<float> dis(-1.0, 1.0);
-
-    for (int i = 0; i < numFrames; ++i) {
-        float x = _excitation;
-        _excitation = 0.0f;
-
-        // Head resonance
-        float head = _head.process(x);
-
-        // Snare wires (noise)
-        float noise = dis(gen) * _snareEnv;
-        _snareEnv *= 0.999f; // Snare decay
-
-        buffer[i] = std::tanh((head + noise) * 1.5f); 
-    }
+    FAUSTFLOAT* outputs[1] = { buffer };
+    mDSP->compute(numFrames, nullptr, outputs);
+    setParam("gate", 0.0f);
 }

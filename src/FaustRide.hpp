@@ -1,5 +1,10 @@
-#include "FaustCommon.hpp"
-#include <vector>
+#ifndef FAUST_RIDE_HPP
+#define FAUST_RIDE_HPP
+
+#include <memory>
+#include <faust/gui/MapUI.h>
+#include <faust/dsp/dsp.h>
+#include <faust/gui/meta.h>
 
 class FaustRide {
 public:
@@ -8,19 +13,9 @@ public:
     void render(int numFrames, float* buffer);
 
 private:
-    float _sampleRate;
-    
-    // 6-Oscillator FM/Ring-Mod Cluster
-    float _phases[6];
-    float _freqs[6];
-    
-    // Envelopes
-    float _pingEnv;
-    float _washEnv;
-    
-    // Resonant Band-Pass Filter (Biquad for shimmer)
-    float _v1, _v2;
-    float _b0, _b1, _b2, _a1, _a2;
-
-    void setFilter(float freq, float Q);
+    std::unique_ptr<dsp> mDSP;
+    std::unique_ptr<MapUI> mUI;
+    void setParam(const char* shortName, float val);
 };
+
+#endif

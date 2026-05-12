@@ -1,3 +1,11 @@
+#ifndef FAUST_HIHAT_HPP
+#define FAUST_HIHAT_HPP
+
+#include <memory>
+#include <faust/gui/MapUI.h>
+#include <faust/dsp/dsp.h>
+#include <faust/gui/meta.h>
+
 class FaustHiHat {
 public:
     FaustHiHat(float sampleRate);
@@ -6,8 +14,9 @@ public:
     void render(int numFrames, float* buffer);
 
 private:
-    float _sampleRate;
-    float _decay;
-    float _env;
-    float _filterState;
+    std::unique_ptr<dsp> mDSP;
+    std::unique_ptr<MapUI> mUI;
+    void setParam(const char* shortName, float val);
 };
+
+#endif

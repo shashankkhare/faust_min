@@ -1,8 +1,10 @@
 #ifndef FAUST_BELL_HPP
 #define FAUST_BELL_HPP
 
-#include <vector>
-#include "FaustCommon.hpp"
+#include <memory>
+#include <faust/gui/MapUI.h>
+#include <faust/dsp/dsp.h>
+#include <faust/gui/meta.h>
 
 class FaustBell {
 public:
@@ -14,15 +16,9 @@ public:
     void render(int numFrames, float* buffer);
 
 private:
-    void updateInternal();
-    float _sampleRate;
-    float _baseFreq;
-    float _duration;
-    float _damping;
-    float _excitation;
-    float _strikeEnv;
-    std::vector<float> _baseT60s;
-    std::vector<Faust::Resonator> _modes;
+    std::unique_ptr<dsp> mDSP;
+    std::unique_ptr<MapUI> mUI;
+    void setParam(const char* shortName, float val);
 };
 
 #endif

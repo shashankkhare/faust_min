@@ -21,7 +21,7 @@ import 'ui/drum_panel.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await SoLoud.instance.init();
+  // Removed SoLoud initialization to prevent ALSA soundcard lock contention
   runApp(const MyApp());
 }
 

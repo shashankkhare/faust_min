@@ -1,4 +1,5 @@
 #pragma once
+#include <faust/gui/meta.h>
 #include <cmath>
 #include <algorithm>
 

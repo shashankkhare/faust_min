@@ -1,32 +1,10 @@
 #ifndef FAUST_PIANO_HPP
 #define FAUST_PIANO_HPP
 
-#include <vector>
-
-class PianoString {
-public:
-    PianoString();
-    void init(float sampleRate);
-    void strike(float freq, float velocity, float hardness, float stiffness, float sustain);
-    float render();
-    bool isActive() const;
-
-private:
-    float _sampleRate;
-    float _freq;
-    float _velocity;
-    float _excitation;
-    float _hammerLP;
-    float _sustain;
-    float _stiffness;
-    std::vector<float> _delayLine;
-    int _writePtr;
-    
-    // State for all-pass filters (stiffness)
-    float _apX[4], _apY[4];
-    float _lpState;
-    float _dcState;
-};
+#include <memory>
+#include <faust/gui/MapUI.h>
+#include <faust/dsp/dsp.h>
+#include <faust/gui/meta.h>
 
 class FaustPiano {
 public:
@@ -38,12 +16,9 @@ public:
     void render(int numFrames, float* buffer);
 
 private:
-    float _sampleRate;
-    float _currentFreq;
-    float _globalSustain;
-    float _globalStiffness;
-    int _nextVoice;
-    PianoString _strings[16];
+    std::unique_ptr<dsp> mDSP;
+    std::unique_ptr<MapUI> mUI;
+    void setParam(const char* shortName, float val);
 };
 
-#endif // FAUST_PIANO_HPP
+#endif

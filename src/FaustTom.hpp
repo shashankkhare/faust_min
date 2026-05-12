@@ -1,5 +1,10 @@
-#include "FaustCommon.hpp"
-#include <vector>
+#ifndef FAUST_TOM_HPP
+#define FAUST_TOM_HPP
+
+#include <memory>
+#include <faust/gui/MapUI.h>
+#include <faust/dsp/dsp.h>
+#include <faust/gui/meta.h>
 
 class FaustTom {
 public:
@@ -9,11 +14,9 @@ public:
     void render(int numFrames, float* buffer);
 
 private:
-    float _sampleRate;
-    float _freq;
-    Faust::Resonator _mode1;
-    Faust::Resonator _mode2;
-    float _excitation;
-
-    void updateInternal();
+    std::unique_ptr<dsp> mDSP;
+    std::unique_ptr<MapUI> mUI;
+    void setParam(const char* shortName, float val);
 };
+
+#endif

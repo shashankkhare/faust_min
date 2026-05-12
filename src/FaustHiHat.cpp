@@ -1,32 +1,35 @@
 #include "FaustHiHat.hpp"
-#include <random>
-#include <algorithm>
+#include "FaustHihatDSP.hpp"
+#include <string>
 
-FaustHiHat::FaustHiHat(float sampleRate) : _sampleRate(sampleRate), _decay(0.999f), _env(0.0f), _filterState(0.0f) {}
+FaustHiHat::FaustHiHat(float sampleRate) {
+    mDSP.reset(new FaustHihatDSP());
+    mDSP->init((int)sampleRate);
+    mUI.reset(new MapUI());
+    mDSP->buildUserInterface(mUI.get());
+}
+
+void FaustHiHat::setParam(const char* shortName, float val) {
+    for (int i = 0; i < mUI->getParamsCount(); i++) {
+        std::string addr = mUI->getParamAddress(i);
+        if (addr.find(shortName) != std::string::npos) {
+            mUI->setParamValue(addr, val);
+            break;
+        }
+    }
+}
 
 void FaustHiHat::strike(float velocity) {
-    _env = velocity;
+    setParam("gain", velocity);
+    setParam("gate", 1.0f);
 }
 
 void FaustHiHat::setOpenness(float amount) {
-    // amount: 0 (closed) to 1 (open)
-    // Closed = faster decay, Open = slower decay
-    _decay = 0.998f + (amount * 0.0015f);
+    setParam("openness", amount);
 }
 
 void FaustHiHat::render(int numFrames, float* buffer) {
-    static std::mt19937 gen(47);
-    static std::uniform_real_distribution<float> dis(-1.0, 1.0);
-
-    for (int i = 0; i < numFrames; ++i) {
-        float noise = dis(gen) * _env;
-        _env *= _decay;
-
-        // Simple high-pass filter at ~8kHz
-        // y[n] = x[n] - x[n-1] + a*y[n-1]
-        float filtered = noise - _filterState;
-        _filterState = noise;
-        
-        buffer[i] = std::tanh(filtered * 2.0f); 
-    }
+    FAUSTFLOAT* outputs[1] = { buffer };
+    mDSP->compute(numFrames, nullptr, outputs);
+    setParam("gate", 0.0f);
 }

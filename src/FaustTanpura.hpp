@@ -1,35 +1,10 @@
 #ifndef FAUST_TANPURA_HPP
 #define FAUST_TANPURA_HPP
 
-#include "FaustCommon.hpp"
-#include <vector>
-
-class TanpuraString {
-public:
-    TanpuraString();
-    void init(float sampleRate, float freq);
-    void setJivari(float amount);
-    void setDecay(float t60);
-    void pluck(float velocity);
-    float tick();
-
-private:
-    float mSampleRate;
-    float mFreq;
-    float mJivari;
-    float mFeedback;
-    
-    std::vector<float> mDelayLine;
-    int mWritePtr;
-    float mLpState;
-    float mDCState;
-    float mPrevIn;
-    
-    // Dispersion
-    float mApX[4];
-    float mApY[4];
-    unsigned int mSeed;
-};
+#include <memory>
+#include <faust/gui/MapUI.h>
+#include <faust/dsp/dsp.h>
+#include <faust/gui/meta.h>
 
 class FaustTanpura {
 public:
@@ -42,13 +17,9 @@ public:
     void render(int numFrames, float* buffer);
 
 private:
-    float mSampleRate;
-    TanpuraString mStrings[4];
-    
-    bool mIsPlaying;
-    int mSampleCounter;
-    int mDelaySamples;
-    int mCurrentString;
+    std::unique_ptr<dsp> mDSP;
+    std::unique_ptr<MapUI> mUI;
+    void setParam(const char* shortName, float val);
 };
 
 #endif

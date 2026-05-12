@@ -1,5 +1,10 @@
-#include "FaustCommon.hpp"
-#include <vector>
+#ifndef FAUST_BOWL_HPP
+#define FAUST_BOWL_HPP
+
+#include <memory>
+#include <faust/gui/MapUI.h>
+#include <faust/dsp/dsp.h>
+#include <faust/gui/meta.h>
 
 class FaustBowl {
 public:
@@ -13,15 +18,9 @@ public:
     void dispose() {}
 
 private:
-    float _sampleRate;
-    float _baseFreq;
-    float _duration;
-    float _rub;
-    float _waver;
-    float _excitation;
-    float _strikeEnv;
-    std::vector<float> _baseT60s;
-    std::vector<Faust::Resonator> _modes;
-
-    void updateInternal();
+    std::unique_ptr<dsp> mDSP;
+    std::unique_ptr<MapUI> mUI;
+    void setParam(const char* shortName, float val);
 };
+
+#endif

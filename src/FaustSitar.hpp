@@ -1,5 +1,10 @@
-#include "FaustCommon.hpp"
-#include <vector>
+#ifndef FAUST_SITAR_HPP
+#define FAUST_SITAR_HPP
+
+#include <memory>
+#include <faust/gui/MapUI.h>
+#include <faust/dsp/dsp.h>
+#include <faust/gui/meta.h>
 
 class FaustSitar {
 public:
@@ -11,34 +16,9 @@ public:
     void render(int numFrames, float* buffer);
 
 private:
-    float _sampleRate;
-    float _baseFreq;
-    float _jivari;
-    float _sympGain;
-
-    // String Waveguide
-    std::vector<float> _delayLine;
-    int _writePtr;
-    float _feedback;
-    float _lpState;
-    float _dcState;
-    float _prevIn;
-
-    // Dispersion All-Pass Cascade (4 stages)
-    float _apX[4];
-    float _apY[4];
-
-    // Sympathetic Resonators
-    std::vector<Faust::Resonator> _sympModes;
-
-    float _dynThreshold;
-    float _dynDispersion;
-    float _dynStrikeScale;
-    float _dynDamping;
-    float _dynDC;
-    float _dynFold;
-    float _dynOutputGain;
-    unsigned int _seed;
-
-    void updateInternal();
+    std::unique_ptr<dsp> mDSP;
+    std::unique_ptr<MapUI> mUI;
+    void setParam(const char* shortName, float val);
 };
+
+#endif

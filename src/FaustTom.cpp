@@ -1,37 +1,35 @@
 #include "FaustTom.hpp"
+#include "FaustTomDSP.hpp"
+#include <string>
 
-FaustTom::FaustTom(float sampleRate) : _sampleRate(sampleRate), _freq(100.0f), _excitation(0.0f) {
-    _mode1.ratio = 1.0f;
-    _mode1.t60 = 0.6f;
-    _mode1.gain = 1.0f;
-    _mode1.init();
+FaustTom::FaustTom(float sampleRate) {
+    mDSP.reset(new FaustTomDSP());
+    mDSP->init((int)sampleRate);
+    mUI.reset(new MapUI());
+    mDSP->buildUserInterface(mUI.get());
+}
 
-    _mode2.ratio = 1.6f; // Harmonic 2 of the drum head
-    _mode2.t60 = 0.4f;
-    _mode2.gain = 0.6f;
-    _mode2.init();
-
-    updateInternal();
+void FaustTom::setParam(const char* shortName, float val) {
+    for (int i = 0; i < mUI->getParamsCount(); i++) {
+        std::string addr = mUI->getParamAddress(i);
+        if (addr.find(shortName) != std::string::npos) {
+            mUI->setParamValue(addr, val);
+            break;
+        }
+    }
 }
 
 void FaustTom::setFrequency(float freq) {
-    _freq = freq;
-    updateInternal();
+    setParam("freq", freq);
 }
 
 void FaustTom::strike(float velocity) {
-    _excitation = velocity;
-}
-
-void FaustTom::updateInternal() {
-    _mode1.update(_freq, _sampleRate);
-    _mode2.update(_freq, _sampleRate);
+    setParam("gain", velocity);
+    setParam("gate", 1.0f);
 }
 
 void FaustTom::render(int numFrames, float* buffer) {
-    for (int i = 0; i < numFrames; ++i) {
-        float x = _excitation;
-        _excitation = 0.0f;
-        buffer[i] = _mode1.process(x) + _mode2.process(x);
-    }
+    FAUSTFLOAT* outputs[1] = { buffer };
+    mDSP->compute(numFrames, nullptr, outputs);
+    setParam("gate", 0.0f);
 }

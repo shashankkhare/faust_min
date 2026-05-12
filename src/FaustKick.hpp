@@ -1,5 +1,10 @@
-#include "FaustCommon.hpp"
-#include <vector>
+#ifndef FAUST_KICK_HPP
+#define FAUST_KICK_HPP
+
+#include <memory>
+#include <faust/gui/MapUI.h>
+#include <faust/dsp/dsp.h>
+#include <faust/gui/meta.h>
 
 class FaustKick {
 public:
@@ -8,13 +13,9 @@ public:
     void render(int numFrames, float* buffer);
 
 private:
-    float _sampleRate;
-    float _currentFreq;
-    float _targetFreq;
-    Faust::Resonator _body;
-    Faust::Resonator _click;
-    float _excitation;
-    float _lpState;
-
-    void updateInternal();
+    std::unique_ptr<dsp> mDSP;
+    std::unique_ptr<MapUI> mUI;
+    void setParam(const char* shortName, float val);
 };
+
+#endif
