@@ -308,13 +308,9 @@ void SequenceOrchestrator::processBuffer(std::shared_ptr<ActiveSequence> seq, fl
             if (it->sampleOffset <= currentS) {
                 if (it->sampleOffset == currentS) {
                     if (it->type == UMLEventType::NoteOn) {
-                        printf("[Native] NoteOn: %f Hz, Vel: %f, Bol: %s at sample %ld\n", it->frequency, it->velocity, it->note.c_str(), currentS);
-                        fflush(stdout);
                         updateDSPParams(seq, it->frequency, it->velocity, it->note);
                         seq->inGlide = false;
                     } else if (it->type == UMLEventType::NoteOff) {
-                        printf("[Native] NoteOff at sample %ld\n", currentS);
-                        fflush(stdout);
                         updateDSPParams(seq, 0, 0, ""); 
                         seq->inGlide = false;
                     } else if (it->type == UMLEventType::Glide) {
