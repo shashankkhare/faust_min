@@ -493,7 +493,7 @@ interpreter_dsp* SequenceOrchestrator::createDSP(std::shared_ptr<ActiveSequence>
     std::string factoryName = "FaustInst_" + timestamp;
 
     std::string error;
-    std::string libPath = mAssetBasePath.empty() ? "/home/shashankkhare/faust_sdk/faust_src/libraries/" : (mAssetBasePath + "/libraries/");
+    std::string libPath = mAssetBasePath.empty() ? "./assets/libraries/" : (mAssetBasePath + "/libraries/");
     const char* argv[] = { "-I", libPath.c_str() };
     interpreter_dsp_factory* factory = createInterpreterDSPFactoryFromString(factoryName.c_str(), source, 2, argv, error);
     if (!factory) {
@@ -522,7 +522,7 @@ interpreter_dsp* SequenceOrchestrator::createDSP(std::shared_ptr<ActiveSequence>
 }
 
 std::string SequenceOrchestrator::getDSPPath(const std::string& instrumentName) {
-    std::string base = mAssetBasePath.empty() ? "/home/shashankkhare/AndroidStudioProjects/faust_min/assets/dsp/" : (mAssetBasePath + "/dsp/");
+    std::string base = mAssetBasePath.empty() ? "./assets/dsp/" : (mAssetBasePath + "/dsp/");
     if (instrumentName.empty()) return base + "flute.dsp"; // Default fallback
     if (instrumentName == "FL" || instrumentName == "10") return base + "flute.dsp";
     if (instrumentName == "DA" || instrumentName == "0") return base + "dayan.dsp";
