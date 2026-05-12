@@ -428,7 +428,6 @@ void SequenceOrchestrator::updateDSPParams(std::shared_ptr<ActiveSequence> seq, 
             } else if (note == "Ti" || note == "Tin" || note == "ti" || note == "tin" || note == "Te" || note == "te") strikeVal = 1.0f;
             
             if (strikeVal >= 0.0f) {
-                printf("[Native] Setting Strike for %s: %f\n", note.c_str(), strikeVal);
                 setFuzzyParam("strike", strikeVal);
             } else if (vel > 0) {
                 float s = 0.0f;
@@ -447,7 +446,6 @@ void SequenceOrchestrator::updateDSPParams(std::shared_ptr<ActiveSequence> seq, 
                 strikeVal = 0.0f;
             }
             
-            printf("[Native] Setting Bayan Strike for %s: %f (Meend: %f)\n", note.c_str(), strikeVal, meendVal);
             setFuzzyParam("strike", strikeVal);
             setFuzzyParam("meend", meendVal);
         }
@@ -514,11 +512,6 @@ interpreter_dsp* SequenceOrchestrator::createDSP(std::shared_ptr<ActiveSequence>
     // Build UI for MapUI
     if (seq->ui) {
         dsp->buildUserInterface(seq->ui);
-        printf("[Native] Available Parameters for %s:\n", instrumentName.c_str());
-        for (int i = 0; i < seq->ui->getParamsCount(); i++) {
-            printf("  - %s\n", seq->ui->getParamAddress(i).c_str());
-        }
-        fflush(stdout);
     }
     
     // Clean up the factory AST memory footprint permanently after instance instantiation
@@ -537,5 +530,12 @@ std::string SequenceOrchestrator::getDSPPath(const std::string& instrumentName) 
     if (instrumentName == "TA" || instrumentName == "11") return base + "tanpura.dsp";
     if (instrumentName == "PI" || instrumentName == "12") return base + "piano.dsp";
     if (instrumentName == "SX" || instrumentName == "13") return base + "sax.dsp";
+    if (instrumentName == "BE") return base + "bell.dsp";
+    if (instrumentName == "BO") return base + "bowl.dsp";
+    if (instrumentName == "Kick") return base + "kick.dsp";
+    if (instrumentName == "Snare") return base + "snare.dsp";
+    if (instrumentName == "Tom") return base + "tom.dsp";
+    if (instrumentName == "HiHat") return base + "hihat.dsp";
+    if (instrumentName == "Ride") return base + "ride.dsp";
     return base + instrumentName + ".dsp";
 }
