@@ -17,11 +17,12 @@ t3 = trig @ 26460; // 0.6s
 // Fleshy Pluck Excitation
 pluckExcitation(t) = no.noise * en.ar(0.001, 0.01, t) : fi.lowpass(1, 400);
 
-// Traditional Tuning
-stringFreq(i) = baseFreq * ((i == 0) * 1.5 + (i == 1) * 1.0 + (i == 2) * 1.0 + (i == 3) * 0.5);
+// Traditional Tuning with Smoothed Base Frequency
+smoothedBaseFreq = baseFreq : si.smoo;
+stringFreq(i) = smoothedBaseFreq * ((i == 0) * 1.5 + (i == 1) * 1.0 + (i == 2) * 1.0 + (i == 3) * 0.5);
 
-// Optimized Jivari String Waveguide
-jivariString(f, x) = pluckExcitation(x) : + ~ (de.delay(2048, ma.SR/f-2) : jivariBridge : dispersion : *(0.997) : fi.dcblocker)
+// Optimized Jivari String Waveguide with Fractional Delay
+jivariString(f, x) = pluckExcitation(x) : + ~ (de.fdelay(4096, ma.SR/f-2) : jivariBridge : dispersion : *(0.997) : fi.dcblocker)
 with {
     // Jivari bridge: Optimized soft-folding
     jivariBridge(y) = y - (y > 0.4) * (y - 0.4) * (0.2 + jivari * 0.3) : ma.tanh;

@@ -31,13 +31,22 @@ g3 = (strike < 0.05) * 0.6 + ((strike >= 0.05) * (strike < 0.5)) * 0.5 + ((strik
 g4 = (strike < 0.05) * 1.0 + ((strike >= 0.05) * (strike < 0.5)) * 0.1 + ((strike >= 0.5) * (strike < 1.5)) * 0.4 + (strike >= 1.5) * 0.1;
 g5 = (strike < 0.05) * 1.0 + ((strike >= 0.05) * (strike < 0.5)) * 0.05 + ((strike >= 0.5) * (strike < 1.5)) * 0.2 + (strike >= 1.5) * 0.05;
 
+// Parameter Smoothing to prevent high-frequency IIR modulation glitches
+smoothedFreq = freq : si.smoo;
+smoothedT60 = actualT60 : si.smoo;
+sg1 = g1 : si.smoo;
+sg2 = g2 : si.smoo;
+sg3 = g3 : si.smoo;
+sg4 = g4 : si.smoo;
+sg5 = g5 : si.smoo;
+
 // Dynamic Drive LUT (Near-linear for clean sound)
 dynamicDrive = 1.1;
 
 // Manual 2-Pole Resonator with Internal Normalization
 myResonator(f, t, g, x) = x * (1.0 - r) : + ~ (conv) : * (g)
 with {
-    T60 = t * actualT60;
+    T60 = t * smoothedT60;
     r = pow(0.001, 1.0/(max(0.001, T60) * ma.SR));
     omega = 2.0 * ma.PI * f / ma.SR;
     b1 = 2.0 * r * cos(omega);
@@ -48,11 +57,11 @@ with {
 // Impulse Exciter (Scaled by physical velocity)
 exciter = gate : ba.impulsify * velocity;
 
-dayan = myResonator(freq * 1.0, 3.5, g1, exciter) +
-        myResonator(freq * 1.5, 2.8, g2, exciter) +
-        myResonator(freq * 2.0, 2.0, g3, exciter) +
-        myResonator(freq * 2.5, 1.4, g4, exciter) +
-        myResonator(freq * 3.0, 0.9, g5, exciter);
+dayan = myResonator(smoothedFreq * 1.0, 3.5, sg1, exciter) +
+        myResonator(smoothedFreq * 1.5, 2.8, sg2, exciter) +
+        myResonator(smoothedFreq * 2.0, 2.0, sg3, exciter) +
+        myResonator(smoothedFreq * 2.5, 1.4, sg4, exciter) +
+        myResonator(smoothedFreq * 3.0, 0.9, sg5, exciter);
 
 // Target Peak 0.5: Using normalized internal gain and strong master boost
 process = (dayan * dynamicDrive : ma.tanh) * 24.0 * gain * (1.0 + 0.00001 * strike);

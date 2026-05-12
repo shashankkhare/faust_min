@@ -278,12 +278,13 @@ oboe::DataCallbackResult SequenceOrchestrator::onAudioReady(oboe::AudioStream *a
 
 void SequenceOrchestrator::processBuffer(std::shared_ptr<ActiveSequence> seq, float* output, int numFrames) {
     long startS = seq->currentSample;
+    int framesProcessed = 0;
 
-    for (int i = 0; i < numFrames; ++i) {
-        long currentS = startS + i;
+    while (framesProcessed < numFrames) {
+        long currentS = startS + framesProcessed;
 
-        // 0. Handle Pending Gate-On (Smart Reset) - Done at start of tick
-        // to ensure the DSP saw the gate=0 from the previous tick.
+        // 0. Handle Pending Gate-On (Smart Reset) - Done at start of chunk
+        // to ensure the DSP saw the gate=0 from the previous sub-block.
         if (seq->pendingGateOn) {
             for (int p = 0; p < seq->ui->getParamsCount(); p++) {
                 std::string addr = seq->ui->getParamAddress(p);
@@ -295,7 +296,7 @@ void SequenceOrchestrator::processBuffer(std::shared_ptr<ActiveSequence> seq, fl
             seq->pendingGateOn = false;
         }
 
-        // 1. Optimized Scheduler Logic
+        // 1. Process all events scheduled at currentS
         for (auto it = seq->data.events.begin(); it != seq->data.events.end(); ) {
             if (it->sampleOffset <= currentS) {
                 if (it->sampleOffset == currentS) {
@@ -325,7 +326,27 @@ void SequenceOrchestrator::processBuffer(std::shared_ptr<ActiveSequence> seq, fl
             }
         }
 
-        // 2. Interpolation Logic
+        // 2. Determine contiguous chunk size to render in one native pass
+        int framesToNextEvent = numFrames - framesProcessed;
+        if (!seq->data.events.empty()) {
+            long nextEventS = seq->data.events.front().sampleOffset;
+            if (nextEventS > currentS) {
+                framesToNextEvent = std::min(framesToNextEvent, (int)(nextEventS - currentS));
+            }
+        }
+
+        int chunkSize = framesToNextEvent;
+        // If gate reset is pending, render precisely 1 frame to emit the zero-gate edge
+        if (seq->pendingGateOn && chunkSize > 0) {
+            chunkSize = 1;
+        }
+
+        // Sub-block division during glides to keep parameter sweeps smooth
+        if (seq->inGlide && chunkSize > 16) {
+            chunkSize = 16;
+        }
+
+        // Glide parameter update
         if (seq->inGlide) {
             float progress = (float)(currentS - seq->glideStartSample) / seq->glideDuration;
             progress = std::min(1.0f, std::max(0.0f, progress));
@@ -335,17 +356,19 @@ void SequenceOrchestrator::processBuffer(std::shared_ptr<ActiveSequence> seq, fl
             if (progress >= 1.0f) seq->inGlide = false;
         }
 
-        // 3. Render Sample
-        if (seq->dsp) {
+        // 3. Render multi-sample chunk
+        if (seq->dsp && chunkSize > 0) {
             int numOuts = seq->dsp->getNumOutputs();
             if (numOuts > 0) {
-                float* outputs[1] = { &output[i] };
-                seq->dsp->compute(1, nullptr, outputs);
+                float* outputs[1] = { &output[framesProcessed] };
+                seq->dsp->compute(chunkSize, nullptr, outputs);
             }
         }
-        
+
+        framesProcessed += chunkSize;
+
         // 4. End of Sequence Check
-        if (currentS >= seq->data.totalDurationSamples) {
+        if (startS + framesProcessed >= seq->data.totalDurationSamples) {
             seq->isPlaying = false;
             if (mOnFinishedCallback) {
                 mOnFinishedCallback(seq->data.name.c_str());
@@ -354,7 +377,7 @@ void SequenceOrchestrator::processBuffer(std::shared_ptr<ActiveSequence> seq, fl
         }
     }
 
-    seq->currentSample += numFrames;
+    seq->currentSample += framesProcessed;
 }
 
 void SequenceOrchestrator::updateDSPParams(std::shared_ptr<ActiveSequence> seq, float freq, float vel, const std::string& note) {
