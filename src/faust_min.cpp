@@ -545,6 +545,10 @@ DART_EXPORT void orchestrator_init(float sampleRate) {
     SequenceOrchestrator::getInstance().init(sampleRate);
 }
 
+DART_EXPORT void orchestrator_set_asset_base_path(const char* path) {
+    SequenceOrchestrator::getInstance().setAssetBasePath(path ? path : "");
+}
+
 DART_EXPORT void orchestrator_load_sequence(const char* name, const char* data) {
     SequenceOrchestrator::getInstance().loadSequence(name, data);
 }

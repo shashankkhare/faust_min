@@ -85,6 +85,13 @@ void SequenceOrchestrator::init(float sampleRate) {
 #endif
 }
 
+void SequenceOrchestrator::setAssetBasePath(const std::string& path) {
+    std::lock_guard<std::mutex> lock(mStateMutex);
+    mAssetBasePath = path;
+    printf("[Native] Asset Base Path set to: %s\n", path.c_str());
+    fflush(stdout);
+}
+
 #include <unistd.h>
 #include <sys/stat.h>
 
@@ -486,7 +493,8 @@ interpreter_dsp* SequenceOrchestrator::createDSP(std::shared_ptr<ActiveSequence>
     std::string factoryName = "FaustInst_" + timestamp;
 
     std::string error;
-    const char* argv[] = { "-I", "/home/shashankkhare/faust_sdk/faust_src/libraries/" };
+    std::string libPath = mAssetBasePath.empty() ? "/home/shashankkhare/faust_sdk/faust_src/libraries/" : (mAssetBasePath + "/libraries/");
+    const char* argv[] = { "-I", libPath.c_str() };
     interpreter_dsp_factory* factory = createInterpreterDSPFactoryFromString(factoryName.c_str(), source, 2, argv, error);
     if (!factory) {
         printf("[Native] ERROR: Faust Compilation failed for %s: %s\n", instrumentName.c_str(), error.c_str());
@@ -514,7 +522,7 @@ interpreter_dsp* SequenceOrchestrator::createDSP(std::shared_ptr<ActiveSequence>
 }
 
 std::string SequenceOrchestrator::getDSPPath(const std::string& instrumentName) {
-    std::string base = "/home/shashankkhare/AndroidStudioProjects/faust_min/assets/dsp/";
+    std::string base = mAssetBasePath.empty() ? "/home/shashankkhare/AndroidStudioProjects/faust_min/assets/dsp/" : (mAssetBasePath + "/dsp/");
     if (instrumentName.empty()) return base + "flute.dsp"; // Default fallback
     if (instrumentName == "FL" || instrumentName == "10") return base + "flute.dsp";
     if (instrumentName == "DA" || instrumentName == "0") return base + "dayan.dsp";

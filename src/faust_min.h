@@ -200,6 +200,7 @@ DART_EXPORT void render_automation_sequence(
 
 // --- Real-time Sequence Orchestrator (Singleton) ---
 DART_EXPORT void orchestrator_init(float sampleRate);
+DART_EXPORT void orchestrator_set_asset_base_path(const char* path);
 DART_EXPORT void orchestrator_load_sequence(const char* name, const char* data);
 DART_EXPORT void orchestrator_play(const char* name);
 DART_EXPORT void orchestrator_stop();

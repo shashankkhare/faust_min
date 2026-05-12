@@ -76,6 +76,7 @@ public:
     void setOnFinishedCallback(OnSequenceFinished callback);
 
     void init(float sampleRate);
+    void setAssetBasePath(const std::string& path);
     void loadSequence(const std::string& name, const std::string& umlData);
     void play(const std::string& name);
     void stop();
@@ -98,6 +99,7 @@ private:
     SequenceOrchestrator& operator=(const SequenceOrchestrator&) = delete;
 
     float mSampleRate;
+    std::string mAssetBasePath;
     std::shared_ptr<oboe::AudioStream> mStream;
     OnSequenceFinished mOnFinishedCallback = nullptr; 
     

@@ -783,6 +783,16 @@ class FaustOrchestrator {
     _isInitialized = true;
   }
 
+  static void setAssetBasePath(String path) {
+    final func = _dylib.lookupFunction<Void Function(Pointer<Utf8>), void Function(Pointer<Utf8>)>('orchestrator_set_asset_base_path');
+    final ptr = path.toNativeUtf8();
+    try {
+      func(ptr);
+    } finally {
+      malloc.free(ptr);
+    }
+  }
+
   static void loadSequence(String name, String umlData) {
     final func = _dylib.lookupFunction<Void Function(Pointer<Utf8>, Pointer<Utf8>), void Function(Pointer<Utf8>, Pointer<Utf8>)>('orchestrator_load_sequence');
     final namePtr = name.toNativeUtf8();
