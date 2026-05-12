@@ -27,20 +27,17 @@ SequenceOrchestrator& SequenceOrchestrator::getInstance() {
     return instance;
 }
 
-SequenceOrchestrator::SequenceOrchestrator() : mSampleRate(44100.0f), mIsPaused(false), mScratchBuffer(nullptr) {}
+SequenceOrchestrator::SequenceOrchestrator() : mSampleRate(44100.0f), mIsPaused(false), mScratchBuffer(nullptr), mRenderScratchBuffer(nullptr), mMaxRenderFrames(0) {}
 
 SequenceOrchestrator::~SequenceOrchestrator() {
     stop();
     {
         std::lock_guard<std::mutex> lock(mStateMutex);
-        for (auto& [name, seq] : mActiveSequences) {
-            if (seq->dsp) delete seq->dsp;
-            if (seq->ui) delete seq->ui;
-        }
-        mActiveSequences.clear();
+        mActiveSequences.clear(); // ~ActiveSequence() handles dsp and ui cleanup automatically
     }
     if (mStream) mStream->close();
     if (mScratchBuffer) delete[] mScratchBuffer;
+    if (mRenderScratchBuffer) delete[] mRenderScratchBuffer;
 }
 
 void SequenceOrchestrator::init(float sampleRate) {
@@ -215,18 +212,22 @@ void SequenceOrchestrator::renderMaster(float* buffer, int numFrames) {
     std::lock_guard<std::mutex> lock(mStateMutex);
     std::fill(buffer, buffer + numFrames, 0.0f);
     
-    float* tempBuffer = new float[numFrames];
+    if (numFrames > mMaxRenderFrames) {
+        if (mRenderScratchBuffer) delete[] mRenderScratchBuffer;
+        mMaxRenderFrames = numFrames;
+        mRenderScratchBuffer = new float[mMaxRenderFrames];
+    }
+
     for (auto& [name, seq] : mActiveSequences) {
         if (!seq->isPlaying) continue;
         
-        std::fill(tempBuffer, tempBuffer + numFrames, 0.0f);
-        processBuffer(seq, tempBuffer, numFrames);
+        std::fill(mRenderScratchBuffer, mRenderScratchBuffer + numFrames, 0.0f);
+        processBuffer(seq, mRenderScratchBuffer, numFrames);
         
         for (int i = 0; i < numFrames; i++) {
-            buffer[i] += tempBuffer[i] * seq->weight;
+            buffer[i] += mRenderScratchBuffer[i] * seq->weight;
         }
     }
-    delete[] tempBuffer;
 
     // --- Peak Normalization ---
     float maxAmp = 0.0f;
@@ -503,6 +504,9 @@ interpreter_dsp* SequenceOrchestrator::createDSP(std::shared_ptr<ActiveSequence>
         }
         fflush(stdout);
     }
+    
+    // Clean up the factory AST memory footprint permanently after instance instantiation
+    deleteInterpreterDSPFactory(factory);
     
     return dsp;
 }

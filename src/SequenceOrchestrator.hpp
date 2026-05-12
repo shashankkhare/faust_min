@@ -57,6 +57,15 @@ struct ActiveSequence {
     float glideStartVel;
     float glideEndVel;
     bool pendingGateOn;
+
+    ActiveSequence() : dsp(nullptr), ui(nullptr), currentSample(0), weight(1.0f), isPlaying(false),
+                       inGlide(false), glideStartSample(0), glideDuration(0), glideStartFreq(0),
+                       glideEndFreq(0), glideStartVel(0), glideEndVel(0), pendingGateOn(false) {}
+
+    ~ActiveSequence() {
+        if (dsp) { delete dsp; dsp = nullptr; }
+        if (ui) { delete ui; ui = nullptr; }
+    }
 };
 
 class SequenceOrchestrator : public oboe::AudioStreamDataCallback {
@@ -90,7 +99,7 @@ private:
 
     float mSampleRate;
     std::shared_ptr<oboe::AudioStream> mStream;
-    OnSequenceFinished mOnFinishedCallback = nullptr; // Fixed typo from OnFinishedCallback
+    OnSequenceFinished mOnFinishedCallback = nullptr; 
     
     std::map<std::string, std::shared_ptr<ActiveSequence>> mActiveSequences;
     std::mutex mStateMutex;
@@ -98,6 +107,9 @@ private:
     
     float* mScratchBuffer = nullptr;
     int32_t mMaxFramesPerBuffer = 1024;
+
+    float* mRenderScratchBuffer = nullptr;
+    int32_t mMaxRenderFrames = 0;
 
     void processBuffer(std::shared_ptr<ActiveSequence> seq, float* output, int numFrames);
     void updateDSPParams(std::shared_ptr<ActiveSequence> seq, float freq, float vel, const std::string& note = "");
