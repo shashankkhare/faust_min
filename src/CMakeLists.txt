@@ -9,6 +9,7 @@ endif()
 
 add_library(faust_min SHARED
   "faust_min.cpp"
+  "FaustInstrument.cpp"
   "FaustFlute.cpp"
   "FaustBowl.cpp"
   "FaustDayan.cpp"
@@ -19,12 +20,15 @@ add_library(faust_min SHARED
   "FaustTom.cpp"
   "FaustHiHat.cpp"
   "FaustRide.cpp"
+  "FaustCowbell.cpp"
   "FaustBell.cpp"
   "FaustTanpura.cpp"
   "FaustPiano.cpp"
   "FaustSax.cpp"
   "UMLParser.cpp"
   "SequenceOrchestrator.cpp"
+  "FaustMixer.cpp"
+  "InstrumentMapper.cpp"
 )
 
 target_include_directories(faust_min PRIVATE 

@@ -1,20 +1,38 @@
+/*
+ * Copyright (c) 2026 Shashank Khare
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+/**
+ * @file InstrumentMapper.cpp
+ * @brief Implementation file for InstrumentMapper
+ * 
+ * DESIGN: Factory utility that maps UML instrument identifiers to concrete C++ classes. It ensures that the orchestrator can instantiate instruments without direct coupling.
+ */
+
 #include "InstrumentMapper.hpp"
-#include "FaustDayanDSP.hpp"
-#include "FaustBayanDSP.hpp"
-#include "FaustKickDSP.hpp"
-#include "FaustSnareDSP.hpp"
-#include "FaustHihatDSP.hpp"
-#include "FaustTomDSP.hpp"
-#include "FaustRideDSP.hpp"
-#include "FaustBellDSP.hpp"
-#include "FaustBowlDSP.hpp"
-#include "FaustSitarDSP.hpp"
-#include "FaustFluteDSP.hpp"
-#include "FaustTanpuraDSP.hpp"
-#include "FaustPianoDSP.hpp"
-#include "FaustSaxDSP.hpp"
-#include <faust/dsp/dsp.h>
 #include <algorithm>
+
+constexpr float InstrumentMapper::DEFAULT_SAMPLE_RATE;
+constexpr int InstrumentMapper::MAX_INSTRUMENTS;
+constexpr int InstrumentMapper::MAX_FRAMES_PER_BUFFER;
 
 std::string InstrumentMapper::getNameFromID(int id) {
     switch (id) {
@@ -32,6 +50,7 @@ std::string InstrumentMapper::getNameFromID(int id) {
         case 11: return "TA";
         case 12: return "PI";
         case 13: return "SX";
+        case 14: return "CB";
         default: return "DA";
     }
 }
@@ -47,7 +66,7 @@ int InstrumentMapper::getIDFromName(const std::string& name) {
     std::string lowerName = name;
     std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(), ::tolower);
 
-    if (lowerName == "da" || lowerName == "dayan") return 0;
+    if (lowerName == "da" || lowerName == "dy" || lowerName == "dayan") return 0;
     if (lowerName == "ba" || lowerName == "bayan") return 1;
     if (lowerName == "kick") return 2;
     if (lowerName == "snare") return 3;
@@ -61,12 +80,18 @@ int InstrumentMapper::getIDFromName(const std::string& name) {
     if (lowerName == "ta" || lowerName == "tanpura") return 11;
     if (lowerName == "pi" || lowerName == "piano") return 12;
     if (lowerName == "sx" || lowerName == "sax") return 13;
+    if (lowerName == "cb" || lowerName == "cowbell") return 14;
 
     return -1;
 }
 
+bool InstrumentMapper::isPercussionID(int id) {
+    // Drum nodes map sequentially from 0 (Dayan) through 6 (Ride)
+    return (id >= 0 && id <= 6);
+}
+
 std::string InstrumentMapper::getDSPPathForID(int id, const std::string& assetBasePath) {
-    std::string base = assetBasePath.empty() ? "./assets/dsp/" : (assetBasePath + "/dsp/");
+    std::string base = assetBasePath.empty() ? DEFAULT_DSP_DIR : (assetBasePath + "/dsp/");
     switch (id) {
         case 0:  return base + "dayan.dsp";
         case 1:  return base + "bayan.dsp";
@@ -82,26 +107,7 @@ std::string InstrumentMapper::getDSPPathForID(int id, const std::string& assetBa
         case 11: return base + "tanpura.dsp";
         case 12: return base + "piano.dsp";
         case 13: return base + "sax.dsp";
+        case 14: return base + "cowbell.dsp";
         default: return base + "dayan.dsp";
-    }
-}
-
-dsp* InstrumentMapper::createStaticDSPForID(int id) {
-    switch (id) {
-        case 0:  return new FaustDayanDSP();
-        case 1:  return new FaustBayanDSP();
-        case 2:  return new FaustKickDSP();
-        case 3:  return new FaustSnareDSP();
-        case 4:  return new FaustHihatDSP();
-        case 5:  return new FaustTomDSP();
-        case 6:  return new FaustRideDSP();
-        case 7:  return new FaustBellDSP();
-        case 8:  return new FaustBowlDSP();
-        case 9:  return new FaustSitarDSP();
-        case 10: return new FaustFluteDSP();
-        case 11: return new FaustTanpuraDSP();
-        case 12: return new FaustPianoDSP();
-        case 13: return new FaustSaxDSP();
-        default: return new FaustDayanDSP();
     }
 }

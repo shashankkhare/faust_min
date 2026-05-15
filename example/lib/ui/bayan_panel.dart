@@ -15,11 +15,17 @@ class _BayanPanelState extends State<BayanPanel> {
   int _noteIndex = 24; // C3 (Lower than Dayan)
   double _meend = 1.0;
 
-  void _strike() {
-    _inst.setFrequency(NoteMath.getFreq(_noteIndex));
+  void _noteOn() {
+    _inst.noteOn(freq: NoteMath.getFreq(_noteIndex), velocity: 0.8);
     _inst.setMeend(_meend);
-    _inst.strike(0.8);
     final pcm = Float32List(44100 * 2);
+    _inst.render(pcm);
+    widget.onPlay(createWavFile(pcm, 44100));
+  }
+
+  void _noteOff() {
+    _inst.noteOff();
+    final pcm = Float32List(44100 * 1);
     _inst.render(pcm);
     widget.onPlay(createWavFile(pcm, 44100));
   }
@@ -31,9 +37,15 @@ class _BayanPanelState extends State<BayanPanel> {
       const SizedBox(height: 10),
       Text("Meend (Slide): ${_meend.toStringAsFixed(2)}", style: const TextStyle(color: Colors.white70)),
       Slider(value: _meend, min: 1.0, max: 2.0, onChanged: (v) => setState(() => _meend = v)),
-      ElevatedButton(onPressed: _strike, 
-        style: ElevatedButton.styleFrom(backgroundColor: Colors.blueGrey),
-        child: const Text("Strike Bayan")),
+      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        ElevatedButton(onPressed: _noteOn, 
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.blueGrey),
+          child: const Text("Note On")),
+        const SizedBox(width: 10),
+        ElevatedButton(onPressed: _noteOff, 
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+          child: const Text("Note Off")),
+      ]),
     ]);
   }
 }

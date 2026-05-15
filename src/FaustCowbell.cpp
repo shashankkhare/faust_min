@@ -20,18 +20,23 @@
  * SOFTWARE.
  */
 
-#ifndef FAUST_PIANO_HPP
-#define FAUST_PIANO_HPP
+/**
+ * @file FaustCowbell.cpp
+ * @brief Implementation file for FaustCowbell
+ * 
+ * DESIGN: Physical modeling synthesis instrument wrapper. It encapsulates the Faust-generated C++ DSP logic and exposes high-level expressive controls like frequency, velocity, and articulation.
+ */
 
-#include "FaustInstrument.hpp"
+#include "FaustCowbell.hpp"
+#include "FaustCowbellDSP.hpp"
 
-class FaustPiano : public FaustInstrument {
-public:
-    FaustPiano(float sampleRate);
-    void setSustain(float sustain);
-    void setStiffness(float stiffness);
-    void strike(float velocity, float hardness = 0.5f);
-    int getID() const override { return 12; }
-};
+FaustCowbell::FaustCowbell(float sampleRate) {
+    setSampleRate(sampleRate);
+    setDSP(new FaustCowbellDSP());
+    startInternalStream(sampleRate);
+}
 
-#endif
+void FaustCowbell::strike(float velocity) {
+    setParam("velocity", velocity);
+    noteOn();
+}

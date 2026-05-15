@@ -15,11 +15,17 @@ class _SitarPanelState extends State<SitarPanel> {
   int _noteIndex = 36; // C4
   double _jivari = 0.5;
 
-  void _render() {
-    _inst.setFrequency(NoteMath.getFreq(_noteIndex));
+  void _noteOn() {
+    _inst.noteOn(freq: NoteMath.getFreq(_noteIndex), velocity: 0.8);
     _inst.setJivari(_jivari);
-    _inst.pluck(0.8);
-    final pcm = Float32List(44100 * 4);
+    final pcm = Float32List(44100 * 2);
+    _inst.render(pcm);
+    widget.onPlay(createWavFile(pcm, 44100));
+  }
+
+  void _noteOff() {
+    _inst.noteOff();
+    final pcm = Float32List(44100 * 2);
     _inst.render(pcm);
     widget.onPlay(createWavFile(pcm, 44100));
   }
@@ -31,9 +37,15 @@ class _SitarPanelState extends State<SitarPanel> {
       const SizedBox(height: 10),
       Text("Jivari Buzz: ${_jivari.toStringAsFixed(2)}", style: const TextStyle(color: Colors.white70)),
       Slider(value: _jivari, onChanged: (v) => setState(() => _jivari = v)),
-      ElevatedButton(onPressed: _render, 
-        style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple),
-        child: const Text("Pluck Sitar")),
+      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        ElevatedButton(onPressed: _noteOn, 
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple),
+          child: const Text("Note On")),
+        const SizedBox(width: 10),
+        ElevatedButton(onPressed: _noteOff, 
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+          child: const Text("Note Off")),
+      ]),
     ]);
   }
 }

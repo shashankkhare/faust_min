@@ -1,26 +1,39 @@
+/*
+ * Copyright (c) 2026 Shashank Khare
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+/**
+ * @file FaustSax.cpp
+ * @brief Implementation file for FaustSax
+ * 
+ * DESIGN: Physical modeling synthesis instrument wrapper. It encapsulates the Faust-generated C++ DSP logic and exposes high-level expressive controls like frequency, velocity, and articulation.
+ */
+
 #include "FaustSax.hpp"
 #include "FaustSaxDSP.hpp"
-#include <string>
 
 FaustSax::FaustSax(float sampleRate) {
-    mDSP.reset(new FaustSaxDSP());
-    mDSP->init((int)sampleRate);
-    mUI.reset(new MapUI());
-    mDSP->buildUserInterface(mUI.get());
-}
-
-void FaustSax::setParam(const char* shortName, float val) {
-    for (int i = 0; i < mUI->getParamsCount(); i++) {
-        std::string addr = mUI->getParamAddress(i);
-        if (addr.find(shortName) != std::string::npos) {
-            mUI->setParamValue(addr, val);
-            break;
-        }
-    }
-}
-
-void FaustSax::setFrequency(float freq) {
-    setParam("freq", freq);
+    setSampleRate(sampleRate);
+    setDSP(new FaustSaxDSP());
+    startInternalStream(sampleRate);
 }
 
 void FaustSax::setVibrato(float rate, float depth) {
@@ -30,11 +43,5 @@ void FaustSax::setVibrato(float rate, float depth) {
 
 void FaustSax::strike(float velocity) {
     setParam("gain", velocity);
-    setParam("gate", 1.0f);
-}
-
-void FaustSax::render(int numFrames, float* buffer) {
-    FAUSTFLOAT* outputs[1] = { buffer };
-    mDSP->compute(numFrames, nullptr, outputs);
-    setParam("gate", 0.0f);
+    noteOn();
 }

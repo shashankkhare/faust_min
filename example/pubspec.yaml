@@ -34,7 +34,6 @@ dependencies:
   faust_min:
     path: ../
 
-  flutter_soloud: ^2.1.2
   ffi: ^2.1.3
   path_provider: ^2.1.5
 

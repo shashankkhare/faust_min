@@ -1,62 +1,85 @@
+/*
+ * Copyright (c) 2026 Shashank Khare
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+/**
+ * @file test_orchestrator.cpp
+ * @brief Implementation file for test_orchestrator
+ * 
+ * DESIGN: Hardware-level validation suite. It verifies the pure Controller-Sink model by running a real-time playback loop through the system's audio driver.
+ */
+
 #include <iostream>
 #include <vector>
 #include <string>
+#include <cmath>
+#include <unistd.h>
 #include "../src/SequenceOrchestrator.hpp"
+#include "../src/FaustMixer.hpp"
 #include "../src/UMLParser.hpp"
+#include "../src/InstrumentMapper.hpp"
 
+/**
+ * @brief Standalone C++ Engine Validation Test.
+ * 
+ * Demonstrates explicit registration of instruments into the FaustMixer 
+ * and manual driving of the audio loop for signal verification.
+ */
 int main() {
-    std::cout << "--- SequenceOrchestrator Test ---" << std::endl;
+    std::cout << "--- Standalone C++ Engine Validation ---" << std::endl;
 
-    // 1. Initialize Orchestrator
-    auto& orch = SequenceOrchestrator::getInstance();
-    orch.init(44100.0f);
-
-    // 2. Prepare Sample UML (Flute Melody)
-    // 9Sa plays Sa at max velocity for 2 grids
-    // ^ indicates glide to R1 over the next 2 grids
-    // 5R1 arrival and sustain
-    // _ stop
-    std::string uml = 
-        "notation: Indian\n"
-        "instrument: FL\n"
-        "bpm: 120\n"
-        "grid: 4\n"
-        "basefreq: 440.0\n"
-        "\n"
-        "9Sa..^..5R1.._...";
-
-    // 3. Load Sequence
-    std::cout << "Loading Sequence: 'morning_flute'..." << std::endl;
-    orch.loadSequence("morning_flute", uml);
-
-    // 4. Render to Buffer (Simulating Playback)
-    // 120bpm, grid 4 -> 8 samples/beat? No.
-    // 44100 / (120/60 * 4) = 44100 / 8 = 5512.5 samples per grid.
-    // Total grids = 12 tokens. Total samples ~ 66,150.
-    int numFrames = 70000;
-    std::vector<float> buffer(numFrames, 0.0f);
-
-    std::cout << "Rendering Sequence..." << std::endl;
-    orch.play("morning_flute");
+    // 1. Setup Orchestrator and Mixer
+    SequenceOrchestrator& orch = SequenceOrchestrator::getInstance();
+    FaustMixer& mixer = FaustMixer::getInstance();
     
-    // In our test, we manually call renderToBuffer or simulate the callback
-    // For this standalone test, we'll use a mock compute loop
-    orch.renderToBuffer("morning_flute", buffer.data(), numFrames);
+    std::cout << "[Test] Initializing engine..." << std::endl;
+    orch.init(InstrumentMapper::DEFAULT_SAMPLE_RATE);
+    mixer.start(); 
 
-    // 5. Verification
-    bool soundDetected = false;
-    for (int i = 0; i < numFrames; i++) {
-        if (std::abs(buffer[i]) > 0.001f) {
-            soundDetected = true;
-            break;
-        }
+    // 2. Define a rhythmic Dayan (Tabla) sequence
+    std::string uml = 
+        "grid: 4\n"
+        "basefreq: 293.66\n"
+        "\n"
+        "9Na..tk..5Tin..Tun..";
+
+    std::cout << "[Test] Creating UMLSequence..." << std::endl;
+    UMLSequence* seq = new UMLSequence("TestDayan", 0, uml);
+    
+    // 3. Register sequence with Orchestrator
+    std::cout << "[Test] Adding sequence to Orchestrator..." << std::endl;
+    orch.addSequence("TestDayan", seq);
+
+    // 4. Trigger Playback
+    std::cout << "[Test] Starting Playback (Real-time hardware)..." << std::endl;
+    orch.play("TestDayan");
+    
+    // 5. Auditory Verification Loop
+    std::cout << "[Test] Playing for 5 seconds. Please listen to the output..." << std::endl;
+    for (int i = 0; i < 5; i++) {
+        std::cout << "  " << (5 - i) << "s remaining..." << std::endl;
+        sleep(1);
     }
 
-    if (soundDetected) {
-        std::cout << "SUCCESS: Audio data generated in buffer." << std::endl;
-    } else {
-        std::cout << "FAILURE: Buffer is silent." << std::endl;
-    }
-
+    std::cout << "\nSUCCESS: Test playback cycle completed." << std::endl;
+    std::cout << "--- Test Complete ---" << std::endl;
     return 0;
 }

@@ -5,7 +5,6 @@ import 'dart:ffi' hide Size;
 import 'package:ffi/ffi.dart';
 import 'package:faust_min/faust_min.dart';
 import 'package:faust_min/umpl_parser.dart';
-import 'package:flutter_soloud/flutter_soloud.dart';
 
 import 'ui/common.dart';
 import 'ui/flute_panel.dart';
@@ -67,6 +66,9 @@ class _FaustInstrumentsHomeState extends State<FaustInstrumentsHome> {
   
   final List<String> _patterns = ["Tanpura Drone", "Varanasi Dawn", "Dayan Strokes", "Bayan Strokes", "22 Shrutis Test"];
 
+  SequenceOrchestrator? _orchestratorSession;
+  final List<UMLSequence> _activeSequences = [];
+
   Future<void> _playPattern(String genre) async {
     setState(() { 
       _isPlayingPattern = true; 
@@ -74,12 +76,11 @@ class _FaustInstrumentsHomeState extends State<FaustInstrumentsHome> {
     });
     
     try {
-      FaustOrchestrator.stop(); // Stop any existing sequence first
-      FaustOrchestrator.init();
-      FaustOrchestrator.setAssetBasePath("../assets");
+      _stopAll(); 
+      _orchestratorSession = SequenceOrchestrator();
+      _orchestratorSession!.setAssetBasePath("../assets");
       
       if (genre == "Tanpura Drone") {
-        // Single strike with 100 dots (25s) to allow for 8s natural decay
         final String uml = """
 notation: Indian
 instrument: TA
@@ -89,9 +90,12 @@ basefreq: 130.81
 
 9Sa....................................................................................................
 """;
-        FaustOrchestrator.loadSequence("tanpura_solo", uml);
-        FaustOrchestrator.play("tanpura_solo");
-        Future.delayed(const Duration(seconds: 30));
+        final seq = UMLSequence("tanpura_solo", 11, uml);
+        _activeSequences.add(seq);
+        _orchestratorSession!.addSequence("tanpura_solo", seq);
+        _orchestratorSession!.play("tanpura_solo");
+        final inst = seq.getFaustInstrument();
+        inst.setParameter("decay", 8.0);
       } else if (genre == "22 Shrutis Test") {
         final List<String> shrutis = [
           "Sa", "r1", "r2", "R1", "R2", "g1", "g2", "G1", "G2", "M1", "M2", 
@@ -101,44 +105,42 @@ basefreq: 130.81
         for (String s in shrutis) notes += "9$s.. ";
         
         final String uml = "notation: Indian\ninstrument: FL\nbpm: 120\ngrid: 4\nbasefreq: 200.0\n\n$notes";
-        FaustOrchestrator.loadSequence("shruti_test", uml);
-        FaustOrchestrator.play("shruti_test");
-        await Future.delayed(Duration(seconds: shrutis.length));
+        final seq = UMLSequence("shruti_test", 10, uml);
+        _activeSequences.add(seq);
+        _orchestratorSession!.addSequence("shruti_test", seq);
+        _orchestratorSession!.play("shruti_test");
       } else if (genre == "Varanasi Dawn") {
         final List<String> umplTracks = [
           'baseFreq: 261.63\nbpm: 100\ninstrument: DA\n9Sa.......9(Pa/2).......9Sa.......9(Pa/2).......\n9Sa...9Sa...9Sa.9Sa...9Sa...9Sa.9Sa...',
           'baseFreq: 130.81\nbpm: 100\ninstrument: TA\n9Sa^ .S.. .S.. .S..', 
           'baseFreq: 523.25\nbpm: 100\ninstrument: FL\n9Sa.9r1^9R2.9G1.9M1.9(2*Pa).....9(2*Ma)^9(2*Pa).9G2.9R1.9Sa....'
         ];
+        final List<int> instIDs = [0, 11, 10]; 
         for (int i = 0; i < umplTracks.length; i++) {
           final name = "vd_track_$i";
-          FaustOrchestrator.loadSequence(name, umplTracks[i]);
-          FaustOrchestrator.play(name);
+          final seq = UMLSequence(name, instIDs[i], umplTracks[i]);
+          _activeSequences.add(seq);
+          _orchestratorSession!.addSequence(name, seq);
+          _orchestratorSession!.play(name);
         }
-        Future.delayed(const Duration(seconds: 30));
       } else if (genre == "Dayan Strokes") {
-        // Authentic Bols: Na, Tin, Tun, tk
         final String uml = "notation: Indian\ninstrument: DA\nbpm: 120\ngrid: 4\nbasefreq: 150.0\n\n9Na. 9Na. 9Tin. 9Tin. 9Tun. 9Tun. 9tk. 9tk. 9Na. 9Tin. 9Tun. .S..";
-        FaustOrchestrator.loadSequence("dayan_test", uml);
-        FaustOrchestrator.play("dayan_test");
-        
-        // Auto-trigger Bayan after Dayan
-        Future.delayed(const Duration(seconds: 12), () {
-          if (mounted) _playPattern("Bayan Strokes");
-        });
-        
-        await Future.delayed(const Duration(seconds: 10));
+        final seq = UMLSequence("dayan_test", 0, uml);
+        _activeSequences.add(seq);
+        _orchestratorSession!.addSequence("dayan_test", seq);
+        _orchestratorSession!.play("dayan_test");
       } else if (genre == "Bayan Strokes") {
-        // Authentic Bols: Ghe, Ka
         final String uml = "notation: Indian\ninstrument: BA\nbpm: 120\ngrid: 4\nbasefreq: 110.0\n\n9Ghe. 9Ghe. 9Ka. 9Ka. 9Ghe. 9Ghe. 9Ka. 9Ka. 9Ghe. .S..";
-        FaustOrchestrator.loadSequence("bayan_test", uml);
-        FaustOrchestrator.play("bayan_test");
-        await Future.delayed(const Duration(seconds: 10));
+        final seq = UMLSequence("bayan_test", 1, uml);
+        _activeSequences.add(seq);
+        _orchestratorSession!.addSequence("bayan_test", seq);
+        _orchestratorSession!.play("bayan_test");
       } else {
-        // Simple Real-Time Scale
         final String uml = "notation: Indian\ninstrument: FL\nbpm: 120\ngrid: 4\nbasefreq: 440.0\n\n9Sa. 9Re. 9Ga. 9Ma. 9Pa. 9Dh. 9Ni. 9Sa^ .S..";
-        FaustOrchestrator.loadSequence("rt_scale", uml);
-        FaustOrchestrator.play("rt_scale");
+        final seq = UMLSequence("rt_scale", 10, uml);
+        _activeSequences.add(seq);
+        _orchestratorSession!.addSequence("rt_scale", seq);
+        _orchestratorSession!.play("rt_scale");
       }
     } catch (e) {
       debugPrint("Playback Error: $e");
@@ -150,15 +152,22 @@ basefreq: 130.81
   Future<void> _playRealTimeTest() async => _playPattern("Real-Time");
 
   void _stopAll() {
-    FaustOrchestrator.stop();
-    setState(() => _status = "Stopped");
+    _orchestratorSession?.dispose();
+    _orchestratorSession = null;
+    for (final seq in _activeSequences) {
+      seq.dispose();
+    }
+    _activeSequences.clear();
+    setState(() => _status = "Stopped & Released Native Instances");
   }
 
   void _onPlayData(Uint8List wav) async {
-    final source = await SoLoud.instance.loadMem('os_${DateTime.now().microsecondsSinceEpoch}', wav);
-    await SoLoud.instance.play(source);
-    await Future.delayed(const Duration(seconds: 4));
-    await SoLoud.instance.disposeSource(source);
+    debugPrint("Rendered WAV audio buffer successfully: ${wav.length} bytes");
+    if (mounted) {
+      setState(() {
+        _status = "Rendered ${wav.length} bytes for $_activeView";
+      });
+    }
   }
 
   @override

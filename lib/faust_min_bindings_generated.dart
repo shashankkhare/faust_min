@@ -92,6 +92,34 @@ class FaustMinBindings {
   late final _flute_set_vibrato = _flute_set_vibratoPtr
       .asFunction<void Function(ffi.Pointer<FaustFlute>, double, double)>();
 
+  void flute_note_on(
+    ffi.Pointer<FaustFlute> flute,
+    double freq,
+    double velocity,
+  ) {
+    return _flute_note_on(flute, freq, velocity);
+  }
+
+  late final _flute_note_onPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<FaustFlute>, ffi.Float, ffi.Float)
+        >
+      >('flute_note_on');
+  late final _flute_note_on = _flute_note_onPtr
+      .asFunction<void Function(ffi.Pointer<FaustFlute>, double, double)>();
+
+  void flute_note_off(ffi.Pointer<FaustFlute> flute) {
+    return _flute_note_off(flute);
+  }
+
+  late final _flute_note_offPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<FaustFlute>)>>(
+        'flute_note_off',
+      );
+  late final _flute_note_off = _flute_note_offPtr
+      .asFunction<void Function(ffi.Pointer<FaustFlute>)>();
+
   void flute_render(
     ffi.Pointer<FaustFlute> flute,
     int numFrames,
@@ -193,6 +221,30 @@ class FaustMinBindings {
   late final _bowl_strike = _bowl_strikePtr
       .asFunction<void Function(ffi.Pointer<FaustBowl>, double)>();
 
+  void bowl_note_on(ffi.Pointer<FaustBowl> bowl, double freq, double velocity) {
+    return _bowl_note_on(bowl, freq, velocity);
+  }
+
+  late final _bowl_note_onPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<FaustBowl>, ffi.Float, ffi.Float)
+        >
+      >('bowl_note_on');
+  late final _bowl_note_on = _bowl_note_onPtr
+      .asFunction<void Function(ffi.Pointer<FaustBowl>, double, double)>();
+
+  void bowl_note_off(ffi.Pointer<FaustBowl> bowl) {
+    return _bowl_note_off(bowl);
+  }
+
+  late final _bowl_note_offPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<FaustBowl>)>>(
+        'bowl_note_off',
+      );
+  late final _bowl_note_off = _bowl_note_offPtr
+      .asFunction<void Function(ffi.Pointer<FaustBowl>)>();
+
   void bowl_render(
     ffi.Pointer<FaustBowl> bowl,
     int numFrames,
@@ -275,6 +327,34 @@ class FaustMinBindings {
       >('dayan_strike');
   late final _dayan_strike = _dayan_strikePtr
       .asFunction<void Function(ffi.Pointer<FaustDayan>, double)>();
+
+  void dayan_note_on(
+    ffi.Pointer<FaustDayan> dayan,
+    double freq,
+    double velocity,
+  ) {
+    return _dayan_note_on(dayan, freq, velocity);
+  }
+
+  late final _dayan_note_onPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<FaustDayan>, ffi.Float, ffi.Float)
+        >
+      >('dayan_note_on');
+  late final _dayan_note_on = _dayan_note_onPtr
+      .asFunction<void Function(ffi.Pointer<FaustDayan>, double, double)>();
+
+  void dayan_note_off(ffi.Pointer<FaustDayan> dayan) {
+    return _dayan_note_off(dayan);
+  }
+
+  late final _dayan_note_offPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<FaustDayan>)>>(
+        'dayan_note_off',
+      );
+  late final _dayan_note_off = _dayan_note_offPtr
+      .asFunction<void Function(ffi.Pointer<FaustDayan>)>();
 
   void dayan_render(
     ffi.Pointer<FaustDayan> dayan,
@@ -371,6 +451,34 @@ class FaustMinBindings {
       >('bayan_strike');
   late final _bayan_strike = _bayan_strikePtr
       .asFunction<void Function(ffi.Pointer<FaustBayan>, double)>();
+
+  void bayan_note_on(
+    ffi.Pointer<FaustBayan> bayan,
+    double freq,
+    double velocity,
+  ) {
+    return _bayan_note_on(bayan, freq, velocity);
+  }
+
+  late final _bayan_note_onPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<FaustBayan>, ffi.Float, ffi.Float)
+        >
+      >('bayan_note_on');
+  late final _bayan_note_on = _bayan_note_onPtr
+      .asFunction<void Function(ffi.Pointer<FaustBayan>, double, double)>();
+
+  void bayan_note_off(ffi.Pointer<FaustBayan> bayan) {
+    return _bayan_note_off(bayan);
+  }
+
+  late final _bayan_note_offPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<FaustBayan>)>>(
+        'bayan_note_off',
+      );
+  late final _bayan_note_off = _bayan_note_offPtr
+      .asFunction<void Function(ffi.Pointer<FaustBayan>)>();
 
   void bayan_render(
     ffi.Pointer<FaustBayan> bayan,
@@ -469,6 +577,34 @@ class FaustMinBindings {
       >('sitar_pluck');
   late final _sitar_pluck = _sitar_pluckPtr
       .asFunction<void Function(ffi.Pointer<FaustSitar>, double)>();
+
+  void sitar_note_on(
+    ffi.Pointer<FaustSitar> sitar,
+    double freq,
+    double velocity,
+  ) {
+    return _sitar_note_on(sitar, freq, velocity);
+  }
+
+  late final _sitar_note_onPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<FaustSitar>, ffi.Float, ffi.Float)
+        >
+      >('sitar_note_on');
+  late final _sitar_note_on = _sitar_note_onPtr
+      .asFunction<void Function(ffi.Pointer<FaustSitar>, double, double)>();
+
+  void sitar_note_off(ffi.Pointer<FaustSitar> sitar) {
+    return _sitar_note_off(sitar);
+  }
+
+  late final _sitar_note_offPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<FaustSitar>)>>(
+        'sitar_note_off',
+      );
+  late final _sitar_note_off = _sitar_note_offPtr
+      .asFunction<void Function(ffi.Pointer<FaustSitar>)>();
 
   void sitar_render(
     ffi.Pointer<FaustSitar> sitar,
@@ -581,22 +717,33 @@ class FaustMinBindings {
   late final _tanpura_set_playing = _tanpura_set_playingPtr
       .asFunction<void Function(ffi.Pointer<FaustTanpura>, int)>();
 
-  void tanpura_pluck(
+  void tanpura_note_on(
     ffi.Pointer<FaustTanpura> tanpura,
-    int stringIndex,
+    double freq,
     double velocity,
   ) {
-    return _tanpura_pluck(tanpura, stringIndex, velocity);
+    return _tanpura_note_on(tanpura, freq, velocity);
   }
 
-  late final _tanpura_pluckPtr =
+  late final _tanpura_note_onPtr =
       _lookup<
         ffi.NativeFunction<
-          ffi.Void Function(ffi.Pointer<FaustTanpura>, ffi.Int, ffi.Float)
+          ffi.Void Function(ffi.Pointer<FaustTanpura>, ffi.Float, ffi.Float)
         >
-      >('tanpura_pluck');
-  late final _tanpura_pluck = _tanpura_pluckPtr
-      .asFunction<void Function(ffi.Pointer<FaustTanpura>, int, double)>();
+      >('tanpura_note_on');
+  late final _tanpura_note_on = _tanpura_note_onPtr
+      .asFunction<void Function(ffi.Pointer<FaustTanpura>, double, double)>();
+
+  void tanpura_note_off(ffi.Pointer<FaustTanpura> tanpura) {
+    return _tanpura_note_off(tanpura);
+  }
+
+  late final _tanpura_note_offPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<FaustTanpura>)>>(
+        'tanpura_note_off',
+      );
+  late final _tanpura_note_off = _tanpura_note_offPtr
+      .asFunction<void Function(ffi.Pointer<FaustTanpura>)>();
 
   void tanpura_render(
     ffi.Pointer<FaustTanpura> tanpura,
@@ -687,6 +834,30 @@ class FaustMinBindings {
       >('bell_strike');
   late final _bell_strike = _bell_strikePtr
       .asFunction<void Function(ffi.Pointer<FaustBell>, double)>();
+
+  void bell_note_on(ffi.Pointer<FaustBell> bell, double freq, double velocity) {
+    return _bell_note_on(bell, freq, velocity);
+  }
+
+  late final _bell_note_onPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<FaustBell>, ffi.Float, ffi.Float)
+        >
+      >('bell_note_on');
+  late final _bell_note_on = _bell_note_onPtr
+      .asFunction<void Function(ffi.Pointer<FaustBell>, double, double)>();
+
+  void bell_note_off(ffi.Pointer<FaustBell> bell) {
+    return _bell_note_off(bell);
+  }
+
+  late final _bell_note_offPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<FaustBell>)>>(
+        'bell_note_off',
+      );
+  late final _bell_note_off = _bell_note_offPtr
+      .asFunction<void Function(ffi.Pointer<FaustBell>)>();
 
   void bell_render(
     ffi.Pointer<FaustBell> bell,
@@ -1098,6 +1269,34 @@ class FaustMinBindings {
   late final _piano_strike = _piano_strikePtr
       .asFunction<void Function(ffi.Pointer<FaustPiano>, double, double)>();
 
+  void piano_note_on(
+    ffi.Pointer<FaustPiano> piano,
+    double freq,
+    double velocity,
+  ) {
+    return _piano_note_on(piano, freq, velocity);
+  }
+
+  late final _piano_note_onPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<FaustPiano>, ffi.Float, ffi.Float)
+        >
+      >('piano_note_on');
+  late final _piano_note_on = _piano_note_onPtr
+      .asFunction<void Function(ffi.Pointer<FaustPiano>, double, double)>();
+
+  void piano_note_off(ffi.Pointer<FaustPiano> piano) {
+    return _piano_note_off(piano);
+  }
+
+  late final _piano_note_offPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<FaustPiano>)>>(
+        'piano_note_off',
+      );
+  late final _piano_note_off = _piano_note_offPtr
+      .asFunction<void Function(ffi.Pointer<FaustPiano>)>();
+
   void piano_render(
     ffi.Pointer<FaustPiano> piano,
     int numFrames,
@@ -1178,6 +1377,30 @@ class FaustMinBindings {
       >('sax_strike');
   late final _sax_strike = _sax_strikePtr
       .asFunction<void Function(ffi.Pointer<FaustSax>, double)>();
+
+  void sax_note_on(ffi.Pointer<FaustSax> sax, double freq, double velocity) {
+    return _sax_note_on(sax, freq, velocity);
+  }
+
+  late final _sax_note_onPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<FaustSax>, ffi.Float, ffi.Float)
+        >
+      >('sax_note_on');
+  late final _sax_note_on = _sax_note_onPtr
+      .asFunction<void Function(ffi.Pointer<FaustSax>, double, double)>();
+
+  void sax_note_off(ffi.Pointer<FaustSax> sax) {
+    return _sax_note_off(sax);
+  }
+
+  late final _sax_note_offPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<FaustSax>)>>(
+        'sax_note_off',
+      );
+  late final _sax_note_off = _sax_note_offPtr
+      .asFunction<void Function(ffi.Pointer<FaustSax>)>();
 
   void sax_render(
     ffi.Pointer<FaustSax> sax,
@@ -1391,6 +1614,184 @@ class FaustMinBindings {
           ffi.Pointer<ffi.Float>,
         )
       >();
+
+  /// --- Real-time Sequence Orchestrator (Singleton) ---
+  void orchestrator_init(double sampleRate) {
+    return _orchestrator_init(sampleRate);
+  }
+
+  late final _orchestrator_initPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Float)>>(
+        'orchestrator_init',
+      );
+  late final _orchestrator_init = _orchestrator_initPtr
+      .asFunction<void Function(double)>();
+
+  void orchestrator_set_asset_base_path(ffi.Pointer<ffi.Char> path) {
+    return _orchestrator_set_asset_base_path(path);
+  }
+
+  late final _orchestrator_set_asset_base_pathPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Char>)>>(
+        'orchestrator_set_asset_base_path',
+      );
+  late final _orchestrator_set_asset_base_path =
+      _orchestrator_set_asset_base_pathPtr
+          .asFunction<void Function(ffi.Pointer<ffi.Char>)>();
+
+  void orchestrator_load_sequence(
+    ffi.Pointer<ffi.Char> name,
+    ffi.Pointer<ffi.Char> data,
+  ) {
+    return _orchestrator_load_sequence(name, data);
+  }
+
+  late final _orchestrator_load_sequencePtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>)
+        >
+      >('orchestrator_load_sequence');
+  late final _orchestrator_load_sequence = _orchestrator_load_sequencePtr
+      .asFunction<
+        void Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>)
+      >();
+
+  void orchestrator_play(ffi.Pointer<ffi.Char> name) {
+    return _orchestrator_play(name);
+  }
+
+  late final _orchestrator_playPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Char>)>>(
+        'orchestrator_play',
+      );
+  late final _orchestrator_play = _orchestrator_playPtr
+      .asFunction<void Function(ffi.Pointer<ffi.Char>)>();
+
+  void orchestrator_stop() {
+    return _orchestrator_stop();
+  }
+
+  late final _orchestrator_stopPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function()>>('orchestrator_stop');
+  late final _orchestrator_stop = _orchestrator_stopPtr
+      .asFunction<void Function()>();
+
+  void orchestrator_pause() {
+    return _orchestrator_pause();
+  }
+
+  late final _orchestrator_pausePtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function()>>('orchestrator_pause');
+  late final _orchestrator_pause = _orchestrator_pausePtr
+      .asFunction<void Function()>();
+
+  void orchestrator_resume() {
+    return _orchestrator_resume();
+  }
+
+  late final _orchestrator_resumePtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function()>>('orchestrator_resume');
+  late final _orchestrator_resume = _orchestrator_resumePtr
+      .asFunction<void Function()>();
+
+  void orchestrator_set_weight(ffi.Pointer<ffi.Char> name, double weight) {
+    return _orchestrator_set_weight(name, weight);
+  }
+
+  late final _orchestrator_set_weightPtr =
+      _lookup<
+        ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Char>, ffi.Float)>
+      >('orchestrator_set_weight');
+  late final _orchestrator_set_weight = _orchestrator_set_weightPtr
+      .asFunction<void Function(ffi.Pointer<ffi.Char>, double)>();
+
+  void orchestrator_set_parameter(
+    ffi.Pointer<ffi.Char> name,
+    ffi.Pointer<ffi.Char> param,
+    double value,
+  ) {
+    return _orchestrator_set_parameter(name, param, value);
+  }
+
+  late final _orchestrator_set_parameterPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<ffi.Char>,
+            ffi.Pointer<ffi.Char>,
+            ffi.Float,
+          )
+        >
+      >('orchestrator_set_parameter');
+  late final _orchestrator_set_parameter = _orchestrator_set_parameterPtr
+      .asFunction<
+        void Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>, double)
+      >();
+
+  void orchestrator_set_finished_callback(
+    ffi.Pointer<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Char>)>>
+    callback,
+  ) {
+    return _orchestrator_set_finished_callback(callback);
+  }
+
+  late final _orchestrator_set_finished_callbackPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<
+              ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Char>)>
+            >,
+          )
+        >
+      >('orchestrator_set_finished_callback');
+  late final _orchestrator_set_finished_callback =
+      _orchestrator_set_finished_callbackPtr
+          .asFunction<
+            void Function(
+              ffi.Pointer<
+                ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Char>)>
+              >,
+            )
+          >();
+
+  void orchestrator_render_pcm(
+    ffi.Pointer<ffi.Char> name,
+    ffi.Pointer<ffi.Float> buffer,
+    int numFrames,
+  ) {
+    return _orchestrator_render_pcm(name, buffer, numFrames);
+  }
+
+  late final _orchestrator_render_pcmPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<ffi.Char>,
+            ffi.Pointer<ffi.Float>,
+            ffi.Int,
+          )
+        >
+      >('orchestrator_render_pcm');
+  late final _orchestrator_render_pcm = _orchestrator_render_pcmPtr
+      .asFunction<
+        void Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Float>, int)
+      >();
+
+  void orchestrator_render_master(
+    ffi.Pointer<ffi.Float> buffer,
+    int numFrames,
+  ) {
+    return _orchestrator_render_master(buffer, numFrames);
+  }
+
+  late final _orchestrator_render_masterPtr =
+      _lookup<
+        ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Float>, ffi.Int)>
+      >('orchestrator_render_master');
+  late final _orchestrator_render_master = _orchestrator_render_masterPtr
+      .asFunction<void Function(ffi.Pointer<ffi.Float>, int)>();
 }
 
 final class FaustFlute extends ffi.Opaque {}

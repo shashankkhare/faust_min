@@ -14,10 +14,16 @@ class _PianoPanelState extends State<PianoPanel> {
   final FaustPianoInstrument _inst = FaustPianoInstrument();
   int _noteIndex = 36; // C4
 
-  void _render() {
-    _inst.setFrequency(NoteMath.getFreq(_noteIndex));
-    _inst.strike(0.8);
-    final pcm = Float32List(44100 * 4);
+  void _noteOn() {
+    _inst.noteOn(freq: NoteMath.getFreq(_noteIndex), velocity: 0.8);
+    final pcm = Float32List(44100 * 2);
+    _inst.render(pcm);
+    widget.onPlay(createWavFile(pcm, 44100));
+  }
+
+  void _noteOff() {
+    _inst.noteOff();
+    final pcm = Float32List(44100 * 2);
     _inst.render(pcm);
     widget.onPlay(createWavFile(pcm, 44100));
   }
@@ -27,9 +33,15 @@ class _PianoPanelState extends State<PianoPanel> {
     return BaseInstrumentCard(title: "Grand Piano", icon: Icons.piano, color: Colors.indigo, children: [
       NoteSlider(value: _noteIndex, onChanged: (v) => setState(() => _noteIndex = v)),
       const SizedBox(height: 10),
-      ElevatedButton(onPressed: _render, 
-        style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo),
-        child: const Text("Strike Piano")),
+      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        ElevatedButton(onPressed: _noteOn, 
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo),
+          child: const Text("Note On")),
+        const SizedBox(width: 10),
+        ElevatedButton(onPressed: _noteOff, 
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+          child: const Text("Note Off")),
+      ]),
     ]);
   }
 }

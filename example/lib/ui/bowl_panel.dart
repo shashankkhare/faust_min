@@ -14,10 +14,16 @@ class _BowlPanelState extends State<BowlPanel> {
   final FaustBowlInstrument _inst = FaustBowlInstrument();
   int _noteIndex = 36; // C4
 
-  void _strike() {
-    _inst.setFrequency(NoteMath.getFreq(_noteIndex));
-    _inst.strike(0.8);
-    final pcm = Float32List(44100 * 6);
+  void _noteOn() {
+    _inst.noteOn(freq: NoteMath.getFreq(_noteIndex), velocity: 0.8);
+    final pcm = Float32List(44100 * 3);
+    _inst.render(pcm);
+    widget.onPlay(createWavFile(pcm, 44100));
+  }
+
+  void _noteOff() {
+    _inst.noteOff();
+    final pcm = Float32List(44100 * 2);
     _inst.render(pcm);
     widget.onPlay(createWavFile(pcm, 44100));
   }
@@ -27,9 +33,15 @@ class _BowlPanelState extends State<BowlPanel> {
     return BaseInstrumentCard(title: "Singing Bowl", icon: Icons.soup_kitchen, color: Colors.cyan, children: [
       NoteSlider(value: _noteIndex, onChanged: (v) => setState(() => _noteIndex = v)),
       const SizedBox(height: 10),
-      ElevatedButton(onPressed: _strike, 
-        style: ElevatedButton.styleFrom(backgroundColor: Colors.cyan),
-        child: const Text("Strike Bowl")),
+      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        ElevatedButton(onPressed: _noteOn, 
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.cyan),
+          child: const Text("Note On")),
+        const SizedBox(width: 10),
+        ElevatedButton(onPressed: _noteOff, 
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+          child: const Text("Note Off")),
+      ]),
     ]);
   }
 }

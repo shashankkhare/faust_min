@@ -13,13 +13,8 @@ class DrumPanel extends StatefulWidget {
 }
 
 class _DrumPanelState extends State<DrumPanel> {
-  void _strike() {
-    if (widget.inst is FaustKickInstrument) (widget.inst as FaustKickInstrument).strike(0.8);
-    else if (widget.inst is FaustSnareInstrument) (widget.inst as FaustSnareInstrument).strike(0.8);
-    else if (widget.inst is FaustTomInstrument) (widget.inst as FaustTomInstrument).strike(0.8);
-    else if (widget.inst is FaustHiHatInstrument) (widget.inst as FaustHiHatInstrument).strike(0.8);
-    else if (widget.inst is FaustRideInstrument) (widget.inst as FaustRideInstrument).strike(0.8);
-    
+  void _noteOn() {
+    widget.inst.noteOn(velocity: 0.8);
     final pcm = Float32List(44100 * 1);
     widget.inst.render(pcm);
     widget.onPlay(createWavFile(pcm, 44100));
@@ -28,7 +23,7 @@ class _DrumPanelState extends State<DrumPanel> {
   @override
   Widget build(BuildContext context) {
     return BaseInstrumentCard(title: widget.name, icon: Icons.album, color: Colors.redAccent, children: [
-      ElevatedButton(onPressed: _strike, child: Text("Strike ${widget.name}")),
+      ElevatedButton(onPressed: _noteOn, child: Text("Strike ${widget.name}")),
     ]);
   }
 }

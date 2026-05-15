@@ -1,3 +1,25 @@
+/*
+ * Copyright (c) 2026 Shashank Khare
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 /* ------------------------------------------------------------
 name: "kick"
 Code generated with Faust 2.37.3 (https://faust.grame.fr)
@@ -72,9 +94,10 @@ class FaustKickDSP : public dsp {
  private:
 	
 	FAUSTFLOAT fHslider0;
+	FAUSTFLOAT fHslider1;
 	int fSampleRate;
 	float fConst1;
-	FAUSTFLOAT fHslider1;
+	FAUSTFLOAT fHslider2;
 	float fConst2;
 	float fConst3;
 	FAUSTFLOAT fButton0;
@@ -139,8 +162,9 @@ class FaustKickDSP : public dsp {
 	}
 	
 	virtual void instanceResetUserInterface() {
-		fHslider0 = FAUSTFLOAT(0.80000000000000004f);
-		fHslider1 = FAUSTFLOAT(55.0f);
+		fHslider0 = FAUSTFLOAT(1.0f);
+		fHslider1 = FAUSTFLOAT(0.80000000000000004f);
+		fHslider2 = FAUSTFLOAT(55.0f);
 		fButton0 = FAUSTFLOAT(0.0f);
 	}
 	
@@ -179,28 +203,31 @@ class FaustKickDSP : public dsp {
 	
 	virtual void buildUserInterface(UI* ui_interface) {
 		ui_interface->openVerticalBox("kick");
-		ui_interface->declare(&fHslider1, "unit", "Hz");
-		ui_interface->addHorizontalSlider("freq", &fHslider1, FAUSTFLOAT(55.0f), FAUSTFLOAT(20.0f), FAUSTFLOAT(200.0f), FAUSTFLOAT(0.100000001f));
-		ui_interface->addHorizontalSlider("gain", &fHslider0, FAUSTFLOAT(0.800000012f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->declare(&fHslider2, "unit", "Hz");
+		ui_interface->addHorizontalSlider("freq", &fHslider2, FAUSTFLOAT(55.0f), FAUSTFLOAT(20.0f), FAUSTFLOAT(200.0f), FAUSTFLOAT(0.100000001f));
+		ui_interface->addHorizontalSlider("gain", &fHslider1, FAUSTFLOAT(0.800000012f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addButton("gate", &fButton0);
+		ui_interface->addHorizontalSlider("velocity", &fHslider0, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->closeBox();
 	}
 	
 	virtual void compute(int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs) {
 		FAUSTFLOAT* output0 = outputs[0];
 		float fSlow0 = float(fHslider0);
-		float fSlow1 = (fConst1 * float(fHslider1));
-		float fSlow2 = float(fButton0);
+		float fSlow1 = ((fSlow0 * float(fHslider1)) * ((0.200000003f * fSlow0) + 1.0f));
+		float fSlow2 = (fConst1 * float(fHslider2));
+		float fSlow3 = float(fButton0);
+		float fSlow4 = (1.16415322e-10f * (fSlow0 + 1.0f));
 		for (int i0 = 0; (i0 < count); i0 = (i0 + 1)) {
-			fVec1[0] = fSlow2;
-			iRec2[0] = ((fSlow2 > fVec1[1]) + ((fSlow2 <= fVec1[1]) * (iRec2[1] + (iRec2[1] > 0))));
+			fVec1[0] = fSlow3;
+			iRec2[0] = ((fSlow3 > fVec1[1]) + ((fSlow3 <= fVec1[1]) * (iRec2[1] + (iRec2[1] > 0))));
 			float fTemp0 = float(iRec2[0]);
 			float fTemp1 = (fConst3 * fTemp0);
-			float fTemp2 = (fRec1[1] + (fSlow1 * ((4.0f * std::max<float>(0.0f, std::min<float>(fTemp1, (1.0f - (fConst4 * (fTemp0 - fConst2)))))) + 1.0f)));
+			float fTemp2 = (fRec1[1] + (fSlow2 * ((4.0f * std::max<float>(0.0f, std::min<float>(fTemp1, (1.0f - (fConst4 * (fTemp0 - fConst2)))))) + 1.0f)));
 			fRec1[0] = (fTemp2 - std::floor(fTemp2));
 			float fTemp3 = (fConst2 - fTemp0);
 			iRec3[0] = ((1103515245 * iRec3[1]) + 12345);
-			output0[i0] = FAUSTFLOAT((fSlow0 * ((ftbl0FaustKickDSPSIG0[int((65536.0f * fRec1[0]))] * std::max<float>(0.0f, std::min<float>(fTemp1, ((fConst5 * fTemp3) + 1.0f)))) + (2.32830644e-10f * (float(iRec3[0]) * std::max<float>(0.0f, std::min<float>(fTemp1, ((fConst6 * fTemp3) + 1.0f))))))));
+			output0[i0] = FAUSTFLOAT((fSlow1 * ((ftbl0FaustKickDSPSIG0[int((65536.0f * fRec1[0]))] * std::max<float>(0.0f, std::min<float>(fTemp1, ((fConst5 * fTemp3) + 1.0f)))) + (fSlow4 * (float(iRec3[0]) * std::max<float>(0.0f, std::min<float>(fTemp1, ((fConst6 * fTemp3) + 1.0f))))))));
 			fVec1[1] = fVec1[0];
 			iRec2[1] = iRec2[0];
 			fRec1[1] = fRec1[0];

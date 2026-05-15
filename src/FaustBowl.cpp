@@ -1,34 +1,43 @@
+/*
+ * Copyright (c) 2026 Shashank Khare
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+/**
+ * @file FaustBowl.cpp
+ * @brief Implementation file for FaustBowl
+ * 
+ * DESIGN: Physical modeling synthesis instrument wrapper. It encapsulates the Faust-generated C++ DSP logic and exposes high-level expressive controls like frequency, velocity, and articulation.
+ */
+
 #include "FaustBowl.hpp"
 #include "FaustBowlDSP.hpp"
-#include <string>
 
 FaustBowl::FaustBowl(float sampleRate) {
-    mDSP.reset(new FaustBowlDSP());
-    mDSP->init((int)sampleRate);
-    mUI.reset(new MapUI());
-    mDSP->buildUserInterface(mUI.get());
-}
-
-void FaustBowl::setParam(const char* shortName, float val) {
-    for (int i = 0; i < mUI->getParamsCount(); i++) {
-        std::string addr = mUI->getParamAddress(i);
-        if (addr.find(shortName) != std::string::npos) {
-            mUI->setParamValue(addr, val);
-            break;
-        }
-    }
-}
-
-void FaustBowl::setFrequency(float freq) {
-    setParam("freq", freq);
-}
-
-void FaustBowl::setDuration(float seconds) {
-    // Unsupported dynamic parameter in pure static bowl.dsp
+    setSampleRate(sampleRate);
+    setDSP(new FaustBowlDSP());
+    startInternalStream(sampleRate);
 }
 
 void FaustBowl::strike(float velocity) {
-    setParam("strike", 1.0f);
+    noteOn(-1.0f, velocity);
 }
 
 void FaustBowl::setRub(float rub) {
@@ -37,11 +46,4 @@ void FaustBowl::setRub(float rub) {
 
 void FaustBowl::setWaver(float waver) {
     // Unmapped static layout
-}
-
-void FaustBowl::render(int numFrames, float* buffer) {
-    FAUSTFLOAT* outputs[1] = { buffer };
-    mDSP->compute(numFrames, nullptr, outputs);
-    // Auto-clear gate triggers
-    setParam("strike", 0.0f);
 }

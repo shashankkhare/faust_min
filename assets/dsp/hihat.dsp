@@ -2,14 +2,17 @@ import("stdfaust.lib");
 
 // --- Dedicated HiHat Cymbal ---
 gain = hslider("gain", 0.5, 0, 1, 0.01);
-openness = hslider("openness", 0.2, 0, 1, 0.01);
+velocity = hslider("velocity", 1, 0, 1, 0.01);
+strike = hslider("strike", 0, 0, 3, 1); 
 gate = button("gate");
 
-// Scalable short/long release based on openness parameter
-decay = 0.05 + openness * 0.4;
+// 0: Closed, 1: Open, 2: Pedal
+openness_strike = ba.selectn(4, strike, 0.1, 0.6, 0.05, 0.1);
+decay = 0.05 + openness_strike * 0.4;
 env = en.ar(0.001, decay, gate);
 
 // Highpass filtered metallic noise cluster
-hat = no.noise : fi.highpass(2, 6000) * env;
+// Velocity increases brightness
+hat = no.noise : fi.highpass(2, 6000 + 2000 * velocity) * env;
 
-process = hat * gain;
+process = hat * gain * velocity * (1.0 + 0.1 * velocity);

@@ -1,26 +1,37 @@
+/*
+ * Copyright (c) 2026 Shashank Khare
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #ifndef FAUST_BOWL_HPP
 #define FAUST_BOWL_HPP
 
-#include <memory>
-#include <faust/gui/MapUI.h>
-#include <faust/dsp/dsp.h>
-#include <faust/gui/meta.h>
+#include "FaustInstrument.hpp"
 
-class FaustBowl {
+class FaustBowl : public FaustInstrument {
 public:
     FaustBowl(float sampleRate);
-    void setFrequency(float freq);
-    void setDuration(float seconds);
     void strike(float velocity);
     void setRub(float rub);
     void setWaver(float waver);
-    void render(int numFrames, float* buffer);
-    void dispose() {}
-
-private:
-    std::unique_ptr<dsp> mDSP;
-    std::unique_ptr<MapUI> mUI;
-    void setParam(const char* shortName, float val);
+    int getID() const override { return 8; }
 };
 
 #endif

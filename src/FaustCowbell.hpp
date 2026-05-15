@@ -20,18 +20,16 @@
  * SOFTWARE.
  */
 
-#ifndef FAUST_PIANO_HPP
-#define FAUST_PIANO_HPP
+#ifndef FAUST_COWBELL_HPP
+#define FAUST_COWBELL_HPP
 
 #include "FaustInstrument.hpp"
 
-class FaustPiano : public FaustInstrument {
+class FaustCowbell : public FaustInstrument {
 public:
-    FaustPiano(float sampleRate);
-    void setSustain(float sustain);
-    void setStiffness(float stiffness);
-    void strike(float velocity, float hardness = 0.5f);
-    int getID() const override { return 12; }
+    FaustCowbell(float sampleRate);
+    void strike(float velocity);
+    int getID() const override { return 14; }
 };
 
 #endif
