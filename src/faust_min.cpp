@@ -122,6 +122,10 @@ DART_EXPORT FaustMixer* mixer_get_instance() {
     return &FaustMixer::getInstance();
 }
 
+DART_EXPORT void mixer_init(FaustMixer* mixer, float sampleRate) {
+    if (mixer) mixer->init(sampleRate);
+}
+
 DART_EXPORT int mixer_start(FaustMixer* mixer) {
     return (mixer && mixer->start()) ? 1 : 0;
 }
@@ -136,6 +140,18 @@ DART_EXPORT float mixer_get_sample_rate(FaustMixer* mixer) {
 
 DART_EXPORT void mixer_set_master_gain(FaustMixer* mixer, float gain) {
     if (mixer) mixer->setMasterGain(gain);
+}
+
+DART_EXPORT void mixer_set_instrument_weight(FaustMixer* mixer, FaustInstrument* inst, float weight) {
+    if (mixer && inst) mixer->setInstrumentWeight(inst->getID(), weight);
+}
+
+DART_EXPORT void mixer_register_instrument(FaustMixer* mixer, FaustInstrument* inst, float weight) {
+    if (mixer && inst) mixer->registerInstrument(inst, weight);
+}
+
+DART_EXPORT void mixer_unregister_instrument(FaustMixer* mixer, FaustInstrument* inst) {
+    if (mixer && inst) mixer->unregisterInstrument(inst);
 }
 
 // --- UMLSequence Flat Endpoints ---

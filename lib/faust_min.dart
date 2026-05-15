@@ -3,8 +3,6 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
 
-import 'package:faust_min/faust_min_bindings_generated.dart';
-
 const String _libName = 'faust_min';
 
 final DynamicLibrary _dylib = () {
@@ -20,861 +18,319 @@ final DynamicLibrary _dylib = () {
   throw UnsupportedError('Unknown platform: ${Platform.operatingSystem}');
 }();
 
-final FaustMinBindings _bindings = FaustMinBindings(_dylib);
+// --- Internal FFI Opaque Pointer Structures ---
+final class NativeInstrumentOpaque extends Opaque {}
+final class NativeSequenceOpaque extends Opaque {}
+final class NativeMixerOpaque extends Opaque {}
+class NativeOrchestratorOpaque extends Opaque {}
 
-// Top-level FFI function pointers for the Orchestrator
-final _funcSetWeight = _dylib.lookupFunction<Void Function(Pointer<Utf8>, Float), void Function(Pointer<Utf8>, double)>('orchestrator_set_weight');
-final _funcSetParameter = _dylib.lookupFunction<Void Function(Pointer<Utf8>, Pointer<Utf8>, Float), void Function(Pointer<Utf8>, Pointer<Utf8>, double)>('orchestrator_set_parameter');
-final _funcRenderMaster = _dylib.lookupFunction<Void Function(Pointer<Float>, Int), void Function(Pointer<Float>, int)>('orchestrator_render_master');
-final _funcSetFinishedCallback = _dylib.lookupFunction<Void Function(Pointer<NativeFunction<Void Function(Pointer<Utf8>)>>), void Function(Pointer<NativeFunction<Void Function(Pointer<Utf8>)>>)>('orchestrator_set_finished_callback');
+// --- FaustMixer Typedefs ---
+typedef _c_mixer_get_instance = Pointer<NativeMixerOpaque> Function();
+typedef _dart_mixer_get_instance = Pointer<NativeMixerOpaque> Function();
 
-/// Utility to manage a persistent native buffer for audio rendering.
-class _NativeAudioBuffer {
-  final int size;
-  final Pointer<Float> pointer;
+typedef _c_mixer_init = Void Function(Pointer<NativeMixerOpaque> mixer, Float sampleRate);
+typedef _dart_mixer_init = void Function(Pointer<NativeMixerOpaque> mixer, double sampleRate);
 
-  _NativeAudioBuffer(this.size) : pointer = calloc<Float>(size);
+typedef _c_mixer_start = Int32 Function(Pointer<NativeMixerOpaque> mixer);
+typedef _dart_mixer_start = int Function(Pointer<NativeMixerOpaque> mixer);
 
-  void copyTo(Float32List list) {
-    for (int i = 0; i < size; i++) {
-      list[i] = pointer[i];
-    }
-  }
+typedef _c_mixer_stop = Void Function(Pointer<NativeMixerOpaque> mixer);
+typedef _dart_mixer_stop = void Function(Pointer<NativeMixerOpaque> mixer);
 
-  void copyFrom(Float32List list) {
-    for (int i = 0; i < size; i++) {
-      pointer[i] = list[i];
-    }
-  }
+typedef _c_mixer_get_sr = Float Function(Pointer<NativeMixerOpaque> mixer);
+typedef _dart_mixer_get_sr = double Function(Pointer<NativeMixerOpaque> mixer);
 
-  void dispose() {
-    calloc.free(pointer);
-  }
-}
+typedef _c_mixer_set_gain = Void Function(Pointer<NativeMixerOpaque> mixer, Float gain);
+typedef _dart_mixer_set_gain = void Function(Pointer<NativeMixerOpaque> mixer, double gain);
 
-/// Configuration for a single audio track layer in the mixer.
-class MixLayer {
-  final Float32List buffer;
-  final double amplitudeScale; 
-  final int fadeInSamples;
-  final int fadeOutSamples;
-  final int curveType;
-  final int offsetSamples; 
-  final double pan; 
+typedef _c_mixer_set_inst_weight = Void Function(Pointer<NativeMixerOpaque> mixer, Pointer<NativeInstrumentOpaque> inst, Float weight);
+typedef _dart_mixer_set_inst_weight = void Function(Pointer<NativeMixerOpaque> mixer, Pointer<NativeInstrumentOpaque> inst, double weight);
 
-  MixLayer({
-    required this.buffer,
-    required this.amplitudeScale,
-    this.fadeInSamples = 0,
-    this.fadeOutSamples = 0,
-    this.curveType = 3,
-    this.offsetSamples = 0,
-    this.pan = 0.0,
-  });
-}
+typedef _c_mixer_register_inst = Void Function(Pointer<NativeMixerOpaque> mixer, Pointer<NativeInstrumentOpaque> inst, Float weight);
+typedef _dart_mixer_register_inst = void Function(Pointer<NativeMixerOpaque> mixer, Pointer<NativeInstrumentOpaque> inst, double weight);
 
-/// DSP Utility for fast native post-processing and mixing
-class FaustAudioDSP {
-  static void mixSignals({
-    required List<MixLayer> layers,
-    required Float32List stereoOutputBuffer,
-    double masterGain = 1.0,
-  }) {
-    final int numTracks = layers.length;
-    if (numTracks == 0) return;
-    
-    final int numSamples = layers[0].buffer.length;
-    final int stereoSamples = numSamples * 2;
-    
-    final Pointer<Pointer<Float>> trackPointers = calloc<Pointer<Float>>(numTracks);
-    final Pointer<Float> amplitudeScales = calloc<Float>(numTracks);
-    final Pointer<Int> fadeInSamples = calloc<Int>(numTracks);
-    final Pointer<Int> fadeOutSamples = calloc<Int>(numTracks);
-    final Pointer<Int> curveTypes = calloc<Int>(numTracks);
-    final Pointer<Int> offsetSamples = calloc<Int>(numTracks);
-    final Pointer<Float> pans = calloc<Float>(numTracks);
-    
-    final nativeOutput = _NativeAudioBuffer(stereoSamples);
-    final List<_NativeAudioBuffer> nativeTracks = [];
-    
-    for (int i = 0; i < numTracks; i++) {
-      final layer = layers[i];
-      final nativeTrack = _NativeAudioBuffer(layer.buffer.length);
-      nativeTrack.copyFrom(layer.buffer);
-      nativeTracks.add(nativeTrack);
-      
-      trackPointers[i] = nativeTrack.pointer;
-      amplitudeScales[i] = layer.amplitudeScale;
-      fadeInSamples[i] = layer.fadeInSamples;
-      fadeOutSamples[i] = layer.fadeOutSamples;
-      curveTypes[i] = layer.curveType;
-      offsetSamples[i] = layer.offsetSamples;
-      pans[i] = layer.pan;
-    }
-    
-    try {
-      _bindings.mix_raw_signals(
-        trackPointers,
-        amplitudeScales,
-        fadeInSamples,
-        fadeOutSamples,
-        curveTypes,
-        offsetSamples,
-        pans,
-        numTracks,
-        numSamples,
-        nativeOutput.pointer,
-        masterGain,
-      );
-      nativeOutput.copyTo(stereoOutputBuffer);
-    } finally {
-      for (var nt in nativeTracks) {
-        nt.dispose();
-      }
-      nativeOutput.dispose();
-      calloc.free(trackPointers);
-      calloc.free(amplitudeScales);
-      calloc.free(fadeInSamples);
-      calloc.free(fadeOutSamples);
-      calloc.free(curveTypes);
-      calloc.free(offsetSamples);
-      calloc.free(pans);
-    }
-  }
-}
+typedef _c_mixer_unregister_inst = Void Function(Pointer<NativeMixerOpaque> mixer, Pointer<NativeInstrumentOpaque> inst);
+typedef _dart_mixer_unregister_inst = void Function(Pointer<NativeMixerOpaque> mixer, Pointer<NativeInstrumentOpaque> inst);
 
-abstract class FaustInstrument {
-  void dispose();
-  void render(Float32List buffer);
-}
 
-class FaustFluteInstrument implements FaustInstrument {
-  late Pointer<FaustFlute> _nativeHandle;
-  _NativeAudioBuffer? _renderBuffer;
+// --- Flat API Bindings Signatures ---
+typedef _c_sequence_create = Pointer<NativeSequenceOpaque> Function(Pointer<Utf8>, Int32, Pointer<Utf8>);
+typedef _dart_sequence_create = Pointer<NativeSequenceOpaque> Function(Pointer<Utf8>, int, Pointer<Utf8>);
+
+typedef _c_sequence_destroy = Void Function(Pointer<NativeSequenceOpaque>);
+typedef _dart_sequence_destroy = void Function(Pointer<NativeSequenceOpaque>);
+
+typedef _c_sequence_get_bpm = Double Function(Pointer<NativeSequenceOpaque>);
+typedef _dart_sequence_get_bpm = double Function(Pointer<NativeSequenceOpaque>);
+
+typedef _c_sequence_get_grid = Int32 Function(Pointer<NativeSequenceOpaque>);
+typedef _dart_sequence_get_grid = int Function(Pointer<NativeSequenceOpaque>);
+
+typedef _c_inst_set_param = Void Function(Pointer<NativeInstrumentOpaque>, Pointer<Utf8>, Float);
+typedef _dart_inst_set_param = void Function(Pointer<NativeInstrumentOpaque>, Pointer<Utf8>, double);
+
+typedef _c_inst_note_on = Void Function(Pointer<NativeInstrumentOpaque>, Float, Float, Float);
+typedef _dart_inst_note_on = void Function(Pointer<NativeInstrumentOpaque>, double, double, double);
+
+typedef _c_inst_note_off = Void Function(Pointer<NativeInstrumentOpaque>);
+typedef _dart_inst_note_off = void Function(Pointer<NativeInstrumentOpaque>);
+
+typedef _c_orch_create = Pointer<NativeOrchestratorOpaque> Function();
+typedef _dart_orch_create = Pointer<NativeOrchestratorOpaque> Function();
+
+typedef _c_orch_destroy = Void Function(Pointer<NativeOrchestratorOpaque>);
+typedef _dart_orch_destroy = void Function(Pointer<NativeOrchestratorOpaque>);
+
+typedef _c_orch_add_seq = Void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>, Pointer<NativeSequenceOpaque>);
+typedef _dart_orch_add_seq = void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>, Pointer<NativeSequenceOpaque>);
+
+typedef _c_orch_play = Void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>);
+typedef _dart_orch_play = void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>);
+
+
+
+typedef _c_orch_stop = Void Function(Pointer<NativeOrchestratorOpaque>);
+typedef _dart_orch_stop = void Function(Pointer<NativeOrchestratorOpaque>);
+
+typedef _c_orch_pause = Void Function(Pointer<NativeOrchestratorOpaque>);
+typedef _dart_orch_pause = void Function(Pointer<NativeOrchestratorOpaque>);
+
+typedef _c_orch_resume = Void Function(Pointer<NativeOrchestratorOpaque>);
+typedef _dart_orch_resume = void Function(Pointer<NativeOrchestratorOpaque>);
+
+typedef _c_orch_mute_track = Void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>, Int32);
+typedef _dart_orch_mute_track = void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>, int);
+
+typedef _c_orch_set_weight = Void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>, Float);
+typedef _dart_orch_set_weight = void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>, double);
+
+typedef _c_orch_set_param = Void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>, Pointer<Utf8>, Float);
+typedef _dart_orch_set_param = void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>, Pointer<Utf8>, double);
+
+typedef _c_orch_render_master = Void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Float>, Int32);
+typedef _dart_orch_render_master = void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Float>, int);
+
+typedef _c_orch_poll_finished = Pointer<Utf8> Function(Pointer<NativeOrchestratorOpaque>);
+typedef _dart_orch_poll_finished = Pointer<Utf8> Function(Pointer<NativeOrchestratorOpaque>);
+
+// --- Classes ---
+
+/// Concrete dynamic representation wrapping opaque instrument heap pointers over FFI.
+class FaustInstrument {
+  final Pointer<NativeInstrumentOpaque> _handle;
   bool _isDisposed = false;
 
-  FaustFluteInstrument({double sampleRate = 44100.0}) {
-    _nativeHandle = _bindings.flute_create(sampleRate);
-  }
+  static late final _funcSetParam = _dylib.lookupFunction<_c_inst_set_param, _dart_inst_set_param>('instrument_set_parameter');
+  static late final _funcNoteOn = _dylib.lookupFunction<_c_inst_note_on, _dart_inst_note_on>('instrument_note_on');
+  static late final _funcNoteOff = _dylib.lookupFunction<_c_inst_note_off, _dart_inst_note_off>('instrument_note_off');
 
-  void setFrequency(double freq) {
-    if (_isDisposed) return;
-    _bindings.flute_set_frequency(_nativeHandle, freq);
-  }
+  FaustInstrument._(this._handle);
 
-  void setPressure(double pressure) {
-    if (_isDisposed) return;
-    _bindings.flute_set_pressure(_nativeHandle, pressure);
-  }
-
-  void setVibrato(double rate, double depth) {
-    if (_isDisposed) return;
-    _bindings.flute_set_vibrato(_nativeHandle, rate, depth);
-  }
-
-  @override
-  void render(Float32List buffer) {
-    if (_isDisposed) return;
-    if (_renderBuffer == null || _renderBuffer!.size != buffer.length) {
-      _renderBuffer?.dispose();
-      _renderBuffer = _NativeAudioBuffer(buffer.length);
-    }
-    _bindings.flute_render(_nativeHandle, buffer.length, _renderBuffer!.pointer);
-    _renderBuffer!.copyTo(buffer);
-  }
-
-  @override
-  void dispose() {
-    if (!_isDisposed) {
-      _bindings.flute_destroy(_nativeHandle);
-      _renderBuffer?.dispose();
-      _isDisposed = true;
-    }
-  }
-}
-
-class FaustBowlInstrument implements FaustInstrument {
-  late Pointer<FaustBowl> _nativeHandle;
-  _NativeAudioBuffer? _renderBuffer;
-  bool _isDisposed = false;
-
-  FaustBowlInstrument({double sampleRate = 44100.0}) {
-    _nativeHandle = _bindings.bowl_create(sampleRate);
-  }
-
-  void setFrequency(double freq) {
-    if (_isDisposed) return;
-    _bindings.bowl_set_frequency(_nativeHandle, freq);
-  }
-
-  void setDuration(double seconds) {
-    if (_isDisposed) return;
-    _bindings.bowl_set_duration(_nativeHandle, seconds);
-  }
-
-  void setRub(double rub) {
-    if (_isDisposed) return;
-    _bindings.bowl_set_rub(_nativeHandle, rub);
-  }
-
-  void setWaver(double waver) {
-    if (_isDisposed) return;
-    _bindings.bowl_set_waver(_nativeHandle, waver);
-  }
-
-  void strike(double velocity) {
-    if (_isDisposed) return;
-    _bindings.bowl_strike(_nativeHandle, velocity);
-  }
-
-  @override
-  void render(Float32List buffer) {
-    if (_isDisposed) return;
-    if (_renderBuffer == null || _renderBuffer!.size != buffer.length) {
-      _renderBuffer?.dispose();
-      _renderBuffer = _NativeAudioBuffer(buffer.length);
-    }
-    _bindings.bowl_render(_nativeHandle, buffer.length, _renderBuffer!.pointer);
-    _renderBuffer!.copyTo(buffer);
-  }
-
-  @override
-  void dispose() {
-    if (!_isDisposed) {
-      _bindings.bowl_destroy(_nativeHandle);
-      _renderBuffer?.dispose();
-      _isDisposed = true;
-    }
-  }
-}
-
-class FaustBellInstrument implements FaustInstrument {
-  late Pointer<FaustBell> _nativeHandle;
-  _NativeAudioBuffer? _renderBuffer;
-  bool _isDisposed = false;
-
-  FaustBellInstrument({double sampleRate = 44100.0}) {
-    _nativeHandle = _bindings.bell_create(sampleRate);
-  }
-
-  void setFrequency(double freq) {
-    if (_isDisposed) return;
-    _bindings.bell_set_frequency(_nativeHandle, freq);
-  }
-
-  void setDuration(double seconds) {
-    if (_isDisposed) return;
-    _bindings.bell_set_duration(_nativeHandle, seconds);
-  }
-
-  void setDamping(double damping) {
-    if (_isDisposed) return;
-    _bindings.bell_set_damping(_nativeHandle, damping);
-  }
-
-  void strike(double velocity) {
-    if (_isDisposed) return;
-    _bindings.bell_strike(_nativeHandle, velocity);
-  }
-
-  @override
-  void render(Float32List buffer) {
-    if (_isDisposed) return;
-    if (_renderBuffer == null || _renderBuffer!.size != buffer.length) {
-      _renderBuffer?.dispose();
-      _renderBuffer = _NativeAudioBuffer(buffer.length);
-    }
-    _bindings.bell_render(_nativeHandle, buffer.length, _renderBuffer!.pointer);
-    _renderBuffer!.copyTo(buffer);
-  }
-
-  @override
-  void dispose() {
-    if (!_isDisposed) {
-      _bindings.bell_destroy(_nativeHandle);
-      _renderBuffer?.dispose();
-      _isDisposed = true;
-    }
-  }
-}
-
-class FaustDayanInstrument implements FaustInstrument {
-  late Pointer<FaustDayan> _nativeHandle;
-  _NativeAudioBuffer? _renderBuffer;
-  bool _isDisposed = false;
-
-  FaustDayanInstrument({double sampleRate = 44100.0}) {
-    _nativeHandle = _bindings.dayan_create(sampleRate);
-  }
-
-  void setFrequency(double freq) {
-    if (_isDisposed) return;
-    _bindings.dayan_set_frequency(_nativeHandle, freq);
-  }
-
-  void setMute(bool muted) {
-    if (_isDisposed) return;
-    _bindings.dayan_set_mute(_nativeHandle, muted ? 1 : 0);
-  }
-
-  void strike(double velocity) {
-    if (_isDisposed) return;
-    _bindings.dayan_strike(_nativeHandle, velocity);
-  }
-
-  @override
-  void render(Float32List buffer) {
-    if (_isDisposed) return;
-    if (_renderBuffer == null || _renderBuffer!.size != buffer.length) {
-      _renderBuffer?.dispose();
-      _renderBuffer = _NativeAudioBuffer(buffer.length);
-    }
-    _bindings.dayan_render(_nativeHandle, buffer.length, _renderBuffer!.pointer);
-    _renderBuffer!.copyTo(buffer);
-  }
-
-  @override
-  void dispose() {
-    if (!_isDisposed) {
-      _bindings.dayan_destroy(_nativeHandle);
-      _renderBuffer?.dispose();
-      _isDisposed = true;
-    }
-  }
-}
-
-class FaustBayanInstrument implements FaustInstrument {
-  late Pointer<FaustBayan> _nativeHandle;
-  _NativeAudioBuffer? _renderBuffer;
-  bool _isDisposed = false;
-
-  FaustBayanInstrument({double sampleRate = 44100.0}) {
-    _nativeHandle = _bindings.bayan_create(sampleRate);
-  }
-
-  void setFrequency(double freq) {
-    if (_isDisposed) return;
-    _bindings.bayan_set_frequency(_nativeHandle, freq);
-  }
-
-  void setMeend(double multiplier) {
-    if (_isDisposed) return;
-    _bindings.bayan_set_meend(_nativeHandle, multiplier);
-  }
-
-  void setMute(bool muted) {
-    if (_isDisposed) return;
-    _bindings.bayan_set_mute(_nativeHandle, muted ? 1 : 0);
-  }
-
-  void strike(double velocity) {
-    if (_isDisposed) return;
-    _bindings.bayan_strike(_nativeHandle, velocity);
-  }
-
-  @override
-  void render(Float32List buffer) {
-    if (_isDisposed) return;
-    if (_renderBuffer == null || _renderBuffer!.size != buffer.length) {
-      _renderBuffer?.dispose();
-      _renderBuffer = _NativeAudioBuffer(buffer.length);
-    }
-    _bindings.bayan_render(_nativeHandle, buffer.length, _renderBuffer!.pointer);
-    _renderBuffer!.copyTo(buffer);
-  }
-
-  @override
-  void dispose() {
-    if (!_isDisposed) {
-      _bindings.bayan_destroy(_nativeHandle);
-      _renderBuffer?.dispose();
-      _isDisposed = true;
-    }
-  }
-}
-
-class FaustSitarInstrument implements FaustInstrument {
-  late Pointer<FaustSitar> _nativeHandle;
-  _NativeAudioBuffer? _renderBuffer;
-  bool _isDisposed = false;
-
-  FaustSitarInstrument({double sampleRate = 44100.0}) {
-    _nativeHandle = _bindings.sitar_create(sampleRate);
-  }
-
-  void setFrequency(double freq) {
-    if (_isDisposed) return;
-    _bindings.sitar_set_frequency(_nativeHandle, freq);
-  }
-
-  void setJivari(double amount) {
-    if (_isDisposed) return;
-    _bindings.sitar_set_jivari(_nativeHandle, amount);
-  }
-
-  void setSympatheticGain(double gain) {
-    if (_isDisposed) return;
-    _bindings.sitar_set_sympathetic_gain(_nativeHandle, gain);
-  }
-
-  void pluck(double velocity) {
-    if (_isDisposed) return;
-    _bindings.sitar_pluck(_nativeHandle, velocity);
-  }
-
-  @override
-  void render(Float32List buffer) {
-    if (_isDisposed) return;
-    if (_renderBuffer == null || _renderBuffer!.size != buffer.length) {
-      _renderBuffer?.dispose();
-      _renderBuffer = _NativeAudioBuffer(buffer.length);
-    }
-    _bindings.sitar_render(_nativeHandle, buffer.length, _renderBuffer!.pointer);
-    _renderBuffer!.copyTo(buffer);
-  }
-
-  @override
-  void dispose() {
-    if (!_isDisposed) {
-      _bindings.sitar_destroy(_nativeHandle);
-      _renderBuffer?.dispose();
-      _isDisposed = true;
-    }
-  }
-}
-
-class FaustTanpuraInstrument implements FaustInstrument {
-  late Pointer<FaustTanpura> _nativeHandle;
-  _NativeAudioBuffer? _renderBuffer;
-  bool _isDisposed = false;
-
-  FaustTanpuraInstrument({double sampleRate = 44100.0}) {
-    _nativeHandle = _bindings.tanpura_create(sampleRate);
-  }
-
-  void setParams(double f1, double f2, double f3, double f4, double decay, double delay) {
-    if (_isDisposed) return;
-    _bindings.tanpura_set_params(_nativeHandle, f1, f2, f3, f4, decay, delay);
-  }
-
-  void setJivari(double amount) {
-    if (_isDisposed) return;
-    _bindings.tanpura_set_jivari(_nativeHandle, amount);
-  }
-
-  void setPlaying(bool playing) {
-    if (_isDisposed) return;
-    _bindings.tanpura_set_playing(_nativeHandle, playing ? 1 : 0);
-  }
-
-  void pluck(int stringIndex, double velocity) {
-    if (_isDisposed) return;
-    _bindings.tanpura_pluck(_nativeHandle, stringIndex, velocity);
-  }
-
-  @override
-  void render(Float32List buffer) {
-    if (_isDisposed) return;
-    if (_renderBuffer == null || _renderBuffer!.size != buffer.length) {
-      _renderBuffer?.dispose();
-      _renderBuffer = _NativeAudioBuffer(buffer.length);
-    }
-    _bindings.tanpura_render(_nativeHandle, buffer.length, _renderBuffer!.pointer);
-    _renderBuffer!.copyTo(buffer);
-  }
-
-  @override
-  void dispose() {
-    if (!_isDisposed) {
-      _bindings.tanpura_destroy(_nativeHandle);
-      _renderBuffer?.dispose();
-      _isDisposed = true;
-    }
-  }
-}
-
-class FaustKickInstrument implements FaustInstrument {
-  late Pointer<FaustKick> _nativeHandle;
-  _NativeAudioBuffer? _renderBuffer;
-  bool _isDisposed = false;
-
-  FaustKickInstrument({double sampleRate = 44100.0}) {
-    _nativeHandle = _bindings.kick_create(sampleRate);
-  }
-
-  void strike(double velocity) {
-    if (_isDisposed) return;
-    _bindings.kick_strike(_nativeHandle, velocity);
-  }
-
-  @override
-  void render(Float32List buffer) {
-    if (_isDisposed) return;
-    if (_renderBuffer == null || _renderBuffer!.size != buffer.length) {
-      _renderBuffer?.dispose();
-      _renderBuffer = _NativeAudioBuffer(buffer.length);
-    }
-    _bindings.kick_render(_nativeHandle, buffer.length, _renderBuffer!.pointer);
-    _renderBuffer!.copyTo(buffer);
-  }
-
-  @override
-  void dispose() {
-    if (!_isDisposed) {
-      _bindings.kick_destroy(_nativeHandle);
-      _renderBuffer?.dispose();
-      _isDisposed = true;
-    }
-  }
-}
-
-class FaustSnareInstrument implements FaustInstrument {
-  late Pointer<FaustSnare> _nativeHandle;
-  _NativeAudioBuffer? _renderBuffer;
-  bool _isDisposed = false;
-
-  FaustSnareInstrument({double sampleRate = 44100.0}) {
-    _nativeHandle = _bindings.snare_create(sampleRate);
-  }
-
-  void strike(double velocity) {
-    if (_isDisposed) return;
-    _bindings.snare_strike(_nativeHandle, velocity);
-  }
-
-  @override
-  void render(Float32List buffer) {
-    if (_isDisposed) return;
-    if (_renderBuffer == null || _renderBuffer!.size != buffer.length) {
-      _renderBuffer?.dispose();
-      _renderBuffer = _NativeAudioBuffer(buffer.length);
-    }
-    _bindings.snare_render(_nativeHandle, buffer.length, _renderBuffer!.pointer);
-    _renderBuffer!.copyTo(buffer);
-  }
-
-  @override
-  void dispose() {
-    if (!_isDisposed) {
-      _bindings.snare_destroy(_nativeHandle);
-      _renderBuffer?.dispose();
-      _isDisposed = true;
-    }
-  }
-}
-
-class FaustTomInstrument implements FaustInstrument {
-  late Pointer<FaustTom> _nativeHandle;
-  _NativeAudioBuffer? _renderBuffer;
-  bool _isDisposed = false;
-
-  FaustTomInstrument({double sampleRate = 44100.0}) {
-    _nativeHandle = _bindings.tom_create(sampleRate);
-  }
-
-  void setFrequency(double freq) {
-    if (_isDisposed) return;
-    _bindings.tom_set_frequency(_nativeHandle, freq);
-  }
-
-  void strike(double velocity) {
-    if (_isDisposed) return;
-    _bindings.tom_strike(_nativeHandle, velocity);
-  }
-
-  @override
-  void render(Float32List buffer) {
-    if (_isDisposed) return;
-    if (_renderBuffer == null || _renderBuffer!.size != buffer.length) {
-      _renderBuffer?.dispose();
-      _renderBuffer = _NativeAudioBuffer(buffer.length);
-    }
-    _bindings.tom_render(_nativeHandle, buffer.length, _renderBuffer!.pointer);
-    _renderBuffer!.copyTo(buffer);
-  }
-
-  @override
-  void dispose() {
-    if (!_isDisposed) {
-      _bindings.tom_destroy(_nativeHandle);
-      _renderBuffer?.dispose();
-      _isDisposed = true;
-    }
-  }
-}
-
-class FaustHiHatInstrument implements FaustInstrument {
-  late Pointer<FaustHiHat> _nativeHandle;
-  _NativeAudioBuffer? _renderBuffer;
-  bool _isDisposed = false;
-
-  FaustHiHatInstrument({double sampleRate = 44100.0}) {
-    _nativeHandle = _bindings.hihat_create(sampleRate);
-  }
-
-  void setOpenness(double amount) {
-    if (_isDisposed) return;
-    _bindings.hihat_set_openness(_nativeHandle, amount);
-  }
-
-  void strike(double velocity) {
-    if (_isDisposed) return;
-    _bindings.hihat_strike(_nativeHandle, velocity);
-  }
-
-  @override
-  void render(Float32List buffer) {
-    if (_isDisposed) return;
-    if (_renderBuffer == null || _renderBuffer!.size != buffer.length) {
-      _renderBuffer?.dispose();
-      _renderBuffer = _NativeAudioBuffer(buffer.length);
-    }
-    _bindings.hihat_render(_nativeHandle, buffer.length, _renderBuffer!.pointer);
-    _renderBuffer!.copyTo(buffer);
-  }
-
-  @override
-  void dispose() {
-    if (!_isDisposed) {
-      _bindings.hihat_destroy(_nativeHandle);
-      _renderBuffer?.dispose();
-      _isDisposed = true;
-    }
-  }
-}
-
-class FaustRideInstrument implements FaustInstrument {
-  late Pointer<FaustRide> _nativeHandle;
-  _NativeAudioBuffer? _renderBuffer;
-  bool _isDisposed = false;
-
-  FaustRideInstrument({double sampleRate = 44100.0}) {
-    _nativeHandle = _bindings.ride_create(sampleRate);
-  }
-
-  void strike(double velocity) {
-    if (_isDisposed) return;
-    _bindings.ride_strike(_nativeHandle, velocity);
-  }
-
-  @override
-  void render(Float32List buffer) {
-    if (_isDisposed) return;
-    if (_renderBuffer == null || _renderBuffer!.size != buffer.length) {
-      _renderBuffer?.dispose();
-      _renderBuffer = _NativeAudioBuffer(buffer.length);
-    }
-    _bindings.ride_render(_nativeHandle, buffer.length, _renderBuffer!.pointer);
-    _renderBuffer!.copyTo(buffer);
-  }
-
-  @override
-  void dispose() {
-    if (!_isDisposed) {
-      _bindings.ride_destroy(_nativeHandle);
-      _renderBuffer?.dispose();
-      _isDisposed = true;
-    }
-  }
-}
-
-class FaustPianoInstrument implements FaustInstrument {
-  late Pointer<FaustPiano> _nativeHandle;
-  _NativeAudioBuffer? _renderBuffer;
-  bool _isDisposed = false;
-
-  FaustPianoInstrument({double sampleRate = 44100.0}) {
-    _nativeHandle = _bindings.piano_create(sampleRate);
-  }
-
-  void setFrequency(double freq) {
-    if (_isDisposed) return;
-    _bindings.piano_set_frequency(_nativeHandle, freq);
-  }
-
-  void setSustain(double level) {
-    if (_isDisposed) return;
-    _bindings.piano_set_sustain(_nativeHandle, level);
-  }
-
-  void setStiffness(double stiffness) {
-    if (_isDisposed) return;
-    _bindings.piano_set_stiffness(_nativeHandle, stiffness);
-  }
-
-  void strike(double velocity, {double hardness = 0.5}) {
-    if (_isDisposed) return;
-    _bindings.piano_strike(_nativeHandle, velocity, hardness);
-  }
-
-  @override
-  void render(Float32List buffer) {
-    if (_isDisposed) return;
-    if (_renderBuffer == null || _renderBuffer!.size != buffer.length) {
-      _renderBuffer?.dispose();
-      _renderBuffer = _NativeAudioBuffer(buffer.length);
-    }
-    _bindings.piano_render(_nativeHandle, buffer.length, _renderBuffer!.pointer);
-    _renderBuffer!.copyTo(buffer);
-  }
-
-  @override
-  void dispose() {
-    if (!_isDisposed) {
-      _bindings.piano_destroy(_nativeHandle);
-      _renderBuffer?.dispose();
-      _isDisposed = true;
-    }
-  }
-}
-
-class FaustSaxInstrument implements FaustInstrument {
-  late Pointer<FaustSax> _nativeHandle;
-  _NativeAudioBuffer? _renderBuffer;
-  bool _isDisposed = false;
-
-  FaustSaxInstrument({double sampleRate = 44100.0}) {
-    _nativeHandle = _bindings.sax_create(sampleRate);
-  }
-
-  void setFrequency(double freq) {
-    if (_isDisposed) return;
-    _bindings.sax_set_frequency(_nativeHandle, freq);
-  }
-
-  void setVibrato(double rate, double depth) {
-    if (_isDisposed) return;
-    _bindings.sax_set_vibrato(_nativeHandle, rate, depth);
-  }
-
-  void strike(double velocity) {
-    if (_isDisposed) return;
-    _bindings.sax_strike(_nativeHandle, velocity);
-  }
-
-  @override
-  void render(Float32List buffer) {
-    if (_isDisposed) return;
-    if (_renderBuffer == null || _renderBuffer!.size != buffer.length) {
-      _renderBuffer?.dispose();
-      _renderBuffer = _NativeAudioBuffer(buffer.length);
-    }
-    _bindings.sax_render(_nativeHandle, buffer.length, _renderBuffer!.pointer);
-    _renderBuffer!.copyTo(buffer);
-  }
-
-  @override
-  void dispose() {
-    if (!_isDisposed) {
-      _bindings.sax_destroy(_nativeHandle);
-      _renderBuffer?.dispose();
-      _isDisposed = true;
-    }
-  }
-}
-
-class FaustOrchestrator {
-  static bool _isInitialized = false;
-
-  static void init({double sampleRate = 44100.0}) {
-    if (_isInitialized) return;
-    final func = _dylib.lookupFunction<Void Function(Float), void Function(double)>('orchestrator_init');
-    func(sampleRate);
-    _isInitialized = true;
-  }
-
-  static void setAssetBasePath(String path) {
-    final func = _dylib.lookupFunction<Void Function(Pointer<Utf8>), void Function(Pointer<Utf8>)>('orchestrator_set_asset_base_path');
-    final ptr = path.toNativeUtf8();
-    try {
-      func(ptr);
-    } finally {
-      malloc.free(ptr);
-    }
-  }
-
-  static void loadSequence(String name, String umlData) {
-    final func = _dylib.lookupFunction<Void Function(Pointer<Utf8>, Pointer<Utf8>), void Function(Pointer<Utf8>, Pointer<Utf8>)>('orchestrator_load_sequence');
+  void setParameter(String name, double value) {
+    if (_isDisposed || _handle == nullptr) return;
     final namePtr = name.toNativeUtf8();
-    final dataPtr = umlData.toNativeUtf8();
     try {
-      func(namePtr, dataPtr);
+      _funcSetParam(_handle, namePtr.cast(), value);
+    } finally {
+      malloc.free(namePtr);
+    }
+  }
+
+  void noteOn({double freq = -1.0, double velocity = -1.0, double strike = -1.0}) {
+    if (_isDisposed || _handle == nullptr) return;
+    _funcNoteOn(_handle, freq, velocity, strike);
+  }
+
+  void noteOff() {
+    if (_isDisposed || _handle == nullptr) return;
+    _funcNoteOff(_handle);
+  }
+
+  void dispose() {
+    _isDisposed = true;
+  }
+
+  Pointer<NativeInstrumentOpaque> get nativePointer => _handle;
+}
+
+/// Self-contained object-oriented schedule timeline model natively parsing UML patterns.
+class UMLSequence {
+  late final Pointer<NativeSequenceOpaque> _handle;
+  bool _isDisposed = false;
+
+  static late final _funcCreate = _dylib.lookupFunction<_c_sequence_create, _dart_sequence_create>('sequence_create');
+  static late final _funcDestroy = _dylib.lookupFunction<_c_sequence_destroy, _dart_sequence_destroy>('sequence_destroy');
+
+  UMLSequence(String name, int instrumentID, String umlDataString) {
+    final namePtr = name.toNativeUtf8();
+    final dataPtr = umlDataString.toNativeUtf8();
+    try {
+      _handle = _funcCreate(namePtr.cast(), instrumentID, dataPtr.cast());
     } finally {
       malloc.free(namePtr);
       malloc.free(dataPtr);
     }
   }
 
-  static void play(String name) {
-    final func = _dylib.lookupFunction<Void Function(Pointer<Utf8>), void Function(Pointer<Utf8>)>('orchestrator_play');
+  static late final _funcGetBpm = _dylib.lookupFunction<_c_sequence_get_bpm, _dart_sequence_get_bpm>('sequence_get_bpm');
+  static late final _funcGetGrid = _dylib.lookupFunction<_c_sequence_get_grid, _dart_sequence_get_grid>('sequence_get_grid');
+
+  double get bpm => _isDisposed ? 120.0 : _funcGetBpm(_handle);
+  int get grid => _isDisposed ? 4 : _funcGetGrid(_handle);
+
+  void dispose() {
+    if (!_isDisposed && _handle != nullptr) {
+      _funcDestroy(_handle);
+      _isDisposed = true;
+    }
+  }
+
+  Pointer<NativeSequenceOpaque> get nativePointer => _handle;
+}
+
+/// Standalone multi-instance session orchestration controller driving continuous native callbacks.
+class SequenceOrchestrator {
+  late final Pointer<NativeOrchestratorOpaque> _handle;
+  bool _isDisposed = false;
+
+  static late final _funcCreate = _dylib.lookupFunction<_c_orch_create, _dart_orch_create>('orchestrator_create');
+  static late final _funcDestroy = _dylib.lookupFunction<_c_orch_destroy, _dart_orch_destroy>('orchestrator_destroy');
+  static late final _funcAddSeq = _dylib.lookupFunction<_c_orch_add_seq, _dart_orch_add_seq>('orchestrator_add_sequence');
+  static late final _funcPlay = _dylib.lookupFunction<_c_orch_play, _dart_orch_play>('orchestrator_play');
+
+  static late final _funcStop = _dylib.lookupFunction<_c_orch_stop, _dart_orch_stop>('orchestrator_stop');
+  static late final _funcPause = _dylib.lookupFunction<_c_orch_pause, _dart_orch_pause>('orchestrator_pause');
+  static late final _funcResume = _dylib.lookupFunction<_c_orch_resume, _dart_orch_resume>('orchestrator_resume');
+  static late final _funcMuteTrack = _dylib.lookupFunction<_c_orch_mute_track, _dart_orch_mute_track>('orchestrator_mute_track');
+  static late final _funcSetWeight = _dylib.lookupFunction<_c_orch_set_weight, _dart_orch_set_weight>('orchestrator_set_weight');
+  static late final _funcSetParam = _dylib.lookupFunction<_c_orch_set_param, _dart_orch_set_param>('orchestrator_set_parameter');
+
+  static late final _funcPollFinished = _dylib.lookupFunction<_c_orch_poll_finished, _dart_orch_poll_finished>('orchestrator_poll_finished');
+  SequenceOrchestrator() {
+    _handle = _funcCreate();
+  }
+
+  void addSequence(String name, UMLSequence sequence) {
+    if (_isDisposed) return;
     final namePtr = name.toNativeUtf8();
     try {
-      func(namePtr);
+      _funcAddSeq(_handle, namePtr.cast(), sequence.nativePointer);
     } finally {
       malloc.free(namePtr);
     }
   }
 
-  static void stop() {
-    final func = _dylib.lookupFunction<Void Function(), void Function()>('orchestrator_stop');
-    func();
-  }
-
-  static void pause() {
-    final func = _dylib.lookupFunction<Void Function(), void Function()>('orchestrator_pause');
-    func();
-  }
-
-  static void resume() {
-    final func = _dylib.lookupFunction<Void Function(), void Function()>('orchestrator_resume');
-    func();
-  }
-
-  static void setWeight(String name, double weight) {
+  void play(String name) {
+    if (_isDisposed) return;
     final namePtr = name.toNativeUtf8();
-    _funcSetWeight(namePtr.cast(), weight);
-    malloc.free(namePtr);
+    try {
+      _funcPlay(_handle, namePtr.cast());
+    } finally {
+      malloc.free(namePtr);
+    }
   }
 
-  static void setParameter(String sequenceName, String paramName, double value) {
-    final seqNamePtr = sequenceName.toNativeUtf8();
-    final paramNamePtr = paramName.toNativeUtf8();
-    _funcSetParameter(seqNamePtr.cast(), paramNamePtr.cast(), value);
-    malloc.free(seqNamePtr);
-    malloc.free(paramNamePtr);
-  }
+  void stop() => _isDisposed ? null : _funcStop(_handle);
+  void pause() => _isDisposed ? null : _funcPause(_handle);
+  void resume() => _isDisposed ? null : _funcResume(_handle);
 
-  static void renderMaster(Pointer<Float> buffer, int numFrames) {
-    _funcRenderMaster(buffer, numFrames);
-  }
-
-  static void renderPCM(String name, Pointer<Float> buffer, int numFrames) {
+  void muteTrack(String name, {bool mute = true}) {
+    if (_isDisposed) return;
     final namePtr = name.toNativeUtf8();
-    final func = _dylib.lookupFunction<Void Function(Pointer<Utf8>, Pointer<Float>, Int), void Function(Pointer<Utf8>, Pointer<Float>, int)>('orchestrator_render_pcm');
-    func(namePtr.cast(), buffer, numFrames);
-    malloc.free(namePtr);
+    try {
+      _funcMuteTrack(_handle, namePtr.cast(), mute ? 1 : 0);
+    } finally {
+      malloc.free(namePtr);
+    }
   }
 
-  static void setOnFinishedCallback(void Function(String) callback) {
-    final nativeCallable = NativeCallable<Void Function(Pointer<Utf8>)>.isolateLocal((Pointer<Utf8> namePtr) {
-      callback(namePtr.toDartString());
-    });
-    _funcSetFinishedCallback(nativeCallable.nativeFunction);
+  void setWeight(String name, double weight) {
+    if (_isDisposed) return;
+    final namePtr = name.toNativeUtf8();
+    try {
+      _funcSetWeight(_handle, namePtr.cast(), weight);
+    } finally {
+      malloc.free(namePtr);
+    }
   }
+
+  void setParameter(String trackName, String paramName, double value) {
+    if (_isDisposed) return;
+    final trackPtr = trackName.toNativeUtf8();
+    final paramPtr = paramName.toNativeUtf8();
+    try {
+      _funcSetParam(_handle, trackPtr.cast(), paramPtr.cast(), value);
+    } finally {
+      malloc.free(trackPtr);
+      malloc.free(paramPtr);
+    }
+  }
+
+
+
+  String? pollFinished() {
+    if (_isDisposed) return null;
+    final ptr = _funcPollFinished(_handle);
+    if (ptr == nullptr) return null;
+    return ptr.toDartString();
+  }
+
+  void dispose() {
+    if (!_isDisposed && _handle != nullptr) {
+      _funcDestroy(_handle);
+      _isDisposed = true;
+    }
+  }
+
+  Pointer<NativeOrchestratorOpaque> get nativePointer => _handle;
 }
 
-class FaustEventData {
-  final int sampleOffset;
-  final int instrumentId;
-  final int eventType; 
-  final int paramId;
-  final double value;
+/// Singleton access to the global Faust audio mixer and hardware driver.
+class FaustMixer {
+  static final FaustMixer instance = FaustMixer._internal();
+  late final Pointer<NativeMixerOpaque> _handle;
 
-  FaustEventData({
-    required this.sampleOffset,
-    required this.instrumentId,
-    required this.eventType,
-    this.paramId = 0,
-    required this.value,
-  });
+  static late final _funcGetInstance = _dylib.lookupFunction<_c_mixer_get_instance, _dart_mixer_get_instance>('mixer_get_instance');
+  static late final _funcInit = _dylib.lookupFunction<_c_mixer_init, _dart_mixer_init>('mixer_init');
+  static late final _funcStart = _dylib.lookupFunction<_c_mixer_start, _dart_mixer_start>('mixer_start');
+  static late final _funcStop = _dylib.lookupFunction<_c_mixer_stop, _dart_mixer_stop>('mixer_stop');
+  static late final _funcGetSR = _dylib.lookupFunction<_c_mixer_get_sr, _dart_mixer_get_sr>('mixer_get_sample_rate');
+  static late final _funcSetGain = _dylib.lookupFunction<_c_mixer_set_gain, _dart_mixer_set_gain>('mixer_set_master_gain');
+  static late final _funcSetInstWeight = _dylib.lookupFunction<_c_mixer_set_inst_weight, _dart_mixer_set_inst_weight>('mixer_set_instrument_weight');
+  static late final _funcRegisterInst = _dylib.lookupFunction<_c_mixer_register_inst, _dart_mixer_register_inst>('mixer_register_instrument');
+  static late final _funcUnregisterInst = _dylib.lookupFunction<_c_mixer_unregister_inst, _dart_mixer_unregister_inst>('mixer_unregister_instrument');
+
+  FaustMixer._internal() {
+    _handle = _funcGetInstance();
+  }
+
+  /// Initialize the mixer with a specific sample rate.
+  void init(double sampleRate) => _funcInit(_handle, sampleRate);
+
+  /// Start the hardware audio device.
+  bool start() => _funcStart(_handle) != 0;
+
+  /// Stop the hardware audio device.
+  void stop() => _funcStop(_handle);
+
+  /// Get the hardware sample rate.
+  double get sampleRate => _funcGetSR(_handle);
+
+  /// Set the master bus gain (0.0 to 1.0+).
+  set masterGain(double gain) => _funcSetGain(_handle, gain);
+
+  /// Set the volume weight for a specific instrument.
+  void setInstrumentWeight(FaustInstrument inst, double weight) {
+    _funcSetInstWeight(_handle, inst.nativePointer, weight);
+  }
+
+  /// Register an instrument with the mixer.
+  void registerInstrument(FaustInstrument inst, double weight) {
+    _funcRegisterInst(_handle, inst.nativePointer, weight);
+  }
+
+  /// Unregister an instrument from the mixer.
+  void unregisterInstrument(FaustInstrument inst) {
+    _funcUnregisterInst(_handle, inst.nativePointer);
+  }
 }

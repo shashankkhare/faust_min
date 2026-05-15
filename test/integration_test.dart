@@ -40,9 +40,16 @@ basefreq: 300.0
   
   final orchestrator = SequenceOrchestrator();
 
-  // 3. Register Tracks
+  // 3. Register Tracks with Orchestrator (The Brain)
+  print("[Test] Adding sequences to Orchestrator...");
   orchestrator.addSequence("Flute", fluteSequence);
   orchestrator.addSequence("Dayan", dayanSequence);
+
+  // 3.1 SUPPLY INSTRUMENTS TO MIXER (The Heartbeat)
+  // Strict Separation: Orchestrator manages UML, Mixer manages Audio Nodes.
+  print("[Test] Supplying instruments to Mixer...");
+  mixer.registerInstrument(fluteSequence.getFaustInstrument(), 0.8);
+  mixer.registerInstrument(dayanSequence.getFaustInstrument(), 0.8);
 
   print("[Test] Starting Multi-Track Playback...");
   // orchestrator.play("Flute");

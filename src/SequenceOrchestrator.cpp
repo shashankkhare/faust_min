@@ -110,11 +110,8 @@ int SequenceOrchestrator::addSequence(const std::string& name, UMLSequence* sequ
     // Ensure audio engine is armed and running (lazy init)
     // REMOVED: Hardware control should be explicit via FaustMixer class.
     
-    // Directly register standalone companion instrument into global mixer arrays
-    FaustInstrument* companionInst = sequence->getFaustInstrument();
-    if (companionInst) {
-        FaustMixer::getInstance().registerInstrument(companionInst, static_cast<float>(sequence->gain));
-    }
+    // Registration with FaustMixer is now handled explicitly by the caller (Bridge/Dart)
+    // to maintain strict decoupling between Orchestration and Rendering.
     
     rebuildSnapshot();
     return 0;
