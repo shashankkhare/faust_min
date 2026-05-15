@@ -165,13 +165,19 @@ public:
      */
     void processBuffer(std::shared_ptr<ActiveSequence> seq, float* output, int numFrames);
 
-private:
-    static void staticPreRender(int numFrames, void* userData) {
+    /**
+     * @brief Static bridge for the mixer's pre-render callback.
+     */
+    static int staticPreRender(int numFrames, void* userData) {
         if (userData) {
             auto* orch = static_cast<SequenceOrchestrator*>(userData);
             orch->updateTimeline(numFrames);
+            return numFrames;
         }
+        return 0;
     }
+
+private:
     void updateTimeline(int numFrames);
     void updateDSPParams(std::shared_ptr<ActiveSequence> seqWrapper, float freq, float vel, float strikeVal, const std::string& note);
     SequenceOrchestrator(const SequenceOrchestrator&) = delete;

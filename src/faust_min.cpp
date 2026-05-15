@@ -60,7 +60,10 @@ __attribute__((constructor)) void faust_min_init() {
 // --- High-Level Orchestrator Endpoints (The Controller) ---
 
 DART_EXPORT SequenceOrchestrator* orchestrator_create() {
-    return &SequenceOrchestrator::getInstance();
+    auto& orch = SequenceOrchestrator::getInstance();
+    // Connect the Brain to the Heartbeat via the FFI bridge (Decoupled)
+    FaustMixer::getInstance().setPreRenderCallback(SequenceOrchestrator::staticPreRender, &orch);
+    return &orch;
 }
 
 
