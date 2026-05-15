@@ -1,8 +1,41 @@
+/*
+ * Copyright (c) 2026 Shashank Khare
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+/**
+ * @file UMLParser.cpp
+ * @brief Implementation file for UMLParser
+ * 
+ * DESIGN: A lightweight parser for the Unified Musical Language (UML). It converts string-based musical notation into a deterministic event timeline for the orchestrator.
+ */
+
 #include "UMLParser.hpp"
 #include <sstream>
 #include <iostream>
 #include <cmath>
 #include <algorithm>
+#include <regex>
+#include <fstream>
+#include "InstrumentMapper.hpp"
+#include "FaustMixer.hpp"
 
 const std::map<std::string, double> UMLParser::indianRatios = {
     {"SaLow", 0.5}, {"Sa", 1.0}, 
@@ -10,15 +43,15 @@ const std::map<std::string, double> UMLParser::indianRatios = {
     {"g1", 32.0/27.0}, {"g2", 6.0/5.0}, {"G1", 5.0/4.0}, {"G2", 81.0/64.0}, {"Ga", 5.0/4.0},
     {"M1", 4.0/3.0}, {"M2", 27.0/20.0}, {"m1", 45.0/32.0}, {"m2", 64.0/45.0}, {"Ma", 4.0/3.0},
     {"Pa", 1.5},
-    {"d1", 128.0/81.0}, {"d2", 8.0/5.0}, {"D1", 5.0/3.0}, {"D2", 27.0/16.0}, {"Dh", 5.0/3.0},
+    {"d1", 128.0/81.0}, {"d2", 8.0/5.0}, {"D1", 5.0/3.0}, {"D2", 27.0/16.0}, {"Dh", 5.0/3.0}, {"Dha", 5.0/3.0},
     {"n1", 16.0/9.0}, {"n2", 9.0/5.0}, {"N1", 15.0/8.0}, {"N2", 243.0/128.0}, {"Ni", 15.0/8.0}
 };
 
 const std::map<std::string, double> UMLParser::percussionBols = {
-    {"Ta", 1.0}, {"Na", 1.0}, // Dayan Rim
-    {"Dh", 2.0}, {"Di", 2.0}, // Dayan White/Open
-    {"Ge", 3.0}, {"Ka", 4.0}, // Bayan Bass/Closed
-    {"Ti", 5.0}, {"Te", 6.0}  // Center/Muted
+    {"Na", 0.0}, {"Ta", 0.0}, 
+    {"tk", 1.0}, {"Ka", 1.0}, 
+    {"Ti", 2.0}, {"Tin", 2.0},
+    {"Tu", 3.0}, {"Tun", 3.0}
 };
 
 const std::map<std::string, double> UMLParser::westernPitches = {
@@ -34,7 +67,6 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
     std::string line;
     std::string notesSection;
     int grid = 4;
-
     // --- Pass 1: Header Parsing ---
     while (std::getline(ss, line)) {
         if (line.empty()) continue;
@@ -52,144 +84,207 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
             val.erase(val.find_last_not_of(" \t\r\n") + 1);
 
             if (key == "notation") seq.notation = val;
+            else if (key == "exectype" || key == "execType" || key == "exec_type") seq.execType = val;
             else if (key == "basefreq") seq.baseFreq = std::stod(val);
             else if (key == "bpm") seq.bpm = std::stod(val);
             else if (key == "grid") grid = std::stoi(val);
             else if (key == "instrument") {
-                // Split for params: instrument: FL (pressure=0.8)
-                auto p_start = val.find('(');
-                if (p_start != std::string::npos) {
-                    seq.instrument = val.substr(0, p_start);
-                } else {
+                seq.instrument = val;
+            }
+            else if (key == "parameters") {
+                std::stringstream pss(val);
+                std::string pPair;
+                while (std::getline(pss, pPair, ',')) {
+                    auto eq = pPair.find('=');
+                    if (eq != std::string::npos) {
+                        std::string pKey = pPair.substr(0, eq);
+                        std::string pVal = pPair.substr(eq + 1);
+                        pKey.erase(0, pKey.find_first_not_of(" \t\r\n"));
+                        pKey.erase(pKey.find_last_not_of(" \t\r\n") + 1);
+                        seq.initialParams[pKey] = std::stod(pVal);
+                    }
+                }
+            }
+            else if (key == "gain") seq.gain = std::stod(val);
+            else if (key == "instrumentID" || key == "instrumentid" || key == "ID" || key == "id") {
+                seq.instrumentID = std::stoi(val);
+            }
+            else if (!key.empty() && std::all_of(key.begin(), key.end(), ::isdigit)) {
+                seq.instrumentID = std::stoi(key);
+                if (seq.instrument.empty()) {
                     seq.instrument = val;
                 }
             }
-            else if (key == "0") { if (seq.instrument.empty()) seq.instrument = "DA"; }
-            else if (key == "1") { if (seq.instrument.empty()) seq.instrument = "BA"; }
-            else if (key == "gain") seq.gain = std::stod(val);
         } else {
             notesSection += line;
         }
     }
 
-    double samplesPerGrid = (60.0 / seq.bpm) * sampleRate / grid;
-
-    // --- Pass 2: Tokenization & Glide Resolution ---
-    struct RawToken {
-        int velocity;
-        std::string note;
-        char articulation; // '.', '_', '^'
-        long gridOffset;
-    };
-
-    std::vector<RawToken> rawTokens;
-    long currentGrid = 0;
-    
-    for (size_t i = 0; i < notesSection.length(); ) {
-        char c = notesSection[i];
-        if (isspace(c)) { i++; continue; }
-
-        RawToken rt;
-        rt.gridOffset = currentGrid;
-        rt.velocity = 5; // Default
-
-        if (isdigit(c)) {
-            // Velocity prefix
-            rt.velocity = c - '0';
-            i++;
+    // Bidirectional translation mapping cross-synchronization via Universal Service
+    if (seq.instrumentID != -1 && seq.instrument.empty()) {
+        seq.instrument = InstrumentMapper::getNameFromID(seq.instrumentID);
+    } else if (seq.instrumentID == -1 && !seq.instrument.empty()) {
+        seq.instrumentID = InstrumentMapper::getIDFromName(seq.instrument);
+        if (seq.instrumentID == -1) {
+            printf("[Native Error] UMLParser: Failed to resolve instrument name '%s'\n", seq.instrument.c_str());
+            fflush(stdout);
         }
-
-        // Read note until next articulation (. _ ^) or space
-        // We only stop at digits if we haven't started a note yet or if it's a velocity prefix
-        // Actually, the simplest rule: read until grid marker or space. 
-        // If there's a digit inside, it's part of the note.
-        size_t start = i;
-        while (i < notesSection.length() && 
-               notesSection[i] != '.' && 
-               notesSection[i] != '_' && 
-               notesSection[i] != '^' && 
-               !isspace(notesSection[i])) {
-            // Check if this digit is actually a velocity for the NEXT note.
-            // In UML, velocity is always followed by a note or grid? 
-            // Actually, let's look for the next Note-Velocity pair.
-            // For now, let's assume notes don't start with digits unless they are numeric frequencies.
-            // If it's a numeric frequency, it will be handled by the numeric check.
-            if (isdigit(notesSection[i])) {
-                // If the next char is ALSO a digit or a note letter, then this MIGHT be a velocity.
-                // But wait, the user said "note is the frequency". 
-                // 9200.5 -> 9 is vel, 200.5 is note.
-                // If we hit another digit, it might be part of the frequency.
-                
-                // Let's use a simpler heuristic: notes stop at articulations or spaces.
-                // Multiple notes without articulations must be separated by spaces in this parser.
-                i++;
-            } else {
-                i++;
-            }
-        }
-        rt.note = notesSection.substr(start, i - start);
-        rt.articulation = 0;
-
-        // If no note was found but we hit an articulation, it's a grid token
-        if (rt.note.empty() && i < notesSection.length() && 
-            (notesSection[i] == '.' || notesSection[i] == '_' || notesSection[i] == '^')) {
-            rt.articulation = notesSection[i];
-            i++;
-        }
-        
-        rawTokens.push_back(rt);
-        currentGrid++;
     }
 
-    // --- Pass 3: Event Generation with Look-ahead ---
-    for (size_t i = 0; i < rawTokens.size(); ++i) {
-        const auto& rt = rawTokens[i];
-        if (!rt.note.empty()) {
-            float freq = (float)getFrequency(rt.note, seq.notation, seq.baseFreq, seq.instrument);
-            float vel = (float)rt.velocity / 9.0f;
+    double samplesPerGrid = (60.0 / seq.bpm) * sampleRate / grid;
 
-            UMLEvent ev;
-            ev.sampleOffset = (long)(rt.gridOffset * samplesPerGrid);
-            ev.frequency = freq;
-            ev.velocity = vel;
-            ev.type = UMLEventType::NoteOn;
-            ev.note = rt.note; // STORE THE ORIGINAL BOL/NOTE NAME
-            
-            // Look-ahead for duration (dots '.')
+    // --- Pass 2: Tokenization via Standardized Regex Classifier ---
+    std::vector<TokenItem> tokenItems;
+    long currentGridIndex = 0;
+
+    // Regex parsing layout:
+    // Group 1 matches standalone dots (.) -> ContinuityDot
+    // Group 2 matches standalone underscores (_) -> StopRest
+    // Group 3 matches general notes starting with optional digits/chars ending with optional glide marker (^) -> NoteWithControl
+    std::regex tokenRegex(R"((\.)|(\_)|([^\s\.\_]+))");
+    auto words_begin = std::sregex_iterator(notesSection.begin(), notesSection.end(), tokenRegex);
+    auto words_end = std::sregex_iterator();
+
+    for (std::sregex_iterator i = words_begin; i != words_end; ++i) {
+        std::smatch match = *i;
+        TokenItem ti;
+        ti.gridIndex = currentGridIndex;
+        ti.controlParam = 5; // Default middle-register/velocity scalar
+        ti.hasGlide = false;
+
+        if (match[1].matched) {
+            ti.type = TokenType::ContinuityDot;
+            ti.rawStr = ".";
+        } else if (match[2].matched) {
+            ti.type = TokenType::StopRest;
+            ti.rawStr = "_";
+        } else if (match[3].matched) {
+            ti.type = TokenType::NoteWithControl;
+            std::string rem = match[3].str();
+            ti.rawStr = rem;
+
+            // Extract embedded single-digit control prefix modifier securely
+            if (rem.length() > 1 && std::isdigit(rem[0]) && !std::isdigit(rem[1])) {
+                ti.controlParam = rem[0] - '0';
+                rem = rem.substr(1);
+            }
+            if (!rem.empty() && rem.back() == '^') {
+                ti.hasGlide = true;
+                rem.pop_back();
+            }
+            ti.noteName = rem;
+        }
+        tokenItems.push_back(ti);
+        currentGridIndex++;
+    }
+
+    // --- Pass 3: Event Generation with Standardized Multi-Grid Sustains ---
+    for (size_t i = 0; i < tokenItems.size(); ++i) {
+        const auto& ti = tokenItems[i];
+        if (ti.type == TokenType::NoteWithControl) {
+            float vel = (float)ti.controlParam / 9.0f;
+
+            // Calculate exact continuous sustain duration across trailing ContinuityDot tokens
             long durationGrids = 1;
             size_t k = i + 1;
-            while (k < rawTokens.size() && rawTokens[k].articulation == '.') {
+            while (k < tokenItems.size() && tokenItems[k].type == TokenType::ContinuityDot) {
                 durationGrids++;
                 k++;
             }
-            
-            // Check for Glide Look-ahead
-            size_t j = i + 1;
-            while (j < rawTokens.size() && rawTokens[j].articulation == '^') {
-                // Found a glide marker
-                size_t glideTarget = j + 1;
-                while (glideTarget < rawTokens.size() && rawTokens[glideTarget].articulation == '.') glideTarget++;
-                
-                if (glideTarget < rawTokens.size() && !rawTokens[glideTarget].note.empty()) {
-                    // Found target note
-                    ev.type = UMLEventType::Glide;
-                    ev.targetFrequency = (float)getFrequency(rawTokens[glideTarget].note, seq.notation, seq.baseFreq, seq.instrument);
-                    ev.targetVelocity = (float)rawTokens[glideTarget].velocity / 9.0f;
-                    ev.durationSamples = (long)((glideTarget - j) * samplesPerGrid);
-                }
-                break;
+            long calculatedDurationSamples = (long)(durationGrids * samplesPerGrid);
+            long sampleOffset = (long)(ti.gridIndex * samplesPerGrid);
+
+            int mappedInstID = seq.instrumentID;
+            if (mappedInstID == -1 && !seq.instrument.empty()) {
+                mappedInstID = InstrumentMapper::getIDFromName(seq.instrument);
             }
-            
-            seq.events.push_back(ev);
-        } else if (rt.articulation == '_') {
-            UMLEvent ev;
-            ev.sampleOffset = (long)(rt.gridOffset * samplesPerGrid);
-            seq.events.push_back(ev);
+
+            if (InstrumentMapper::isPercussionID(mappedInstID)) {
+                handlePercussionToken(ti.noteName, vel, sampleOffset, calculatedDurationSamples, seq.baseFreq, seq.instrument, seq.events);
+            } else {
+                handlePitchedToken(ti, vel, sampleOffset, calculatedDurationSamples, seq.notation, seq.baseFreq, seq.instrument, samplesPerGrid, k, tokenItems, seq.events);
+            }
+        } else if (ti.type == TokenType::StopRest) {
+            UMLEvent restEv;
+            restEv.sampleOffset = (long)(ti.gridIndex * samplesPerGrid);
+            restEv.type = UMLEventType::NoteOff;
+            seq.events.push_back(restEv);
         }
     }
 
-    seq.totalDurationSamples = (long)(currentGrid * samplesPerGrid);
+    seq.grid = grid;
+    seq.totalDurationSamples = (long)(currentGridIndex * samplesPerGrid);
+
+    // Parsed events dump complete
     return seq;
+}
+
+void UMLParser::handlePercussionToken(const std::string& tokenNoteName, float velocityScalar, long sampleOffset, long durationSamples, double baseFreq, const std::string& instrument, std::vector<UMLEvent>& outEvents) {
+    // Percussion instances utilize unpitched triggering mechanics where note string defines stroke style.
+    // The frequency is inherited from the sequence base frequency.
+    UMLEvent ev; 
+    ev.sampleOffset = sampleOffset;
+    ev.frequency = static_cast<float>(baseFreq);
+    ev.velocity = velocityScalar;
+    ev.type = UMLEventType::NoteOn;
+    ev.note = tokenNoteName;
+    ev.durationSamples = durationSamples;
+
+    // Pre-calculate strikeVal based on instrument and note
+    int instID = InstrumentMapper::getIDFromName(instrument);
+    if (instID == 0) { // Dayan
+        if (tokenNoteName == "Na" || tokenNoteName == "Ta" || tokenNoteName == "na" || tokenNoteName == "ta") ev.strikeVal = 0.0f;
+        else if (tokenNoteName == "tk") ev.strikeVal = 1.0f;
+        else if (tokenNoteName == "Tin" || tokenNoteName == "Ti" || tokenNoteName == "tin" || tokenNoteName == "ti") ev.strikeVal = 2.0f;
+        else if (tokenNoteName == "Tun" || tokenNoteName == "Tu" || tokenNoteName == "tun" || tokenNoteName == "tu") ev.strikeVal = 3.0f;
+    } else if (instID == 1) { // Bayan
+        if (tokenNoteName == "Ka" || tokenNoteName == "ka") ev.strikeVal = 0.0f;
+        else if (tokenNoteName == "Ghe" || tokenNoteName == "ghe") ev.strikeVal = 1.0f;
+        else if (tokenNoteName == "Ghi" || tokenNoteName == "ghi") ev.strikeVal = 2.0f;
+        else if (tokenNoteName == "Ke" || tokenNoteName == "ke") ev.strikeVal = 3.0f;
+    } else if (percussionBols.count(tokenNoteName)) {
+        ev.strikeVal = static_cast<float>(percussionBols.at(tokenNoteName));
+    }
+
+    outEvents.push_back(ev);
+}
+
+void UMLParser::handlePitchedToken(const TokenItem& ti, float velocityScalar, long sampleOffset, long durationSamples, 
+                                   const std::string& notation, double baseFreq, const std::string& instrument,
+                                   double samplesPerGrid, size_t nextTokenIndex, const std::vector<TokenItem>& tokenItemsArray, std::vector<UMLEvent>& outEvents) {
+    float freq = static_cast<float>(getFrequency(ti.noteName, notation, baseFreq, instrument));
+    
+    UMLEvent noteEv;
+    noteEv.sampleOffset = sampleOffset;
+    noteEv.frequency = freq;
+    noteEv.velocity = velocityScalar;
+    noteEv.type = UMLEventType::NoteOn;
+    noteEv.note = ti.noteName;
+    noteEv.durationSamples = durationSamples;
+    outEvents.push_back(noteEv);
+
+    // Execute automated glides targeting next standalone operational pitch boundary
+    if (ti.hasGlide) {
+        size_t targetIdx = nextTokenIndex;
+        while (targetIdx < tokenItemsArray.size() && (tokenItemsArray[targetIdx].type == TokenType::ContinuityDot || tokenItemsArray[targetIdx].type == TokenType::StopRest)) {
+            targetIdx++;
+        }
+        if (targetIdx < tokenItemsArray.size() && tokenItemsArray[targetIdx].type == TokenType::NoteWithControl) {
+            float tFreq = (float)getFrequency(tokenItemsArray[targetIdx].noteName, notation, baseFreq, instrument);
+            float tVel = (float)tokenItemsArray[targetIdx].controlParam / 9.0f;
+            
+            // Enforce lookahead constraint: glide triggers ONLY if target frequency or velocity differs
+            if (std::abs(tFreq - freq) > 0.01f || std::abs(tVel - velocityScalar) > 0.01f) {
+                UMLEvent glideEv;
+                glideEv.sampleOffset = sampleOffset;
+                glideEv.type = UMLEventType::Glide;
+                glideEv.targetFrequency = tFreq;
+                glideEv.targetVelocity = tVel;
+                glideEv.durationSamples = durationSamples;
+                outEvents.push_back(glideEv);
+            }
+        }
+    }
 }
 
 double UMLParser::getFrequency(const std::string& token, const std::string& notation, double baseFreq, const std::string& instrument) {
@@ -200,10 +295,11 @@ double UMLParser::getFrequency(const std::string& token, const std::string& nota
         }
     } catch (...) {}
 
-    // 1. Percussion Check
-    if (instrument == "DA" || instrument == "BA" || instrument == "0" || instrument == "1") {
-        // For percussion, the bol name itself is used for articulation.
-        // We return baseFreq as the default pitch.
+    // 1. Universal Percussion Check via Translation Mapper (IDs 0 to 6 are non-pitched drums)
+    int instID = InstrumentMapper::getIDFromName(instrument);
+    if (instID >= 0 && instID <= 6) {
+        // For percussion, the bol/stroke name itself controls articulation mappings.
+        // We return baseFreq directly as a static unpitched target.
         return baseFreq;
     }
 
@@ -214,4 +310,45 @@ double UMLParser::getFrequency(const std::string& token, const std::string& nota
         if (westernPitches.count(token)) return westernPitches.at(token);
     }
     return baseFreq;
+}
+
+UMLSequence::UMLSequence(const std::string& seqName, int instID, const std::string& umlDataString) {
+    UMLSequence parsed = UMLParser::parse(seqName, umlDataString, InstrumentMapper::DEFAULT_SAMPLE_RATE);
+    this->name = parsed.name;
+    this->instrument = parsed.instrument;
+    this->instrumentID = instID != -1 ? instID : parsed.instrumentID;
+    this->initialParams = parsed.initialParams;
+    this->events = parsed.events;
+    this->bpm = parsed.bpm;
+    this->grid = parsed.grid;
+    this->baseFreq = parsed.baseFreq;
+    this->gain = parsed.gain;
+    this->totalDurationSamples = parsed.totalDurationSamples;
+    this->notation = parsed.notation;
+    this->execType = parsed.execType;
+    this->umlData = umlDataString;
+
+    int targetID = this->instrumentID;
+    if (targetID == -1 && !this->instrument.empty()) {
+        targetID = InstrumentMapper::getIDFromName(this->instrument);
+    }
+    if (targetID != -1) {
+        DSPExecutionType mode = (this->execType == "interpreter" || this->execType == "interpreted") 
+                              ? DSPExecutionType::InterpretedByte 
+                              : DSPExecutionType::StaticCompiled;
+        this->mInstrument = std::make_shared<FaustInstrument>(targetID, mode, InstrumentMapper::DEFAULT_SAMPLE_RATE);
+        for (const auto& pair : this->initialParams) {
+            this->mInstrument->setParameter(pair.first.c_str(), pair.second);
+        }
+    } else {
+        printf("[Native] WARNING: UMLSequence created with invalid instrument ID mapping.\n");
+        fflush(stdout);
+    }
+}
+
+UMLSequence::~UMLSequence() {
+    if (mInstrument) {
+        // Ensure the mixer stops referencing this instrument before it's deleted
+        FaustMixer::getInstance().unregisterInstrument(mInstrument.get());
+    }
 }

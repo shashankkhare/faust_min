@@ -1,4 +1,37 @@
+/*
+ * Copyright (c) 2026 Shashank Khare
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+/**
+ * @file SequenceOrchestrator.cpp
+ * @brief Implementation file for SequenceOrchestrator
+ * 
+ * DESIGN: Acts as the 'Controller' in the Controller-Sink model. It manages the musical timeline (UML) and schedules events. It is synchronized with the hardware interrupt via the FaustMixer's pre-render callback.
+ */
+
 #include "SequenceOrchestrator.hpp"
+#include "UMLParser.hpp"
+#include "InstrumentMapper.hpp"
+#include "FaustMixer.hpp"
+
 #include <faust/dsp/dsp.h>
 #include <faust/dsp/interpreter-dsp.h>
 #include <faust/gui/MapUI.h>
@@ -7,95 +40,34 @@
 #include <fstream>
 #include <sstream>
 #include <cstdio>
+#include <cstring>
 #include <chrono>
-
-#ifndef __ANDROID__
-#define MINIAUDIO_IMPLEMENTATION
-#include "miniaudio.h"
-
-// Bridge function for miniaudio to call the orchestrator's onAudioReady
-void maDataCallback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount) {
-    SequenceOrchestrator* orchestrator = (SequenceOrchestrator*)pDevice->pUserData;
-    // We render into a static scratch buffer to support mono-to-stereo expansion cleanly
-    static float* monoScratch = nullptr;
-    static ma_uint32 maxFrames = 0;
-    if (frameCount > maxFrames) {
-        if (monoScratch) delete[] monoScratch;
-        maxFrames = frameCount;
-        monoScratch = new float[maxFrames];
-    }
-    orchestrator->onAudioReady(nullptr, monoScratch, frameCount);
-    float* outF = (float*)pOutput;
-    for (ma_uint32 i = 0; i < frameCount; i++) {
-        outF[i * 2] = monoScratch[i];
-        outF[i * 2 + 1] = monoScratch[i];
-    }
-}
-#endif
+#include <unistd.h>
+#include <sys/stat.h>
 
 #define DEBUG_ORCHESTRATOR 1
 
-SequenceOrchestrator& SequenceOrchestrator::getInstance() {
-    static SequenceOrchestrator instance;
-    return instance;
-}
-
-SequenceOrchestrator::SequenceOrchestrator() : mSampleRate(44100.0f), mIsPaused(false), mScratchBuffer(nullptr), mRenderScratchBuffer(nullptr), mMaxRenderFrames(0) {}
+SequenceOrchestrator::SequenceOrchestrator() {}
 
 SequenceOrchestrator::~SequenceOrchestrator() {
     stop();
     {
         std::lock_guard<std::mutex> lock(mStateMutex);
-        mActiveSequences.clear(); // ~ActiveSequence() handles dsp and ui cleanup automatically
+        mActiveSequences.clear();
     }
-    if (mStream) mStream->close();
-    if (mScratchBuffer) delete[] mScratchBuffer;
-    if (mRenderScratchBuffer) delete[] mRenderScratchBuffer;
+    // Release snapshot — shared_ptr ref count handles safe cleanup
+    std::atomic_store(&mRenderSnapshot, std::shared_ptr<SnapshotVec>(nullptr));
 }
 
-void SequenceOrchestrator::init(float sampleRate) {
-    if (mScratchBuffer && mSampleRate == sampleRate) return; // Already initialized
-    mSampleRate = sampleRate;
-    
-    if (mScratchBuffer) delete[] mScratchBuffer;
-    mMaxFramesPerBuffer = 2048; 
-    mScratchBuffer = new float[mMaxFramesPerBuffer];
 
-#ifdef __ANDROID__
-    if (mStream) return;
-    oboe::AudioStreamBuilder builder;
-    builder.setDirection(oboe::Direction::Output)
-           .setPerformanceMode(oboe::PerformanceMode::LowLatency)
-           .setSharingMode(oboe::SharingMode::Exclusive)
-           .setFormat(oboe::AudioFormat::Float)
-           .setChannelCount(oboe::ChannelCount::Mono)
-           .setSampleRate((int32_t)sampleRate)
-           .setDataCallback(this);
-    
-    builder.openStream(mStream);
-    if (mStream) mStream->requestStart();
-#else
-    printf("[Native] SequenceOrchestrator: Initializing miniaudio for Desktop/iOS...\n");
-    ma_device_config config = ma_device_config_init(ma_device_type_playback);
-    config.playback.format = ma_format_f32;
-    config.playback.channels = 2; // Stereo output ensures ALSA/PulseAudio shared connection stability
-    config.sampleRate = (ma_uint32)sampleRate;
-    config.dataCallback = maDataCallback;
-    config.pUserData = this;
-
-    static ma_device device; 
-    static bool deviceInitialized = false;
-    if (!deviceInitialized) {
-        if (ma_device_init(NULL, &config, &device) != MA_SUCCESS) {
-            printf("[Native] ERROR: Failed to initialize miniaudio device.\n");
-        } else {
-            ma_device_start(&device);
-            deviceInitialized = true;
-            printf("[Native] miniaudio: Device started successfully at %f Hz.\n", sampleRate);
-        }
+void SequenceOrchestrator::rebuildSnapshot() {
+    // Must be called under mStateMutex from main thread only.
+    auto next = std::make_shared<SnapshotVec>();
+    next->reserve(mActiveSequences.size());
+    for (auto& pair : mActiveSequences) {
+        next->push_back(pair.second);
     }
-    fflush(stdout);
-#endif
+    std::atomic_store(&mRenderSnapshot, next);
 }
 
 void SequenceOrchestrator::setAssetBasePath(const std::string& path) {
@@ -105,55 +77,47 @@ void SequenceOrchestrator::setAssetBasePath(const std::string& path) {
     fflush(stdout);
 }
 
-#include <unistd.h>
-#include <sys/stat.h>
-
-std::string readFileContent(const std::string& path) {
-    char cwd[1024];
-    if (getcwd(cwd, sizeof(cwd)) != NULL) {
-        printf("[Native] Current Working Directory: %s\n", cwd);
-    }
-    
-    struct stat buffer;
-    if (stat(path.c_str(), &buffer) == 0) {
-        printf("[Native] File 'stat' SUCCESS: %s (Size: %lld)\n", path.c_str(), (long long)buffer.st_size);
-    } else {
-        printf("[Native] File 'stat' FAILED: %s\n", path.c_str());
-    }
-    fflush(stdout);
-
-    std::ifstream file(path);
-    if (!file.is_open()) {
-        printf("[Native] ERROR: Failed to open file stream: %s\n", path.c_str());
+int SequenceOrchestrator::addSequence(const std::string& name, UMLSequence* sequence) {
+    if (!sequence || sequence->instrumentID == -1) {
+        printf("[Native Error] Failed to add sequence '%s': Invalid Instrument ID\n", name.c_str());
         fflush(stdout);
-        return "";
+        return -1;
     }
-    std::stringstream ss;
-    ss << file.rdbuf();
-    return ss.str();
-}
 
-void SequenceOrchestrator::loadSequence(const std::string& name, const std::string& umlData) {
-    printf("[Native] Loading Sequence: %s\n", name.c_str());
-    fflush(stdout);
-    
-    // Parse UML and compile Faust factory bytecode OUTSIDE the audio thread lock
-    auto data = UMLParser::parse(name, umlData, mSampleRate);
-    printf("[Native] Parsed %lu events for %s. Instrument: %s\n", data.events.size(), name.c_str(), data.instrument.c_str());
-    fflush(stdout);
-    
-    auto seq = std::make_shared<ActiveSequence>();
-    seq->data = data;
-    seq->ui = new MapUI(); 
-    seq->dsp = createDSP(seq, data.instrument);
-    seq->currentSample = 0;
-    seq->weight = 1.0f;
-    seq->inGlide = false;
-    seq->pendingGateOn = false;
-    
-    // Lock briefly only to insert the fully constructed sequence into the active map
     std::lock_guard<std::mutex> lock(mStateMutex);
-    mActiveSequences[name] = seq;
+
+    for (const auto& pair : mActiveSequences) {
+        if (pair.second && pair.second->sequenceObj && 
+            pair.second->sequenceObj->instrumentID == sequence->instrumentID) {
+            printf("[Native Error] Failed to add sequence '%s': Instrument ID %d is already allocated\n", 
+                   name.c_str(), sequence->instrumentID);
+            fflush(stdout);
+            return -2;
+        }
+    }
+
+    printf("[Native] Adding Sequence Object: %s (InstID: %d)\n", name.c_str(), sequence->instrumentID);
+    fflush(stdout);
+    
+    auto seqWrapper = std::make_shared<ActiveSequence>();
+    seqWrapper->sequenceObj = sequence;
+    seqWrapper->currentSample = 0;
+    seqWrapper->nextEventIndex = 0;
+    seqWrapper->isPlaying = false;
+    
+    mActiveSequences[name] = seqWrapper;
+    
+    // Ensure audio engine is armed and running (lazy init)
+    // REMOVED: Hardware control should be explicit via FaustMixer class.
+    
+    // Directly register standalone companion instrument into global mixer arrays
+    FaustInstrument* companionInst = sequence->getFaustInstrument();
+    if (companionInst) {
+        FaustMixer::getInstance().registerInstrument(companionInst, static_cast<float>(sequence->gain));
+    }
+    
+    rebuildSnapshot();
+    return 0;
 }
 
 void SequenceOrchestrator::play(const std::string& name) {
@@ -161,11 +125,10 @@ void SequenceOrchestrator::play(const std::string& name) {
     if (mActiveSequences.count(name)) {
         printf("[Native] Starting Playback: %s\n", name.c_str());
         fflush(stdout);
-        mActiveSequences[name]->isPlaying = true;
+        mActiveSequences[name]->isPlaying.store(true);
         mActiveSequences[name]->currentSample = 0;
-#ifdef __ANDROID__
-        if (mStream) mStream->requestStart();
-#endif
+        mActiveSequences[name]->nextEventIndex = 0;
+        rebuildSnapshot();
     } else {
         printf("[Native] ERROR: Sequence not found: %s\n", name.c_str());
         fflush(stdout);
@@ -174,368 +137,110 @@ void SequenceOrchestrator::play(const std::string& name) {
 
 void SequenceOrchestrator::stop() {
     std::lock_guard<std::mutex> lock(mStateMutex);
-    for (auto& [name, seq] : mActiveSequences) {
-        seq->isPlaying = false;
+    for (auto& pair : mActiveSequences) {
+        pair.second->isPlaying = false;
     }
-#ifdef __ANDROID__
-    if (mStream) mStream->requestStop();
-#endif
 }
 
 void SequenceOrchestrator::pause() { mIsPaused = true; }
 void SequenceOrchestrator::resume() { mIsPaused = false; }
 
-void SequenceOrchestrator::setWeight(const std::string& name, float weight) {
+void SequenceOrchestrator::muteTrack(const std::string& name, bool mute) {
     std::lock_guard<std::mutex> lock(mStateMutex);
     if (mActiveSequences.count(name)) {
-        mActiveSequences[name]->weight = weight;
+        mActiveSequences[name]->isMuted.store(mute);
+        rebuildSnapshot();
+        printf("[Native] Track '%s' mute state set to: %s\n", name.c_str(), mute ? "true" : "false");
+        fflush(stdout);
     }
 }
 
 void SequenceOrchestrator::setParameter(const std::string& name, const std::string& param, float value) {
     std::lock_guard<std::mutex> lock(mStateMutex);
-    if (mActiveSequences.count(name) && mActiveSequences[name]->ui) {
-        mActiveSequences[name]->ui->setParamValue(param, value);
+    if (mActiveSequences.count(name) && mActiveSequences[name]->sequenceObj) {
+        auto inst = mActiveSequences[name]->sequenceObj->getFaustInstrument();
+        if (inst) inst->setParameter(param.c_str(), value);
     }
 }
 
-void SequenceOrchestrator::setOnFinishedCallback(OnSequenceFinished callback) {
-    mOnFinishedCallback = callback;
-}
-
-void SequenceOrchestrator::renderToBuffer(const std::string& name, float* buffer, int numFrames) {
-    auto start = std::chrono::high_resolution_clock::now();
+void SequenceOrchestrator::setWeight(const std::string& name, float weight) {
     std::lock_guard<std::mutex> lock(mStateMutex);
     if (mActiveSequences.count(name)) {
-        std::fill(buffer, buffer + numFrames, 0.0f);
-        processBuffer(mActiveSequences[name], buffer, numFrames);
-        
-        // --- Normalization ---
-        float maxAmp = 0.0f;
-        for (int i = 0; i < numFrames; i++) {
-            float a = std::abs(buffer[i]);
-            if (a > maxAmp) maxAmp = a;
+        auto inst = mActiveSequences[name]->sequenceObj->getFaustInstrument();
+        if (inst) {
+            FaustMixer::getInstance().setInstrumentWeight(inst->getID(), weight);
         }
-        if (maxAmp > 0.0f) {
-            float scale = 0.95f / maxAmp;
-            for (int i = 0; i < numFrames; i++) buffer[i] *= scale;
-        }
-        
-        auto end = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-        printf("[Native] renderToBuffer: '%s' (%d frames) took %lld ms. Peak: %f\n", 
-               name.c_str(), numFrames, (long long)duration, maxAmp);
-        fflush(stdout);
     }
 }
 
-void SequenceOrchestrator::renderMaster(float* buffer, int numFrames) {
-    std::lock_guard<std::mutex> lock(mStateMutex);
-    int totalStereoSamples = numFrames * 2;
-    std::fill(buffer, buffer + totalStereoSamples, 0.0f);
+
+
+void SequenceOrchestrator::updateTimeline(int numFrames) {
+    if (mIsPaused.load(std::memory_order_relaxed)) return;
     
-    if (numFrames > mMaxRenderFrames) {
-        if (mRenderScratchBuffer) delete[] mRenderScratchBuffer;
-        mMaxRenderFrames = numFrames;
-        mRenderScratchBuffer = new float[mMaxRenderFrames];
-    }
+    auto snapshot = getRenderSnapshot();
+    if (!snapshot || snapshot->empty()) return;
 
-    for (auto& [name, seq] : mActiveSequences) {
-        if (!seq->isPlaying) continue;
+
+    for (auto& seqWrapper : *snapshot) {
+        if (!seqWrapper->isPlaying.load(std::memory_order_relaxed) || seqWrapper->isMuted.load(std::memory_order_relaxed)) continue;
         
-        std::fill(mRenderScratchBuffer, mRenderScratchBuffer + numFrames, 0.0f);
-        processBuffer(seq, mRenderScratchBuffer, numFrames);
-        
-        for (int i = 0; i < numFrames; i++) {
-            float val = mRenderScratchBuffer[i] * seq->weight;
-            buffer[i * 2] += val;
-            buffer[i * 2 + 1] += val;
-        }
-    }
+        UMLSequence* seq = seqWrapper->sequenceObj;
+        FaustInstrument* inst = seq->getFaustInstrument();
+        if (!inst) continue;
 
-    // --- Peak Normalization ---
-    float maxAmp = 0.0f;
-    for (int i = 0; i < totalStereoSamples; i++) {
-        float absVal = std::abs(buffer[i]);
-        if (absVal > maxAmp) maxAmp = absVal;
-    }
-    if (maxAmp > 0.0f) {
-        float scale = 0.95f / maxAmp;
-        for (int i = 0; i < totalStereoSamples; i++) buffer[i] *= scale;
-    }
-    // High-frequency console logs inside real-time callback removed to prevent pipe stalling
-}
+        auto& events = seq->events;
 
-oboe::DataCallbackResult SequenceOrchestrator::onAudioReady(oboe::AudioStream *audioStream, void *audioData, int32_t numFrames) {
-    float* output = static_cast<float*>(audioData);
-    std::fill(output, output + numFrames, 0.0f);
-
-    if (mIsPaused) return oboe::DataCallbackResult::Continue;
-
-    std::lock_guard<std::mutex> lock(mStateMutex);
-    
-    // Ensure scratch buffer is large enough
-    if (numFrames > mMaxFramesPerBuffer) {
-        if (mScratchBuffer) delete[] mScratchBuffer;
-        mMaxFramesPerBuffer = numFrames;
-        mScratchBuffer = new float[mMaxFramesPerBuffer];
-    }
-
-    for (auto& [name, seq] : mActiveSequences) {
-        if (!seq->isPlaying) continue;
-
-        std::fill(mScratchBuffer, mScratchBuffer + numFrames, 0.0f);
-        processBuffer(seq, mScratchBuffer, numFrames);
-
-        // Weighted Summation
-        for (int i = 0; i < numFrames; ++i) {
-            output[i] += mScratchBuffer[i] * seq->weight;
-        }
-    }
-
-    return oboe::DataCallbackResult::Continue;
-}
-
-void SequenceOrchestrator::processBuffer(std::shared_ptr<ActiveSequence> seq, float* output, int numFrames) {
-    long startS = seq->currentSample;
-    int framesProcessed = 0;
-
-    while (framesProcessed < numFrames) {
-        long currentS = startS + framesProcessed;
-
-        // 0. Handle Pending Gate-On (Smart Reset) - Done at start of chunk
-        // to ensure the DSP saw the gate=0 from the previous sub-block.
-        if (seq->pendingGateOn) {
-            for (int p = 0; p < seq->ui->getParamsCount(); p++) {
-                std::string addr = seq->ui->getParamAddress(p);
-                if (addr.find("gate") != std::string::npos) {
-                    seq->ui->setParamValue(addr, 1.0f);
-                    break;
-                }
-            }
-            seq->pendingGateOn = false;
-        }
-
-        // 1. Process all events scheduled at currentS
-        for (auto it = seq->data.events.begin(); it != seq->data.events.end(); ) {
-            if (it->sampleOffset <= currentS) {
-                if (it->sampleOffset == currentS) {
-                    if (it->type == UMLEventType::NoteOn) {
-                        updateDSPParams(seq, it->frequency, it->velocity, it->note);
-                        seq->inGlide = false;
-                    } else if (it->type == UMLEventType::NoteOff) {
-                        updateDSPParams(seq, 0, 0, ""); 
-                        seq->inGlide = false;
-                    } else if (it->type == UMLEventType::Glide) {
-                        seq->inGlide = true;
-                        seq->glideStartSample = currentS;
-                        seq->glideDuration = it->durationSamples;
-                        seq->glideStartFreq = it->frequency;
-                        seq->glideEndFreq = it->targetFrequency;
-                        seq->glideStartVel = it->velocity;
-                        seq->glideEndVel = it->targetVelocity;
+        // Evaluate all events that fall within this block's sample range
+        while (seqWrapper->isPlaying && seqWrapper->nextEventIndex < events.size()) {
+            auto& ev = events[seqWrapper->nextEventIndex];
+            
+            // If the event happens within this block (or happened in the past due to a skip)
+            if (ev.sampleOffset <= seqWrapper->currentSample + numFrames) {
+                if (ev.type == UMLEventType::NoteOn) {
+                    printf("[Native Trace] TRIGGER: Seq='%s' | EvIdx=%zu | Offset=%ld\n", 
+                           seqWrapper->sequenceObj->name.c_str(), seqWrapper->nextEventIndex, ev.sampleOffset);
+                    fflush(stdout);
+                    updateDSPParams(seqWrapper, ev.frequency, ev.velocity, ev.strikeVal, ev.note);
+                    if (inst) inst->noteOn(ev.frequency, ev.velocity, ev.strikeVal);
+                } else if (ev.type == UMLEventType::NoteOff) {
+                    printf("[Native Trace] TRIGGER (OFF): Seq='%s' | EvIdx=%zu | Offset=%ld\n", 
+                           seqWrapper->sequenceObj->name.c_str(), seqWrapper->nextEventIndex, ev.sampleOffset);
+                    fflush(stdout);
+                    if (inst) inst->noteOff();
+                } else if (ev.type == UMLEventType::Glide) {
+                    float durSec = static_cast<float>(ev.durationSamples) / FaustMixer::getInstance().getSampleRate();
+                    if (inst) {
+                        inst->frequencyGlide(ev.targetFrequency, durSec);
+                        inst->velocityGlide(ev.targetVelocity, durSec);
                     }
                 }
-                it = seq->data.events.erase(it);
+                seqWrapper->nextEventIndex++;
             } else {
+                // Event is further in the future, stop for this block
                 break;
             }
         }
 
-        // 2. Determine contiguous chunk size to render in one native pass
-        int framesToNextEvent = numFrames - framesProcessed;
-        if (!seq->data.events.empty()) {
-            long nextEventS = seq->data.events.front().sampleOffset;
-            if (nextEventS > currentS) {
-                framesToNextEvent = std::min(framesToNextEvent, (int)(nextEventS - currentS));
-            }
-        }
+        seqWrapper->currentSample += numFrames;
 
-        int chunkSize = framesToNextEvent;
-        // If gate reset is pending, render precisely 1 frame to emit the zero-gate edge
-        if (seq->pendingGateOn && chunkSize > 0) {
-            chunkSize = 1;
+        if (seqWrapper->currentSample >= seq->totalDurationSamples) {
+            seqWrapper->isPlaying.store(false, std::memory_order_release);
+            notifyFinished(seq->name);
         }
-
-        // Sub-block division during glides to keep parameter sweeps smooth
-        if (seq->inGlide && chunkSize > 16) {
-            chunkSize = 16;
-        }
-
-        // Glide parameter update
-        if (seq->inGlide) {
-            float progress = (float)(currentS - seq->glideStartSample) / seq->glideDuration;
-            progress = std::min(1.0f, std::max(0.0f, progress));
-            float f = seq->glideStartFreq + (seq->glideEndFreq - seq->glideStartFreq) * progress;
-            float v = seq->glideStartVel + (seq->glideEndVel - seq->glideStartVel) * progress;
-            updateDSPParams(seq, f, v);
-            if (progress >= 1.0f) seq->inGlide = false;
-        }
-
-        // 3. Render multi-sample chunk
-        if (seq->dsp && chunkSize > 0) {
-            int numOuts = seq->dsp->getNumOutputs();
-            if (numOuts > 0) {
-                float* outputs[1] = { &output[framesProcessed] };
-                seq->dsp->compute(chunkSize, nullptr, outputs);
-            }
-        }
-
-        framesProcessed += chunkSize;
-
-        // 4. End of Sequence Check
-        if (startS + framesProcessed >= seq->data.totalDurationSamples) {
-            seq->isPlaying = false;
-            if (mOnFinishedCallback) {
-                mOnFinishedCallback(seq->data.name.c_str());
-            }
-            break;
-        }
-    }
-
-    seq->currentSample += framesProcessed;
-}
-
-void SequenceOrchestrator::updateDSPParams(std::shared_ptr<ActiveSequence> seq, float freq, float vel, const std::string& note) {
-    if (!seq->ui) return;
-
-    auto setFuzzyParam = [&](const std::string& key, float value) {
-        for (int i = 0; i < seq->ui->getParamsCount(); i++) {
-            std::string addr = seq->ui->getParamAddress(i);
-            auto it = std::search(addr.begin(), addr.end(), key.begin(), key.end(),
-                                [](char a, char b) { return std::tolower(a) == std::tolower(b); });
-            if (it != addr.end()) {
-                seq->ui->setParamValue(addr, value);
-                return true;
-            }
-        }
-        return false;
-    };
-
-    std::string inst = seq->data.instrument;
-
-    // --- Percussion Bol Mapping ---
-    if (!note.empty()) {
-        if (inst == "DA" || inst == "0") {
-            // Dayan Bols
-            float strikeVal = -1.0f; 
-            if (note == "Na" || note == "Ta" || note == "na" || note == "ta") {
-                strikeVal = 0.0f; // Na Snap
-            } else if (note == "tk") {
-                strikeVal = 0.1f; // tk Dead Click
-            } else if (note == "Tu" || note == "Tun" || note == "tu" || note == "tun") {
-                strikeVal = 2.0f; // Tun Open
-            } else if (note == "Ti" || note == "Tin" || note == "ti" || note == "tin" || note == "Te" || note == "te") strikeVal = 1.0f;
-            
-            if (strikeVal >= 0.0f) {
-                setFuzzyParam("strike", strikeVal);
-            } else if (vel > 0) {
-                float s = 0.0f;
-                if (vel > 0.66f) s = 2.0f;
-                else if (vel > 0.33f) s = 1.0f;
-                setFuzzyParam("strike", s);
-            }
-        } else if (inst == "BA" || inst == "1") {
-            // Bayan Bols
-            float strikeVal = 1.0f; // Default Ghe
-            float meendVal = 1.0f;
-            if (note == "Ghe" || note == "Ghi" || note == "ghe" || note == "ghi") {
-                strikeVal = 1.0f;
-                meendVal = 1.6f; // Deeper glide for Ghe
-            } else if (note == "Ka" || note == "Ke" || note == "ka" || note == "ke") {
-                strikeVal = 0.0f;
-            }
-            
-            setFuzzyParam("strike", strikeVal);
-            setFuzzyParam("meend", meendVal);
-        }
-    }
-
-    if (freq > 0) {
-        if (!setFuzzyParam("freq", freq)) {
-            setFuzzyParam("tubeLength", freq);
-        }
-    }
-    
-    if (vel > 0) {
-        // Sample-accurate gate reset: ONLY if not in a glide
-        if (!seq->inGlide) {
-            setFuzzyParam("gate", 0.0f);
-            // The next render cycle will set it to 1.0
-            seq->pendingGateOn = true; 
-        }
-        
-        if (!setFuzzyParam("velocity", vel)) {
-            if (!setFuzzyParam("gain", vel)) {
-                setFuzzyParam("pressure", vel);
-            }
-        } else {
-            setFuzzyParam("gain", 1.0f);
-        }
-        
-        if (!seq->pendingGateOn) {
-            setFuzzyParam("gate", 1.0f);
-        }
-    } else {
-        setFuzzyParam("gate", 0.0f);
-        setFuzzyParam("pressure", 0.0f);
     }
 }
 
-interpreter_dsp* SequenceOrchestrator::createDSP(std::shared_ptr<ActiveSequence> seq, const std::string& instrumentName) {
-    std::string path = getDSPPath(instrumentName);
-    std::string source = readFileContent(path);
-    if (source.empty()) {
-        printf("[Native] ERROR: Could not read DSP file: %s\n", path.c_str());
-        fflush(stdout);
-        return nullptr;
-    }
-
-    // Cache-busting: add a unique comment and use a unique factory name to force re-compilation
-    std::string timestamp = std::to_string(std::chrono::system_clock::now().time_since_epoch().count());
-    source = "// " + timestamp + "\n" + source;
-    std::string factoryName = "FaustInst_" + timestamp;
-
-    std::string error;
-    std::string libPath = mAssetBasePath.empty() ? "./assets/libraries/" : (mAssetBasePath + "/libraries/");
-    const char* argv[] = { "-I", libPath.c_str() };
-    interpreter_dsp_factory* factory = createInterpreterDSPFactoryFromString(factoryName.c_str(), source, 2, argv, error);
-    if (!factory) {
-        printf("[Native] ERROR: Faust Compilation failed for %s: %s\n", instrumentName.c_str(), error.c_str());
-        fflush(stdout);
-        return nullptr;
-    }
-
-    interpreter_dsp* dsp = factory->createDSPInstance();
-    dsp->init(mSampleRate);
-    
-    // Build UI for MapUI
-    if (seq->ui) {
-        dsp->buildUserInterface(seq->ui);
-    }
-    
-    // Clean up the factory AST memory footprint permanently after instance instantiation
-    deleteInterpreterDSPFactory(factory);
-    
-    return dsp;
+void SequenceOrchestrator::processBuffer(std::shared_ptr<ActiveSequence> seqWrapper, float* output, int numFrames) {
+    // This is now a legacy stub if anyone still calls it directly
 }
 
-std::string SequenceOrchestrator::getDSPPath(const std::string& instrumentName) {
-    std::string base = mAssetBasePath.empty() ? "./assets/dsp/" : (mAssetBasePath + "/dsp/");
-    if (instrumentName.empty()) return base + "flute.dsp"; // Default fallback
-    if (instrumentName == "FL" || instrumentName == "10") return base + "flute.dsp";
-    if (instrumentName == "DA" || instrumentName == "0") return base + "dayan.dsp";
-    if (instrumentName == "BA" || instrumentName == "1") return base + "bayan.dsp";
-    if (instrumentName == "SI" || instrumentName == "9") return base + "sitar.dsp";
-    if (instrumentName == "TA" || instrumentName == "11") return base + "tanpura.dsp";
-    if (instrumentName == "PI" || instrumentName == "12") return base + "piano.dsp";
-    if (instrumentName == "SX" || instrumentName == "13") return base + "sax.dsp";
-    if (instrumentName == "BE") return base + "bell.dsp";
-    if (instrumentName == "BO") return base + "bowl.dsp";
-    if (instrumentName == "Kick") return base + "kick.dsp";
-    if (instrumentName == "Snare") return base + "snare.dsp";
-    if (instrumentName == "Tom") return base + "tom.dsp";
-    if (instrumentName == "HiHat") return base + "hihat.dsp";
-    if (instrumentName == "Ride") return base + "ride.dsp";
-    return base + instrumentName + ".dsp";
+void SequenceOrchestrator::updateDSPParams(std::shared_ptr<ActiveSequence> seqWrapper, float freq, float vel, float strikeVal, const std::string& note) {
+    if (!seqWrapper || !seqWrapper->sequenceObj) return;
+    auto inst = seqWrapper->sequenceObj->getFaustInstrument();
+    if (!inst) return;
+
+    if (freq > 0.0f) inst->setParam("freq", freq);
+    if (vel >= 0.0f) inst->setParam("velocity", vel);
+    if (strikeVal >= 0.0f) inst->setParam("strike", strikeVal);
 }

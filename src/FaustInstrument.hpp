@@ -1,11 +1,38 @@
+/*
+ * Copyright (c) 2026 Shashank Khare
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #ifndef FAUST_INSTRUMENT_HPP
 #define FAUST_INSTRUMENT_HPP
 
+#include "InstrumentMapper.hpp"
 #include <memory>
 #include <string>
 #include <faust/gui/MapUI.h>
 #include <faust/dsp/dsp.h>
 #include <faust/gui/meta.h>
+#include <vector>
+#include <map>
+
+#include <mutex>
 
 enum class DSPExecutionType {
     StaticCompiled,  // Static compiled sub-classes e.g., FaustFluteDSP
@@ -15,25 +42,27 @@ enum class DSPExecutionType {
 class __attribute__((visibility("default"))) FaustInstrument {
 public:
     FaustInstrument(int instrumentID = -1, DSPExecutionType execType = DSPExecutionType::StaticCompiled,
-                    float sampleRate = 44100.0f, float gain = 1.0f, float freq = 440.0f, float velocity = 0.8f);
+                    float sampleRate = InstrumentMapper::DEFAULT_SAMPLE_RATE, float gain = 1.0f, float freq = 440.0f, float velocity = 0.8f);
     virtual ~FaustInstrument();
 
-    // Concrete core setup parameters
-    void setSampleRate(float sampleRate);
     void setDSP(dsp* newDSP, DSPExecutionType execType = DSPExecutionType::StaticCompiled);
     void unloadDSP();
-    void loadTargetDSP(int instrumentID, DSPExecutionType execType);
+
 
     // Concrete parameter tracking controls
     void setGain(float gain);
+    void setGainImmediate(float gain);
     void setFrequency(float freq);
+    void setFrequencyImmediate(float freq);
     void setVelocity(float velocity);
+    void setVelocityImmediate(float velocity);
     void setDuration(float seconds);
     void setParameter(const char* name, float value);
 
     // --- Native Automation Glides ---
     void velocityGlide(float targetVelocity, float durationSeconds);
     void frequencyGlide(float targetFreq, float durationSeconds);
+    void gainGlide(float targetGain, float durationSeconds);
 
     // Public concrete accessors
     float getGain() const;
@@ -43,7 +72,7 @@ public:
     float getSampleRate() const;
     DSPExecutionType getExecutionType() const;
 
-    void noteOn(float freq = -1.0f, float velocity = -1.0f);
+    void noteOn(float freq = -1.0f, float velocity = -1.0f, float strikeVal = -1.0f);
     void noteOff(float decayTailMs = 0.0f);
     void render(int numFrames, float* buffer);
 
@@ -51,7 +80,7 @@ public:
     virtual void onNoteFinish();
 
     // Group routing identifier
-    virtual int getID() const { return -1; }
+    virtual int getID() const { return mInstrumentID; }
 
     // Weight scaling properties
     void setAssignedWeight(float weight);
@@ -60,11 +89,48 @@ public:
     // Real-time audio streaming driver execution loop
     void processRealtimeStream(float* buffer, int numFrames);
 
+    /**
+     * @brief Queues a parameter change for sub-block processing.
+     * 
+     * This method ensures that the parameter change is 'seen' by the DSP by dividing 
+     * the next audio block into sub-blocks. Each queued event triggers a separate 
+     * compute cycle. Use this for all real-time triggers (e.g., gate hits).
+     */
+    void setParam(const char* shortName, float val);
+
+    /**
+     * @brief Instantly updates the DSP parameter memory.
+     * 
+     * Use this ONLY when you are already inside the rendering loop (e.g., glides)
+     * or during initialization where queuing is not required. It does NOT trigger 
+     * sub-block rendering.
+     */
+    void setParamImmediate(const char* shortName, float val);
+
 protected:
+    std::recursive_mutex mDSPLock; // Dedicated recursive mutex protecting DSP state maps
+    
+    struct LUTRecord {
+        float frequency;
+        float velocity;
+        std::map<std::string, float> targetParams;
+    };
+    std::vector<LUTRecord> mLUTRecords;
+    bool mLUTActive = false;
+
+    struct TimedEvent {
+        std::string paramName;
+        float value;
+    };
+    std::vector<TimedEvent> mEventQueue;
+
+    void applyDynamicLUTParams(float freq, float vel);
+
     std::unique_ptr<dsp> mDSP;
     std::unique_ptr<MapUI> mUI;
     DSPExecutionType mExecType;
     void* mDSPFactory;
+    int mInstrumentID;
 
     bool mIsStreamActive;
     float mSampleRate;
@@ -73,6 +139,7 @@ protected:
     float mVelocity;
     float mDuration;
     float mAssignedWeight;
+    bool mGateOpen;
 
     // Internal sample-accurate timeline counters
     long mTargetFrames;
@@ -93,12 +160,24 @@ protected:
     long mFreqGlideFramesTotal;
     long mFreqGlideFramesElapsed;
 
+    bool mGainGlideActive;
+    float mGainGlideStart;
+    float mGainGlideTarget;
+    long mGainGlideFramesTotal;
+    long mGainGlideFramesElapsed;
+
     void* mStreamDevice;
 
-    void setParam(const char* shortName, float val);
+protected:
     void processInternalGlides(int numFrames);
     void startInternalStream(float sampleRate);
     void stopInternalStream();
+    void setSampleRate(float sampleRate);  // accessible to subclass constructors
+    void loadTargetDSP();                  // accessible to subclass constructors
+
+private:
+    std::map<std::string, std::string> mParamAddressCache;
+    // No external or subclass-unsafe methods remain here
 };
 
 #endif

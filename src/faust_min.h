@@ -21,6 +21,7 @@ typedef struct FaustBell FaustBell;
 typedef struct FaustTanpura FaustTanpura;
 typedef struct FaustPiano FaustPiano;
 typedef struct FaustSax FaustSax;
+typedef struct FaustCowbell FaustCowbell;
 
 // --- High-Res Automation Event ---
 typedef struct {
@@ -37,6 +38,9 @@ DART_EXPORT void flute_destroy(FaustFlute* flute);
 DART_EXPORT void flute_set_frequency(FaustFlute* flute, float freq);
 DART_EXPORT void flute_set_pressure(FaustFlute* flute, float pressure);
 DART_EXPORT void flute_set_vibrato(FaustFlute* flute, float rate, float depth);
+DART_EXPORT void flute_set_duration(FaustFlute* flute, float seconds);
+DART_EXPORT void flute_note_on(FaustFlute* flute, float freq, float velocity);
+DART_EXPORT void flute_note_off(FaustFlute* flute);
 DART_EXPORT void flute_render(FaustFlute* flute, int numFrames, float* buffer);
 
 // --- Singing Bowl ---
@@ -47,6 +51,8 @@ DART_EXPORT void bowl_set_duration(FaustBowl* bowl, float seconds);
 DART_EXPORT void bowl_set_rub(FaustBowl* bowl, float rub);
 DART_EXPORT void bowl_set_waver(FaustBowl* bowl, float waver);
 DART_EXPORT void bowl_strike(FaustBowl* bowl, float velocity);
+DART_EXPORT void bowl_note_on(FaustBowl* bowl, float freq, float velocity);
+DART_EXPORT void bowl_note_off(FaustBowl* bowl);
 DART_EXPORT void bowl_render(FaustBowl* bowl, int numFrames, float* buffer);
 
 // --- Tabla Dayan ---
@@ -55,6 +61,8 @@ DART_EXPORT void dayan_destroy(FaustDayan* dayan);
 DART_EXPORT void dayan_set_frequency(FaustDayan* dayan, float freq);
 DART_EXPORT void dayan_set_mute(FaustDayan* dayan, int muted);
 DART_EXPORT void dayan_strike(FaustDayan* dayan, float velocity);
+DART_EXPORT void dayan_note_on(FaustDayan* dayan, float freq, float velocity);
+DART_EXPORT void dayan_note_off(FaustDayan* dayan);
 DART_EXPORT void dayan_render(FaustDayan* dayan, int numFrames, float* buffer);
 
 // --- Tabla Bayan ---
@@ -64,6 +72,8 @@ DART_EXPORT void bayan_set_frequency(FaustBayan* bayan, float freq);
 DART_EXPORT void bayan_set_meend(FaustBayan* bayan, float multiplier);
 DART_EXPORT void bayan_set_mute(FaustBayan* bayan, int muted);
 DART_EXPORT void bayan_strike(FaustBayan* bayan, float velocity);
+DART_EXPORT void bayan_note_on(FaustBayan* bayan, float freq, float velocity);
+DART_EXPORT void bayan_note_off(FaustBayan* bayan);
 DART_EXPORT void bayan_render(FaustBayan* bayan, int numFrames, float* buffer);
 
 // --- Sitar ---
@@ -73,6 +83,8 @@ DART_EXPORT void sitar_set_frequency(FaustSitar* sitar, float freq);
 DART_EXPORT void sitar_set_jivari(FaustSitar* sitar, float amount);
 DART_EXPORT void sitar_set_sympathetic_gain(FaustSitar* sitar, float gain);
 DART_EXPORT void sitar_pluck(FaustSitar* sitar, float velocity);
+DART_EXPORT void sitar_note_on(FaustSitar* sitar, float freq, float velocity);
+DART_EXPORT void sitar_note_off(FaustSitar* sitar);
 DART_EXPORT void sitar_render(FaustSitar* sitar, int numFrames, float* buffer);
 
 // --- Tanpura ---
@@ -81,15 +93,19 @@ DART_EXPORT void tanpura_destroy(FaustTanpura* tanpura);
 DART_EXPORT void tanpura_set_params(FaustTanpura* tanpura, float f1, float f2, float f3, float f4, float decay, float delay);
 DART_EXPORT void tanpura_set_jivari(FaustTanpura* tanpura, float amount);
 DART_EXPORT void tanpura_set_playing(FaustTanpura* tanpura, int playing);
+DART_EXPORT void tanpura_note_on(FaustTanpura* tanpura, float freq, float velocity);
+DART_EXPORT void tanpura_note_off(FaustTanpura* tanpura);
 DART_EXPORT void tanpura_render(FaustTanpura* tanpura, int numFrames, float* buffer);
 
 // --- Bell ---
 DART_EXPORT FaustBell* bell_create(float sampleRate);
 DART_EXPORT void bell_destroy(FaustBell* bell);
 DART_EXPORT void bell_set_frequency(FaustBell* bell, float freq);
-DART_EXPORT void bell_set_duration(FaustBell* bell, float seconds);
+DART_EXPORT void bell_set_ring_time(FaustBell* bell, float seconds);
 DART_EXPORT void bell_set_damping(FaustBell* bell, float damping);
 DART_EXPORT void bell_strike(FaustBell* bell, float velocity);
+DART_EXPORT void bell_note_on(FaustBell* bell, float freq, float velocity);
+DART_EXPORT void bell_note_off(FaustBell* bell);
 DART_EXPORT void bell_render(FaustBell* bell, int numFrames, float* buffer);
 
 // --- Drum Kit ---
@@ -126,6 +142,12 @@ DART_EXPORT void ride_destroy(FaustRide* ride);
 DART_EXPORT void ride_strike(FaustRide* ride, float velocity);
 DART_EXPORT void ride_render(FaustRide* ride, int numFrames, float* buffer);
 
+// --- Cowbell ---
+DART_EXPORT FaustCowbell* cowbell_create(float sampleRate);
+DART_EXPORT void cowbell_destroy(FaustCowbell* cowbell);
+DART_EXPORT void cowbell_strike(FaustCowbell* cowbell, float velocity);
+DART_EXPORT void cowbell_render(FaustCowbell* cowbell, int numFrames, float* buffer);
+
 // --- Piano ---
 DART_EXPORT FaustPiano* piano_create(float sampleRate);
 DART_EXPORT void piano_destroy(FaustPiano* piano);
@@ -133,6 +155,8 @@ DART_EXPORT void piano_set_frequency(FaustPiano* piano, float freq);
 DART_EXPORT void piano_set_sustain(FaustPiano* piano, float level);
 DART_EXPORT void piano_set_stiffness(FaustPiano* piano, float stiffness);
 DART_EXPORT void piano_strike(FaustPiano* piano, float velocity, float hardness);
+DART_EXPORT void piano_note_on(FaustPiano* piano, float freq, float velocity);
+DART_EXPORT void piano_note_off(FaustPiano* piano);
 DART_EXPORT void piano_render(FaustPiano* piano, int numFrames, float* buffer);
 
 // --- Saxophone ---
@@ -141,6 +165,8 @@ DART_EXPORT void sax_destroy(FaustSax* sax);
 DART_EXPORT void sax_set_frequency(FaustSax* sax, float freq);
 DART_EXPORT void sax_set_vibrato(FaustSax* sax, float rate, float depth);
 DART_EXPORT void sax_strike(FaustSax* sax, float velocity);
+DART_EXPORT void sax_note_on(FaustSax* sax, float freq, float velocity);
+DART_EXPORT void sax_note_off(FaustSax* sax);
 DART_EXPORT void sax_render(FaustSax* sax, int numFrames, float* buffer);
 
 // --- Audio Mixer & DSP ---
@@ -198,19 +224,41 @@ DART_EXPORT void render_automation_sequence(
     float* outputBuffer
 );
 
-// --- Real-time Sequence Orchestrator (Singleton) ---
-DART_EXPORT void orchestrator_init(float sampleRate);
-DART_EXPORT void orchestrator_set_asset_base_path(const char* path);
-DART_EXPORT void orchestrator_load_sequence(const char* name, const char* data);
-DART_EXPORT void orchestrator_play(const char* name);
-DART_EXPORT void orchestrator_stop();
-DART_EXPORT void orchestrator_pause();
-DART_EXPORT void orchestrator_resume();
-DART_EXPORT void orchestrator_set_weight(const char* name, float weight);
-DART_EXPORT void orchestrator_set_parameter(const char* name, const char* param, float value);
-DART_EXPORT void orchestrator_set_finished_callback(void (*callback)(const char*));
-DART_EXPORT void orchestrator_render_pcm(const char* name, float* buffer, int numFrames);
-DART_EXPORT void orchestrator_render_master(float* buffer, int numFrames);
+// --- Forward Object Definitions ---
+typedef struct SequenceOrchestrator SequenceOrchestrator;
+typedef struct UMLSequence UMLSequence;
+typedef struct FaustInstrument FaustInstrument;
+typedef struct FaustMixer FaustMixer;
+
+// --- Real-time Sequence Orchestrator Object Exposure ---
+DART_EXPORT SequenceOrchestrator* orchestrator_create();
+DART_EXPORT void orchestrator_destroy(SequenceOrchestrator* orch);
+
+DART_EXPORT void orchestrator_set_asset_base_path(SequenceOrchestrator* orch, const char* path);
+DART_EXPORT int orchestrator_add_sequence(SequenceOrchestrator* orch, const char* name, UMLSequence* seq);
+DART_EXPORT void orchestrator_play(SequenceOrchestrator* orch, const char* name);
+DART_EXPORT void orchestrator_stop(SequenceOrchestrator* orch);
+DART_EXPORT void orchestrator_pause(SequenceOrchestrator* orch);
+DART_EXPORT void orchestrator_resume(SequenceOrchestrator* orch);
+DART_EXPORT void orchestrator_set_weight(SequenceOrchestrator* orch, const char* name, float weight);
+DART_EXPORT void orchestrator_set_parameter(SequenceOrchestrator* orch, const char* name, const char* param, float value);
+DART_EXPORT const char* orchestrator_poll_finished(SequenceOrchestrator* orch);
+
+// --- FaustMixer Singleton Endpoints ---
+DART_EXPORT FaustMixer* mixer_get_instance();
+DART_EXPORT int mixer_start(FaustMixer* mixer);
+DART_EXPORT void mixer_stop(FaustMixer* mixer);
+DART_EXPORT float mixer_get_sample_rate(FaustMixer* mixer);
+DART_EXPORT void mixer_set_master_gain(FaustMixer* mixer, float gain);
+
+
+// --- UMLSequence and FaustInstrument Flat Endpoints ---
+DART_EXPORT UMLSequence* sequence_create(const char* name, int instID, const char* umlDataString);
+DART_EXPORT void sequence_destroy(UMLSequence* seq);
+DART_EXPORT FaustInstrument* sequence_get_instrument(UMLSequence* seq);
+DART_EXPORT void instrument_set_parameter(FaustInstrument* inst, const char* name, float value);
+DART_EXPORT double sequence_get_bpm(UMLSequence* seq);
+DART_EXPORT int sequence_get_grid(UMLSequence* seq);
 
 #ifdef __cplusplus
 }

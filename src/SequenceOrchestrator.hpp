@@ -1,123 +1,194 @@
+/*
+ * Copyright (c) 2026 Shashank Khare
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #ifndef SEQUENCE_ORCHESTRATOR_HPP
 #define SEQUENCE_ORCHESTRATOR_HPP
 
 #include <cstdint>
-
-#ifdef __ANDROID__
-#include <oboe/Oboe.h>
-#define OBOE_OVERRIDE override
-#else
-#define OBOE_OVERRIDE
-#include "miniaudio.h"
-namespace oboe {
-    enum class DataCallbackResult { Continue };
-    class AudioStream {
-    public:
-        virtual void close() {}
-        virtual void requestStart() {}
-        virtual void requestStop() {}
-    };
-    class AudioStreamDataCallback {
-    public:
-        virtual ~AudioStreamDataCallback() {}
-        virtual DataCallbackResult onAudioReady(AudioStream *audioStream, void *audioData, int32_t numFrames) {
-            return DataCallbackResult::Continue;
-        }
-    };
-}
-#endif
-
 #include <string>
 #include <vector>
 #include <map>
 #include <mutex>
 #include <atomic>
 #include <memory>
+#include <functional>
+#include <cstring>
 #include "UMLParser.hpp"
 #include "CSVModelLoader.hpp"
+#include "InstrumentMapper.hpp"
 
 // Faust SDK includes
 #include <faust/dsp/interpreter-dsp.h>
 #include <faust/gui/MapUI.h>
 
 struct ActiveSequence {
-    UMLSequence data;
-    interpreter_dsp* dsp; 
-    MapUI* ui; // MapUI to control the DSP parameters
-    long currentSample;
-    float weight;
-    bool isPlaying;
-    
-    // For Glide interpolation
-    bool inGlide;
-    long glideStartSample;
-    long glideDuration;
-    float glideStartFreq;
-    float glideEndFreq;
-    float glideStartVel;
-    float glideEndVel;
-    bool pendingGateOn;
+    UMLSequence* sequenceObj;
+    long currentSample;           // written only by driving worker thread — no race
+    size_t nextEventIndex;        // written only by driving worker thread — no race
+    std::atomic<bool> isPlaying{false};
+    std::atomic<bool> isMuted{false};
 
-    ActiveSequence() : dsp(nullptr), ui(nullptr), currentSample(0), weight(1.0f), isPlaying(false),
-                       inGlide(false), glideStartSample(0), glideDuration(0), glideStartFreq(0),
-                       glideEndFreq(0), glideStartVel(0), glideEndVel(0), pendingGateOn(false) {}
-
-    ~ActiveSequence() {
-        if (dsp) { delete dsp; dsp = nullptr; }
-        if (ui) { delete ui; ui = nullptr; }
-    }
+    ActiveSequence() : sequenceObj(nullptr), currentSample(0), nextEventIndex(0) {}
+    ~ActiveSequence() {}
+    // Non-copyable — atomics cannot be copied
+    ActiveSequence(const ActiveSequence&) = delete;
+    ActiveSequence& operator=(const ActiveSequence&) = delete;
 };
 
-class SequenceOrchestrator : public oboe::AudioStreamDataCallback {
+/**
+ * @class SequenceOrchestrator
+ * @brief High-level manager for UML-based musical sequences and their active playback state.
+ * 
+ * The SequenceOrchestrator is responsible for:
+ * 1. Loading and parsing UML sequence definitions.
+ * 2. Managing the lifecycle of "Active Sequences" (play, pause, stop).
+ * 3. Providing a thread-safe snapshot of active sequences to the FaustMixer for rendering.
+ * 4. Handling track-level metadata like volume weights and parameter overrides.
+ * 
+ * DESIGN NOTE: This class does NOT perform audio rendering. It delegates all signal 
+ * generation and block processing to the FaustMixer.
+ */
+class SequenceOrchestrator {
 public:
-    static SequenceOrchestrator& getInstance();
-
-    typedef void (*OnSequenceFinished)(const char* name);
-    void setOnFinishedCallback(OnSequenceFinished callback);
-
-    void init(float sampleRate);
-    void setAssetBasePath(const std::string& path);
-    void loadSequence(const std::string& name, const std::string& umlData);
-    void play(const std::string& name);
-    void stop();
-    void pause();
-    void resume();
-    void setWeight(const std::string& name, float weight);
-    void setParameter(const std::string& name, const std::string& param, float value);
-
-    // Static PCM Rendering
-    void renderToBuffer(const std::string& name, float* buffer, int numFrames);
-    void renderMaster(float* buffer, int numFrames);
-
-    // Oboe Callback
-    oboe::DataCallbackResult onAudioReady(oboe::AudioStream *audioStream, void *audioData, int32_t numFrames) OBOE_OVERRIDE;
+    /**
+     * @brief Singleton Accessor
+     */
+    static SequenceOrchestrator& getInstance() {
+        static SequenceOrchestrator instance;
+        return instance;
+    }
 
 private:
     SequenceOrchestrator();
     ~SequenceOrchestrator();
+public:
+
+    void setAssetBasePath(const std::string& path);
+
+    /**
+     * @brief Register a new sequence definition into the orchestrator.
+     * @param name Unique identifier for the sequence track.
+     * @param sequence Parsed UML sequence object.
+     */
+    int addSequence(const std::string& name, UMLSequence* sequence);
+
+    /**
+     * @brief Trigger playback for a registered sequence.
+     */
+    void play(const std::string& name);
+
+    /**
+     * @brief Stop all active playback immediately.
+     */
+    void stop();
+
+    /**
+     * @brief Pause the global playback timeline.
+     */
+    void pause();
+
+    /**
+     * @brief Resume global playback.
+     */
+    void resume();
+
+    /**
+     * @brief Mute or unmute a specific track.
+     */
+    void muteTrack(const std::string& name, bool mute = true);
+
+    /**
+     * @brief Manually override a DSP parameter for a specific track.
+     */
+    void setParameter(const std::string& name, const std::string& param, float value);
+
+    /**
+     * @brief Set the relative mix weight (gain) for a sequence.
+     */
+    void setWeight(const std::string& name, float weight);
+
+
+
+
+
+    /**
+     * @brief Poll for finished sequence notifications (for Dart FFI).
+     * @return The name of the sequence that just finished, or nullptr.
+     */
+    const char* pollFinished() {
+        if (mPendingFinish.exchange(false, std::memory_order_acq_rel)) return mFinishedName;
+        return nullptr;
+    }
+
+    /**
+     * @brief Signal from the mixer that a sequence has completed its timeline.
+     */
+    void notifyFinished(const std::string& name) {
+        std::strncpy(mFinishedName, name.c_str(), 127);
+        mFinishedName[127] = '\0';
+        mPendingFinish.store(true, std::memory_order_release);
+    }
+
+    /**
+     * @brief Returns a thread-safe snapshot of active sequences for the mixer.
+     */
+    std::shared_ptr<std::vector<std::shared_ptr<ActiveSequence>>> getRenderSnapshot() {
+        return std::atomic_load(&mRenderSnapshot);
+    }
+
+    /**
+     * @brief Checks if the global timeline is paused.
+     */
+    bool isPaused() const { return mIsPaused.load(std::memory_order_relaxed); }
+
+    /**
+     * @brief Render a block of audio for a specific sequence. 
+     */
+    void processBuffer(std::shared_ptr<ActiveSequence> seq, float* output, int numFrames);
+
+private:
+    static void staticPreRender(int numFrames, void* userData) {
+        if (userData) {
+            auto* orch = static_cast<SequenceOrchestrator*>(userData);
+            orch->updateTimeline(numFrames);
+        }
+    }
+    void updateTimeline(int numFrames);
+    void updateDSPParams(std::shared_ptr<ActiveSequence> seqWrapper, float freq, float vel, float strikeVal, const std::string& note);
     SequenceOrchestrator(const SequenceOrchestrator&) = delete;
     SequenceOrchestrator& operator=(const SequenceOrchestrator&) = delete;
 
-    float mSampleRate;
     std::string mAssetBasePath;
-    std::shared_ptr<oboe::AudioStream> mStream;
-    OnSequenceFinished mOnFinishedCallback = nullptr; 
-    
+
     std::map<std::string, std::shared_ptr<ActiveSequence>> mActiveSequences;
     std::mutex mStateMutex;
-    std::atomic<bool> mIsPaused;
-    
-    float* mScratchBuffer = nullptr;
-    int32_t mMaxFramesPerBuffer = 1024;
+    std::atomic<bool> mIsPaused{false};
 
-    float* mRenderScratchBuffer = nullptr;
-    int32_t mMaxRenderFrames = 0;
+    using SnapshotVec = std::vector<std::shared_ptr<ActiveSequence>>;
+    std::shared_ptr<SnapshotVec> mRenderSnapshot; 
+    void rebuildSnapshot(); 
 
-    void processBuffer(std::shared_ptr<ActiveSequence> seq, float* output, int numFrames);
-    void updateDSPParams(std::shared_ptr<ActiveSequence> seq, float freq, float vel, const std::string& note = "");
-    interpreter_dsp* createDSP(std::shared_ptr<ActiveSequence> seq, const std::string& instrumentName);
-    
-    std::string getDSPPath(const std::string& instrumentName);
+    std::atomic<bool> mPendingFinish{false};
+    char mFinishedName[128] = {};
 };
 
 #endif // SEQUENCE_ORCHESTRATOR_HPP
