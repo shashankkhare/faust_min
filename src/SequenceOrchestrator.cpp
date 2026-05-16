@@ -86,14 +86,10 @@ int SequenceOrchestrator::addSequence(const std::string& name, UMLSequence* sequ
 
     std::lock_guard<std::mutex> lock(mStateMutex);
 
-    for (const auto& pair : mActiveSequences) {
-        if (pair.second && pair.second->sequenceObj && 
-            pair.second->sequenceObj->instrumentID == sequence->instrumentID) {
-            printf("[Native Error] Failed to add sequence '%s': Instrument ID %d is already allocated\n", 
-                   name.c_str(), sequence->instrumentID);
-            fflush(stdout);
-            return -2;
-        }
+    if (mActiveSequences.count(name)) {
+        printf("[Native Error] Failed to add sequence '%s': Name already exists\n", name.c_str());
+        fflush(stdout);
+        return -2;
     }
 
     printf("[Native] Adding Sequence Object: %s (InstID: %d)\n", name.c_str(), sequence->instrumentID);
