@@ -102,10 +102,6 @@ DART_EXPORT void orchestrator_mute_track(SequenceOrchestrator* orch, const char*
     if (orch && name) orch->muteTrack(name, mute != 0);
 }
 
-DART_EXPORT void orchestrator_set_weight(SequenceOrchestrator* orch, const char* name, float weight) {
-    if (orch && name) orch->setWeight(name, weight);
-}
-
 DART_EXPORT void orchestrator_set_parameter(SequenceOrchestrator* orch, const char* name, const char* param, float value) {
     if (orch && name && param) orch->setParameter(name, param, value);
 }
@@ -143,7 +139,7 @@ DART_EXPORT void mixer_set_master_gain(FaustMixer* mixer, float gain) {
 }
 
 DART_EXPORT void mixer_set_instrument_weight(FaustMixer* mixer, FaustInstrument* inst, float weight) {
-    if (mixer && inst) mixer->setInstrumentWeight(inst->getID(), weight);
+    if (inst) inst->setAssignedWeight(weight);
 }
 
 DART_EXPORT void mixer_register_instrument(FaustMixer* mixer, FaustInstrument* inst, float weight) {
@@ -181,6 +177,14 @@ DART_EXPORT FaustInstrument* sequence_get_instrument(UMLSequence* seq) {
 
 DART_EXPORT void instrument_set_parameter(FaustInstrument* inst, const char* name, float value) {
     if (inst && name) inst->setParameter(name, value);
+}
+
+DART_EXPORT void instrument_set_weight(FaustInstrument* inst, float weight) {
+    if (inst) inst->setAssignedWeight(weight);
+}
+
+DART_EXPORT float instrument_get_weight(FaustInstrument* inst) {
+    return inst ? inst->getAssignedWeight() : 0.0f;
 }
 
 DART_EXPORT void instrument_note_on(FaustInstrument* inst, float freq, float velocity, float strike) {

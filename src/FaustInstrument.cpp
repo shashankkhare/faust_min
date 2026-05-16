@@ -277,15 +277,11 @@ void FaustInstrument::setGainImmediate(float gain) {
 void FaustInstrument::setVelocity(float velocity) {
     mVelocity = velocity;
     setParam("velocity", velocity);
-    setParam("strike", velocity);
-    setParam("pluck", velocity);
 }
 
 void FaustInstrument::setVelocityImmediate(float velocity) {
     mVelocity = velocity;
     setParamImmediate("velocity", velocity);
-    setParamImmediate("strike", velocity);
-    setParamImmediate("pluck", velocity);
 }
 
 void FaustInstrument::setDuration(float seconds) {
@@ -351,6 +347,9 @@ void FaustInstrument::noteOn(float freq, float vel, float strike) {
     
     mElapsedFrames = 0;
     mGateOpen = true;
+    
+    // Force a 0->1 transition in the event queue to ensure triggering
+    setParam("gate", 0.0f);
     setParam("gate", 1.0f);
 }
 

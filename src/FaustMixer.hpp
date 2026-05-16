@@ -63,10 +63,10 @@ public:
     void unregisterInstrument(FaustInstrument* inst);
 
     // Explicit DJ Fader Automation API (Real-time Sweeps)
-    void fadeIn(int instrumentID, float durationSeconds);
-    void fadeOut(int instrumentID, float durationSeconds);
-    void setInstrumentWeight(int instrumentID, float dynamicWeight);
-    float getInstrumentWeight(int instrumentID);
+    void fadeIn(FaustInstrument* inst, float durationSeconds);
+    void fadeOut(FaustInstrument* inst, float durationSeconds);
+    void setInstrumentWeight(FaustInstrument* inst, float dynamicWeight);
+    float getInstrumentWeight(FaustInstrument* inst);
 
     // Global Master-Bus Automation
     void masterFadeIn(float durationSeconds);
@@ -119,8 +119,7 @@ private:
     float mMasterGain;
 
     std::vector<FaustInstrument*> mRegisteredInstruments;
-    std::map<int, float> mAssignedWeights;
-    std::map<int, float> mDynamicWeights;
+    std::map<FaustInstrument*, float> mDynamicWeights;
 
     struct WeightSweep {
         bool isActive = false;
@@ -129,7 +128,7 @@ private:
         long startSample = 0;
         long durationSamples = 0;
     };
-    std::map<int, WeightSweep> mWeightSweeps;
+    std::map<FaustInstrument*, WeightSweep> mWeightSweeps;
 
     struct MasterSweep {
         bool isActive = false;

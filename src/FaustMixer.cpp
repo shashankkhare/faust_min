@@ -247,10 +247,8 @@ void FaustMixer::registerInstrument(FaustInstrument* inst, float assignedWeight)
     auto it = std::find(mRegisteredInstruments.begin(), mRegisteredInstruments.end(), inst);
     if (it == mRegisteredInstruments.end()) {
         mRegisteredInstruments.push_back(inst);
-        int id = inst->getID();
         inst->setAssignedWeight(assignedWeight);
-        mAssignedWeights[id] = assignedWeight;
-        mDynamicWeights[id] = assignedWeight;
+        mDynamicWeights[inst] = assignedWeight;
     }
 }
 
@@ -260,14 +258,17 @@ void FaustMixer::unregisterInstrument(FaustInstrument* inst) {
     auto it = std::find(mRegisteredInstruments.begin(), mRegisteredInstruments.end(), inst);
     if (it != mRegisteredInstruments.end()) {
         mRegisteredInstruments.erase(it);
+        mDynamicWeights.erase(inst);
+        mWeightSweeps.erase(inst);
     }
 }
 
-void FaustMixer::fadeIn(int id, float durationSeconds) {
+void FaustMixer::fadeIn(FaustInstrument* inst, float durationSeconds) {
+    if (!inst) return;
     std::lock_guard<std::mutex> lock(mRegistryMutex);
-    mDynamicWeights[id] = 0.0f;
-    float assignedCap = mAssignedWeights.count(id) ? mAssignedWeights[id] : 1.0f;
-    auto& sweep = mWeightSweeps[id];
+    mDynamicWeights[inst] = 0.0f;
+    float assignedCap = inst->getAssignedWeight();
+    auto& sweep = mWeightSweeps[inst];
     sweep.isActive = true;
     sweep.startWeight = 0.0f;
     sweep.targetWeight = assignedCap;
@@ -275,10 +276,11 @@ void FaustMixer::fadeIn(int id, float durationSeconds) {
     sweep.durationSamples = static_cast<long>(durationSeconds * mSampleRate);
 }
 
-void FaustMixer::fadeOut(int id, float durationSeconds) {
+void FaustMixer::fadeOut(FaustInstrument* inst, float durationSeconds) {
+    if (!inst) return;
     std::lock_guard<std::mutex> lock(mRegistryMutex);
-    float curW = mDynamicWeights.count(id) ? mDynamicWeights[id] : 0.0f;
-    auto& sweep = mWeightSweeps[id];
+    float curW = mDynamicWeights.count(inst) ? mDynamicWeights[inst] : 0.0f;
+    auto& sweep = mWeightSweeps[inst];
     sweep.isActive = true;
     sweep.startWeight = curW;
     sweep.targetWeight = 0.0f;
@@ -286,16 +288,18 @@ void FaustMixer::fadeOut(int id, float durationSeconds) {
     sweep.durationSamples = static_cast<long>(durationSeconds * mSampleRate);
 }
 
-void FaustMixer::setInstrumentWeight(int id, float dynamicWeight) {
+void FaustMixer::setInstrumentWeight(FaustInstrument* inst, float dynamicWeight) {
+    if (!inst) return;
     std::lock_guard<std::mutex> lock(mRegistryMutex);
-    float assignedCap = mAssignedWeights.count(id) ? mAssignedWeights[id] : 1.0f;
-    mDynamicWeights[id] = std::min(dynamicWeight, assignedCap);
-    mWeightSweeps[id].isActive = false;
+    float assignedCap = inst->getAssignedWeight();
+    mDynamicWeights[inst] = std::min(dynamicWeight, assignedCap);
+    mWeightSweeps[inst].isActive = false;
 }
 
-float FaustMixer::getInstrumentWeight(int id) {
+float FaustMixer::getInstrumentWeight(FaustInstrument* inst) {
+    if (!inst) return 0.0f;
     std::lock_guard<std::mutex> lock(mRegistryMutex);
-    return mDynamicWeights.count(id) ? mDynamicWeights[id] : 0.0f;
+    return mDynamicWeights.count(inst) ? mDynamicWeights[inst] : inst->getAssignedWeight();
 }
 
 void FaustMixer::masterFadeIn(float durationSeconds) {
@@ -409,14 +413,14 @@ inline void FaustMixer::processMasterSweep(long currentS) {
 
 inline void FaustMixer::processChannelSweeps(long currentS) {
     for (auto& pair : mWeightSweeps) {
-        int id = pair.first;
+        FaustInstrument* inst = pair.first;
         auto& sweep = pair.second;
         if (sweep.isActive) {
             float progress = (float)(currentS - sweep.startSample) / sweep.durationSamples;
             if (progress >= 1.0f) { progress = 1.0f; sweep.isActive = false; }
             float curW = sweep.startWeight + (sweep.targetWeight - sweep.startWeight) * progress;
-            float assignedCap = mAssignedWeights.count(id) ? mAssignedWeights[id] : 1.0f;
-            mDynamicWeights[id] = std::min(curW, assignedCap);
+            float assignedCap = inst->getAssignedWeight();
+            mDynamicWeights[inst] = std::min(curW, assignedCap);
         }
     }
 }
@@ -424,8 +428,7 @@ inline void FaustMixer::processChannelSweeps(long currentS) {
 inline float FaustMixer::computeAutoRecalibrationMultiplier(const std::vector<FaustInstrument*>& activeList) {
     float totalDynamicWeight = 0.0f;
     for (auto* inst : activeList) {
-        int id = inst->getID();
-        totalDynamicWeight += mDynamicWeights.count(id) ? mDynamicWeights[id] : 0.0f;
+        totalDynamicWeight += mDynamicWeights.count(inst) ? mDynamicWeights[inst] : inst->getAssignedWeight();
     }
     return (totalDynamicWeight > 0.0f) ? (1.0f / totalDynamicWeight) : 1.0f;
 }
@@ -477,8 +480,7 @@ inline void FaustMixer::accumulateInstrumentChannels(float* stereoOutput, int nu
     float peakMix = 0.0f;
     for (int slot = 0; slot < workCount; slot++) {
         FaustInstrument* inst = activeList[slot];
-        int id = inst->getID();
-        float effectiveWeight = (mDynamicWeights.count(id) ? mDynamicWeights[id] : 0.0f) * balanceMultiplier;
+        float effectiveWeight = (mDynamicWeights.count(inst) ? mDynamicWeights[inst] : inst->getAssignedWeight()) * balanceMultiplier;
         float* sourceBuffer = mInstrumentBuffers[slot];
 
         float instPeak = 0.0f;

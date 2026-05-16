@@ -30,7 +30,6 @@
 #include "SequenceOrchestrator.hpp"
 #include "UMLParser.hpp"
 #include "InstrumentMapper.hpp"
-#include "FaustMixer.hpp"
 
 #include <faust/dsp/dsp.h>
 #include <faust/dsp/interpreter-dsp.h>
@@ -156,15 +155,6 @@ void SequenceOrchestrator::setParameter(const std::string& name, const std::stri
     }
 }
 
-void SequenceOrchestrator::setWeight(const std::string& name, float weight) {
-    std::lock_guard<std::mutex> lock(mStateMutex);
-    if (mActiveSequences.count(name)) {
-        auto inst = mActiveSequences[name]->sequenceObj->getFaustInstrument();
-        if (inst) {
-            FaustMixer::getInstance().setInstrumentWeight(inst->getID(), weight);
-        }
-    }
-}
 
 
 
@@ -202,8 +192,8 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
                     fflush(stdout);
                     if (inst) inst->noteOff();
                 } else if (ev.type == UMLEventType::Glide) {
-                    float durSec = static_cast<float>(ev.durationSamples) / FaustMixer::getInstance().getSampleRate();
                     if (inst) {
+                        float durSec = static_cast<float>(ev.durationSamples) / inst->getSampleRate();
                         inst->frequencyGlide(ev.targetFrequency, durSec);
                         inst->velocityGlide(ev.targetVelocity, durSec);
                     }

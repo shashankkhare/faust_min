@@ -121,10 +121,6 @@ public:
      */
     void setParameter(const std::string& name, const std::string& param, float value);
 
-    /**
-     * @brief Set the relative mix weight (gain) for a sequence.
-     */
-    void setWeight(const std::string& name, float weight);
 
 
 
