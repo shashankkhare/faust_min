@@ -22,7 +22,7 @@ final DynamicLibrary _dylib = () {
 final class NativeInstrumentOpaque extends Opaque {}
 final class NativeSequenceOpaque extends Opaque {}
 final class NativeMixerOpaque extends Opaque {}
-class NativeOrchestratorOpaque extends Opaque {}
+final class NativeOrchestratorOpaque extends Opaque {}
 
 // --- FaustMixer Typedefs ---
 typedef _c_mixer_get_instance = Pointer<NativeMixerOpaque> Function();
@@ -65,6 +65,9 @@ typedef _dart_sequence_get_bpm = double Function(Pointer<NativeSequenceOpaque>);
 
 typedef _c_sequence_get_grid = Int32 Function(Pointer<NativeSequenceOpaque>);
 typedef _dart_sequence_get_grid = int Function(Pointer<NativeSequenceOpaque>);
+
+typedef _c_sequence_get_instrument = Pointer<NativeInstrumentOpaque> Function(Pointer<NativeSequenceOpaque>);
+typedef _dart_sequence_get_instrument = Pointer<NativeInstrumentOpaque> Function(Pointer<NativeSequenceOpaque>);
 
 typedef _c_inst_set_param = Void Function(Pointer<NativeInstrumentOpaque>, Pointer<Utf8>, Float);
 typedef _dart_inst_set_param = void Function(Pointer<NativeInstrumentOpaque>, Pointer<Utf8>, double);
@@ -125,6 +128,7 @@ class FaustInstrument {
   static late final _funcNoteOff = _dylib.lookupFunction<_c_inst_note_off, _dart_inst_note_off>('instrument_note_off');
 
   FaustInstrument._(this._handle);
+  factory FaustInstrument.fromNative(Pointer<NativeInstrumentOpaque> handle) => FaustInstrument._(handle);
 
   void setParameter(String name, double value) {
     if (_isDisposed || _handle == nullptr) return;
@@ -174,9 +178,16 @@ class UMLSequence {
 
   static late final _funcGetBpm = _dylib.lookupFunction<_c_sequence_get_bpm, _dart_sequence_get_bpm>('sequence_get_bpm');
   static late final _funcGetGrid = _dylib.lookupFunction<_c_sequence_get_grid, _dart_sequence_get_grid>('sequence_get_grid');
+  static late final _funcGetInst = _dylib.lookupFunction<_c_sequence_get_instrument, _dart_sequence_get_instrument>('sequence_get_instrument');
 
   double get bpm => _isDisposed ? 120.0 : _funcGetBpm(_handle);
   int get grid => _isDisposed ? 4 : _funcGetGrid(_handle);
+
+  FaustInstrument getFaustInstrument() {
+    if (_isDisposed) throw StateError("UMLSequence is disposed");
+    final instHandle = _funcGetInst(_handle);
+    return FaustInstrument.fromNative(instHandle);
+  }
 
   void dispose() {
     if (!_isDisposed && _handle != nullptr) {

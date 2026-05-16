@@ -173,6 +173,10 @@ DART_EXPORT int sequence_get_grid(UMLSequence* seq) {
     return seq ? seq->grid : 4;
 }
 
+DART_EXPORT FaustInstrument* sequence_get_instrument(UMLSequence* seq) {
+    return seq ? seq->getFaustInstrument() : nullptr;
+}
+
 // --- Individual Instrument Endpoints (For UI Auditioning/Direct Control) ---
 
 DART_EXPORT void instrument_set_parameter(FaustInstrument* inst, const char* name, float value) {
