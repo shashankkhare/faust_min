@@ -51,7 +51,11 @@ int main() {
     FaustMixer& mixer = FaustMixer::getInstance();
     
     std::cout << "[Test] Initializing engine..." << std::endl;
-    orch.init(InstrumentMapper::DEFAULT_SAMPLE_RATE);
+    mixer.init(InstrumentMapper::DEFAULT_SAMPLE_RATE);
+    
+    // Connect the Brain to the Heartbeat (Now required due to decoupling)
+    mixer.setPreRenderCallback(SequenceOrchestrator::staticPreRender, &orch);
+    
     mixer.start(); 
 
     // 2. Define a rhythmic Dayan (Tabla) sequence
@@ -64,9 +68,14 @@ int main() {
     std::cout << "[Test] Creating UMLSequence..." << std::endl;
     UMLSequence* seq = new UMLSequence("TestDayan", 0, uml);
     
-    // 3. Register sequence with Orchestrator
+    // 3. Register sequence with Orchestrator (The Brain)
     std::cout << "[Test] Adding sequence to Orchestrator..." << std::endl;
     orch.addSequence("TestDayan", seq);
+    
+    // 3.1 SUPPLY INSTRUMENT TO MIXER (The Heartbeat)
+    // Mixer is now authoritative for signal summation.
+    std::cout << "[Test] Supplying instrument to Mixer..." << std::endl;
+    mixer.registerInstrument(seq->getFaustInstrument(), 0.8f);
 
     // 4. Trigger Playback
     std::cout << "[Test] Starting Playback (Real-time hardware)..." << std::endl;
