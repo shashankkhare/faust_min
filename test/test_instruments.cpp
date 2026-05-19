@@ -17,9 +17,12 @@
 
 std::vector<double> getTestFrequencies(int id) {
     if (id == 0) { // Dayan
-        return { 130.81, 196.00, 261.63 }; // 130 to 260 Hz range
+        return { 130.81, 170.00, 210.00, 261.63 }; // 130 to 260 Hz range, covering all 4 strikes
     }
-    if (id == 1 || id == 2) { // Bayan, Kick
+    if (id == 1) { // Bayan
+        return { 65.41, 85.00, 105.00, 130.81 }; // 65 to 130 Hz range, covering all 4 strikes
+    }
+    if (id == 2) { // Kick
         return { 65.41, 98.00, 130.81 }; // 65 to 130 Hz range
     }
     if (id == 11) { // Tanpura
@@ -64,9 +67,15 @@ void testInstrument(FaustMixer& mixer, int id, const std::string& name, bool isP
         for (size_t i = 0; i < freqs.size(); ++i) {
             double freq = freqs[i];
             long currentHold = (i == freqs.size() - 1) ? lastHoldTime : holdTime;
-            std::cout << "  -> Playing Note (" << freq << " Hz)" << std::endl;
             
-            float strikeParam = (id == 0 || id == 1 || id == 2) ? 1.0f : -1.0f;
+            float strikeParam = -1.0f;
+            if (id == 0 || id == 1) { // Dayan, Bayan
+                strikeParam = static_cast<float>(i % 4); // Loop through strike types 0, 1, 2, 3
+            } else if (id == 2) { // Kick
+                strikeParam = 1.0f; // generic trigger
+            }
+
+            std::cout << "  -> Playing Note (" << freq << " Hz), Strike: " << strikeParam << std::endl;
             inst->noteOn(freq, (i == freqs.size() - 1) ? 0.9f : 0.8f, strikeParam);
             usleep(currentHold);
             inst->noteOff();
