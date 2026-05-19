@@ -157,21 +157,14 @@ with {
     excite =
         max(0.0, env - thresh);
 
-    // IMPORTANT:
-    // normalize derivative by frequency
-
-    norm =
-        sqrt(130.81 / max(130.81, freqVal));
-
     transient =
-        ((y - y') * norm)
+        (y - y')
         : fi.highpass(1, 2200);
 
     sparkle =
         transient
         * excite
-        * jAmt
-        * 0.08;
+        * jAmt;
 };
 
 // =====================================================
