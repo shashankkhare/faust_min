@@ -17,7 +17,7 @@ Compilation options: -lang cpp -es 1 -single -ftz 1
 #include <float.h>
 #include <math.h>
 
-const static float fFaustTanpuraDSPSIG0Wave0[32] = {130.809998f,0.150000006f,0.699999988f,0.0115f,0.349999994f,1800.0f,0.100000001f,0.899999976f,261.630005f,0.239999995f,0.550000012f,0.00600000005f,0.280000001f,2600.0f,0.0500000007f,0.949999988f,392.0f,0.319999993f,0.449999988f,0.00400000019f,0.379999995f,3600.0f,0.0250000004f,1.25f,523.25f,0.400000006f,0.349999994f,0.00300000003f,0.449999988f,4500.0f,0.0149999997f,0.800000012f};
+const static float fFaustTanpuraDSPSIG0Wave0[32] = {65.4100037f,0.100000001f,0.800000012f,0.0149999997f,0.400000006f,1200.0f,0.150000006f,1.10000002f,130.809998f,0.150000006f,0.699999988f,0.0115f,0.349999994f,1800.0f,0.100000001f,0.899999976f,196.0f,0.200000003f,0.620000005f,0.00850000046f,0.300000012f,2200.0f,0.075000003f,1.10000002f,261.630005f,0.239999995f,0.550000012f,0.00600000005f,0.280000001f,2600.0f,0.0500000007f,0.949999988f};
 class FaustTanpuraDSPSIG0 {
 	
   private:
@@ -385,7 +385,7 @@ class FaustTanpuraDSP : public dsp {
 			float fTempFTZ0 = (fSlow1 + (fConst3 * fRec3[1]));
 			fRec3[0] = ((std::fabs(fTempFTZ0) > 1.17549435e-38f) ? fTempFTZ0 : 0.0f);
 			float fTemp0 = (1.5f * fRec3[0]);
-			float fTemp1 = (8.0f * ((float(((fTemp0 >= 200.0f) * (fTemp0 < 330.0f))) + (2.0f * float(((fTemp0 >= 330.0f) * (fTemp0 < 460.0f))))) + (3.0f * float((fTemp0 >= 460.0f)))));
+			float fTemp1 = (8.0f * ((float(((fTemp0 >= 100.0f) * (fTemp0 < 160.0f))) + (2.0f * float(((fTemp0 >= 160.0f) * (fTemp0 < 220.0f))))) + (3.0f * float((fTemp0 >= 220.0f)))));
 			float fTemp2 = (1.0f / std::tan((fConst1 * ftbl0FaustTanpuraDSPSIG0[int((fTemp1 + 5.0f))])));
 			iRec4[0] = ((1103515245 * iRec4[1]) + 12345);
 			float fTemp3 = float(iRec4[0]);
@@ -421,7 +421,7 @@ class FaustTanpuraDSP : public dsp {
 			fRec8[0] = ((std::fabs(fTempFTZ5) > 1.17549435e-38f) ? fTempFTZ5 : 0.0f);
 			float fTempFTZ6 = (fRec2[0] + (0.999750018f * (((fTemp13 * fTemp15) + (fRec8[1] * fTemp16)) * (1.0f - fTemp5))));
 			fRec1[(IOTA & 16383)] = ((std::fabs(fTempFTZ6) > 1.17549435e-38f) ? fTempFTZ6 : 0.0f);
-			float fTemp17 = (8.0f * ((float(((fRec3[0] >= 200.0f) * (fRec3[0] < 330.0f))) + (2.0f * float(((fRec3[0] >= 330.0f) * (fRec3[0] < 460.0f))))) + (3.0f * float((fRec3[0] >= 460.0f)))));
+			float fTemp17 = (8.0f * ((float(((fRec3[0] >= 100.0f) * (fRec3[0] < 160.0f))) + (2.0f * float(((fRec3[0] >= 160.0f) * (fRec3[0] < 220.0f))))) + (3.0f * float((fRec3[0] >= 220.0f)))));
 			float fTemp18 = (1.0f / std::tan((fConst1 * ftbl0FaustTanpuraDSPSIG0[int((fTemp17 + 5.0f))])));
 			float fTemp19 = (1.0f - fTemp18);
 			float fTemp20 = float((float((iVec1[((IOTA - iConst10) & 524287)] - iVec1[((IOTA - iConst11) & 524287)])) > 0.0f));
@@ -483,7 +483,7 @@ class FaustTanpuraDSP : public dsp {
 			float fTempFTZ18 = (fRec16[0] + (0.999750018f * (((fTemp39 * fTemp45) + (fTemp40 * fRec20[1])) * (1.0f - fTemp41))));
 			fRec15[(IOTA & 16383)] = ((std::fabs(fTempFTZ18) > 1.17549435e-38f) ? fTempFTZ18 : 0.0f);
 			float fTemp46 = (0.5f * fRec3[0]);
-			float fTemp47 = (8.0f * ((float(((fTemp46 >= 200.0f) * (fTemp46 < 330.0f))) + (2.0f * float(((fTemp46 >= 330.0f) * (fTemp46 < 460.0f))))) + (3.0f * float((fTemp46 >= 460.0f)))));
+			float fTemp47 = (8.0f * ((float(((fTemp46 >= 100.0f) * (fTemp46 < 160.0f))) + (2.0f * float(((fTemp46 >= 160.0f) * (fTemp46 < 220.0f))))) + (3.0f * float((fTemp46 >= 220.0f)))));
 			float fTemp48 = (1.0f / std::tan((fConst1 * ftbl0FaustTanpuraDSPSIG0[int((fTemp47 + 5.0f))])));
 			float fTemp49 = float((float((iVec1[((IOTA - iConst14) & 524287)] - iVec1[((IOTA - iConst15) & 524287)])) > 0.0f));
 			float fThen3 = std::max<float>(0.0f, (fRec23[1] + -1.0f));
