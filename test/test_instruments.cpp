@@ -44,21 +44,24 @@ void testInstrument(FaustMixer& mixer, int id, const std::string& name, bool isP
         double e4 = 329.63;
         double g4 = 392.00;
 
+        long holdTime = (id == 11) ? 12000000 : 2500000; // 12s for Tanpura plucks to resolve
+        long lastHoldTime = (id == 11) ? 12000000 : 3500000;
+
         std::cout << "  -> Playing Note C4 (" << c4 << " Hz)" << std::endl;
         inst->noteOn(c4, 0.8f, -1.0f);
-        usleep(2500000); // 2.5s hold
+        usleep(holdTime); 
         inst->noteOff();
-        usleep(1000000); // 1.0s spacing
+        usleep(1500000); // 1.5s spacing
 
         std::cout << "  -> Playing Note E4 (" << e4 << " Hz)" << std::endl;
         inst->noteOn(e4, 0.8f, -1.0f);
-        usleep(2500000);
+        usleep(holdTime);
         inst->noteOff();
-        usleep(1000000);
+        usleep(1500000);
 
         std::cout << "  -> Playing Note G4 (" << g4 << " Hz)" << std::endl;
         inst->noteOn(g4, 0.9f, -1.0f);
-        usleep(3500000); // 3.5s hold
+        usleep(lastHoldTime);
         inst->noteOff();
     }
 

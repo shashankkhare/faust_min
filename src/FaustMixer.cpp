@@ -244,6 +244,8 @@ void FaustMixer::workerLoop(int workerID) {
 void FaustMixer::registerInstrument(FaustInstrument* inst, float assignedWeight) {
     if (!inst) return;
     std::lock_guard<std::mutex> lock(mRegistryMutex);
+    printf("[Mixer Registry] Registering Instrument ID: %d, ptr: %p\n", inst->getID(), (void*)inst);
+    fflush(stdout);
     auto it = std::find(mRegisteredInstruments.begin(), mRegisteredInstruments.end(), inst);
     if (it == mRegisteredInstruments.end()) {
         mRegisteredInstruments.push_back(inst);
