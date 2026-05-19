@@ -5,6 +5,7 @@ import("stdfaust.lib");
 // =====================================================
 
 baseFreq = hslider("freq", 130.81, 40, 600, 0.01);
+firstFreq = hslider("freq1", 196.22, 40, 600, 0.01);
 
 gain = hslider("gain", 0.8, 0, 1, 0.01);
 
@@ -32,9 +33,10 @@ t3 = rawTrig @ ba.sec2samp(1.5);
 // Pa Sa Sa LowSa
 
 smoothedBaseFreq = baseFreq : si.smoo;
+smoothedFirstFreq = firstFreq : si.smoo;
 
 stringFreq(i) =
-      (i == 0) * (smoothedBaseFreq * 1.5)
+      (i == 0) * (smoothedFirstFreq)
     + (i == 1) * (smoothedBaseFreq)
     + (i == 2) * (smoothedBaseFreq)
     + (i == 3) * (smoothedBaseFreq * 0.5);
