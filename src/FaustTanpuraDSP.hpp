@@ -17,7 +17,7 @@ Compilation options: -lang cpp -es 1 -single -ftz 1
 #include <float.h>
 #include <math.h>
 
-const static float fFaustTanpuraDSPSIG0Wave0[32] = {65.4100037f,0.0149999997f,0.550000012f,0.0149999997f,0.5f,1500.0f,0.100000001f,1.20000005f,130.809998f,0.0199999996f,0.449999988f,0.0115f,0.400000006f,2000.0f,0.0700000003f,1.0f,196.0f,0.0250000004f,0.349999994f,0.00850000046f,0.449999988f,2400.0f,0.0500000007f,0.899999976f,261.630005f,0.0299999993f,0.25f,0.00600000005f,0.5f,2800.0f,0.0299999993f,0.800000012f};
+const static float fFaustTanpuraDSPSIG0Wave0[32] = {65.4100037f,0.0149999997f,0.550000012f,0.0149999997f,0.5f,1500.0f,0.100000001f,1.0f,130.809998f,0.0199999996f,0.449999988f,0.0115f,0.400000006f,2000.0f,0.0700000003f,1.0f,196.0f,0.0250000004f,0.349999994f,0.00850000046f,0.449999988f,2400.0f,0.0500000007f,1.0f,261.630005f,0.0299999993f,0.25f,0.00600000005f,0.5f,2800.0f,0.0299999993f,1.0f};
 class FaustTanpuraDSPSIG0 {
 	
   private:
@@ -377,7 +377,7 @@ class FaustTanpuraDSP : public dsp {
 	
 	virtual void compute(int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs) {
 		FAUSTFLOAT* output0 = outputs[0];
-		float fSlow0 = float(fHslider0);
+		float fSlow0 = (0.25f * float(fHslider0));
 		float fSlow1 = (fConst2 * float(fHslider1));
 		float fSlow2 = (4.65661287e-10f * float(fHslider2));
 		float fSlow3 = float(fButton0);
