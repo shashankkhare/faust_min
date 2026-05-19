@@ -42,7 +42,7 @@ enum class DSPExecutionType {
 class __attribute__((visibility("default"))) FaustInstrument {
 public:
     FaustInstrument(int instrumentID = -1, DSPExecutionType execType = DSPExecutionType::StaticCompiled,
-                    float sampleRate = InstrumentMapper::DEFAULT_SAMPLE_RATE, float gain = 1.0f, float freq = 440.0f, float velocity = 0.8f);
+                    float sampleRate = InstrumentMapper::DEFAULT_SAMPLE_RATE, float gain = -1.0f, float freq = -1.0f, float velocity = -1.0f);
     virtual ~FaustInstrument();
 
     void setDSP(dsp* newDSP, DSPExecutionType execType = DSPExecutionType::StaticCompiled);

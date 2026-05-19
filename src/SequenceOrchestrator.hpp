@@ -97,6 +97,11 @@ public:
     void play(const std::string& name);
 
     /**
+     * @brief Remove all sequences from the active orchestrator pool.
+     */
+    void clearSequences();
+
+    /**
      * @brief Stop all active playback immediately.
      */
     void stop();

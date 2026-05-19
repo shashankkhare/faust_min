@@ -80,9 +80,39 @@ void FaustInstrument::setDSP(dsp* newDSP, DSPExecutionType execType) {
     mDSP->init(static_cast<int>(mSampleRate));
     mUI.reset(new MapUI());
     mDSP->buildUserInterface(mUI.get());
-    setFrequency(mFrequency);
-    setVelocity(mVelocity);
-    setGain(mGain);
+    if (mFrequency >= 0.0f) {
+        setFrequency(mFrequency);
+    } else {
+        if (mUI->getParamZone("freq") != nullptr) {
+            mFrequency = mUI->getParamValue("freq");
+        } else if (mUI->getParamZone("frequency") != nullptr) {
+            mFrequency = mUI->getParamValue("frequency");
+        } else {
+            mFrequency = 261.63f;
+        }
+    }
+    if (mVelocity >= 0.0f) {
+        setVelocity(mVelocity);
+    } else {
+        if (mUI->getParamZone("velocity") != nullptr) {
+            mVelocity = mUI->getParamValue("velocity");
+        } else if (mUI->getParamZone("vel") != nullptr) {
+            mVelocity = mUI->getParamValue("vel");
+        } else {
+            mVelocity = 1.0f;
+        }
+    }
+    if (mGain >= 0.0f) {
+        setGain(mGain);
+    } else {
+        if (mUI->getParamZone("gain") != nullptr) {
+            mGain = mUI->getParamValue("gain");
+        } else if (mUI->getParamZone("vol") != nullptr) {
+            mGain = mUI->getParamValue("vol");
+        } else {
+            mGain = 1.0f;
+        }
+    }
 }
 
 void FaustInstrument::unloadDSP() {
@@ -93,7 +123,6 @@ void FaustInstrument::unloadDSP() {
         deleteInterpreterDSPFactory(static_cast<interpreter_dsp_factory*>(mDSPFactory));
         mDSPFactory = nullptr;
     }
-    mExecType = DSPExecutionType::StaticCompiled;
 }
 
 void FaustInstrument::loadTargetDSP() {
@@ -191,21 +220,65 @@ void FaustInstrument::loadTargetDSP() {
             std::string err;
             std::string libDir = InstrumentMapper::DEFAULT_LIB_DIR;
             const char* argv[] = { "-I", libDir.c_str() };
-            interpreter_dsp_factory* factory = createInterpreterDSPFactoryFromString("AutoInst", source, 2, argv, err);
+            interpreter_dsp_factory* factory = createInterpreterDSPFactoryFromFile(path, 2, argv, err);
             if (factory) {
-                printf("[Native] SUCCESS: Faust Bytecode Interpreter successfully compiled DSP file '%s'\n", path.c_str());
-                fflush(stdout);
-                mDSPFactory = factory;
                 dsp* instDSP = factory->createDSPInstance();
-                mDSP.reset(instDSP);
-                mDSP->init(static_cast<int>(mSampleRate));
-                mUI.reset(new MapUI());
-                mDSP->buildUserInterface(mUI.get());
-                setFrequency(mFrequency);
-                setVelocity(mVelocity);
-                setGain(mGain);
+                if (instDSP) {
+                    printf("[Native] SUCCESS: Faust Bytecode Interpreter successfully compiled DSP file '%s'\n", path.c_str());
+                    if (!err.empty()) {
+                        printf("[Native] Compiler Warnings: %s\n", err.c_str());
+                    }
+                    fflush(stdout);
+                    mDSPFactory = factory;
+                    mDSP.reset(instDSP);
+                    mDSP->init(static_cast<int>(mSampleRate));
+                    mUI.reset(new MapUI());
+                    mDSP->buildUserInterface(mUI.get());
+                    if (mFrequency >= 0.0f) {
+                        setFrequency(mFrequency);
+                    } else {
+                        if (mUI->getParamZone("freq") != nullptr) {
+                            mFrequency = mUI->getParamValue("freq");
+                        } else if (mUI->getParamZone("frequency") != nullptr) {
+                            mFrequency = mUI->getParamValue("frequency");
+                        } else {
+                            mFrequency = 261.63f;
+                        }
+                    }
+                    if (mVelocity >= 0.0f) {
+                        setVelocity(mVelocity);
+                    } else {
+                        if (mUI->getParamZone("velocity") != nullptr) {
+                            mVelocity = mUI->getParamValue("velocity");
+                        } else if (mUI->getParamZone("vel") != nullptr) {
+                            mVelocity = mUI->getParamValue("vel");
+                        } else {
+                            mVelocity = 1.0f;
+                        }
+                    }
+                    if (mGain >= 0.0f) {
+                        setGain(mGain);
+                    } else {
+                        if (mUI->getParamZone("gain") != nullptr) {
+                            mGain = mUI->getParamValue("gain");
+                        } else if (mUI->getParamZone("vol") != nullptr) {
+                            mGain = mUI->getParamValue("vol");
+                        } else {
+                            mGain = 1.0f;
+                        }
+                    }
+                } else {
+                    std::cerr << "[Native] WARNING: Interpreter factory failed to instantiate DSP (libfaust limitation). Falling back to StaticCompiled mode." << std::endl;
+                    deleteInterpreterDSPFactory(factory);
+                    mDSPFactory = nullptr;
+                    mExecType = DSPExecutionType::StaticCompiled;
+                    loadTargetDSP();
+                }
             } else {
                 std::cerr << "[Native] Faust Compilation failed for ID " << mInstrumentID << ": " << err << std::endl;
+                std::cerr << "[Native] Falling back to StaticCompiled mode." << std::endl;
+                mExecType = DSPExecutionType::StaticCompiled;
+                loadTargetDSP();
             }
         } else {
             std::cerr << "[Native] ERROR: Could not open DSP file path: " << path << std::endl;
@@ -218,9 +291,9 @@ void FaustInstrument::setSampleRate(float sampleRate) {
     mSampleRate = sampleRate;
     if (mDSP) {
         mDSP->init(static_cast<int>(sampleRate));
-        setFrequency(mFrequency);
-        setVelocity(mVelocity);
-        setGain(mGain);
+        if (mFrequency >= 0.0f) setFrequency(mFrequency);
+        if (mVelocity >= 0.0f) setVelocity(mVelocity);
+        if (mGain >= 0.0f) setGain(mGain);
     }
 }
 

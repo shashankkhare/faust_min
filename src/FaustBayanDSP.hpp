@@ -1,25 +1,3 @@
-/*
- * Copyright (c) 2026 Shashank Khare
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-
 /* ------------------------------------------------------------
 name: "bayan"
 Code generated with Faust 2.37.3 (https://faust.grame.fr)
@@ -170,7 +148,7 @@ class FaustBayanDSP : public dsp {
 	
 	virtual void compute(int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs) {
 		FAUSTFLOAT* output0 = outputs[0];
-		float fSlow0 = (20.0f * float(fHslider0));
+		float fSlow0 = float(fHslider0);
 		float fSlow1 = float(fHslider1);
 		float fSlow2 = (1.0f - (0.0500000007f * fSlow1));
 		float fSlow3 = float(fHslider2);
@@ -206,7 +184,7 @@ class FaustBayanDSP : public dsp {
 			fRec0[0] = ((fSlow8 * ((2.0f * (std::cos((fSlow10 * fRec1[0])) * fRec0[1])) - (fSlow8 * fRec0[2]))) + fTemp1);
 			fRec2[0] = (fTemp1 + (fSlow15 * ((2.0f * (std::cos((fSlow16 * fRec1[0])) * fRec2[1])) - (fSlow15 * fRec2[2]))));
 			fRec3[0] = (fTemp1 + (fSlow19 * ((2.0f * (std::cos((fSlow20 * fRec1[0])) * fRec3[1])) - (fSlow19 * fRec3[2]))));
-			output0[i0] = FAUSTFLOAT((fSlow0 * float(tanhf(float((1.04999995f * (((fSlow2 * fRec0[0]) + (fSlow14 * (fRec2[0] * fSlow17))) + (fSlow18 * (fRec3[0] * fSlow21)))))))));
+			output0[i0] = FAUSTFLOAT((fSlow0 * float(tanhf(float((21.0f * (((fSlow2 * fRec0[0]) + (fSlow14 * (fRec2[0] * fSlow17))) + (fSlow18 * (fRec3[0] * fSlow21)))))))));
 			fRec1[1] = fRec1[0];
 			fVec0[1] = fVec0[0];
 			fRec0[2] = fRec0[1];

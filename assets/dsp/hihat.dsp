@@ -13,6 +13,6 @@ env = en.ar(0.001, decay, gate);
 
 // Highpass filtered metallic noise cluster
 // Velocity increases brightness
-hat = no.noise : fi.highpass(2, 6000 + 2000 * velocity) * env;
+hat = no.noise : fi.highpass(2, 6000 + 2000 * velocity) * env * 6.0;
 
 process = hat * gain * velocity * (1.0 + 0.1 * velocity);

@@ -35,7 +35,6 @@
 #include <regex>
 #include <fstream>
 #include "InstrumentMapper.hpp"
-#include "FaustMixer.hpp"
 
 const std::map<std::string, double> UMLParser::indianRatios = {
     {"SaLow", 0.5}, {"Sa", 1.0}, 
@@ -59,9 +58,10 @@ const std::map<std::string, double> UMLParser::westernPitches = {
     // Add more western pitches as needed
 };
 
-UMLSequence UMLParser::parse(const std::string& name, const std::string& input, double sampleRate) {
+UMLSequence UMLParser::parse(const std::string& name, const std::string& input, double sampleRate, double defaultBaseFreq) {
     UMLSequence seq;
     seq.name = name;
+    seq.baseFreq = defaultBaseFreq;
     
     std::stringstream ss(input);
     std::string line;
@@ -129,6 +129,9 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
             printf("[Native Error] UMLParser: Failed to resolve instrument name '%s'\n", seq.instrument.c_str());
             fflush(stdout);
         }
+    } else if (seq.instrumentID == -1 && seq.instrument.empty()) {
+        seq.instrumentID = 10; // Flute fallback if missing headers
+        seq.instrument = "flute";
     }
 
     double samplesPerGrid = (60.0 / seq.bpm) * sampleRate / grid;
@@ -312,8 +315,8 @@ double UMLParser::getFrequency(const std::string& token, const std::string& nota
     return baseFreq;
 }
 
-UMLSequence::UMLSequence(const std::string& seqName, int instID, const std::string& umlDataString) {
-    UMLSequence parsed = UMLParser::parse(seqName, umlDataString, InstrumentMapper::DEFAULT_SAMPLE_RATE);
+UMLSequence::UMLSequence(const std::string& seqName, int instID, const std::string& umlDataString, double defaultBaseFreq) {
+    UMLSequence parsed = UMLParser::parse(seqName, umlDataString, InstrumentMapper::DEFAULT_SAMPLE_RATE, defaultBaseFreq);
     this->name = parsed.name;
     this->instrument = parsed.instrument;
     this->instrumentID = instID != -1 ? instID : parsed.instrumentID;
@@ -347,8 +350,6 @@ UMLSequence::UMLSequence(const std::string& seqName, int instID, const std::stri
 }
 
 UMLSequence::~UMLSequence() {
-    if (mInstrument) {
-        // Ensure the mixer stops referencing this instrument before it's deleted
-        FaustMixer::getInstance().unregisterInstrument(mInstrument.get());
-    }
+    // Note: FaustMixer unregistration must be handled by the caller/owner
+    // to strictly preserve zero-coupling architecture.
 }

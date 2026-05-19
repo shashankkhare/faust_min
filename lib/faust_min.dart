@@ -78,6 +78,12 @@ typedef _dart_inst_note_on = void Function(Pointer<NativeInstrumentOpaque>, doub
 typedef _c_inst_note_off = Void Function(Pointer<NativeInstrumentOpaque>);
 typedef _dart_inst_note_off = void Function(Pointer<NativeInstrumentOpaque>);
 
+typedef _c_inst_set_weight = Void Function(Pointer<NativeInstrumentOpaque>, Float);
+typedef _dart_inst_set_weight = void Function(Pointer<NativeInstrumentOpaque>, double);
+
+typedef _c_inst_get_weight = Float Function(Pointer<NativeInstrumentOpaque>);
+typedef _dart_inst_get_weight = double Function(Pointer<NativeInstrumentOpaque>);
+
 typedef _c_orch_create = Pointer<NativeOrchestratorOpaque> Function();
 typedef _dart_orch_create = Pointer<NativeOrchestratorOpaque> Function();
 
@@ -104,9 +110,6 @@ typedef _dart_orch_resume = void Function(Pointer<NativeOrchestratorOpaque>);
 typedef _c_orch_mute_track = Void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>, Int32);
 typedef _dart_orch_mute_track = void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>, int);
 
-typedef _c_orch_set_weight = Void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>, Float);
-typedef _dart_orch_set_weight = void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>, double);
-
 typedef _c_orch_set_param = Void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>, Pointer<Utf8>, Float);
 typedef _dart_orch_set_param = void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>, Pointer<Utf8>, double);
 
@@ -126,6 +129,8 @@ class FaustInstrument {
   static late final _funcSetParam = _dylib.lookupFunction<_c_inst_set_param, _dart_inst_set_param>('instrument_set_parameter');
   static late final _funcNoteOn = _dylib.lookupFunction<_c_inst_note_on, _dart_inst_note_on>('instrument_note_on');
   static late final _funcNoteOff = _dylib.lookupFunction<_c_inst_note_off, _dart_inst_note_off>('instrument_note_off');
+  static late final _funcSetWeight = _dylib.lookupFunction<_c_inst_set_weight, _dart_inst_set_weight>('instrument_set_weight');
+  static late final _funcGetWeight = _dylib.lookupFunction<_c_inst_get_weight, _dart_inst_get_weight>('instrument_get_weight');
 
   FaustInstrument._(this._handle);
   factory FaustInstrument.fromNative(Pointer<NativeInstrumentOpaque> handle) => FaustInstrument._(handle);
@@ -146,9 +151,16 @@ class FaustInstrument {
   }
 
   void noteOff() {
-    if (_isDisposed || _handle == nullptr) return;
+    if (_isDisposed) return;
     _funcNoteOff(_handle);
   }
+
+  void setWeight(double weight) {
+    if (_isDisposed) return;
+    _funcSetWeight(_handle, weight);
+  }
+
+  double get weight => _isDisposed ? 0.0 : _funcGetWeight(_handle);
 
   void dispose() {
     _isDisposed = true;
@@ -265,19 +277,17 @@ class SequenceOrchestrator {
     }
   }
 
-  void setParameter(String trackName, String paramName, double value) {
+  void setParameter(String name, String param, double value) {
     if (_isDisposed) return;
-    final trackPtr = trackName.toNativeUtf8();
-    final paramPtr = paramName.toNativeUtf8();
+    final namePtr = name.toNativeUtf8();
+    final paramPtr = param.toNativeUtf8();
     try {
-      _funcSetParam(_handle, trackPtr.cast(), paramPtr.cast(), value);
+      _funcSetParam(_handle, namePtr.cast(), paramPtr.cast(), value);
     } finally {
-      malloc.free(trackPtr);
+      malloc.free(namePtr);
       malloc.free(paramPtr);
     }
   }
-
-
 
   String? pollFinished() {
     if (_isDisposed) return null;

@@ -127,6 +127,17 @@ void SequenceOrchestrator::play(const std::string& name) {
     }
 }
 
+void SequenceOrchestrator::clearSequences() {
+    stop();
+    {
+        std::lock_guard<std::mutex> lock(mStateMutex);
+        mActiveSequences.clear();
+        rebuildSnapshot();
+    }
+    printf("[Native] Sequence Orchestrator cleared.\n");
+    fflush(stdout);
+}
+
 void SequenceOrchestrator::stop() {
     std::lock_guard<std::mutex> lock(mStateMutex);
     for (auto& pair : mActiveSequences) {

@@ -1,17 +1,18 @@
 import("stdfaust.lib");
 
-// --- Physical Model Saxophone ---
+// --- Subtractive Synth Saxophone ---
 freq = hslider("freq [unit:Hz]", 440, 50, 2000, 0.1);
 gain = hslider("gain", 0.5, 0, 1, 0.01);
 gate = button("gate");
 
-// Expressive physical controls
+// Expressive controls
 vibratoRate = hslider("vibrato_rate", 5.0, 0, 10, 0.1);
-vibratoDepth = hslider("vibrato_depth", 0.02, 0, 0.1, 0.001);
+vibratoDepth = hslider("vibrato_depth", 0.015, 0, 0.1, 0.001);
 
-// Waveguide with reed stiffness table modeling
 breath = gate * gain : si.smooth(0.995);
-vib = os.osc(vibratoRate) * vibratoDepth;
+vib = os.osc(vibratoRate) * vibratoDepth * breath;
 
-// Faust standard physical model macro
-process = pm.brassModel(pm.f2l(freq * (1.0 + vib)), 0.6, breath, 0.5) * 0.5;
+// A sawtooth through a dynamic lowpass filter strongly mimics a reed instrument (Sax)
+sax_env = en.adsr(0.05, 0.1, 0.8, 0.2, gate);
+filter_cutoff = freq * 1.5 + breath * 3500;
+process = os.sawtooth(freq * (1.0 + vib)) : fi.lowpass(2, filter_cutoff) * sax_env * gain * 0.5;

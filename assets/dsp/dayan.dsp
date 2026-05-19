@@ -72,4 +72,4 @@ dayan = myResonator(smoothedFreq * 1.0, 3.5, sg1, exciter) +
         myResonator(smoothedFreq * 3.0, 0.9, sg5, exciter);
 
 // Final Stage
-process = (dayan * dynamicDrive : ma.tanh) * 24.0 * gain;
+process = (dayan * dynamicDrive * 24.0 : ma.tanh) * gain;

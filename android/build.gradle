@@ -61,3 +61,29 @@ android {
         minSdk = 24
     }
 }
+
+task compileFaustDSPs {
+    doLast {
+        def dspDir = file("../assets/dsp")
+        def srcDir = file("../src")
+        
+        if (!dspDir.exists()) return
+
+        dspDir.eachFileMatch(~/.*\.dsp/) { dspFile ->
+            def name = dspFile.name.replace(".dsp", "")
+            def capitalizedName = name.substring(0, 1).toUpperCase() + name.substring(1)
+            def hppName = "Faust" + capitalizedName + "DSP.hpp"
+            def hppFile = new File(srcDir, hppName)
+            
+            // Recompile if the HPP file doesn't exist or the DSP file is newer
+            if (!hppFile.exists() || dspFile.lastModified() > hppFile.lastModified()) {
+                println "Faust: Compiling ${dspFile.name} to ${hppFile.name}..."
+                exec {
+                    commandLine 'faust', '-lang', 'cpp', '-es', '1', '-single', '-ftz', '0', '-cn', "Faust${capitalizedName}DSP", dspFile.absolutePath, '-o', hppFile.absolutePath
+                }
+            }
+        }
+    }
+}
+
+preBuild.dependsOn compileFaustDSPs

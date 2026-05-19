@@ -48,4 +48,4 @@ bayan = myResonator(smoothedFreq * 1.0, 1.8, bg1, exciter) +
         myResonator(smoothedFreq * 3.2, 0.5, bg3, exciter);
 
 // Target Peak 0.5: Using normalized internal gain and strong master boost
-process = (bayan * dynamicDrive : ma.tanh) * 20.0 * gain;
+process = (bayan * dynamicDrive * 20.0 : ma.tanh) * gain;

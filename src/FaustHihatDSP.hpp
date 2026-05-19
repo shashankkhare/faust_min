@@ -1,25 +1,3 @@
-/*
- * Copyright (c) 2026 Shashank Khare
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-
 /* ------------------------------------------------------------
 name: "hihat"
 Code generated with Faust 2.37.3 (https://faust.grame.fr)
@@ -185,7 +163,7 @@ class FaustHihatDSP : public dsp {
 		float fSlow1 = std::tan((fConst1 * ((2000.0f * fSlow0) + 6000.0f)));
 		float fSlow2 = (1.0f / fSlow1);
 		float fSlow3 = (((fSlow2 + 1.41421354f) / fSlow1) + 1.0f);
-		float fSlow4 = (((fSlow0 * float(fHslider1)) * ((0.100000001f * fSlow0) + 1.0f)) / fSlow3);
+		float fSlow4 = (6.0f * (((fSlow0 * float(fHslider1)) * ((0.100000001f * fSlow0) + 1.0f)) / fSlow3));
 		float fSlow5 = FaustHihatDSP_faustpower2_f(fSlow1);
 		float fSlow6 = (1.0f / fSlow5);
 		float fSlow7 = (1.0f / fSlow3);

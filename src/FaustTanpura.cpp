@@ -38,11 +38,16 @@ FaustTanpura::FaustTanpura(float sampleRate) {
 
 void FaustTanpura::setParams(float f1, float f2, float f3, float f4, float decay, float delay) {
     FaustInstrument::setFrequency(f1);
+    setParam("freq1", f2);
     setGain(0.8f);
 }
 
 void FaustTanpura::setFrequency(int stringIdx, float freq) {
-    FaustInstrument::setFrequency(freq);
+    if (stringIdx == 1) {
+        setParam("freq1", freq);
+    } else {
+        FaustInstrument::setFrequency(freq);
+    }
 }
 
 void FaustTanpura::setJivari(float amount) {

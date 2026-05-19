@@ -12,6 +12,6 @@ decay = hslider("decay_time", 0.5, 0.1, 2.0, 0.01);
 pitch_env = en.ar(0.001, 0.03, gate) * (1.0 + 1.0 * velocity);
 click = no.noise * en.ar(0.001, 0.01, gate) * 0.1 * velocity;
 
-tom_body = os.osc(freq * (1 + 2 * pitch_env)) * en.ar(0.001, decay, gate);
+tom_body = os.osc(freq * (1 + 0.3 * pitch_env)) * en.ar(0.001, decay, gate);
 
 process = (tom_body + click) * gain * velocity * (1.0 + 0.2 * velocity);

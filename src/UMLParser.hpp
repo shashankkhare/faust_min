@@ -69,7 +69,7 @@ public:
 
     UMLSequence() : instrumentID(-1), bpm(120.0), grid(4), baseFreq(261.63), gain(1.0), totalDurationSamples(0), notation("Indian"), execType("static") {}
 
-    UMLSequence(const std::string& seqName, int instID, const std::string& umlDataString);
+    UMLSequence(const std::string& seqName, int instID, const std::string& umlDataString, double defaultBaseFreq = 261.63);
 
     FaustInstrument* getFaustInstrument() {
         return mInstrument.get();
@@ -90,7 +90,7 @@ public:
         bool hasGlide;
     };
 
-    static UMLSequence parse(const std::string& name, const std::string& input, double sampleRate);
+    static UMLSequence parse(const std::string& name, const std::string& input, double sampleRate, double defaultBaseFreq = 261.63);
 
 private:
     static double getFrequency(const std::string& token, const std::string& notation, double baseFreq, const std::string& instrument);

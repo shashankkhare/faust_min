@@ -24,7 +24,7 @@ excitation = (pressure + no.noise * breath_noise) * gate;
 
 // Resonator (Delay line based on frequency)
 delay_len = ma.SR / actual_freq;
-flute_loop = excitation : pm.fdelay(1024, delay_len) : ef.cubic_distortion(0.5);
+flute_loop = excitation : de.fdelay(1024, delay_len) : ef.cubicnl(0.5, 0.0);
 
 // Output
 process = flute_loop * gain * gate : fi.lowpass(1, 5000) : *(0.5);

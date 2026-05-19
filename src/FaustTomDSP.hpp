@@ -1,25 +1,3 @@
-/*
- * Copyright (c) 2026 Shashank Khare
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-
 /* ------------------------------------------------------------
 name: "tom"
 Code generated with Faust 2.37.3 (https://faust.grame.fr)
@@ -218,7 +196,7 @@ class FaustTomDSP : public dsp {
 		float fSlow0 = float(fHslider0);
 		float fSlow1 = ((fSlow0 * float(fHslider1)) * ((0.200000003f * fSlow0) + 1.0f));
 		float fSlow2 = (fConst1 * float(fHslider2));
-		float fSlow3 = (2.0f * (fSlow0 + 1.0f));
+		float fSlow3 = (0.300000012f * (fSlow0 + 1.0f));
 		float fSlow4 = float(fButton0);
 		float fSlow5 = (1.0f / std::max<float>(1.0f, (fConst0 * float(fHslider3))));
 		float fSlow6 = (4.65661294e-11f * fSlow0);
