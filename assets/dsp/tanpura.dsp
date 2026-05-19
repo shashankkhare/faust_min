@@ -209,7 +209,7 @@ jivariString(freqVal, trigSig) =
 
         :
 
-        *(exciteActive == 0.0)
+        *(1.0 - perStringTrig)
     )
 
 with {

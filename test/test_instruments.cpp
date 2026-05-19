@@ -15,6 +15,14 @@
 #include "../src/InstrumentMapper.hpp"
 #include "../src/FaustInstrument.hpp"
 
+std::vector<double> getTestFrequencies(int id) {
+    if (id == 11) { // Tanpura
+        return { 130.81, 196.00, 261.63 }; // 130 to 260 Hz range
+    }
+    // Default frequencies for other melodic instruments (C4, E4, G4)
+    return { 261.63, 329.63, 392.00 };
+}
+
 void testInstrument(FaustMixer& mixer, int id, const std::string& name, bool isPercussion, DSPExecutionType execType) {
     std::cout << "\n=============================================" << std::endl;
     std::cout << "[Test] Loading Instrument ID " << id << " (" << name << ")" << std::endl;
@@ -39,30 +47,21 @@ void testInstrument(FaustMixer& mixer, int id, const std::string& name, bool isP
         usleep(2500000);
         inst->noteOff();
     } else {
-        // Play Major Notes (C4, E4, G4)
-        double c4 = 261.63;
-        double e4 = 329.63;
-        double g4 = 392.00;
-
+        std::vector<double> freqs = getTestFrequencies(id);
         long holdTime = (id == 11) ? 12000000 : 2500000; // 12s for Tanpura plucks to resolve
         long lastHoldTime = (id == 11) ? 12000000 : 3500000;
 
-        std::cout << "  -> Playing Note C4 (" << c4 << " Hz)" << std::endl;
-        inst->noteOn(c4, 0.8f, -1.0f);
-        usleep(holdTime); 
-        inst->noteOff();
-        usleep(1500000); // 1.5s spacing
-
-        std::cout << "  -> Playing Note E4 (" << e4 << " Hz)" << std::endl;
-        inst->noteOn(e4, 0.8f, -1.0f);
-        usleep(holdTime);
-        inst->noteOff();
-        usleep(1500000);
-
-        std::cout << "  -> Playing Note G4 (" << g4 << " Hz)" << std::endl;
-        inst->noteOn(g4, 0.9f, -1.0f);
-        usleep(lastHoldTime);
-        inst->noteOff();
+        for (size_t i = 0; i < freqs.size(); ++i) {
+            double freq = freqs[i];
+            long currentHold = (i == freqs.size() - 1) ? lastHoldTime : holdTime;
+            std::cout << "  -> Playing Note (" << freq << " Hz)" << std::endl;
+            inst->noteOn(freq, (i == freqs.size() - 1) ? 0.9f : 0.8f, -1.0f);
+            usleep(currentHold);
+            inst->noteOff();
+            if (i < freqs.size() - 1) {
+                usleep(1500000); // 1.5s spacing
+            }
+        }
     }
 
     usleep(1500000); // Wait for release tail
