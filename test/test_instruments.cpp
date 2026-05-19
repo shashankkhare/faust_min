@@ -16,8 +16,18 @@
 #include "../src/FaustInstrument.hpp"
 
 std::vector<double> getTestFrequencies(int id) {
+    if (id == 0) { // Dayan
+        return { 130.81, 196.00, 261.63 }; // 130 to 260 Hz range
+    }
+    if (id == 1 || id == 2) { // Bayan, Kick
+        return { 65.41, 98.00, 130.81 }; // 65 to 130 Hz range
+    }
     if (id == 11) { // Tanpura
         return { 130.81, 196.00, 261.63 }; // 130 to 260 Hz range
+    }
+    // Unpitched percussion (Snare, HiHat, Tom, Ride, Cowbell)
+    if (id == 3 || id == 4 || id == 5 || id == 6 || id == 14) {
+        return {};
     }
     // Default frequencies for other melodic instruments (C4, E4, G4)
     return { 261.63, 329.63, 392.00 };
@@ -34,8 +44,9 @@ void testInstrument(FaustMixer& mixer, int id, const std::string& name, bool isP
     // Register with Mixer
     mixer.registerInstrument(inst.get(), 0.8f);
 
-    if (isPercussion) {
-        // Play Bols / Strikes
+    std::vector<double> freqs = getTestFrequencies(id);
+    if (freqs.empty()) {
+        // Play Bols / Strikes for unpitched percussion
         std::cout << "  -> Playing Strike 1" << std::endl;
         inst->noteOn(0.0f, 0.8f, 1.0f); // Velocity 0.8, Strike type 1.0
         usleep(2500000); // 2.5s hold
@@ -47,7 +58,6 @@ void testInstrument(FaustMixer& mixer, int id, const std::string& name, bool isP
         usleep(2500000);
         inst->noteOff();
     } else {
-        std::vector<double> freqs = getTestFrequencies(id);
         long holdTime = (id == 11) ? 12000000 : 2500000; // 12s for Tanpura plucks to resolve
         long lastHoldTime = (id == 11) ? 12000000 : 3500000;
 
@@ -55,7 +65,9 @@ void testInstrument(FaustMixer& mixer, int id, const std::string& name, bool isP
             double freq = freqs[i];
             long currentHold = (i == freqs.size() - 1) ? lastHoldTime : holdTime;
             std::cout << "  -> Playing Note (" << freq << " Hz)" << std::endl;
-            inst->noteOn(freq, (i == freqs.size() - 1) ? 0.9f : 0.8f, -1.0f);
+            
+            float strikeParam = (id == 0 || id == 1 || id == 2) ? 1.0f : -1.0f;
+            inst->noteOn(freq, (i == freqs.size() - 1) ? 0.9f : 0.8f, strikeParam);
             usleep(currentHold);
             inst->noteOff();
             if (i < freqs.size() - 1) {
