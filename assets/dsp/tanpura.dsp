@@ -1,7 +1,7 @@
 import("stdfaust.lib");
 
 // =====================================================
-// TANPURA WITH STABLE FREQUENCY-NORMALIZED JAWARI
+// TANPURA WITH STABLE PARAMETER-DRIVEN JAWARI
 // =====================================================
 
 baseFreq = hslider("freq", 130.81, 40, 600, 0.01);
@@ -13,8 +13,18 @@ velocity = hslider("velocity", 0.8, 0, 1, 0.01);
 
 gate = button("gate");
 
+// Parameter Sliders (Mappable via companion CSV)
+sustain = hslider("sustain", 35.0, 0.1, 1000.0, 0.01);
+jivariThreshold = hslider("jivariThreshold", 0.015, 0.0, 1.0, 0.0001);
+jivari = hslider("jivari", 0.55, 0.0, 10.0, 0.01);
+excDur = hslider("excDur", 0.0115, 0.0001, 1.0, 0.0001);
+excGain = hslider("excGain", 0.40, 0.0, 10.0, 0.01);
+excLPF = hslider("excLPF", 2000.0, 100.0, 20000.0, 1.0);
+dispersion = hslider("dispersion", 0.07, 0.0, 1.0, 0.0001);
+stringGainVal = hslider("stringGainVal", 1.0, 0.0, 2.0, 0.01);
+
 // =====================================================
-// SEQUENTIAL PLUCKS (same relock pattern as sitar.dsp)
+// SEQUENTIAL PLUCKS
 // =====================================================
 
 // Rising edge detector (1-sample impulse per note-on)
@@ -42,134 +52,35 @@ stringFreq(i) =
     + (i == 3) * (smoothedBaseFreq * 0.5);
 
 // =====================================================
-// 2D LOOKUP TABLE
+// LOOP FEEDBACK COEFFICIENT FROM SUSTAIN (T60 DECAY)
 // =====================================================
 
-// Columns:
-//
-// 0 = frequency
-// 1 = threshold
-// 2 = jivari
-// 3 = excDur
-// 4 = excGain
-// 5 = excLPF
-// 6 = dispersion
-// 7 = stringGain
-
-cols = 8;
-rows = 4;
-
-tableData = waveform {
-
-    // LowSa (65.41 Hz)
-    65.41,0.015,0.55,0.0150,0.50,1500,0.10,1.00,
-
-    // Sa (130.81 Hz)
-    130.81,0.0150,0.55,0.0115,0.40,2000,0.07,1.00,
-
-    // Pa (196.00 Hz)
-    196.00,0.015,0.55,0.0085,0.45,2400,0.05,1.00,
-
-    // HighSa (261.63 Hz)
-    261.63,0.005,0.75,0.0150,0.50,1000,0.07,1.00
-};
-
-// =====================================================
-// TABLE ACCESS
-// =====================================================
-
-cell(row,col) =
-    (tableData, int(row * cols + col)) : rdtable;
-
-// =====================================================
-// ROW LOOKUP
-// =====================================================
-
-findNearest(f, 0) = 0.0;
-findNearest(f, r) = ba.if(abs(f - cell(r, 0)) < abs(f - cell(prev, 0)), r, prev)
-with {
-    prev = findNearest(f, r - 1);
-};
-
-lookupRow(f) = findNearest(f, rows - 1);
-
-// =====================================================
-// LOOKUPS
-// =====================================================
-
-lookupThresh(f)   = cell(lookupRow(f), 1);
-
-lookupJivari(f)   = cell(lookupRow(f), 2);
-
-lookupExcDur(f)   = cell(lookupRow(f), 3);
-
-lookupExcGain(f)  = cell(lookupRow(f), 4);
-
-lookupExcLPF(f)   = cell(lookupRow(f), 5);
-
-lookupDisp(f)     = cell(lookupRow(f), 6);
-
-stringGain(i)     = cell(lookupRow(stringFreq(i)), 7);
-
-// =====================================================
-// FIXED FEEDBACK
-// =====================================================
-
-// CRITICAL FIX:
-// previous formula overdamped loop massively
-
-feedback = 0.99975;
+feedback(freqVal) = exp(-3.0 / (max(0.1, sustain) * freqVal));
 
 // =====================================================
 // EXCITATION (gated by exciteActive)
 // =====================================================
 
 pluckExcitation(freqVal, exciteActive) =
-
     no.noise
-
     * exciteActive
-
-    * lookupExcGain(freqVal)
-
+    * excGain
     * velocity
-
-    : fi.lowpass(
-        1,
-        lookupExcLPF(freqVal)
-      );
+    : fi.lowpass(1, excLPF);
 
 // =====================================================
 // FREQUENCY-NORMALIZED JAWARI
 // =====================================================
 
 jivariBridge(freqVal, y) =
-
     (y * 0.9997) + sparkle
-
 with {
-
-    thresh =
-        lookupThresh(freqVal);
-
-    jAmt =
-        lookupJivari(freqVal);
-
-    env =
-        abs(y)
-        : si.smooth(0.997);
-
-    excite =
-        max(0.0, env - thresh);
-
-    transient =
-        (y - y')
-        : fi.highpass(1, 2200);
-
-    sparkle =
-        transient
-        * excite
-        * jAmt;
+    thresh = jivariThreshold;
+    jAmt = jivari;
+    env = abs(y) : si.smooth(0.997);
+    excite = max(0.0, env - thresh);
+    transient = (y - y') : fi.highpass(1, 2200);
+    sparkle = transient * excite * jAmt;
 };
 
 // =====================================================
@@ -177,51 +88,27 @@ with {
 // =====================================================
 
 jivariString(freqVal, trigSig) =
-
     pluckExcitation(freqVal, exciteActive)
-
     :
-
     + ~
-
     (
-        de.fdelay(
-            8192,
-            ma.SR / max(20.0, freqVal) - 2.0
-        )
-
-        :
-
-        jivariBridge(freqVal)
-
-        :
-
-        fi.allpassnn(
-            1,
-            lookupDisp(freqVal)
-        )
-
-        :
-
-        *(feedback)
-
-        :
-
-        *(1.0 - perStringTrig)
+        de.fdelay(8192, ma.SR / max(20.0, freqVal) - 2.0)
+        : jivariBridge(freqVal)
+        : fi.allpassnn(1, dispersion)
+        : *(feedback(freqVal))
+        : *(1.0 - perStringTrig)
     )
-
 with {
-
     // Rising edge of this string's trigger
     perStringTrig = (trigSig - trigSig') > 0.0;
 
-    // Counter-based pulse (same pattern as sitar.dsp)
+    // Counter-based pulse
     exciteTimer = perStringTrig : trig_pulse
     with {
         trig_pulse(t) = loop ~ _
         with {
             loop(cnt) = ba.if(t > 0.0,
-                ba.sec2samp(lookupExcDur(freqVal)),
+                ba.sec2samp(excDur),
                 max(0.0, cnt - 1.0)
             );
         };
@@ -233,29 +120,10 @@ with {
 // STRINGS
 // =====================================================
 
-s0 =
-    jivariString(
-        stringFreq(0),
-        t0
-    ) * stringGain(0);
-
-s1 =
-    jivariString(
-        stringFreq(1),
-        t1
-    ) * stringGain(1);
-
-s2 =
-    jivariString(
-        stringFreq(2),
-        t2
-    ) * stringGain(2);
-
-s3 =
-    jivariString(
-        stringFreq(3),
-        t3
-    ) * stringGain(3);
+s0 = jivariString(stringFreq(0), t0) * stringGainVal;
+s1 = jivariString(stringFreq(1), t1) * stringGainVal;
+s2 = jivariString(stringFreq(2), t2) * stringGainVal;
+s3 = jivariString(stringFreq(3), t3) * stringGainVal;
 
 // =====================================================
 // MIX
