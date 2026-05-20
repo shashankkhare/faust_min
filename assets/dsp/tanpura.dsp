@@ -85,10 +85,13 @@ cell(row,col) =
 // ROW LOOKUP
 // =====================================================
 
-lookupRow(f) =
-    (f >= 100.0) * (f < 160.0) * 1.0
-    + (f >= 160.0) * (f < 220.0) * 2.0
-    + (f >= 220.0) * 3.0;
+findNearest(f, 0) = 0.0;
+findNearest(f, r) = ba.if(abs(f - cell(r, 0)) < abs(f - cell(prev, 0)), r, prev)
+with {
+    prev = findNearest(f, r - 1);
+};
+
+lookupRow(f) = findNearest(f, rows - 1);
 
 // =====================================================
 // LOOKUPS
