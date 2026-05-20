@@ -1,29 +1,153 @@
 import("stdfaust.lib");
 
-freq = hslider("freq [unit:Hz]", 440, 20, 4000, 0.1);
+// =====================================================
+// SIMPLE GRAND PIANO MODEL
+// =====================================================
+
+freq = hslider("freq [unit:Hz]", 110, 27, 4000, 0.1);
+
 gain = hslider("gain", 0.5, 0, 1, 0.01);
+
 velocity = hslider("velocity", 0.8, 0, 1, 0.01);
+
 gate = button("gate");
 
-sustain = hslider("sustain", 0.8, 0, 1, 0.01);
-stiffness = hslider("stiffness", 0.1, 0, 1, 0.01);
-hardness = hslider("hardness", 0.5, 0, 1, 0.01);
+brightness = hslider("brightness", 0.7, 0, 1, 0.01);
 
-// Harder hammer response based on velocity
-env = en.adsr(0.001, 0.1, sustain, 1.0, gate);
-hammer = (gate : ba.impulsify) : fi.lowpass(1, 2000 + (hardness * velocity) * 8000) * velocity;
+stiffness = hslider("stiffness", 0.25, 0, 1, 0.01);
 
-// Three detuned strings per note for rich acoustic chorus
-string(f, detune) = loop
-with {
-    f_detuned = f * detune;
-    del_len = ma.SR / f_detuned;
-    loop = hammer : + ~ (de.fdelay(4096, del_len) : fi.lowpass(1, 4000 - stiffness * 1000) : _ * 0.99);
-};
+// =====================================================
+// HAMMER EXCITATION
+// =====================================================
 
-pianoStrings = string(freq, 1.0) * 0.4 + string(freq, 1.0006) * 0.3 + string(freq, 0.9994) * 0.3;
+// Short felt-hammer burst
 
-// Soundboard sympathetic resonance
-soundboard = pianoStrings : + ~ (de.delay(1024, 256) : fi.lowpass(1, 1200) : * (0.25));
+hammerEnv =
+    en.ar(
+        0.0001,
+        0.008,
+        gate : ba.impulsify
+    );
 
-process = (pianoStrings + soundboard * 0.3) * env * gain * 30.0;
+hammerNoise =
+    no.noise
+    * hammerEnv
+    * velocity;
+
+// Hammer brightness depends on velocity
+
+hammer =
+    hammerNoise
+    : fi.lowpass(
+        1,
+        1500 + velocity * brightness * 8000
+    );
+
+// =====================================================
+// STIFF STRING DISPERSION
+// =====================================================
+
+dispersion =
+    fi.allpassnn(
+        1,
+        0.02 + stiffness * 0.12
+    );
+
+// =====================================================
+// FREQUENCY-DEPENDENT DAMPING
+// =====================================================
+
+loopLPF =
+    fi.lowpass(
+        1,
+        6000 - freq * 0.8
+    );
+
+// =====================================================
+// STRING MODEL
+// =====================================================
+
+pianoString(f, detune, amp) =
+
+    hammer
+
+    :
+
+    + ~
+
+    (
+        de.fdelay(
+            8192,
+            ma.SR / (f * detune)
+        )
+
+        :
+
+        dispersion
+
+        :
+
+        loopLPF
+
+        :
+
+        *(0.9996 - f * 0.0000002)
+    )
+
+    * amp;
+
+// =====================================================
+// THREE STRINGS
+// =====================================================
+
+s1 =
+    pianoString(freq, 1.0000, 0.40);
+
+s2 =
+    pianoString(freq, 1.0007, 0.30);
+
+s3 =
+    pianoString(freq, 0.9994, 0.30);
+
+// =====================================================
+// SOUNDBOARD
+// =====================================================
+
+soundboardIn =
+    s1 + s2 + s3;
+
+soundboard =
+
+    soundboardIn
+
+    <:
+
+    (
+        fi.resonbp(110, 12, 1.0)
+        + fi.resonbp(220, 10, 1.0)
+        + fi.resonbp(440, 8, 1.0)
+        + fi.resonbp(880, 6, 1.0)
+    )
+
+    * 0.25;
+
+// =====================================================
+// FINAL MIX
+// =====================================================
+
+mix =
+    soundboardIn
+    + soundboard;
+
+// =====================================================
+// OUTPUT
+// =====================================================
+
+softclip(x) =
+    x / (1.0 + abs(x));
+
+process =
+    mix
+    * gain
+    * 1.5
+    : softclip;
