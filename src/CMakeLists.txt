@@ -24,6 +24,12 @@ foreach(DSP_FILE ${DSP_FILES})
         COMMENT "Auto-compiling Faust DSP: ${DSP_NAME} -> Faust${CAP_NAME}DSP.hpp"
     )
     list(APPEND FAUST_GENERATED_HEADERS ${HPP_FILE})
+    
+    # Establish direct dependency so that C++ object files recompile when the generated header changes
+    set(CPP_FILE "${CMAKE_CURRENT_SOURCE_DIR}/Faust${CAP_NAME}.cpp")
+    if (EXISTS ${CPP_FILE})
+        set_source_files_properties(${CPP_FILE} PROPERTIES OBJECT_DEPENDS ${HPP_FILE})
+    endif()
 endforeach()
 add_custom_target(compile_faust_dsps DEPENDS ${FAUST_GENERATED_HEADERS})
  
@@ -49,6 +55,7 @@ add_library(faust_min SHARED
   "SequenceOrchestrator.cpp"
   "FaustMixer.cpp"
   "InstrumentMapper.cpp"
+  ${FAUST_GENERATED_HEADERS}
 )
  
 add_dependencies(faust_min compile_faust_dsps)
