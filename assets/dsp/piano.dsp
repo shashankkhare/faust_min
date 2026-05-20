@@ -16,4 +16,4 @@ hammer = (gate : ba.impulsify) : fi.lowpass(1, 2000 + (hardness * velocity) * 80
 del = ma.SR / freq;
 pianoLoop = hammer : + ~ (de.fdelay(4096, del) : fi.lowpass(1, 4000 - stiffness * 1000) : _ * 0.99);
 
-process = pianoLoop * env * gain * 2.0;
+process = pianoLoop * env * gain * 30.0;
