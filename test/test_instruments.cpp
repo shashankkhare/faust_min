@@ -75,6 +75,10 @@ void testInstrument(FaustMixer& mixer, int id, const std::string& name, bool isP
                 strikeParam = 1.0f; // generic trigger
             }
 
+            if (id == 11) { // Tanpura
+                inst->setParam("freq1", freq * 1.5f);
+            }
+
             std::cout << "  -> Playing Note (" << freq << " Hz), Strike: " << strikeParam << std::endl;
             inst->noteOn(freq, (i == freqs.size() - 1) ? 0.9f : 0.8f, strikeParam);
             usleep(currentHold);
