@@ -73,12 +73,12 @@ pluckExcitation(freqVal, exciteActive) =
 // =====================================================
 
 jivariBridge(freqVal, y) =
-    (y * 0.9997) + sparkle
+    y * (0.9997 - excite * 0.8) + sparkle
 with {
     thresh = jivariThreshold;
     jAmt = jivari;
     env = abs(y) : si.smooth(0.997);
-    excite = max(0.0, env - thresh);
+    excite = max(0.0, env - thresh) : min(0.5);
     transient = (y - y') : fi.highpass(1, 2200);
     sparkle = transient * excite * jAmt;
 };
@@ -96,6 +96,7 @@ jivariString(freqVal, trigSig) =
         : jivariBridge(freqVal)
         : fi.allpassnn(1, dispersion)
         : *(feedback(freqVal))
+        : min(0.99) : max(-0.99)
         : *(1.0 - perStringTrig)
     )
 with {
