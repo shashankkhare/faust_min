@@ -1,7 +1,7 @@
 /* ------------------------------------------------------------
 name: "hihat"
 Code generated with Faust 2.37.3 (https://faust.grame.fr)
-Compilation options: -lang cpp -es 1 -single -ftz 0
+Compilation options: -lang cpp -es 1 -single -ftz 1
 ------------------------------------------------------------ */
 
 #ifndef  __FaustHihatDSP_H__
@@ -14,6 +14,7 @@ Compilation options: -lang cpp -es 1 -single -ftz 0
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <float.h>
 #include <math.h>
 
 static float FaustHihatDSP_faustpower2_f(float value) {
@@ -52,7 +53,7 @@ class FaustHihatDSP : public dsp {
 	void metadata(Meta* m) { 
 		m->declare("basics.lib/name", "Faust Basic Element Library");
 		m->declare("basics.lib/version", "0.2");
-		m->declare("compile_options", "-lang cpp -es 1 -single -ftz 0");
+		m->declare("compile_options", "-lang cpp -es 1 -single -ftz 1");
 		m->declare("envelopes.lib/ar:author", "Yann Orlarey, Stéphane Letz");
 		m->declare("envelopes.lib/author", "GRAME");
 		m->declare("envelopes.lib/copyright", "GRAME");
@@ -177,7 +178,8 @@ class FaustHihatDSP : public dsp {
 		float fSlow13 = std::max<float>(1.0f, (fConst0 * ((0.400000006f * ((fSlow12 >= 2.0f) ? fElse2 : fThen2)) + 0.0500000007f)));
 		for (int i0 = 0; (i0 < count); i0 = (i0 + 1)) {
 			iRec1[0] = ((1103515245 * iRec1[1]) + 12345);
-			fRec0[0] = ((4.65661287e-10f * float(iRec1[0])) - (fSlow7 * ((fSlow8 * fRec0[2]) + (fSlow9 * fRec0[1]))));
+			float fTempFTZ0 = ((4.65661287e-10f * float(iRec1[0])) - (fSlow7 * ((fSlow8 * fRec0[2]) + (fSlow9 * fRec0[1]))));
+			fRec0[0] = ((std::fabs(fTempFTZ0) > 1.17549435e-38f) ? fTempFTZ0 : 0.0f);
 			fVec0[0] = fSlow11;
 			iRec2[0] = (((iRec2[1] + (iRec2[1] > 0)) * (fSlow11 <= fVec0[1])) + (fSlow11 > fVec0[1]));
 			float fTemp0 = float(iRec2[0]);

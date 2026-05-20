@@ -1,29 +1,7 @@
-/*
- * Copyright (c) 2026 Shashank Khare
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-
 /* ------------------------------------------------------------
 name: "cowbell"
 Code generated with Faust 2.37.3 (https://faust.grame.fr)
-Compilation options: -lang cpp -es 1 -single -ftz 0
+Compilation options: -lang cpp -es 1 -single -ftz 1
 ------------------------------------------------------------ */
 
 #ifndef  __FaustCowbellDSP_H__
@@ -36,6 +14,7 @@ Compilation options: -lang cpp -es 1 -single -ftz 0
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <float.h>
 #include <math.h>
 
 static float FaustCowbellDSP_faustpower2_f(float value) {
@@ -83,7 +62,7 @@ class FaustCowbellDSP : public dsp {
  public:
 	
 	void metadata(Meta* m) { 
-		m->declare("compile_options", "-lang cpp -es 1 -single -ftz 0");
+		m->declare("compile_options", "-lang cpp -es 1 -single -ftz 1");
 		m->declare("envelopes.lib/ar:author", "Yann Orlarey, Stéphane Letz");
 		m->declare("envelopes.lib/author", "GRAME");
 		m->declare("envelopes.lib/copyright", "GRAME");
@@ -254,11 +233,13 @@ class FaustCowbellDSP : public dsp {
 		for (int i0 = 0; (i0 < count); i0 = (i0 + 1)) {
 			iVec0[0] = 1;
 			float fTemp0 = float(iVec0[1]);
-			fRec1[0] = (fSlow11 + (fRec1[1] - std::floor((fSlow11 + fRec1[1]))));
+			float fTempFTZ0 = (fSlow11 + (fRec1[1] - std::floor((fSlow11 + fRec1[1]))));
+			fRec1[0] = ((std::fabs(fTempFTZ0) > 1.17549435e-38f) ? fTempFTZ0 : 0.0f);
 			float fTemp1 = FaustCowbellDSP_faustpower2_f(((2.0f * fRec1[0]) + -1.0f));
 			fVec1[0] = fTemp1;
 			float fTemp2 = (fTemp1 - fVec1[1]);
-			fRec2[0] = (fSlow15 + (fRec2[1] - std::floor((fSlow15 + fRec2[1]))));
+			float fTempFTZ1 = (fSlow15 + (fRec2[1] - std::floor((fSlow15 + fRec2[1]))));
+			fRec2[0] = ((std::fabs(fTempFTZ1) > 1.17549435e-38f) ? fTempFTZ1 : 0.0f);
 			float fTemp3 = FaustCowbellDSP_faustpower2_f(((2.0f * fRec2[0]) + -1.0f));
 			fVec2[0] = fTemp3;
 			float fTemp4 = (fTemp3 - fVec2[1]);
@@ -269,7 +250,8 @@ class FaustCowbellDSP : public dsp {
 			fVec5[0] = fSlow30;
 			iRec3[0] = (((iRec3[1] + (iRec3[1] > 0)) * (fSlow30 <= fVec5[1])) + (fSlow30 > fVec5[1]));
 			float fTemp7 = float(iRec3[0]);
-			fRec0[0] = ((((fConst2 * (fTemp0 * ((fSlow10 * fTemp2) + (fSlow14 * fTemp4)))) - ((fSlow18 * fVec3[((IOTA - iSlow21) & 511)]) + (((fSlow24 * fVec4[((IOTA - iSlow26) & 511)]) + (fSlow27 * fVec4[((IOTA - iSlow28) & 511)])) + (fSlow29 * fVec3[((IOTA - iSlow20) & 511)])))) * std::max<float>(0.0f, std::min<float>((fConst6 * fTemp7), ((fConst7 * (fConst5 - fTemp7)) + 1.0f)))) - (fSlow31 * ((fSlow32 * fRec0[2]) + (fSlow33 * fRec0[1]))));
+			float fTempFTZ2 = ((((fConst2 * (fTemp0 * ((fSlow10 * fTemp2) + (fSlow14 * fTemp4)))) - ((fSlow18 * fVec3[((IOTA - iSlow21) & 511)]) + (((fSlow24 * fVec4[((IOTA - iSlow26) & 511)]) + (fSlow27 * fVec4[((IOTA - iSlow28) & 511)])) + (fSlow29 * fVec3[((IOTA - iSlow20) & 511)])))) * std::max<float>(0.0f, std::min<float>((fConst6 * fTemp7), ((fConst7 * (fConst5 - fTemp7)) + 1.0f)))) - (fSlow31 * ((fSlow32 * fRec0[2]) + (fSlow33 * fRec0[1]))));
+			fRec0[0] = ((std::fabs(fTempFTZ2) > 1.17549435e-38f) ? fTempFTZ2 : 0.0f);
 			output0[i0] = FAUSTFLOAT((fSlow4 * (((fSlow6 * fRec0[0]) + (fSlow34 * fRec0[1])) + (fSlow6 * fRec0[2]))));
 			iVec0[1] = iVec0[0];
 			fRec1[1] = fRec1[0];

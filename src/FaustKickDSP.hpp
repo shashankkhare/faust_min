@@ -1,7 +1,7 @@
 /* ------------------------------------------------------------
 name: "kick"
 Code generated with Faust 2.37.3 (https://faust.grame.fr)
-Compilation options: -lang cpp -es 1 -single -ftz 0
+Compilation options: -lang cpp -es 1 -single -ftz 1
 ------------------------------------------------------------ */
 
 #ifndef  __FaustKickDSP_H__
@@ -14,6 +14,7 @@ Compilation options: -lang cpp -es 1 -single -ftz 0
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <float.h>
 #include <math.h>
 
 class FaustKickDSPSIG0 {
@@ -95,7 +96,7 @@ class FaustKickDSP : public dsp {
 	void metadata(Meta* m) { 
 		m->declare("basics.lib/name", "Faust Basic Element Library");
 		m->declare("basics.lib/version", "0.2");
-		m->declare("compile_options", "-lang cpp -es 1 -single -ftz 0");
+		m->declare("compile_options", "-lang cpp -es 1 -single -ftz 1");
 		m->declare("envelopes.lib/adsr:author", "Yann Orlarey and Andrey Bundin");
 		m->declare("envelopes.lib/author", "GRAME");
 		m->declare("envelopes.lib/copyright", "GRAME");
@@ -207,13 +208,15 @@ class FaustKickDSP : public dsp {
 		float fSlow5 = (2.32830647e-11f * (fSlow0 + 1.0f));
 		for (int i0 = 0; (i0 < count); i0 = (i0 + 1)) {
 			fVec1[0] = fSlow3;
-			fRec2[0] = (fSlow3 + (fRec2[1] * float((fVec1[1] >= fSlow3))));
+			float fTempFTZ0 = (fSlow3 + (fRec2[1] * float((fVec1[1] >= fSlow3))));
+			fRec2[0] = ((std::fabs(fTempFTZ0) > 1.17549435e-38f) ? fTempFTZ0 : 0.0f);
 			float fTemp0 = (fConst3 * fRec2[0]);
 			iRec3[0] = (iSlow4 * (iRec3[1] + 1));
 			float fTemp1 = float(iRec3[0]);
 			float fTemp2 = (1.0f - (fConst5 * fTemp1));
 			float fTemp3 = (fRec1[1] + (fSlow2 * ((0.5f * std::max<float>(0.0f, (std::min<float>(fTemp0, std::max<float>((1.0f - (fConst4 * (fRec2[0] - fConst2))), 0.0f)) * fTemp2))) + 1.0f)));
-			fRec1[0] = (fTemp3 - std::floor(fTemp3));
+			float fTempFTZ1 = (fTemp3 - std::floor(fTemp3));
+			fRec1[0] = ((std::fabs(fTempFTZ1) > 1.17549435e-38f) ? fTempFTZ1 : 0.0f);
 			float fTemp4 = (fConst2 - fRec2[0]);
 			iRec4[0] = ((1103515245 * iRec4[1]) + 12345);
 			output0[i0] = FAUSTFLOAT((fSlow1 * ((ftbl0FaustKickDSPSIG0[int((65536.0f * fRec1[0]))] * std::max<float>(0.0f, (std::min<float>(fTemp0, std::max<float>(((fConst6 * fTemp4) + 1.0f), 0.0f)) * (1.0f - (fConst7 * fTemp1))))) + (fSlow5 * (float(iRec4[0]) * std::max<float>(0.0f, (fTemp2 * std::min<float>(fTemp0, std::max<float>(((fConst8 * fTemp4) + 1.0f), 0.0f)))))))));

@@ -1,7 +1,7 @@
 /* ------------------------------------------------------------
 name: "tom"
 Code generated with Faust 2.37.3 (https://faust.grame.fr)
-Compilation options: -lang cpp -es 1 -single -ftz 0
+Compilation options: -lang cpp -es 1 -single -ftz 1
 ------------------------------------------------------------ */
 
 #ifndef  __FaustTomDSP_H__
@@ -14,6 +14,7 @@ Compilation options: -lang cpp -es 1 -single -ftz 0
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <float.h>
 #include <math.h>
 
 class FaustTomDSPSIG0 {
@@ -93,7 +94,7 @@ class FaustTomDSP : public dsp {
 	void metadata(Meta* m) { 
 		m->declare("basics.lib/name", "Faust Basic Element Library");
 		m->declare("basics.lib/version", "0.2");
-		m->declare("compile_options", "-lang cpp -es 1 -single -ftz 0");
+		m->declare("compile_options", "-lang cpp -es 1 -single -ftz 1");
 		m->declare("envelopes.lib/ar:author", "Yann Orlarey, Stéphane Letz");
 		m->declare("envelopes.lib/author", "GRAME");
 		m->declare("envelopes.lib/copyright", "GRAME");
@@ -206,7 +207,8 @@ class FaustTomDSP : public dsp {
 			float fTemp0 = float(iRec2[0]);
 			float fTemp1 = (fConst3 * fTemp0);
 			float fTemp2 = (fRec1[1] + (fSlow2 * ((fSlow3 * std::max<float>(0.0f, std::min<float>(fTemp1, (1.0f - (fConst4 * (fTemp0 - fConst2)))))) + 1.0f)));
-			fRec1[0] = (fTemp2 - std::floor(fTemp2));
+			float fTempFTZ0 = (fTemp2 - std::floor(fTemp2));
+			fRec1[0] = ((std::fabs(fTempFTZ0) > 1.17549435e-38f) ? fTempFTZ0 : 0.0f);
 			float fTemp3 = (fConst2 - fTemp0);
 			iRec3[0] = ((1103515245 * iRec3[1]) + 12345);
 			output0[i0] = FAUSTFLOAT((fSlow1 * ((ftbl0FaustTomDSPSIG0[int((65536.0f * fRec1[0]))] * std::max<float>(0.0f, std::min<float>(fTemp1, ((fSlow5 * fTemp3) + 1.0f)))) + (fSlow6 * (float(iRec3[0]) * std::max<float>(0.0f, std::min<float>(fTemp1, ((fConst5 * fTemp3) + 1.0f))))))));

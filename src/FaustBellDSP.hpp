@@ -1,29 +1,7 @@
-/*
- * Copyright (c) 2026 Shashank Khare
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-
 /* ------------------------------------------------------------
 name: "bell"
 Code generated with Faust 2.37.3 (https://faust.grame.fr)
-Compilation options: -lang cpp -es 1 -single -ftz 0
+Compilation options: -lang cpp -es 1 -single -ftz 1
 ------------------------------------------------------------ */
 
 #ifndef  __FaustBellDSP_H__
@@ -36,6 +14,7 @@ Compilation options: -lang cpp -es 1 -single -ftz 0
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <float.h>
 #include <math.h>
 
 class FaustBellDSPSIG0 {
@@ -121,7 +100,7 @@ class FaustBellDSP : public dsp {
 	void metadata(Meta* m) { 
 		m->declare("basics.lib/name", "Faust Basic Element Library");
 		m->declare("basics.lib/version", "0.2");
-		m->declare("compile_options", "-lang cpp -es 1 -single -ftz 0");
+		m->declare("compile_options", "-lang cpp -es 1 -single -ftz 1");
 		m->declare("envelopes.lib/ar:author", "Yann Orlarey, Stéphane Letz");
 		m->declare("envelopes.lib/author", "GRAME");
 		m->declare("envelopes.lib/copyright", "GRAME");
@@ -246,15 +225,19 @@ class FaustBellDSP : public dsp {
 		float fSlow14 = (fConst8 * fSlow2);
 		float fSlow15 = (1.0f / std::max<float>(1.0f, (fConst9 * fSlow5)));
 		for (int i0 = 0; (i0 < count); i0 = (i0 + 1)) {
-			fRec1[0] = (fSlow3 + (fRec1[1] - std::floor((fSlow3 + fRec1[1]))));
+			float fTempFTZ0 = (fSlow3 + (fRec1[1] - std::floor((fSlow3 + fRec1[1]))));
+			fRec1[0] = ((std::fabs(fTempFTZ0) > 1.17549435e-38f) ? fTempFTZ0 : 0.0f);
 			fVec1[0] = fSlow4;
 			iRec2[0] = (((iRec2[1] + (iRec2[1] > 0)) * (fSlow4 <= fVec1[1])) + (fSlow4 > fVec1[1]));
 			float fTemp0 = float(iRec2[0]);
 			float fTemp1 = (fConst3 * fTemp0);
 			float fTemp2 = (fConst2 - fTemp0);
-			fRec3[0] = (fSlow8 + (fRec3[1] - std::floor((fSlow8 + fRec3[1]))));
-			fRec4[0] = (fSlow11 + (fRec4[1] - std::floor((fSlow11 + fRec4[1]))));
-			fRec5[0] = (fSlow14 + (fRec5[1] - std::floor((fSlow14 + fRec5[1]))));
+			float fTempFTZ1 = (fSlow8 + (fRec3[1] - std::floor((fSlow8 + fRec3[1]))));
+			fRec3[0] = ((std::fabs(fTempFTZ1) > 1.17549435e-38f) ? fTempFTZ1 : 0.0f);
+			float fTempFTZ2 = (fSlow11 + (fRec4[1] - std::floor((fSlow11 + fRec4[1]))));
+			fRec4[0] = ((std::fabs(fTempFTZ2) > 1.17549435e-38f) ? fTempFTZ2 : 0.0f);
+			float fTempFTZ3 = (fSlow14 + (fRec5[1] - std::floor((fSlow14 + fRec5[1]))));
+			fRec5[0] = ((std::fabs(fTempFTZ3) > 1.17549435e-38f) ? fTempFTZ3 : 0.0f);
 			output0[i0] = FAUSTFLOAT((fSlow1 * ((((ftbl0FaustBellDSPSIG0[int((65536.0f * fRec1[0]))] * std::max<float>(0.0f, std::min<float>(fTemp1, ((fSlow6 * fTemp2) + 1.0f)))) + (fSlow7 * (ftbl0FaustBellDSPSIG0[int((65536.0f * fRec3[0]))] * std::max<float>(0.0f, std::min<float>(fTemp1, ((fSlow9 * fTemp2) + 1.0f)))))) + (fSlow10 * (ftbl0FaustBellDSPSIG0[int((65536.0f * fRec4[0]))] * std::max<float>(0.0f, std::min<float>(fTemp1, ((fSlow12 * fTemp2) + 1.0f)))))) + (fSlow13 * (ftbl0FaustBellDSPSIG0[int((65536.0f * fRec5[0]))] * std::max<float>(0.0f, std::min<float>(fTemp1, ((fSlow15 * fTemp2) + 1.0f))))))));
 			fRec1[1] = fRec1[0];
 			fVec1[1] = fVec1[0];

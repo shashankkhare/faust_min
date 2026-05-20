@@ -1,7 +1,7 @@
 /* ------------------------------------------------------------
 name: "ai_flute"
 Code generated with Faust 2.37.3 (https://faust.grame.fr)
-Compilation options: -lang cpp -es 1 -single -ftz 0
+Compilation options: -lang cpp -es 1 -single -ftz 1
 ------------------------------------------------------------ */
 
 #ifndef  __FaustAi_fluteDSP_H__
@@ -14,6 +14,7 @@ Compilation options: -lang cpp -es 1 -single -ftz 0
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <float.h>
 #include <math.h>
 
 class FaustAi_fluteDSPSIG0 {
@@ -102,7 +103,7 @@ class FaustAi_fluteDSP : public dsp {
 	void metadata(Meta* m) { 
 		m->declare("basics.lib/name", "Faust Basic Element Library");
 		m->declare("basics.lib/version", "0.2");
-		m->declare("compile_options", "-lang cpp -es 1 -single -ftz 0");
+		m->declare("compile_options", "-lang cpp -es 1 -single -ftz 1");
 		m->declare("delays.lib/name", "Faust Delay Library");
 		m->declare("delays.lib/version", "0.1");
 		m->declare("filename", "ai_flute.dsp");
@@ -245,20 +246,25 @@ class FaustAi_fluteDSP : public dsp {
 			fVec0[(IOTA & 65535)] = 0.999000013f;
 			float fTemp0 = float((0.999000013f == fVec0[((IOTA - 44100) & 65535)]));
 			float fTemp1 = (1.0f - (0.00100000005f * fTemp0));
-			fRec1[0] = ((0.00100000005f * (fTemp0 * fRec1[1])) + (fSlow1 * fTemp1));
-			fRec2[0] = ((0.00100000005f * (fRec2[1] * fTemp0)) + (fSlow2 * fTemp1));
+			float fTempFTZ0 = ((0.00100000005f * (fTemp0 * fRec1[1])) + (fSlow1 * fTemp1));
+			fRec1[0] = ((std::fabs(fTempFTZ0) > 1.17549435e-38f) ? fTempFTZ0 : 0.0f);
+			float fTempFTZ1 = ((0.00100000005f * (fRec2[1] * fTemp0)) + (fSlow2 * fTemp1));
+			fRec2[0] = ((std::fabs(fTempFTZ1) > 1.17549435e-38f) ? fTempFTZ1 : 0.0f);
 			iRec3[0] = ((1103515245 * iRec3[1]) + 12345);
 			float fTemp2 = (fSlow0 * (fRec2[0] + (fSlow3 * float(iRec3[0]))));
 			fVec1[(IOTA & 2047)] = fTemp2;
-			fRec4[0] = ((0.00100000005f * (fTemp0 * fRec4[1])) + (fSlow4 * fTemp1));
-			fRec6[0] = (fSlow6 + (fRec6[1] - std::floor((fSlow6 + fRec6[1]))));
+			float fTempFTZ2 = ((0.00100000005f * (fTemp0 * fRec4[1])) + (fSlow4 * fTemp1));
+			fRec4[0] = ((std::fabs(fTempFTZ2) > 1.17549435e-38f) ? fTempFTZ2 : 0.0f);
+			float fTempFTZ3 = (fSlow6 + (fRec6[1] - std::floor((fSlow6 + fRec6[1]))));
+			fRec6[0] = ((std::fabs(fTempFTZ3) > 1.17549435e-38f) ? fTempFTZ3 : 0.0f);
 			float fTemp3 = (fConst0 / (fRec4[0] * ((fSlow5 * ftbl0FaustAi_fluteDSPSIG0[int((65536.0f * fRec6[0]))]) + 1.0f)));
 			int iTemp4 = int(fTemp3);
 			float fTemp5 = std::floor(fTemp3);
 			float fTemp6 = std::max<float>(-1.0f, std::min<float>(1.0f, (10.0f * ((fVec1[((IOTA - std::min<int>(1025, int(std::max<int>(0, int(iTemp4))))) & 2047)] * (fTemp5 + (1.0f - fTemp3))) + ((fTemp3 - fTemp5) * fVec1[((IOTA - std::min<int>(1025, int(std::max<int>(0, int((iTemp4 + 1)))))) & 2047)])))));
 			float fTemp7 = (fSlow0 * ((fRec1[0] * fTemp6) * (1.0f - (0.333333343f * FaustAi_fluteDSP_faustpower2_f(fTemp6)))));
 			fVec3[0] = fTemp7;
-			fRec0[0] = (0.0f - (fConst2 * ((fConst3 * fRec0[1]) - (fTemp7 + fVec3[1]))));
+			float fTempFTZ4 = (0.0f - (fConst2 * ((fConst3 * fRec0[1]) - (fTemp7 + fVec3[1]))));
+			fRec0[0] = ((std::fabs(fTempFTZ4) > 1.17549435e-38f) ? fTempFTZ4 : 0.0f);
 			output0[i0] = FAUSTFLOAT((0.5f * fRec0[0]));
 			IOTA = (IOTA + 1);
 			fRec1[1] = fRec1[0];

@@ -1,29 +1,7 @@
-/*
- * Copyright (c) 2026 Shashank Khare
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-
 /* ------------------------------------------------------------
 name: "snare"
 Code generated with Faust 2.37.3 (https://faust.grame.fr)
-Compilation options: -lang cpp -es 1 -single -ftz 0
+Compilation options: -lang cpp -es 1 -single -ftz 1
 ------------------------------------------------------------ */
 
 #ifndef  __FaustSnareDSP_H__
@@ -36,6 +14,7 @@ Compilation options: -lang cpp -es 1 -single -ftz 0
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <float.h>
 #include <math.h>
 
 class FaustSnareDSPSIG0 {
@@ -123,7 +102,7 @@ class FaustSnareDSP : public dsp {
 	void metadata(Meta* m) { 
 		m->declare("basics.lib/name", "Faust Basic Element Library");
 		m->declare("basics.lib/version", "0.2");
-		m->declare("compile_options", "-lang cpp -es 1 -single -ftz 0");
+		m->declare("compile_options", "-lang cpp -es 1 -single -ftz 1");
 		m->declare("envelopes.lib/ar:author", "Yann Orlarey, Stéphane Letz");
 		m->declare("envelopes.lib/author", "GRAME");
 		m->declare("envelopes.lib/copyright", "GRAME");
@@ -266,14 +245,16 @@ class FaustSnareDSP : public dsp {
 		float fSlow4 = ((0.699999988f * fSlow0) + 0.300000012f);
 		float fSlow5 = (1.0f / std::max<float>(1.0f, (fConst17 * (float(fHslider3) + 1.0f))));
 		for (int i0 = 0; (i0 < count); i0 = (i0 + 1)) {
-			fRec1[0] = (fSlow2 + (fRec1[1] - std::floor((fSlow2 + fRec1[1]))));
+			float fTempFTZ0 = (fSlow2 + (fRec1[1] - std::floor((fSlow2 + fRec1[1]))));
+			fRec1[0] = ((std::fabs(fTempFTZ0) > 1.17549435e-38f) ? fTempFTZ0 : 0.0f);
 			fVec1[0] = fSlow3;
 			iRec2[0] = (((iRec2[1] + (iRec2[1] > 0)) * (fSlow3 <= fVec1[1])) + (fSlow3 > fVec1[1]));
 			float fTemp0 = float(iRec2[0]);
 			float fTemp1 = (fConst3 * fTemp0);
 			float fTemp2 = (fConst2 - fTemp0);
 			iRec4[0] = ((1103515245 * iRec4[1]) + 12345);
-			fRec3[0] = ((4.65661287e-10f * float(iRec4[0])) - (fConst13 * ((fConst14 * fRec3[1]) + (fConst15 * fRec3[2]))));
+			float fTempFTZ1 = ((4.65661287e-10f * float(iRec4[0])) - (fConst13 * ((fConst14 * fRec3[1]) + (fConst15 * fRec3[2]))));
+			fRec3[0] = ((std::fabs(fTempFTZ1) > 1.17549435e-38f) ? fTempFTZ1 : 0.0f);
 			output0[i0] = FAUSTFLOAT((fSlow1 * ((ftbl0FaustSnareDSPSIG0[int((65536.0f * fRec1[0]))] * std::max<float>(0.0f, std::min<float>(fTemp1, ((fConst4 * fTemp2) + 1.0f)))) + (fSlow4 * (((fConst12 * fRec3[0]) + (fConst16 * fRec3[2])) * std::max<float>(0.0f, std::min<float>(fTemp1, ((fSlow5 * fTemp2) + 1.0f))))))));
 			fRec1[1] = fRec1[0];
 			fVec1[1] = fVec1[0];
