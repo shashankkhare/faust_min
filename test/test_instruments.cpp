@@ -22,7 +22,7 @@
 
 static float gTestVelocity = 0.8f;
 static float gTestPressure = -1.0f; // -1 means use default or LUT
-static float gTestAmplitude = 1.0f;
+static float gTestAmplitude = 0.8f;
 static double gTestFrequency = -1.0; // -1 means use default test sequence
 
 static std::vector<double> getTestFreqsDouble(const std::vector<double>& defaultFreqs) {
@@ -219,7 +219,7 @@ void testSitar(FaustMixer& mixer, DSPExecutionType execType) {
 void testFlute(FaustMixer& mixer, DSPExecutionType execType) {
     std::cout << "\n=== [Test] Flute ===" << std::endl;
     auto inst = std::make_shared<FaustInstrument>(10, execType, InstrumentMapper::DEFAULT_SAMPLE_RATE);
-    mixer.registerInstrument(inst.get(), gTestVelocity);
+    mixer.registerInstrument(inst.get(), gTestAmplitude);
     if (gTestPressure >= 0.0f) {
         inst->setParam("pressure", gTestPressure);
     } else {
@@ -352,7 +352,7 @@ void testTrumpet(FaustMixer& mixer, DSPExecutionType execType) {
 void testShakuhachi(FaustMixer& mixer, DSPExecutionType execType) {
     std::cout << "\n=== [Test] Shakuhachi (Minyo Pentatonic Scale: D4 to D5) ===" << std::endl;
     auto inst = std::make_shared<FaustInstrument>(16, execType, InstrumentMapper::DEFAULT_SAMPLE_RATE);
-    mixer.registerInstrument(inst.get(), gTestVelocity);
+    mixer.registerInstrument(inst.get(), gTestAmplitude);
     
     std::vector<double> freqs;
     if (gTestFrequency > 0.0) {
@@ -377,7 +377,7 @@ void testShakuhachi(FaustMixer& mixer, DSPExecutionType execType) {
 void testBansuri(FaustMixer& mixer, DSPExecutionType execType) {
     std::cout << "\n=== [Test] Bansuri (Raga Bhupali Scale with Glide/Meend: C4 to C5) ===" << std::endl;
     auto inst = std::make_shared<FaustInstrument>(17, execType, InstrumentMapper::DEFAULT_SAMPLE_RATE);
-    mixer.registerInstrument(inst.get(), gTestVelocity);
+    mixer.registerInstrument(inst.get(), gTestAmplitude);
     
     // Set glide time to 150ms for expressive meend transitions
     inst->setParam("glide", 0.15f);
@@ -405,7 +405,7 @@ void testBansuri(FaustMixer& mixer, DSPExecutionType execType) {
 void testViolin(FaustMixer& mixer, DSPExecutionType execType) {
     std::cout << "\n=== [Test] Violin (G3 to E5, D Major Scale) ===" << std::endl;
     auto inst = std::make_shared<FaustInstrument>(18, execType, InstrumentMapper::DEFAULT_SAMPLE_RATE);
-    mixer.registerInstrument(inst.get(), gTestVelocity);
+    mixer.registerInstrument(inst.get(), gTestAmplitude);
     if (gTestPressure >= 0.0f) {
         inst->setParam("bowPressure", gTestPressure);
     }
@@ -883,20 +883,20 @@ int main(int argc, char* argv[]) {
             });
 
             if (it != instruments.end()) {
-                std::cout << ">>> Enter velocity (0.0 to 1.0) [default 0.8]: ";
-                std::string velStr;
+                std::cout << ">>> Enter amplitude (0.0 to 1.0) [default 0.8]: ";
+                std::string ampStr;
                 std::cin.ignore(10000, '\n'); // Clear the newline from the ID input
-                std::getline(std::cin, velStr);
-                if (!velStr.empty()) {
+                std::getline(std::cin, ampStr);
+                if (!ampStr.empty()) {
                     try {
-                        gTestVelocity = std::stof(velStr);
-                        if (gTestVelocity < 0.0f) gTestVelocity = 0.0f;
-                        if (gTestVelocity > 1.0f) gTestVelocity = 1.0f;
+                        gTestAmplitude = std::stof(ampStr);
+                        if (gTestAmplitude < 0.0f) gTestAmplitude = 0.0f;
+                        if (gTestAmplitude > 1.0f) gTestAmplitude = 1.0f;
                     } catch (...) {
-                        gTestVelocity = 0.8f;
+                        gTestAmplitude = 0.8f;
                     }
                 } else {
-                    gTestVelocity = 0.8f;
+                    gTestAmplitude = 0.8f;
                 }
 
                 std::cout << ">>> Enter frequency in Hz (or press Enter for default sequence): ";
