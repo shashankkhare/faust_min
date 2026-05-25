@@ -340,25 +340,25 @@ int main(int argc, char* argv[]) {
                 "notation: Western\n"
                 "\n"
                 // Measure 1-4 (Bm, F#, A, E)
-                "B3 D4 F#4 C#5 F#4 D4 B3 D4 F#4 B4 F#4 D4 B3 D4 F#4 D4 "
-                "A#3 C#4 F#4 A#4 F#4 C#4 A#3 C#4 F#4 G#4 F#4 C#4 A#3 C#4 F#4 C#4 "
-                "A3 C#4 E4 A4 E4 C#4 A3 C#4 E4 B4 E4 C#4 A3 C#4 E4 C#4 "
-                "G#3 B3 E4 G#4 E4 B3 G#3 B3 E4 F#4 E4 B3 G#3 B3 E4 B3 "
+                "5B2. 5F#3 6B3 6B2 5F#3 6B3. 6F#4... 5D4... "
+                "5F#2. 5F#3 6A#3. 5C#4. 6A#3 5F#4....... "
+                "6A2. 6E3 6A3. 5C#4. 5A3 5A4... 6C#4... "
+                "6B2. 5E3 5G#3. 5B2 6E2 5B2 6E4....... "
                 // Measure 5-8 (G, D, Em, F#)
-                "G3 B3 D4 G4 D4 B3 G3 B3 D4 A4 D4 B3 G3 B3 D4 B3 "
-                "F#3 A3 D4 F#4 D4 A3 F#3 A3 D4 G4 D4 A3 F#3 A3 D4 A3 "
-                "E3 G3 B3 E4 B3 G3 E3 G3 B3 F#4 B3 G3 E3 G3 B3 G3 "
-                "F#3 A#3 C#4 F#4 C#4 A#3 F#3 A#3 C#4 G#4 C#4 A#3 F#3 A#3 C#4 A#3 "
+                "6G3. 6B3 6G3. 5B3. 6G3 5C#4... 5D4... "
+                "_ . 6A3 6D4. 5F#4.. 6F#4... 6D4... "
+                "_ . 6B3 5G3. 5B3 6A3. 5B3... 5G3... "
+                "6F#2. 6F#3 6A#3. 5C#4. 6A#3 6F#4....... "
                 // Repeat Measure 1-4
-                "B3 D4 F#4 C#5 F#4 D4 B3 D4 F#4 B4 F#4 D4 B3 D4 F#4 D4 "
-                "A#3 C#4 F#4 A#4 F#4 C#4 A#3 C#4 F#4 G#4 F#4 C#4 A#3 C#4 F#4 C#4 "
-                "A3 C#4 E4 A4 E4 C#4 A3 C#4 E4 B4 E4 C#4 A3 C#4 E4 C#4 "
-                "G#3 B3 E4 G#4 E4 B3 G#3 B3 E4 F#4 E4 B3 G#3 B3 E4 B3 "
+                "5B2. 5F#3 6B3 6B2 5F#3 6B3. 6F#4... 5D4... "
+                "5F#2. 5F#3 6A#3. 5C#4. 6A#3 5F#4....... "
+                "6A2. 6E3 6A3. 5C#4. 5A3 5A4... 6C#4... "
+                "6B2. 5E3 5G#3. 5B2 6E2 5B2 6E4....... "
                 // Repeat Measure 5-8
-                "G3 B3 D4 G4 D4 B3 G3 B3 D4 A4 D4 B3 G3 B3 D4 B3 "
-                "F#3 A3 D4 F#4 D4 A3 F#3 A3 D4 G4 D4 A3 F#3 A3 D4 A3 "
-                "E3 G3 B3 E4 B3 G3 E3 G3 B3 F#4 B3 G3 E3 G3 B3 G3 "
-                "F#3 A#3 C#4 F#4 C#4 A#3 F#3 A#3 C#4 G#4 C#4 A#3 F#3 A#3 C#4 A#3";
+                "6G3. 6B3 6G3. 5B3. 6G3 5C#4... 5D4... "
+                "_ . 6A3 6D4. 5F#4.. 6F#4... 6D4... "
+                "_ . 6B3 5G3. 5B3 6A3. 5B3... 5G3... "
+                "6F#2. 6F#3 6A#3. 5C#4. 6A#3 6F#4.......";
 
             std::string umlBGuitar = 
                 "grid: 4\n"
