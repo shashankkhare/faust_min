@@ -340,25 +340,25 @@ int main(int argc, char* argv[]) {
                 "notation: Western\n"
                 "\n"
                 // Measure 1-4 (Bm, F#, A, E)
-                "F#4 D4 B3.  F#4 D4 B3.  "
-                "E4 C#4 A#3.  E4 C#4 A#3.  "
-                "E4 C#4 A3.  E4 C#4 A3.  "
-                "D4 B3 G#3.  D4 B3 G#3.  "
+                "B3 D4 F#4 C#5 F#4 D4 B3 D4 F#4 B4 F#4 D4 B3 D4 F#4 D4 "
+                "A#3 C#4 F#4 A#4 F#4 C#4 A#3 C#4 F#4 G#4 F#4 C#4 A#3 C#4 F#4 C#4 "
+                "A3 C#4 E4 A4 E4 C#4 A3 C#4 E4 B4 E4 C#4 A3 C#4 E4 C#4 "
+                "G#3 B3 E4 G#4 E4 B3 G#3 B3 E4 F#4 E4 B3 G#3 B3 E4 B3 "
                 // Measure 5-8 (G, D, Em, F#)
-                "D4 B3 G3.  D4 B3 G3.  "
-                "F#4 D4 A3.  F#4 D4 A3.  "
-                "G4 E4 B3.  G4 E4 B3.  "
-                "E4 C#4 A#3.  E4 C#4 A#3.  "
+                "G3 B3 D4 G4 D4 B3 G3 B3 D4 A4 D4 B3 G3 B3 D4 B3 "
+                "F#3 A3 D4 F#4 D4 A3 F#3 A3 D4 G4 D4 A3 F#3 A3 D4 A3 "
+                "E3 G3 B3 E4 B3 G3 E3 G3 B3 F#4 B3 G3 E3 G3 B3 G3 "
+                "F#3 A#3 C#4 F#4 C#4 A#3 F#3 A#3 C#4 G#4 C#4 A#3 F#3 A#3 C#4 A#3 "
                 // Repeat Measure 1-4
-                "F#4 D4 B3.  F#4 D4 B3.  "
-                "E4 C#4 A#3.  E4 C#4 A#3.  "
-                "E4 C#4 A3.  E4 C#4 A3.  "
-                "D4 B3 G#3.  D4 B3 G#3.  "
+                "B3 D4 F#4 C#5 F#4 D4 B3 D4 F#4 B4 F#4 D4 B3 D4 F#4 D4 "
+                "A#3 C#4 F#4 A#4 F#4 C#4 A#3 C#4 F#4 G#4 F#4 C#4 A#3 C#4 F#4 C#4 "
+                "A3 C#4 E4 A4 E4 C#4 A3 C#4 E4 B4 E4 C#4 A3 C#4 E4 C#4 "
+                "G#3 B3 E4 G#4 E4 B3 G#3 B3 E4 F#4 E4 B3 G#3 B3 E4 B3 "
                 // Repeat Measure 5-8
-                "D4 B3 G3.  D4 B3 G3.  "
-                "F#4 D4 A3.  F#4 D4 A3.  "
-                "G4 E4 B3.  G4 E4 B3.  "
-                "E4 C#4 A#3.  E4 C#4 A#3.";
+                "G3 B3 D4 G4 D4 B3 G3 B3 D4 A4 D4 B3 G3 B3 D4 B3 "
+                "F#3 A3 D4 F#4 D4 A3 F#3 A3 D4 G4 D4 A3 F#3 A3 D4 A3 "
+                "E3 G3 B3 E4 B3 G3 E3 G3 B3 F#4 B3 G3 E3 G3 B3 G3 "
+                "F#3 A#3 C#4 F#4 C#4 A#3 F#3 A#3 C#4 G#4 C#4 A#3 F#3 A#3 C#4 A#3";
 
             std::string umlBGuitar = 
                 "grid: 4\n"
@@ -369,9 +369,12 @@ int main(int argc, char* argv[]) {
                 // Measures 1-4: Silence (64 steps)
                 "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
                 "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
-                // Measures 5-8: Active chord-aligned sustain notes (64 steps total: 8 steps per chord)
-                "G1....... D2....... E1....... F#1....... "
-                "B1....... F#1....... A1....... E1.......";
+                // Measures 5-8: Active chord-aligned sustain notes (64 steps total: 16 steps per chord)
+                "G1............... D2............... E1............... F#1............... "
+                // Measures 9-12: Active chord-aligned sustain notes (64 steps total: 16 steps per chord)
+                "B1............... F#1............... A1............... E1............... "
+                // Measures 13-16: Active chord-aligned sustain notes (64 steps total: 16 steps per chord)
+                "G1............... D2............... E1............... F#1...............";
 
             // Tumba (Low Conga, e.g. 130 Hz): plays deep, syncopated accents on beats 1, 3, and "and" of 2/4
             std::string umlCongaLow = 
@@ -383,7 +386,16 @@ int main(int argc, char* argv[]) {
                 // Measures 1-4: Silence (64 steps)
                 "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
                 "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
-                // Measures 5-8: Active patterns (4 repeats of 16-step pattern = 64 steps)
+                // Measures 5-8: Active patterns (64 steps)
+                "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
+                "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
+                "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
+                "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
+                // Measures 9-16: Active patterns (128 steps)
+                "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
+                "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
+                "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
+                "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
                 "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
                 "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
                 "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
@@ -399,7 +411,16 @@ int main(int argc, char* argv[]) {
                 // Measures 1-4: Silence (64 steps)
                 "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
                 "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
-                // Measures 5-8: Active patterns (4 repeats of 16-step pattern = 64 steps)
+                // Measures 5-8: Active patterns (64 steps)
+                "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
+                "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
+                "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
+                "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
+                // Measures 9-16: Active patterns (128 steps)
+                "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
+                "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
+                "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
+                "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
                 "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
                 "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
                 "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
@@ -415,7 +436,16 @@ int main(int argc, char* argv[]) {
                 // Measures 1-4: Silence (64 steps)
                 "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
                 "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
-                // Measures 5-8: Active patterns (4 repeats of 16-step pattern = 64 steps)
+                // Measures 5-8: Active patterns (64 steps)
+                "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
+                "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
+                "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
+                "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
+                // Measures 9-16: Active patterns (128 steps)
+                "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
+                "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
+                "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
+                "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
                 "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
                 "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
                 "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
@@ -429,15 +459,19 @@ int main(int argc, char* argv[]) {
                 // Measures 1-4: Silence (64 steps)
                 "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
                 "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
-                // Measures 5-8: Active patterns (8 repeats of 8-step pattern = 64 steps)
-                "8x. _ 8x. _  8x. _ 8x. _  "
-                "8x. _ 8x. _  8x. _ 8x. _  "
-                "8x. _ 8x. _  8x. _ 8x. _  "
-                "8x. _ 8x. _  8x. _ 8x. _  "
-                "8x. _ 8x. _  8x. _ 8x. _  "
-                "8x. _ 8x. _  8x. _ 8x. _  "
-                "8x. _ 8x. _  8x. _ 8x. _  "
-                "8x. _ 8x. _  8x. _ 8x. _";
+                // Measures 5-16: Active patterns (192 steps total)
+                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  "
+                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  "
+                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  "
+                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  "
+                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  "
+                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  "
+                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  "
+                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  "
+                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  "
+                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  "
+                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  "
+                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _";
                 
             std::string umlSnare = 
                 "grid: 4\n"
@@ -447,15 +481,19 @@ int main(int argc, char* argv[]) {
                 // Measures 1-4: Silence (64 steps)
                 "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
                 "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
-                // Measures 5-8: Active patterns (8 repeats of 8-step pattern = 64 steps)
-                "_ _ 8x. _  _ _ 8x. _  "
-                "_ _ 8x. _  _ _ 8x. _  "
-                "_ _ 8x. _  _ _ 8x. _  "
-                "_ _ 8x. _  _ _ 8x. _  "
-                "_ _ 8x. _  _ _ 8x. _  "
-                "_ _ 8x. _  _ _ 8x. _  "
-                "_ _ 8x. _  _ _ 8x. _  "
-                "_ _ 8x. _  _ _ 8x. _";
+                // Measures 5-16: Active patterns (192 steps total)
+                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
+                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
+                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
+                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
+                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
+                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
+                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
+                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
+                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
+                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
+                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
+                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _";
 
             group.sequences.push_back({"AcousticGuitar", new UMLSequence("AcousticGuitar", 21, umlAGuitar)});
             group.sequences.push_back({"AcousticBass", new UMLSequence("AcousticBass", 23, umlBGuitar)});
@@ -466,7 +504,7 @@ int main(int argc, char* argv[]) {
             group.sequences.push_back({"AcousticSnare", new UMLSequence("AcousticSnare", 3, umlSnare)});
 
             group.volumes = { 0.8f, 1.1f, 0.3f, 0.3f, 0.3f, 0.4f, 0.15f };
-            duration = 32;
+            duration = 64;
         }
 
         if (!group.sequences.empty()) {
