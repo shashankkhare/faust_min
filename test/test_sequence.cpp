@@ -340,25 +340,25 @@ int main(int argc, char* argv[]) {
                 "notation: Western\n"
                 "\n"
                 // Measure 1-4 (Bm, F#, A, E)
-                "B3. D4. F#4. D4. "
-                "A#3. C#4. F#4. C#4. "
-                "A3. C#4. E4. C#4. "
-                "G#3. B3. E4. B3. "
+                "F#4 D4 B3.  F#4 D4 B3.  "
+                "E4 C#4 A#3.  E4 C#4 A#3.  "
+                "E4 C#4 A3.  E4 C#4 A3.  "
+                "D4 B3 G#3.  D4 B3 G#3.  "
                 // Measure 5-8 (G, D, Em, F#)
-                "G3. B3. D4. B3. "
-                "F#3. A3. D4. A3. "
-                "E3. G3. B3. G3. "
-                "F#3. A#3. C#4. A#3. "
+                "D4 B3 G3.  D4 B3 G3.  "
+                "F#4 D4 A3.  F#4 D4 A3.  "
+                "G4 E4 B3.  G4 E4 B3.  "
+                "E4 C#4 A#3.  E4 C#4 A#3.  "
                 // Repeat Measure 1-4
-                "B3. D4. F#4. D4. "
-                "A#3. C#4. F#4. C#4. "
-                "A3. C#4. E4. C#4. "
-                "G#3. B3. E4. B3. "
+                "F#4 D4 B3.  F#4 D4 B3.  "
+                "E4 C#4 A#3.  E4 C#4 A#3.  "
+                "E4 C#4 A3.  E4 C#4 A3.  "
+                "D4 B3 G#3.  D4 B3 G#3.  "
                 // Repeat Measure 5-8
-                "G3. B3. D4. B3. "
-                "F#3. A3. D4. A3. "
-                "E3. G3. B3. G3. "
-                "F#3. A#3. C#4. A#3.";
+                "D4 B3 G3.  D4 B3 G3.  "
+                "F#4 D4 A3.  F#4 D4 A3.  "
+                "G4 E4 B3.  G4 E4 B3.  "
+                "E4 C#4 A#3.  E4 C#4 A#3.";
 
             std::string umlBGuitar = 
                 "grid: 4\n"
