@@ -43,6 +43,12 @@ public:
 #define MINIAUDIO_IMPLEMENTATION
 #include "miniaudio.h"
 void mixerMaCallback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount) {
+    static bool printed = false;
+    if (!printed) {
+        printf("[Native Trace] miniaudio callback frameCount: %u\n", frameCount);
+        fflush(stdout);
+        printed = true;
+    }
     FaustMixer::hardwareCallback(pOutput, (int)frameCount, pDevice->pUserData);
 }
 #endif
@@ -138,6 +144,7 @@ bool FaustMixer::start() {
     config.playback.format = ma_format_f32;
     config.playback.channels = 2;
     config.sampleRate = (ma_uint32)mSampleRate;
+    config.periodSizeInFrames = 1024;
     config.dataCallback = mixerMaCallback;
     config.pUserData = this;
 

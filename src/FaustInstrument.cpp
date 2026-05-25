@@ -593,15 +593,17 @@ void FaustInstrument::processRealtimeStream(float* buffer, int numFrames) {
         return;
     }
 
-    int numSubBlocks = mEventQueue.size() + 1;
-    int framesPerSubBlock = numFrames / numSubBlocks;
+    // To prevent parameter updates from dividing the render block into large silent gaps/latency,
+    // we use a sub-block size of 1 sample for intermediate events, leaving the
+    // remaining frames for the final state.
+    int framesPerSubBlock = 1;
     int framesProcessed = 0;
 
     int nOuts = mDSP->getNumOutputs();
     FAUSTFLOAT* outputs[2] = { mRenderBuffer, mRenderBuffer + numFrames };
 
     for (const auto& ev : mEventQueue) {
-        if (framesPerSubBlock > 0) {
+        if (framesPerSubBlock > 0 && (framesProcessed + framesPerSubBlock <= numFrames)) {
             processInternalGlides(framesPerSubBlock);
             mDSP->compute(framesPerSubBlock, nullptr, outputs);
             float* chunkBuffer = buffer + (framesProcessed * 2);
