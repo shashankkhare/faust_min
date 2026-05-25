@@ -503,7 +503,7 @@ int main(int argc, char* argv[]) {
             group.sequences.push_back({"AcousticKick", new UMLSequence("AcousticKick", 2, umlKick)});
             group.sequences.push_back({"AcousticSnare", new UMLSequence("AcousticSnare", 3, umlSnare)});
 
-            group.volumes = { 0.8f, 1.1f, 0.3f, 0.3f, 0.3f, 0.4f, 0.15f };
+            group.volumes = { 1.5f, 1.1f, 0.3f, 0.3f, 0.3f, 0.4f, 0.15f };
             duration = 64;
         }
 
