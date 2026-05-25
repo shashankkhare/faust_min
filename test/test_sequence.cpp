@@ -465,7 +465,7 @@ int main(int argc, char* argv[]) {
             group.sequences.push_back({"AcousticKick", new UMLSequence("AcousticKick", 2, umlKick)});
             group.sequences.push_back({"AcousticSnare", new UMLSequence("AcousticSnare", 3, umlSnare)});
 
-            group.volumes = { 0.7f, 0.8f, 0.8f, 0.8f, 0.8f, 0.9f, 0.8f };
+            group.volumes = { 0.7f, 1.4f, 0.4f, 0.4f, 0.4f, 0.4f, 0.4f };
             duration = 32;
         }
 
