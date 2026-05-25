@@ -481,19 +481,19 @@ int main(int argc, char* argv[]) {
                 // Measures 1-4: Silence (64 steps)
                 "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
                 "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
-                // Measures 5-16: Active patterns (192 steps total)
-                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
-                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
-                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
-                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
-                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
-                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
-                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
-                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
-                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
-                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
-                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
-                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _";
+                // Measures 5-8: Active patterns (64 steps: 3 measures silence, 1 measure with snare at end)
+                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  "
+                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  "
+                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  "
+                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ 8x. _  "
+                // Repeat Measures 1-4 (Measures 9-12): Silence (64 steps)
+                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
+                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
+                // Repeat Measures 5-8 (Measures 13-16): Active patterns (64 steps: 3 measures silence, 1 measure with snare at end)
+                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  "
+                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  "
+                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  "
+                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ 8x. _";
 
             group.sequences.push_back({"AcousticGuitar", new UMLSequence("AcousticGuitar", 21, umlAGuitar)});
             group.sequences.push_back({"AcousticBass", new UMLSequence("AcousticBass", 23, umlBGuitar)});
