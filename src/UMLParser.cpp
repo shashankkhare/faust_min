@@ -53,6 +53,52 @@ const std::map<std::string, double> UMLParser::percussionBols = {
     {"Tu", 3.0}, {"Tun", 3.0}
 };
 
+// Vowel syllables → continuous formant-morph index (0=aa, 1=ee, 2=ii, 3=oo, 4=uu)
+const std::map<std::string, double> UMLParser::vowelValues = {
+    {"aa", 0.0}, {"AA", 0.0}, {"Aa", 0.0}, {"a",  0.0},
+    {"ee", 1.0}, {"EE", 1.0}, {"Ee", 1.0}, {"e",  1.0},
+    {"ii", 2.0}, {"II", 2.0}, {"Ii", 2.0}, {"i",  2.0},
+    {"oo", 3.0}, {"OO", 3.0}, {"Oo", 3.0}, {"o",  3.0},
+    {"uu", 4.0}, {"UU", 4.0}, {"Uu", 4.0}, {"u",  4.0}
+};
+
+// Bayan-specific tabla bols → strike index (0..3)
+const std::map<std::string, double> UMLParser::bayanBols = {
+    // Open resonant strokes
+    {"Ge",  0.0}, {"ge",  0.0}, {"Ghe", 0.0}, {"ghe", 0.0},
+    // Deep bass press
+    {"Dha", 1.0}, {"dha", 1.0},
+    // Half-muffled
+    {"Dhin",2.0}, {"dhin",2.0},
+    // Edge stroke
+    {"Ka",  3.0}, {"ka",  3.0}, {"Ke",  3.0}, {"ke",  3.0},
+    // Muted centre
+    {"Ghi", 1.0}, {"ghi", 1.0},
+    // Silent/dummy stroke
+    {"Tit", 0.0}, {"tit", 0.0}
+};
+
+// African hand drum stroke names → strikeVal
+// Djembe (ID 28): strike 0.0=soft/bass, 1.0=sharp/slap (continuous 0–1)
+// Conga (ID 30) / Bongo (ID 31): strike 0=Open Tone, 1=Slap, 2=Muted
+const std::map<std::string, double> UMLParser::africanDrumBols = {
+    // --- Open/Bass strokes (strike = 0) ---
+    {"Ba",   0.0}, {"ba",   0.0},  // Bass  — full palm centre hit
+    {"Gu",   0.0}, {"gu",   0.0},  // Gu    — djembe deep bass (W African)
+    {"Don",  0.0}, {"don",  0.0},  // Don   — dun dun open bass
+    {"To",   0.0}, {"to",   0.0},  // Tone  — open finger tone (conga/bongo)
+    // --- Mid / Tone strokes (strike = 1) ---
+    {"Sl",   1.0}, {"sl",   1.0},  // Slap  — sharp edge slap
+    {"Go",   1.0}, {"go",   1.0},  // Go    — djembe open tone (W African)
+    {"Pa",   1.0},                  // Pa    — djembe mid open tone
+    // --- Muted / Edge strokes (strike = 2) ---
+    {"Mu",   2.0}, {"mu",   2.0},  // Mute  — muffled/touch stroke
+    {"De",   2.0}, {"de",   2.0},  // De    — djembe muted/stopped tone
+    {"Tap",  2.0}, {"tap",  2.0},  // Tap   — light finger tap
+    // --- Ghost / Silent strokes ---
+    {"Gh",   0.0}, {"gh",   0.0}   // Ghost — near-silent brush
+};
+
 const std::map<std::string, double> UMLParser::westernPitches = {
     {"C4", 261.63}, {"C#", 277.18}, {"Db", 277.18}, {"D4", 293.66}
     // Add more western pitches as needed
@@ -61,7 +107,7 @@ const std::map<std::string, double> UMLParser::westernPitches = {
 UMLSequence UMLParser::parse(const std::string& name, const std::string& input, double sampleRate, double defaultBaseFreq) {
     UMLSequence seq;
     seq.name = name;
-    seq.baseFreq = defaultBaseFreq;
+    seq.baseFreq = -1.0;
     
     std::stringstream ss(input);
     std::string line;
@@ -204,6 +250,8 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
 
             if (InstrumentMapper::isPercussionID(mappedInstID)) {
                 handlePercussionToken(ti.noteName, vel, sampleOffset, calculatedDurationSamples, seq.baseFreq, seq.instrument, seq.events);
+            } else if (mappedInstID == 32) { // Voice — vowel-driven token
+                handleVoiceToken(ti, vel, sampleOffset, calculatedDurationSamples, seq.notation, seq.baseFreq, samplesPerGrid, k, tokenItems, seq.events);
             } else {
                 handlePitchedToken(ti, vel, sampleOffset, calculatedDurationSamples, seq.notation, seq.baseFreq, seq.instrument, samplesPerGrid, k, tokenItems, seq.events);
             }
@@ -235,16 +283,32 @@ void UMLParser::handlePercussionToken(const std::string& tokenNoteName, float ve
 
     // Pre-calculate strikeVal based on instrument and note
     int instID = InstrumentMapper::getIDFromName(instrument);
-    if (instID == 0) { // Dayan
+    if (instID == 0) { // Dayan — classical tabla bols
         if (tokenNoteName == "Na" || tokenNoteName == "Ta" || tokenNoteName == "na" || tokenNoteName == "ta") ev.strikeVal = 0.0f;
         else if (tokenNoteName == "tk") ev.strikeVal = 1.0f;
         else if (tokenNoteName == "Tin" || tokenNoteName == "Ti" || tokenNoteName == "tin" || tokenNoteName == "ti") ev.strikeVal = 2.0f;
         else if (tokenNoteName == "Tun" || tokenNoteName == "Tu" || tokenNoteName == "tun" || tokenNoteName == "tu") ev.strikeVal = 3.0f;
-    } else if (instID == 1) { // Bayan
-        if (tokenNoteName == "Ka" || tokenNoteName == "ka") ev.strikeVal = 0.0f;
-        else if (tokenNoteName == "Ghe" || tokenNoteName == "ghe") ev.strikeVal = 1.0f;
-        else if (tokenNoteName == "Ghi" || tokenNoteName == "ghi") ev.strikeVal = 2.0f;
-        else if (tokenNoteName == "Ke" || tokenNoteName == "ke") ev.strikeVal = 3.0f;
+        // Compound bols that have a dayan component (use Na/Ta strike)
+        else if (tokenNoteName == "Dha" || tokenNoteName == "dha") ev.strikeVal = 0.0f; // Dayan open ring
+        else if (tokenNoteName == "Dhin" || tokenNoteName == "dhin") ev.strikeVal = 2.0f; // Dayan Tin-style
+        else if (tokenNoteName == "Tit" || tokenNoteName == "tit") ev.strikeVal = 1.0f;
+    } else if (instID == 1) { // Bayan — extended bol set
+        if (bayanBols.count(tokenNoteName)) {
+            ev.strikeVal = static_cast<float>(bayanBols.at(tokenNoteName));
+        } else {
+            // Legacy fallback for older bol spellings
+            if (tokenNoteName == "Ka" || tokenNoteName == "ka") ev.strikeVal = 0.0f;
+            else if (tokenNoteName == "Ghe" || tokenNoteName == "ghe") ev.strikeVal = 1.0f;
+            else if (tokenNoteName == "Ghi" || tokenNoteName == "ghi") ev.strikeVal = 2.0f;
+            else if (tokenNoteName == "Ke" || tokenNoteName == "ke") ev.strikeVal = 3.0f;
+        }
+    } else if (instID == 28 || instID == 30 || instID == 31) { // Djembe / Conga / Bongo — African stroke names
+        if (africanDrumBols.count(tokenNoteName)) {
+            ev.strikeVal = static_cast<float>(africanDrumBols.at(tokenNoteName));
+        } else if (percussionBols.count(tokenNoteName)) {
+            // Fallback: allow generic tabla tokens to still work
+            ev.strikeVal = static_cast<float>(percussionBols.at(tokenNoteName));
+        }
     } else if (percussionBols.count(tokenNoteName)) {
         ev.strikeVal = static_cast<float>(percussionBols.at(tokenNoteName));
     }
@@ -290,6 +354,42 @@ void UMLParser::handlePitchedToken(const TokenItem& ti, float velocityScalar, lo
     }
 }
 
+static double parseWesternPitch(const std::string& token) {
+    if (token.empty()) return 0.0;
+    
+    size_t i = 0;
+    char note = token[i++];
+    note = std::toupper(note);
+    if (note < 'A' || note > 'G') return 0.0;
+    
+    int offset = 0;
+    switch (note) {
+        case 'C': offset = 0; break;
+        case 'D': offset = 2; break;
+        case 'E': offset = 4; break;
+        case 'F': offset = 5; break;
+        case 'G': offset = 7; break;
+        case 'A': offset = 9; break;
+        case 'B': offset = 11; break;
+    }
+    
+    if (i < token.length() && (token[i] == '#' || token[i] == 's')) {
+        offset += 1;
+        i++;
+    } else if (i < token.length() && (token[i] == 'b' || token[i] == 'f')) {
+        offset -= 1;
+        i++;
+    }
+    
+    int octave = 4; // default octave
+    if (i < token.length() && std::isdigit(token[i])) {
+        octave = token[i] - '0';
+    }
+    
+    int midi = (octave + 1) * 12 + offset;
+    return 440.0 * std::pow(2.0, (midi - 69) / 12.0);
+}
+
 double UMLParser::getFrequency(const std::string& token, const std::string& notation, double baseFreq, const std::string& instrument) {
     // 0. Numeric Check (Direct Frequency)
     try {
@@ -311,8 +411,66 @@ double UMLParser::getFrequency(const std::string& token, const std::string& nota
         if (indianRatios.count(token)) return baseFreq * indianRatios.at(token);
     } else {
         if (westernPitches.count(token)) return westernPitches.at(token);
+        double parsed = parseWesternPitch(token);
+        if (parsed > 0.0) return parsed;
     }
     return baseFreq;
+}
+
+
+void UMLParser::handleVoiceToken(const TokenItem& ti, float velocityScalar, long sampleOffset, long durationSamples,
+                                 const std::string& notation, double baseFreq,
+                                 double samplesPerGrid, size_t nextTokenIndex, const std::vector<TokenItem>& tokenItemsArray, std::vector<UMLEvent>& outEvents) {
+
+    const std::string& token = ti.noteName;
+
+    UMLEvent ev;
+    ev.sampleOffset   = sampleOffset;
+    ev.velocity       = velocityScalar;
+    ev.type           = UMLEventType::NoteOn;
+    ev.note           = token;
+    ev.durationSamples = durationSamples;
+    ev.strikeVal      = -1.0f; // Voice has no strike
+
+    // Check if the token is a vowel syllable
+    if (vowelValues.count(token)) {
+        // Vowel token: emit the formant-morph value; pitch stays at base
+        ev.vowelVal  = static_cast<float>(vowelValues.at(token));
+        ev.frequency = static_cast<float>(baseFreq);
+    } else {
+        // Treat as a pitched note (Indian solfège or direct Hz) with no vowel override
+        ev.frequency = static_cast<float>(getFrequency(token, notation, baseFreq, "voice"));
+        ev.vowelVal  = -1.0f; // No vowel change — orchestrator keeps existing vowel
+    }
+
+    outEvents.push_back(ev);
+
+    // Glide support: if the token ends with '^', emit a Glide event towards the next token
+    if (ti.hasGlide) {
+        size_t targetIdx = nextTokenIndex;
+        while (targetIdx < tokenItemsArray.size() &&
+               (tokenItemsArray[targetIdx].type == TokenType::ContinuityDot ||
+                tokenItemsArray[targetIdx].type == TokenType::StopRest)) {
+            targetIdx++;
+        }
+        if (targetIdx < tokenItemsArray.size() && tokenItemsArray[targetIdx].type == TokenType::NoteWithControl) {
+            const std::string& nextTok = tokenItemsArray[targetIdx].noteName;
+            float tFreq = ev.frequency;
+            if (!vowelValues.count(nextTok)) {
+                tFreq = static_cast<float>(getFrequency(nextTok, notation, baseFreq, "voice"));
+            }
+            float tVel = static_cast<float>(tokenItemsArray[targetIdx].controlParam) / 9.0f;
+            if (std::abs(tFreq - ev.frequency) > 0.01f || std::abs(tVel - velocityScalar) > 0.01f) {
+                UMLEvent glideEv;
+                glideEv.sampleOffset     = sampleOffset;
+                glideEv.type             = UMLEventType::Glide;
+                glideEv.targetFrequency  = tFreq;
+                glideEv.targetVelocity   = tVel;
+                glideEv.durationSamples  = durationSamples;
+                outEvents.push_back(glideEv);
+            }
+        }
+    }
 }
 
 UMLSequence::UMLSequence(const std::string& seqName, int instID, const std::string& umlDataString, double defaultBaseFreq) {

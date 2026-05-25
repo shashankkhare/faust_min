@@ -38,11 +38,12 @@ struct UMLEvent {
     UMLEventType type = UMLEventType::NoteOn;
     float frequency = 0.0f;
     float velocity = 0.0f;
-    float strikeVal = -1.0f; // -1.0 implies no explicit strike value
+    float strikeVal = -1.0f;   // -1.0 implies no explicit strike value
+    float vowelVal  = -1.0f;   // -1.0 = not a voice event; 0=aa 1=ee 2=ii 3=oo 4=uu
     std::string note = "";
-    long durationSamples = 0; // For glides
-    float targetFrequency = 0.0f; // For glides
-    float targetVelocity = 0.0f;  // For glides
+    long durationSamples = 0;  // For glides
+    float targetFrequency = 0.0f;  // For glides
+    float targetVelocity  = 0.0f;  // For glides
     float targetStrikeVal = -1.0f; // For glides if needed
 };
 
@@ -99,10 +100,19 @@ private:
     static void handlePitchedToken(const TokenItem& ti, float velocityScalar, long sampleOffset, long durationSamples, 
                                    const std::string& notation, double baseFreq, const std::string& instrument,
                                    double samplesPerGrid, size_t nextTokenIndex, const std::vector<TokenItem>& tokenItemsArray, std::vector<UMLEvent>& outEvents);
+    static void handleVoiceToken(const TokenItem& ti, float velocityScalar, long sampleOffset, long durationSamples,
+                                 const std::string& notation, double baseFreq,
+                                 double samplesPerGrid, size_t nextTokenIndex, const std::vector<TokenItem>& tokenItemsArray, std::vector<UMLEvent>& outEvents);
 
     static const std::map<std::string, double> indianRatios;
     static const std::map<std::string, double> westernPitches;
     static const std::map<std::string, double> percussionBols;
+    // Vowel syllable table: aa/ee/ii/oo/uu → continuous 0–4 index for formant morphing
+    static const std::map<std::string, double> vowelValues;
+    // Extended bayan-specific bols (Dha, Ge, Dhin, Tit, etc.)
+    static const std::map<std::string, double> bayanBols;
+    // African drum stroke names → strikeVal for djembe (ID 28), conga (ID 30), bongo (ID 31)
+    static const std::map<std::string, double> africanDrumBols;
 };
 
 #endif // UML_PARSER_HPP

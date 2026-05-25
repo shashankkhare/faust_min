@@ -42,7 +42,7 @@ enum class DSPExecutionType {
 class __attribute__((visibility("default"))) FaustInstrument {
 public:
     FaustInstrument(int instrumentID = -1, DSPExecutionType execType = DSPExecutionType::StaticCompiled,
-                    float sampleRate = InstrumentMapper::DEFAULT_SAMPLE_RATE, float gain = -1.0f, float freq = -1.0f, float velocity = -1.0f);
+                    float sampleRate = InstrumentMapper::DEFAULT_SAMPLE_RATE, float gain = -1.0f, float freq = -1.0f, float velocity = -1.0f, float amplitude = 1.0f);
     virtual ~FaustInstrument();
 
     void setDSP(dsp* newDSP, DSPExecutionType execType = DSPExecutionType::StaticCompiled);
@@ -56,7 +56,10 @@ public:
     void setFrequencyImmediate(float freq);
     void setVelocity(float velocity);
     void setVelocityImmediate(float velocity);
+    virtual void setAmplitude(float amplitude);
+    virtual void setAmplitudeImmediate(float amplitude);
     void setDuration(float seconds);
+    void setReverbSend(float send);
     void setParameter(const char* name, float value);
 
     // --- Native Automation Glides ---
@@ -68,12 +71,14 @@ public:
     float getGain() const;
     float getFrequency() const;
     float getVelocity() const;
+    float getAmplitude() const;
     float getDuration() const;
+    float getReverbSend() const;
     float getSampleRate() const;
     DSPExecutionType getExecutionType() const;
 
-    void noteOn(float freq = -1.0f, float velocity = -1.0f, float strikeVal = -1.0f);
-    void noteOff(float decayTailMs = 0.0f);
+    virtual void noteOn(float freq = -1.0f, float velocity = -1.0f, float strikeVal = -1.0f, float amplitude = -1.0f);
+    virtual void noteOff(float decayTailMs = 0.0f);
     void render(int numFrames, float* buffer);
 
     // Virtual completion callback hook
@@ -112,7 +117,7 @@ protected:
     
     struct LUTRecord {
         float frequency;
-        float velocity;
+        float amplitude;
         std::map<std::string, float> targetParams;
     };
     std::vector<LUTRecord> mLUTRecords;
@@ -124,7 +129,7 @@ protected:
     };
     std::vector<TimedEvent> mEventQueue;
 
-    void applyDynamicLUTParams(float freq, float vel);
+    void applyDynamicLUTParams(float freq, float amp);
 
     std::unique_ptr<dsp> mDSP;
     std::unique_ptr<MapUI> mUI;
@@ -137,13 +142,17 @@ protected:
     float mGain;
     float mFrequency;
     float mVelocity;
+    float mAmplitude;
     float mDuration;
     float mAssignedWeight;
+    float mReverbSend;
     bool mGateOpen;
 
     // Internal sample-accurate timeline counters
     long mTargetFrames;
     long mElapsedFrames;
+    
+    float* mRenderBuffer;
     long mDecayFramesTarget;
     long mDecayElapsedFrames;
 

@@ -21,7 +21,10 @@ typedef struct FaustBell FaustBell;
 typedef struct FaustTanpura FaustTanpura;
 typedef struct FaustPiano FaustPiano;
 typedef struct FaustSax FaustSax;
+typedef struct FaustTrumpet FaustTrumpet;
 typedef struct FaustCowbell FaustCowbell;
+typedef struct FaustShakuhachi FaustShakuhachi;
+typedef struct FaustBansuri FaustBansuri;
 
 // --- High-Res Automation Event ---
 typedef struct {
@@ -168,6 +171,36 @@ DART_EXPORT void sax_strike(FaustSax* sax, float velocity);
 DART_EXPORT void sax_note_on(FaustSax* sax, float freq, float velocity);
 DART_EXPORT void sax_note_off(FaustSax* sax);
 DART_EXPORT void sax_render(FaustSax* sax, int numFrames, float* buffer);
+
+// --- Trumpet ---
+DART_EXPORT FaustTrumpet* trumpet_create(float sampleRate);
+DART_EXPORT void trumpet_destroy(FaustTrumpet* trumpet);
+DART_EXPORT void trumpet_set_frequency(FaustTrumpet* trumpet, float freq);
+DART_EXPORT void trumpet_set_vibrato(FaustTrumpet* trumpet, float rate, float depth);
+DART_EXPORT void trumpet_strike(FaustTrumpet* trumpet, float velocity);
+DART_EXPORT void trumpet_note_on(FaustTrumpet* trumpet, float freq, float velocity);
+DART_EXPORT void trumpet_note_off(FaustTrumpet* trumpet);
+DART_EXPORT void trumpet_render(FaustTrumpet* trumpet, int numFrames, float* buffer);
+
+// --- Shakuhachi ---
+DART_EXPORT FaustShakuhachi* shakuhachi_create(float sampleRate);
+DART_EXPORT void shakuhachi_destroy(FaustShakuhachi* shakuhachi);
+DART_EXPORT void shakuhachi_set_frequency(FaustShakuhachi* shakuhachi, float freq);
+DART_EXPORT void shakuhachi_set_vibrato(FaustShakuhachi* shakuhachi, float rate, float depth);
+DART_EXPORT void shakuhachi_strike(FaustShakuhachi* shakuhachi, float velocity);
+DART_EXPORT void shakuhachi_note_on(FaustShakuhachi* shakuhachi, float freq, float velocity);
+DART_EXPORT void shakuhachi_note_off(FaustShakuhachi* shakuhachi);
+DART_EXPORT void shakuhachi_render(FaustShakuhachi* shakuhachi, int numFrames, float* buffer);
+
+// --- Bansuri ---
+DART_EXPORT FaustBansuri* bansuri_create(float sampleRate);
+DART_EXPORT void bansuri_destroy(FaustBansuri* bansuri);
+DART_EXPORT void bansuri_set_frequency(FaustBansuri* bansuri, float freq);
+DART_EXPORT void bansuri_set_vibrato(FaustBansuri* bansuri, float rate, float depth);
+DART_EXPORT void bansuri_strike(FaustBansuri* bansuri, float velocity);
+DART_EXPORT void bansuri_note_on(FaustBansuri* bansuri, float freq, float velocity);
+DART_EXPORT void bansuri_note_off(FaustBansuri* bansuri);
+DART_EXPORT void bansuri_render(FaustBansuri* bansuri, int numFrames, float* buffer);
 
 // --- Audio Mixer & DSP ---
 DART_EXPORT /**

@@ -59,13 +59,18 @@ FaustMixer::FaustMixer()
     : mSampleRate(44100.0f),
 #endif
       mStreamDevice(nullptr), mIsStreamActive(false),
-      mMasterSampleTime(0), mMasterGain(1.0f), mScratchBuffer(nullptr), mMaxFrames(0),
+      mMasterSampleTime(0), mMasterGain(1.0f), mLimiterGain(1.0f), mScratchBuffer(nullptr), mMaxFrames(0),
+      mReverbInL(nullptr), mReverbInR(nullptr), mReverbOutL(nullptr), mReverbOutR(nullptr),
       mIsHardwareStarted(false) {}
 
 FaustMixer::~FaustMixer() {
     stop();
     close();
     if (mScratchBuffer) delete[] mScratchBuffer;
+    if (mReverbInL) delete[] mReverbInL;
+    if (mReverbInR) delete[] mReverbInR;
+    if (mReverbOutL) delete[] mReverbOutL;
+    if (mReverbOutR) delete[] mReverbOutR;
     for (int i = 0; i < InstrumentMapper::MAX_INSTRUMENTS; i++) {
         if (mInstrumentBuffers[i]) delete[] mInstrumentBuffers[i];
         mInstrumentBuffers[i] = nullptr;
@@ -76,11 +81,16 @@ void FaustMixer::init(float sampleRate) {
     std::lock_guard<std::mutex> lock(mRegistryMutex);
     mSampleRate = sampleRate;
 
-    // Pre-allocate thread pool intermediate buffers
+    // Pre-allocate thread pool intermediate buffers (Interleaved Stereo)
     for (int i = 0; i < InstrumentMapper::MAX_INSTRUMENTS; i++) {
         if (!mInstrumentBuffers[i]) {
-            mInstrumentBuffers[i] = new float[InstrumentMapper::MAX_FRAMES_PER_BUFFER];
+            mInstrumentBuffers[i] = new float[InstrumentMapper::MAX_FRAMES_PER_BUFFER * 2];
         }
+    }
+
+    if (!mMasterReverbDSP) {
+        mMasterReverbDSP.reset(new FaustMasterReverbDSP());
+        mMasterReverbDSP->init(static_cast<int>(mSampleRate));
     }
 
     if (!mWorkerRunning.load()) {
@@ -358,8 +368,10 @@ void FaustMixer::mixRawSignals(
         
         float maxAmp = 0.0f;
         for (int i = offset; i < numSamples; i++) {
-            float absVal = std::abs(track[i]);
-            if (absVal > maxAmp) maxAmp = absVal;
+            float absValL = std::abs(track[i * 2]);
+            float absValR = std::abs(track[i * 2 + 1]);
+            float peak = (absValL > absValR) ? absValL : absValR;
+            if (peak > maxAmp) maxAmp = peak;
         }
         if (maxAmp == 0.0f) continue;
         
@@ -373,7 +385,8 @@ void FaustMixer::mixRawSignals(
         float rightGain = pan > 0.0f ? 1.0f : 1.0f + pan;
 
         for (int i = offset; i < numSamples; i++) {
-            float val = track[i] * effectiveWeight;
+            float valL = track[i * 2] * effectiveWeight;
+            float valR = track[i * 2 + 1] * effectiveWeight;
             float envelope = 1.0f;
             if (i < offset + fIn && fIn > 0) {
                 float k = (float)(i - offset) / fIn;
@@ -385,9 +398,8 @@ void FaustMixer::mixRawSignals(
                 else if (curve == 2) envelope = k * k;
                 else envelope = k * k * k;
             }
-            float finalVal = val * envelope;
-            outputBuffer[i * 2] += finalVal * leftGain;
-            outputBuffer[i * 2 + 1] += finalVal * rightGain;
+            outputBuffer[i * 2] += valL * envelope * leftGain;
+            outputBuffer[i * 2 + 1] += valR * envelope * rightGain;
         }
     }
 
@@ -438,8 +450,17 @@ inline float FaustMixer::computeAutoRecalibrationMultiplier(const std::vector<Fa
 inline void FaustMixer::accumulateInstrumentChannels(float* stereoOutput, int numFrames, float balanceMultiplier, const std::vector<FaustInstrument*>& activeList) {
     if (numFrames > mMaxFrames) {
         if (mScratchBuffer) delete[] mScratchBuffer;
+        if (mReverbInL) delete[] mReverbInL;
+        if (mReverbInR) delete[] mReverbInR;
+        if (mReverbOutL) delete[] mReverbOutL;
+        if (mReverbOutR) delete[] mReverbOutR;
+        
         mMaxFrames = numFrames;
         mScratchBuffer = new float[mMaxFrames * 2];
+        mReverbInL = new float[mMaxFrames];
+        mReverbInR = new float[mMaxFrames];
+        mReverbOutL = new float[mMaxFrames];
+        mReverbOutR = new float[mMaxFrames];
     }
 
     // Dispatch all registered instruments to the thread pool for parallel rendering
@@ -464,7 +485,7 @@ inline void FaustMixer::accumulateInstrumentChannels(float* stereoOutput, int nu
             WorkItem& item = mWorkQueue[idx];
             if (item.valid && item.inst) {
                 float* buf = mInstrumentBuffers[item.bufferSlot];
-                std::fill(buf, buf + numFrames, 0.0f);
+                std::fill(buf, buf + (numFrames * 2), 0.0f);
                 item.inst->processRealtimeStream(buf, numFrames);
                 mPendingTasks.fetch_sub(1, std::memory_order_release);
             }
@@ -478,37 +499,68 @@ inline void FaustMixer::accumulateInstrumentChannels(float* stereoOutput, int nu
         }
     }
 
+    // Clear Master Reverb Bus
+    if (mMasterReverbDSP) {
+        std::fill(mReverbInL, mReverbInL + numFrames, 0.0f);
+        std::fill(mReverbInR, mReverbInR + numFrames, 0.0f);
+    }
+    bool hasReverb = false;
+
     // Accumulate results into stereoOutput
     float peakMix = 0.0f;
     for (int slot = 0; slot < workCount; slot++) {
         FaustInstrument* inst = activeList[slot];
         float effectiveWeight = (mDynamicWeights.count(inst) ? mDynamicWeights[inst] : inst->getAssignedWeight()) * balanceMultiplier;
         float* sourceBuffer = mInstrumentBuffers[slot];
+        float revSend = inst->getReverbSend();
+        if (revSend > 0.0f) hasReverb = true;
 
         float instPeak = 0.0f;
         for (int i = 0; i < numFrames; ++i) {
-            float scaledSample = sourceBuffer[i] * effectiveWeight;
-            float absVal = std::abs(scaledSample);
-            if (absVal > instPeak) instPeak = absVal;
+            float scaledSampleL = sourceBuffer[i * 2] * effectiveWeight;
+            float scaledSampleR = sourceBuffer[i * 2 + 1] * effectiveWeight;
             
-            stereoOutput[i * 2] += scaledSample;
-            stereoOutput[i * 2 + 1] += scaledSample;
+            float peak = std::max(std::abs(scaledSampleL), std::abs(scaledSampleR));
+            if (peak > instPeak) instPeak = peak;
             
-            float mixAbs = std::abs(stereoOutput[i * 2]);
-            if (mixAbs > peakMix) peakMix = mixAbs;
+            stereoOutput[i * 2] += scaledSampleL;
+            stereoOutput[i * 2 + 1] += scaledSampleR;
+
+            if (revSend > 0.0f) {
+                mReverbInL[i] += scaledSampleL * revSend;
+                mReverbInR[i] += scaledSampleR * revSend;
+            }
+            
+            float mixAbsL = std::abs(stereoOutput[i * 2]);
+            float mixAbsR = std::abs(stereoOutput[i * 2 + 1]);
+            float mixPeak = std::max(mixAbsL, mixAbsR);
+            if (mixPeak > peakMix) peakMix = mixPeak;
+        }
+    }
+
+    // Process and merge Master Reverb Bus
+    if (mMasterReverbDSP && hasReverb) {
+        FAUSTFLOAT* revIns[2] = { mReverbInL, mReverbInR };
+        FAUSTFLOAT* revOuts[2] = { mReverbOutL, mReverbOutR };
+        mMasterReverbDSP->compute(numFrames, revIns, revOuts);
+        
+        for (int i = 0; i < numFrames; ++i) {
+            stereoOutput[i * 2] += mReverbOutL[i];
+            stereoOutput[i * 2 + 1] += mReverbOutR[i];
+            
+            float mixAbsL = std::abs(stereoOutput[i * 2]);
+            float mixAbsR = std::abs(stereoOutput[i * 2 + 1]);
+            float mixPeak = std::max(mixAbsL, mixAbsR);
+            if (mixPeak > peakMix) peakMix = mixPeak;
         }
     }
 }
 
 inline void FaustMixer::applyMasterLimiter(float* buffer, int totalSamples) {
-    float maxAmp = 0.0f;
-    for (int i = 0; i < totalSamples; i++) {
-        float a = std::abs(buffer[i]);
-        if (a > maxAmp) maxAmp = a;
-    }
-    if (maxAmp > 0.95f) {
-        float scale = 0.95f / maxAmp;
-        for (int i = 0; i < totalSamples; i++) buffer[i] *= scale;
+    for (int i = 0; i < totalSamples; ++i) {
+        // Smooth mathematical soft-clipper to prevent digital clipping
+        // and eliminate low-frequency envelope modulation distortion (crackling).
+        buffer[i] = std::tanh(buffer[i]);
     }
 }
 

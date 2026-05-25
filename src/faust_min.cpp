@@ -48,6 +48,10 @@
 #include "FaustTanpura.hpp"
 #include "FaustPiano.hpp"
 #include "FaustSax.hpp"
+#include "FaustTrumpet.hpp"
+#include "FaustShakuhachi.hpp"
+#include "FaustBansuri.hpp"
+#include "FaustViolin.hpp"
 #include "SequenceOrchestrator.hpp"
 
 extern "C" {
@@ -241,5 +245,17 @@ DART_EXPORT void piano_destroy(FaustPiano* i) { delete i; }
 
 DART_EXPORT FaustSax* sax_create(float sampleRate) { return new FaustSax(sampleRate); }
 DART_EXPORT void sax_destroy(FaustSax* i) { delete i; }
+
+DART_EXPORT FaustTrumpet* trumpet_create(float sampleRate) { return new FaustTrumpet(sampleRate); }
+DART_EXPORT void trumpet_destroy(FaustTrumpet* i) { delete i; }
+
+DART_EXPORT FaustShakuhachi* shakuhachi_create(float sampleRate) { return new FaustShakuhachi(sampleRate); }
+DART_EXPORT void shakuhachi_destroy(FaustShakuhachi* i) { delete i; }
+
+DART_EXPORT FaustBansuri* bansuri_create(float sampleRate) { return new FaustBansuri(sampleRate); }
+DART_EXPORT void bansuri_destroy(FaustBansuri* i) { delete i; }
+
+DART_EXPORT FaustViolin* violin_create(float sampleRate) { return new FaustViolin(sampleRate); }
+DART_EXPORT void violin_destroy(FaustViolin* i) { delete i; }
 
 } // extern "C"

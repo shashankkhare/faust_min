@@ -192,15 +192,20 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
             // If the event happens within this block (or happened in the past due to a skip)
             if (ev.sampleOffset <= seqWrapper->currentSample + numFrames) {
                 if (ev.type == UMLEventType::NoteOn) {
-                    printf("[Native Trace] TRIGGER: Seq='%s' | EvIdx=%zu | Offset=%ld\n", 
-                           seqWrapper->sequenceObj->name.c_str(), seqWrapper->nextEventIndex, ev.sampleOffset);
-                    fflush(stdout);
-                    updateDSPParams(seqWrapper, ev.frequency, ev.velocity, ev.strikeVal, ev.note);
+                    // printf("[Native Trace] TRIGGER: Seq='%s' | EvIdx=%zu | Offset=%ld\n", 
+                    //        seqWrapper->sequenceObj->name.c_str(), seqWrapper->nextEventIndex, ev.sampleOffset);
+                    // fflush(stdout);
+                    int instID = seqWrapper->sequenceObj->instrumentID;
+                    if (instID == 32) { // Voice — use vowel-aware param dispatch
+                        updateDSPParamsVoice(seqWrapper, ev.frequency, ev.velocity, ev.vowelVal);
+                    } else {
+                        updateDSPParams(seqWrapper, ev.frequency, ev.velocity, ev.strikeVal, ev.note);
+                    }
                     if (inst) inst->noteOn(ev.frequency, ev.velocity, ev.strikeVal);
                 } else if (ev.type == UMLEventType::NoteOff) {
-                    printf("[Native Trace] TRIGGER (OFF): Seq='%s' | EvIdx=%zu | Offset=%ld\n", 
-                           seqWrapper->sequenceObj->name.c_str(), seqWrapper->nextEventIndex, ev.sampleOffset);
-                    fflush(stdout);
+                    // printf("[Native Trace] TRIGGER (OFF): Seq='%s' | EvIdx=%zu | Offset=%ld\n", 
+                    //        seqWrapper->sequenceObj->name.c_str(), seqWrapper->nextEventIndex, ev.sampleOffset);
+                    // fflush(stdout);
                     if (inst) inst->noteOff();
                 } else if (ev.type == UMLEventType::Glide) {
                     if (inst) {
@@ -237,4 +242,14 @@ void SequenceOrchestrator::updateDSPParams(std::shared_ptr<ActiveSequence> seqWr
     if (freq > 0.0f) inst->setParam("freq", freq);
     if (vel >= 0.0f) inst->setParam("velocity", vel);
     if (strikeVal >= 0.0f) inst->setParam("strike", strikeVal);
+}
+
+void SequenceOrchestrator::updateDSPParamsVoice(std::shared_ptr<ActiveSequence> seqWrapper, float freq, float vel, float vowelVal) {
+    if (!seqWrapper || !seqWrapper->sequenceObj) return;
+    auto inst = seqWrapper->sequenceObj->getFaustInstrument();
+    if (!inst) return;
+
+    if (freq > 0.0f)     inst->setParam("freq",    freq);
+    if (vel >= 0.0f)     inst->setParam("velocity", vel);
+    if (vowelVal >= 0.0f) inst->setParam("vowel",  vowelVal);
 }

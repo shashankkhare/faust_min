@@ -51,6 +51,24 @@ std::string InstrumentMapper::getNameFromID(int id) {
         case 12: return "PI";
         case 13: return "SX";
         case 14: return "CB";
+        case 15: return "TR";
+        case 16: return "SH";
+        case 17: return "BN";
+        case 18: return "VI";
+        case 19: return "RM";
+        case 20: return "CH";
+        case 21: return "AG";
+        case 22: return "EG";
+        case 23: return "BS";
+        case 24: return "CE";
+        case 25: return "CR";
+        case 26: return "CU";
+        case 27: return "WF";
+        case 28: return "DJ";
+        case 29: return "MA";
+        case 30: return "CG";
+        case 31: return "BG";
+        case 32: return "VO";
         default: return "DA";
     }
 }
@@ -81,6 +99,24 @@ int InstrumentMapper::getIDFromName(const std::string& name) {
     if (lowerName == "pi" || lowerName == "piano") return 12;
     if (lowerName == "sx" || lowerName == "sax") return 13;
     if (lowerName == "cb" || lowerName == "cowbell") return 14;
+    if (lowerName == "tr" || lowerName == "trumpet") return 15;
+    if (lowerName == "sh" || lowerName == "shakuhachi") return 16;
+    if (lowerName == "bn" || lowerName == "bansuri") return 17;
+    if (lowerName == "vi" || lowerName == "violin") return 18;
+    if (lowerName == "rm" || lowerName == "rainmaker") return 19;
+    if (lowerName == "ch" || lowerName == "churchbell") return 20;
+    if (lowerName == "ag" || lowerName == "acousticguitar" || lowerName == "acoustic_guitar") return 21;
+    if (lowerName == "eg" || lowerName == "electricguitar" || lowerName == "electric_guitar") return 22;
+    if (lowerName == "bs" || lowerName == "bass" || lowerName == "bassguitar" || lowerName == "bass_guitar") return 23;
+    if (lowerName == "ce" || lowerName == "cello") return 24;
+    if (lowerName == "cr" || lowerName == "cricket") return 25;
+    if (lowerName == "cu" || lowerName == "cuckoo") return 26;
+    if (lowerName == "wf" || lowerName == "waterfall") return 27;
+    if (lowerName == "dj" || lowerName == "djembe") return 28;
+    if (lowerName == "ma" || lowerName == "marimba") return 29;
+    if (lowerName == "cg" || lowerName == "conga") return 30;
+    if (lowerName == "bg" || lowerName == "bongo" || lowerName == "bonga") return 31;
+    if (lowerName == "vo" || lowerName == "voice" || lowerName == "vocals" || lowerName == "singing") return 32;
 
     return -1;
 }
@@ -108,6 +144,24 @@ std::string InstrumentMapper::getDSPPathForID(int id, const std::string& assetBa
         case 12: return base + "piano.dsp";
         case 13: return base + "sax.dsp";
         case 14: return base + "cowbell.dsp";
+        case 15: return base + "trumpet.dsp";
+        case 16: return base + "shakuhachi.dsp";
+        case 17: return base + "bansuri.dsp";
+        case 18: return base + "violin.dsp";
+        case 19: return base + "rainmaker.dsp";
+        case 20: return base + "churchbell.dsp";
+        case 21: return base + "acoustic_guitar.dsp";
+        case 22: return base + "electric_guitar.dsp";
+        case 23: return base + "bass.dsp";
+        case 24: return base + "cello.dsp";
+        case 25: return base + "cricket.dsp";
+        case 26: return base + "cuckoo.dsp";
+        case 27: return base + "waterfall.dsp";
+        case 28: return base + "djembe.dsp";
+        case 29: return base + "marimba.dsp";
+        case 30: return base + "conga.dsp";
+        case 31: return base + "bongo.dsp";
+        case 32: return base + "voice.dsp";
         default: return base + "dayan.dsp";
     }
 }

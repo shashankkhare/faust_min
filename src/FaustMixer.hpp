@@ -34,6 +34,7 @@
 #include <cmath>
 #include <memory>
 #include "FaustInstrument.hpp"
+#include "FaustMasterReverbDSP.hpp"
 
 /**
  * @class FaustMixer
@@ -117,6 +118,7 @@ private:
     bool mIsStreamActive;
     long mMasterSampleTime;
     float mMasterGain;
+    float mLimiterGain;
 
     std::vector<FaustInstrument*> mRegisteredInstruments;
     std::map<FaustInstrument*, float> mDynamicWeights;
@@ -141,6 +143,13 @@ private:
     std::mutex mRegistryMutex;
     float* mScratchBuffer;
     int mMaxFrames;
+
+    // --- Master Reverb Bus ---
+    std::unique_ptr<FaustMasterReverbDSP> mMasterReverbDSP;
+    float* mReverbInL;
+    float* mReverbInR;
+    float* mReverbOutL;
+    float* mReverbOutR;
 
     // --- Persistent Thread Pool ---
     int mWorkerCount = 4;

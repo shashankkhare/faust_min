@@ -181,6 +181,7 @@ public:
 private:
     void updateTimeline(int numFrames);
     void updateDSPParams(std::shared_ptr<ActiveSequence> seqWrapper, float freq, float vel, float strikeVal, const std::string& note);
+    void updateDSPParamsVoice(std::shared_ptr<ActiveSequence> seqWrapper, float freq, float vel, float vowelVal);
     SequenceOrchestrator(const SequenceOrchestrator&) = delete;
     SequenceOrchestrator& operator=(const SequenceOrchestrator&) = delete;
 

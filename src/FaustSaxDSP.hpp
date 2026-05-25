@@ -22,7 +22,7 @@ class FaustSaxDSPSIG0 {
   private:
 	
 	int iVec1[2];
-	int iRec4[2];
+	int iRec6[2];
 	
   public:
 	
@@ -34,21 +34,21 @@ class FaustSaxDSPSIG0 {
 	}
 	
 	void instanceInitFaustSaxDSPSIG0(int sample_rate) {
-		for (int l2 = 0; (l2 < 2); l2 = (l2 + 1)) {
-			iVec1[l2] = 0;
+		for (int l4 = 0; (l4 < 2); l4 = (l4 + 1)) {
+			iVec1[l4] = 0;
 		}
-		for (int l3 = 0; (l3 < 2); l3 = (l3 + 1)) {
-			iRec4[l3] = 0;
+		for (int l5 = 0; (l5 < 2); l5 = (l5 + 1)) {
+			iRec6[l5] = 0;
 		}
 	}
 	
 	void fillFaustSaxDSPSIG0(int count, float* table) {
 		for (int i1 = 0; (i1 < count); i1 = (i1 + 1)) {
 			iVec1[0] = 1;
-			iRec4[0] = ((iVec1[1] + iRec4[1]) % 65536);
-			table[i1] = std::sin((9.58738019e-05f * float(iRec4[0])));
+			iRec6[0] = ((iVec1[1] + iRec6[1]) % 65536);
+			table[i1] = std::sin((9.58738019e-05f * float(iRec6[0])));
 			iVec1[1] = iVec1[0];
-			iRec4[1] = iRec4[0];
+			iRec6[1] = iRec6[0];
 		}
 	}
 
@@ -79,22 +79,25 @@ class FaustSaxDSP : public dsp {
 	int fSampleRate;
 	float fConst0;
 	float fConst1;
-	FAUSTFLOAT fHslider1;
-	FAUSTFLOAT fHslider2;
+	float fConst2;
 	FAUSTFLOAT fButton0;
 	float fVec0[2];
-	float fRec3[2];
-	FAUSTFLOAT fHslider3;
-	float fRec5[2];
-	float fRec1[2];
-	float fConst2;
-	float fRec0[3];
+	float fRec0[2];
 	float fConst3;
 	float fConst4;
-	float fRec6[2];
+	int iRec1[2];
 	float fConst5;
+	FAUSTFLOAT fHslider1;
+	FAUSTFLOAT fHslider2;
+	float fRec5[2];
+	FAUSTFLOAT fHslider3;
+	float fRec7[2];
 	float fConst6;
-	int iRec7[2];
+	float fConst7;
+	float fRec8[2];
+	float fRec3[2];
+	float fConst8;
+	float fRec2[3];
 	
  public:
 	
@@ -116,11 +119,10 @@ class FaustSaxDSP : public dsp {
 		m->declare("filters.lib/iir:copyright", "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>");
 		m->declare("filters.lib/iir:license", "MIT-style STK-4.3 license");
 		m->declare("filters.lib/lowpass0_highpass1", "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>");
-		m->declare("filters.lib/lowpass0_highpass1:author", "Julius O. Smith III");
-		m->declare("filters.lib/lowpass:author", "Julius O. Smith III");
-		m->declare("filters.lib/lowpass:copyright", "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>");
-		m->declare("filters.lib/lowpass:license", "MIT-style STK-4.3 license");
 		m->declare("filters.lib/name", "Faust Filters Library");
+		m->declare("filters.lib/resonlp:author", "Julius O. Smith III");
+		m->declare("filters.lib/resonlp:copyright", "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>");
+		m->declare("filters.lib/resonlp:license", "MIT-style STK-4.3 license");
 		m->declare("filters.lib/tf2:author", "Julius O. Smith III");
 		m->declare("filters.lib/tf2:copyright", "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>");
 		m->declare("filters.lib/tf2:license", "MIT-style STK-4.3 license");
@@ -159,19 +161,21 @@ class FaustSaxDSP : public dsp {
 	virtual void instanceConstants(int sample_rate) {
 		fSampleRate = sample_rate;
 		fConst0 = std::min<float>(192000.0f, std::max<float>(1.0f, float(fSampleRate)));
-		fConst1 = (1.0f / fConst0);
-		fConst2 = (3.14159274f / fConst0);
-		fConst3 = std::max<float>(1.0f, (0.0500000007f * fConst0));
-		fConst4 = (1.0f / fConst3);
-		fConst5 = (0.200000003f / std::max<float>(1.0f, (0.100000001f * fConst0)));
-		fConst6 = (1.0f / std::max<float>(1.0f, (0.200000003f * fConst0)));
+		fConst1 = std::max<float>(1.0f, (0.0500000007f * fConst0));
+		fConst2 = (1.0f / fConst1);
+		fConst3 = (0.200000003f / std::max<float>(1.0f, (0.100000001f * fConst0)));
+		fConst4 = (1.0f / std::max<float>(1.0f, (0.200000003f * fConst0)));
+		fConst5 = (1.0f / fConst0);
+		fConst6 = (0.416666657f / fConst0);
+		fConst7 = (0.0599999987f * fConst0);
+		fConst8 = (3.14159274f / fConst0);
 	}
 	
 	virtual void instanceResetUserInterface() {
 		fHslider0 = FAUSTFLOAT(0.5f);
+		fButton0 = FAUSTFLOAT(0.0f);
 		fHslider1 = FAUSTFLOAT(440.0f);
 		fHslider2 = FAUSTFLOAT(0.014999999999999999f);
-		fButton0 = FAUSTFLOAT(0.0f);
 		fHslider3 = FAUSTFLOAT(5.0f);
 	}
 	
@@ -180,22 +184,25 @@ class FaustSaxDSP : public dsp {
 			fVec0[l0] = 0.0f;
 		}
 		for (int l1 = 0; (l1 < 2); l1 = (l1 + 1)) {
-			fRec3[l1] = 0.0f;
+			fRec0[l1] = 0.0f;
 		}
-		for (int l4 = 0; (l4 < 2); l4 = (l4 + 1)) {
-			fRec5[l4] = 0.0f;
+		for (int l2 = 0; (l2 < 2); l2 = (l2 + 1)) {
+			iRec1[l2] = 0;
 		}
-		for (int l5 = 0; (l5 < 2); l5 = (l5 + 1)) {
-			fRec1[l5] = 0.0f;
+		for (int l3 = 0; (l3 < 2); l3 = (l3 + 1)) {
+			fRec5[l3] = 0.0f;
 		}
-		for (int l6 = 0; (l6 < 3); l6 = (l6 + 1)) {
-			fRec0[l6] = 0.0f;
+		for (int l6 = 0; (l6 < 2); l6 = (l6 + 1)) {
+			fRec7[l6] = 0.0f;
 		}
 		for (int l7 = 0; (l7 < 2); l7 = (l7 + 1)) {
-			fRec6[l7] = 0.0f;
+			fRec8[l7] = 0.0f;
 		}
 		for (int l8 = 0; (l8 < 2); l8 = (l8 + 1)) {
-			iRec7[l8] = 0;
+			fRec3[l8] = 0.0f;
+		}
+		for (int l9 = 0; (l9 < 3); l9 = (l9 + 1)) {
+			fRec2[l9] = 0.0f;
 		}
 	}
 	
@@ -231,46 +238,51 @@ class FaustSaxDSP : public dsp {
 	virtual void compute(int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs) {
 		FAUSTFLOAT* output0 = outputs[0];
 		float fSlow0 = float(fHslider0);
-		float fSlow1 = (0.5f * fSlow0);
-		float fSlow2 = float(fHslider1);
-		float fSlow3 = float(fHslider2);
-		float fSlow4 = float(fButton0);
-		float fSlow5 = (0.00499999989f * (fSlow0 * fSlow4));
-		float fSlow6 = (fConst1 * float(fHslider3));
-		float fSlow7 = (1.5f * fSlow2);
-		int iSlow8 = (fSlow4 == 0.0f);
+		float fSlow1 = (1.20000005f * fSlow0);
+		float fSlow2 = float(fButton0);
+		int iSlow3 = (fSlow2 == 0.0f);
+		float fSlow4 = float(fHslider1);
+		float fSlow5 = float(fHslider2);
+		float fSlow6 = (0.00499999989f * (fSlow2 * fSlow0));
+		float fSlow7 = (fConst5 * float(fHslider3));
+		float fSlow8 = (2.0f * fSlow4);
 		for (int i0 = 0; (i0 < count); i0 = (i0 + 1)) {
-			fVec0[0] = fSlow4;
-			float fTempFTZ0 = (fSlow5 + (0.995000005f * fRec3[1]));
-			fRec3[0] = ((std::fabs(fTempFTZ0) > 1.17549435e-38f) ? fTempFTZ0 : 0.0f);
-			float fTempFTZ1 = (fSlow6 + (fRec5[1] - std::floor((fSlow6 + fRec5[1]))));
+			fVec0[0] = fSlow2;
+			float fTempFTZ0 = (fSlow2 + (fRec0[1] * float((fVec0[1] >= fSlow2))));
+			fRec0[0] = ((std::fabs(fTempFTZ0) > 1.17549435e-38f) ? fTempFTZ0 : 0.0f);
+			iRec1[0] = (iSlow3 * (iRec1[1] + 1));
+			float fTemp0 = std::max<float>(0.0f, (std::min<float>((fConst2 * fRec0[0]), std::max<float>((1.0f - (fConst3 * (fRec0[0] - fConst1))), 0.800000012f)) * (1.0f - (fConst4 * float(iRec1[0])))));
+			float fTempFTZ1 = (fSlow6 + (0.995000005f * fRec5[1]));
 			fRec5[0] = ((std::fabs(fTempFTZ1) > 1.17549435e-38f) ? fTempFTZ1 : 0.0f);
-			float fTemp0 = std::max<float>(1.1920929e-07f, std::fabs((fSlow2 * ((fSlow3 * (fRec3[0] * ftbl0FaustSaxDSPSIG0[int((65536.0f * fRec5[0]))])) + 1.0f))));
-			float fTemp1 = (fRec1[1] + (fConst1 * fTemp0));
-			float fTemp2 = (fTemp1 + -1.0f);
-			int iTemp3 = (fTemp2 < 0.0f);
-			float fTempFTZ2 = (iTemp3 ? fTemp1 : fTemp2);
-			fRec1[0] = ((std::fabs(fTempFTZ2) > 1.17549435e-38f) ? fTempFTZ2 : 0.0f);
-			float fThen1 = (fTemp1 + (fTemp2 * (1.0f - (fConst0 / fTemp0))));
-			float fTempFTZ3 = (iTemp3 ? fTemp1 : fThen1);
-			float fRec2 = ((std::fabs(fTempFTZ3) > 1.17549435e-38f) ? fTempFTZ3 : 0.0f);
-			float fTemp4 = std::tan((fConst2 * (fSlow7 + (3500.0f * fRec3[0]))));
-			float fTemp5 = (1.0f / fTemp4);
-			float fTemp6 = (((fTemp5 + 1.41421354f) / fTemp4) + 1.0f);
-			float fTempFTZ4 = ((2.0f * fRec2) + (-1.0f - (((fRec0[2] * (((fTemp5 + -1.41421354f) / fTemp4) + 1.0f)) + (2.0f * (fRec0[1] * (1.0f - (1.0f / FaustSaxDSP_faustpower2_f(fTemp4)))))) / fTemp6)));
-			fRec0[0] = ((std::fabs(fTempFTZ4) > 1.17549435e-38f) ? fTempFTZ4 : 0.0f);
-			float fTempFTZ5 = (fSlow4 + (fRec6[1] * float((fVec0[1] >= fSlow4))));
-			fRec6[0] = ((std::fabs(fTempFTZ5) > 1.17549435e-38f) ? fTempFTZ5 : 0.0f);
-			iRec7[0] = (iSlow8 * (iRec7[1] + 1));
-			output0[i0] = FAUSTFLOAT((fSlow1 * (((fRec0[2] + (fRec0[0] + (2.0f * fRec0[1]))) * std::max<float>(0.0f, (std::min<float>((fConst4 * fRec6[0]), std::max<float>(((fConst5 * (fConst3 - fRec6[0])) + 1.0f), 0.800000012f)) * (1.0f - (fConst6 * float(iRec7[0])))))) / fTemp6)));
+			float fTempFTZ2 = (fSlow7 + (fRec7[1] - std::floor((fSlow7 + fRec7[1]))));
+			fRec7[0] = ((std::fabs(fTempFTZ2) > 1.17549435e-38f) ? fTempFTZ2 : 0.0f);
+			float fThen0 = std::max<float>(0.0f, (fRec8[1] + -1.0f));
+			float fTempFTZ3 = ((float(((fSlow2 - fVec0[1]) > 0.0f)) > 0.0f) ? fConst7 : fThen0);
+			fRec8[0] = ((std::fabs(fTempFTZ3) > 1.17549435e-38f) ? fTempFTZ3 : 0.0f);
+			float fTemp1 = std::max<float>(1.1920929e-07f, std::fabs((fSlow4 * ((fSlow5 * (fRec5[0] * ftbl0FaustSaxDSPSIG0[int((65536.0f * fRec7[0]))])) + (1.0f - (fConst6 * fRec8[0]))))));
+			float fTemp2 = (fRec3[1] + (fConst5 * fTemp1));
+			float fTemp3 = (fTemp2 + -1.0f);
+			int iTemp4 = (fTemp3 < 0.0f);
+			float fTempFTZ4 = (iTemp4 ? fTemp2 : fTemp3);
+			fRec3[0] = ((std::fabs(fTempFTZ4) > 1.17549435e-38f) ? fTempFTZ4 : 0.0f);
+			float fThen2 = (fTemp2 + (fTemp3 * (1.0f - (fConst0 / fTemp1))));
+			float fTempFTZ5 = (iTemp4 ? fTemp2 : fThen2);
+			float fRec4 = ((std::fabs(fTempFTZ5) > 1.17549435e-38f) ? fTempFTZ5 : 0.0f);
+			float fTemp5 = std::tan((fConst8 * (fSlow8 + ((800.0f * fRec5[0]) + (400.0f * fTemp0)))));
+			float fTemp6 = (1.0f / fTemp5);
+			float fTemp7 = (((fTemp6 + 0.333333343f) / fTemp5) + 1.0f);
+			float fTempFTZ6 = ((2.0f * fRec4) + (-1.0f - (((fRec2[2] * (((fTemp6 + -0.333333343f) / fTemp5) + 1.0f)) + (2.0f * (fRec2[1] * (1.0f - (1.0f / FaustSaxDSP_faustpower2_f(fTemp5)))))) / fTemp7)));
+			fRec2[0] = ((std::fabs(fTempFTZ6) > 1.17549435e-38f) ? fTempFTZ6 : 0.0f);
+			output0[i0] = FAUSTFLOAT((fSlow1 * ((fTemp0 * (fRec2[2] + (fRec2[0] + (2.0f * fRec2[1])))) / fTemp7)));
 			fVec0[1] = fVec0[0];
-			fRec3[1] = fRec3[0];
-			fRec5[1] = fRec5[0];
-			fRec1[1] = fRec1[0];
-			fRec0[2] = fRec0[1];
 			fRec0[1] = fRec0[0];
-			fRec6[1] = fRec6[0];
-			iRec7[1] = iRec7[0];
+			iRec1[1] = iRec1[0];
+			fRec5[1] = fRec5[0];
+			fRec7[1] = fRec7[0];
+			fRec8[1] = fRec8[0];
+			fRec3[1] = fRec3[0];
+			fRec2[2] = fRec2[1];
+			fRec2[1] = fRec2[0];
 		}
 	}
 

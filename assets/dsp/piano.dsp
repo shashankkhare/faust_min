@@ -17,27 +17,36 @@ brightness = hslider("brightness", 0.7, 0, 1, 0.01);
 stiffness = hslider("stiffness", 0.25, 0, 1, 0.01);
 
 // =====================================================
-// HAMMER EXCITATION
+// HAMMER EXCITATION (freq-dependent sine burst + noise)
 // =====================================================
 
-// Short felt-hammer burst
+// Rising edge detector
+rawTrig = (gate - gate') > 0.0;
 
-hammerEnv =
-    en.ar(
-        0.0001,
-        0.008,
-        gate : ba.impulsify
-    );
+// Frequency-dependent hammer duration: at least 2 cycles
+hammerDur = max(0.003, 2.0 / freq);
 
-hammerNoise =
-    no.noise
-    * hammerEnv
-    * velocity;
+// Counter-based hammer envelope
+hammerTimer = rawTrig : hammer_pulse
+with {
+    hammer_pulse(t) = loop ~ _
+    with {
+        loop(cnt) = ba.if(t > 0.0, hammerDur * ma.SR, max(0.0, cnt - 1.0));
+    };
+};
+hammerEnv = hammerTimer : >(0.0);
 
-// Hammer brightness depends on velocity
+// Sine burst at fundamental frequency (3 full cycles, no truncation click)
+hammerProgress = 1.0 - hammerTimer / (hammerDur * ma.SR);
+hammerSine = sin(2.0 * ma.PI * freq * hammerProgress * hammerDur);
 
+// Scale gain lower at low frequencies to prevent clipping
+hammerGain = sqrt(max(55.0, freq) / 261.0);
+hammerTone = hammerSine * hammerEnv * velocity * hammerGain;
+
+// Mix tone + noise for the felt-hammer attack, then band-limit
 hammer =
-    hammerNoise
+    (hammerTone * 0.7 + no.noise * hammerEnv * velocity * 0.3)
     : fi.lowpass(
         1,
         1500 + velocity * brightness * 8000
@@ -67,7 +76,7 @@ loopLPF =
 // STRING MODEL
 // =====================================================
 
-pianoString(f, detune, amp) =
+pianoString(f, detune) =
 
     hammer
 
@@ -91,23 +100,21 @@ pianoString(f, detune, amp) =
 
         :
 
-        *(0.9996 - f * 0.0000002)
-    )
-
-    * amp;
+        *(gate * max(0.70, 1.0 - 4.6 / max(20.0, f)) + (1.0 - gate) * max(0.50, 1.0 - 17.3 / max(20.0, f)))
+    );
 
 // =====================================================
 // THREE STRINGS
 // =====================================================
 
 s1 =
-    pianoString(freq, 1.0000, 0.40);
+    pianoString(freq, 1.0000) * 0.40;
 
 s2 =
-    pianoString(freq, 1.0007, 0.30);
+    pianoString(freq, 1.0003) * 0.30;
 
 s3 =
-    pianoString(freq, 0.9994, 0.30);
+    pianoString(freq, 0.9997) * 0.30;
 
 // =====================================================
 // SOUNDBOARD
@@ -123,13 +130,13 @@ soundboard =
     <:
 
     (
-        fi.resonbp(110, 12, 1.0)
-        + fi.resonbp(220, 10, 1.0)
-        + fi.resonbp(440, 8, 1.0)
-        + fi.resonbp(880, 6, 1.0)
+        fi.resonbp(110, 6, 0.8)
+        + fi.resonbp(220, 5, 0.8)
+        + fi.resonbp(440, 4, 0.8)
+        + fi.resonbp(880, 3, 0.8)
     )
 
-    * 0.25;
+    * 0.08;
 
 // =====================================================
 // FINAL MIX
