@@ -46,6 +46,15 @@
 
 #define DEBUG_ORCHESTRATOR 1
 
+// Extremely fast, stateless deterministic hash to generate jitter for a given event index and instrument
+inline long getDeterministicJitter(size_t eventIndex, int instID) {
+    uint32_t hash = static_cast<uint32_t>(eventIndex ^ (instID << 8));
+    hash = ((hash >> 16) ^ hash) * 0x45d9f3b;
+    hash = ((hash >> 16) ^ hash) * 0x45d9f3b;
+    hash = (hash >> 16) ^ hash;
+    return static_cast<long>(hash % 961) - 480; // +/- 10ms at 48kHz
+}
+
 SequenceOrchestrator::SequenceOrchestrator() {}
 
 SequenceOrchestrator::~SequenceOrchestrator() {
@@ -189,8 +198,13 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
         while (seqWrapper->isPlaying && seqWrapper->nextEventIndex < events.size()) {
             auto& ev = events[seqWrapper->nextEventIndex];
             
+            long effectiveOffset = ev.sampleOffset;
+            if (mHumanize.load(std::memory_order_relaxed)) {
+                effectiveOffset += getDeterministicJitter(seqWrapper->nextEventIndex, seqWrapper->sequenceObj->instrumentID);
+            }
+            
             // If the event happens within this block (or happened in the past due to a skip)
-            if (ev.sampleOffset <= seqWrapper->currentSample + numFrames) {
+            if (effectiveOffset <= seqWrapper->currentSample + numFrames) {
                 if (ev.type == UMLEventType::NoteOn) {
                     // printf("[Native Trace] TRIGGER: Seq='%s' | EvIdx=%zu | Offset=%ld\n", 
                     //        seqWrapper->sequenceObj->name.c_str(), seqWrapper->nextEventIndex, ev.sampleOffset);
@@ -201,7 +215,7 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
                     } else {
                         updateDSPParams(seqWrapper, ev.frequency, ev.velocity, ev.strikeVal, ev.note);
                     }
-                    if (inst) inst->noteOn(ev.frequency, ev.velocity, ev.strikeVal);
+                    if (inst) inst->noteOn(ev.frequency, ev.velocity, ev.strikeVal, ev.amplitude);
                 } else if (ev.type == UMLEventType::NoteOff) {
                     // printf("[Native Trace] TRIGGER (OFF): Seq='%s' | EvIdx=%zu | Offset=%ld\n", 
                     //        seqWrapper->sequenceObj->name.c_str(), seqWrapper->nextEventIndex, ev.sampleOffset);
@@ -238,10 +252,7 @@ void SequenceOrchestrator::updateDSPParams(std::shared_ptr<ActiveSequence> seqWr
     if (!seqWrapper || !seqWrapper->sequenceObj) return;
     auto inst = seqWrapper->sequenceObj->getFaustInstrument();
     if (!inst) return;
-
-    if (freq > 0.0f) inst->setParam("freq", freq);
-    if (vel >= 0.0f) inst->setParam("velocity", vel);
-    if (strikeVal >= 0.0f) inst->setParam("strike", strikeVal);
+    // freq, velocity, and strikeVal are handled per-voice inside FaustInstrument::noteOn
 }
 
 void SequenceOrchestrator::updateDSPParamsVoice(std::shared_ptr<ActiveSequence> seqWrapper, float freq, float vel, float vowelVal) {
@@ -249,7 +260,5 @@ void SequenceOrchestrator::updateDSPParamsVoice(std::shared_ptr<ActiveSequence> 
     auto inst = seqWrapper->sequenceObj->getFaustInstrument();
     if (!inst) return;
 
-    if (freq > 0.0f)     inst->setParam("freq",    freq);
-    if (vel >= 0.0f)     inst->setParam("velocity", vel);
     if (vowelVal >= 0.0f) inst->setParam("vowel",  vowelVal);
 }

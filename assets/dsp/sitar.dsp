@@ -11,7 +11,7 @@ symp_gain = hslider("symp_gain", 0.2, 0, 1, 0.01);
 // Dynamic parameter mapping (Matches original C++ updateInternal)
 // =====================================================
 normFreq = (freq - 80.0) / (600.0 - 80.0) : min(1.0) : max(0.0);
-dynSustain = 6.0 - normFreq * 3.0;
+dynSustain = 9.0 - normFreq * 3.0;
 feedback = pow(0.001, 1.0 / (dynSustain * freq));
 dynThreshold = 0.08 + normFreq * 0.04;
 dynDispersion = 0.35 - normFreq * 0.20;

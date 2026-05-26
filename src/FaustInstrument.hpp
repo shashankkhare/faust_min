@@ -44,8 +44,9 @@ public:
     FaustInstrument(int instrumentID = -1, DSPExecutionType execType = DSPExecutionType::StaticCompiled,
                     float sampleRate = InstrumentMapper::DEFAULT_SAMPLE_RATE, float gain = -1.0f, float freq = -1.0f, float velocity = -1.0f, float amplitude = 1.0f);
     virtual ~FaustInstrument();
-
     void setDSP(dsp* newDSP, DSPExecutionType execType = DSPExecutionType::StaticCompiled);
+    void addVoice(dsp* newDSP);
+    void initializeVoices();
     void unloadDSP();
 
 
@@ -101,16 +102,8 @@ public:
      * the next audio block into sub-blocks. Each queued event triggers a separate 
      * compute cycle. Use this for all real-time triggers (e.g., gate hits).
      */
-    void setParam(const char* shortName, float val);
-
-    /**
-     * @brief Instantly updates the DSP parameter memory.
-     * 
-     * Use this ONLY when you are already inside the rendering loop (e.g., glides)
-     * or during initialization where queuing is not required. It does NOT trigger 
-     * sub-block rendering.
-     */
-    void setParamImmediate(const char* shortName, float val);
+    void setParam(const char* shortName, float val, int voiceIndex = -1);
+    void setParamImmediate(const char* shortName, float val, int voiceIndex = -1);
 
 protected:
     std::recursive_mutex mDSPLock; // Dedicated recursive mutex protecting DSP state maps
@@ -126,13 +119,19 @@ protected:
     struct TimedEvent {
         std::string paramName;
         float value;
+        int voiceIndex;
     };
     std::vector<TimedEvent> mEventQueue;
 
-    void applyDynamicLUTParams(float freq, float amp);
+    void applyDynamicLUTParams(float freq, float amp, int voiceIndex);
 
-    std::unique_ptr<dsp> mDSP;
-    std::unique_ptr<MapUI> mUI;
+    std::vector<std::unique_ptr<dsp>> mVoices;
+    std::vector<std::unique_ptr<MapUI>> mVoiceUIs;
+    bool mIsPolyphonic;
+    int mNumVoices;
+    int mNextVoice;
+    float* mVoiceScratchBuffer;
+    
     DSPExecutionType mExecType;
     void* mDSPFactory;
     int mInstrumentID;

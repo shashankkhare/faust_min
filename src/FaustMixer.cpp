@@ -65,7 +65,7 @@ FaustMixer::FaustMixer()
     : mSampleRate(44100.0f),
 #endif
       mStreamDevice(nullptr), mIsStreamActive(false),
-      mMasterSampleTime(0), mMasterGain(1.0f), mLimiterGain(1.0f), mScratchBuffer(nullptr), mMaxFrames(0),
+      mMasterSampleTime(0), mMasterGain(1.5f), mLimiterGain(1.0f), mScratchBuffer(nullptr), mMaxFrames(0),
       mReverbInL(nullptr), mReverbInR(nullptr), mReverbOutL(nullptr), mReverbOutR(nullptr),
       mIsHardwareStarted(false) {}
 

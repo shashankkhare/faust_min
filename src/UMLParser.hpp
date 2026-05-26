@@ -37,7 +37,8 @@ struct UMLEvent {
     long sampleOffset = 0;
     UMLEventType type = UMLEventType::NoteOn;
     float frequency = 0.0f;
-    float velocity = 0.0f;
+    float velocity = -1.0f;  // -1.0 = not set (use DSP default)
+    float amplitude = -1.0f; // -1.0 = not set (use DSP default)
     float strikeVal = -1.0f;   // -1.0 implies no explicit strike value
     float vowelVal  = -1.0f;   // -1.0 = not a voice event; 0=aa 1=ee 2=ii 3=oo 4=uu
     std::string note = "";
@@ -95,12 +96,12 @@ public:
 
 private:
     static double getFrequency(const std::string& token, const std::string& notation, double baseFreq, const std::string& instrument);
-    static void handlePercussionToken(const std::string& tokenNoteName, float velocityScalar, long sampleOffset, long durationSamples, 
+    static void handlePercussionToken(const std::string& tokenNoteName, float amplitudeScalar, long sampleOffset, long durationSamples, 
                                      double baseFreq, const std::string& instrument, std::vector<UMLEvent>& outEvents);
-    static void handlePitchedToken(const TokenItem& ti, float velocityScalar, long sampleOffset, long durationSamples, 
+    static void handlePitchedToken(const TokenItem& ti, float amplitudeScalar, long sampleOffset, long durationSamples, 
                                    const std::string& notation, double baseFreq, const std::string& instrument,
                                    double samplesPerGrid, size_t nextTokenIndex, const std::vector<TokenItem>& tokenItemsArray, std::vector<UMLEvent>& outEvents);
-    static void handleVoiceToken(const TokenItem& ti, float velocityScalar, long sampleOffset, long durationSamples,
+    static void handleVoiceToken(const TokenItem& ti, float amplitudeScalar, long sampleOffset, long durationSamples,
                                  const std::string& notation, double baseFreq,
                                  double samplesPerGrid, size_t nextTokenIndex, const std::vector<TokenItem>& tokenItemsArray, std::vector<UMLEvent>& outEvents);
 

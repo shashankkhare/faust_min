@@ -200,17 +200,29 @@ void testBowl(FaustMixer& mixer, DSPExecutionType execType) {
 }
 
 void testSitar(FaustMixer& mixer, DSPExecutionType execType) {
-    std::cout << "\n=== [Test] Sitar ===" << std::endl;
     auto inst = std::make_shared<FaustInstrument>(9, execType, InstrumentMapper::DEFAULT_SAMPLE_RATE);
     mixer.registerInstrument(inst.get(), 0.8f);
-    std::vector<double> freqs = getTestFreqsDouble({ 261.63, 329.63, 392.00 });
+    std::vector<double> freqs;
+    std::vector<float> amps;
+    if (gTestFrequency > 0.0) {
+        freqs = { gTestFrequency };
+        amps = { gTestAmplitude > 0.0f ? gTestAmplitude : 0.8f };
+        std::cout << "\n=== [Test] Sitar (single: " << freqs[0] << " Hz @ " << amps[0] << ") ===" << std::endl;
+    } else {
+        std::cout << "\n=== [Test] Sitar (80–600 Hz CSV range) ===" << std::endl;
+        freqs = { 140, 165, 196, 220, 261, 293, 330, 392, 440, 523, 587, 659 };
+        amps = { 0.2f, 0.5f, 0.9f };
+    }
     for (size_t i = 0; i < freqs.size(); ++i) {
-        double freq = freqs[i];
-        std::cout << "  -> Note: " << freq << " Hz" << std::endl;
-        inst->noteOn(freq, 0.8f);
-        usleep(3000000);
-        inst->noteOff();
-        if (i < freqs.size() - 1) usleep(1500000);
+        for (size_t j = 0; j < amps.size(); ++j) {
+            double freq = freqs[i];
+            float amp = amps[j];
+            std::cout << "  -> freq=" << freq << " Hz  amp=" << amp << std::endl;
+            inst->noteOn(freq, amp, -1.0f, amp);
+            usleep(1800000);
+            inst->noteOff();
+            if (j < amps.size() - 1) usleep(800000);
+        }
     }
     usleep(1500000);
     mixer.unregisterInstrument(inst.get());
@@ -531,21 +543,28 @@ void testElectricGuitar(FaustMixer& mixer, DSPExecutionType execType) {
 }
 
 void testBassGuitar(FaustMixer& mixer, DSPExecutionType execType) {
-    std::cout << "\n=== [Test] Bass Guitar (B1-D3: 50-150 Hz, speaker-safe) ===" << std::endl;
     auto inst = std::make_shared<FaustInstrument>(23, execType, InstrumentMapper::DEFAULT_SAMPLE_RATE);
     mixer.registerInstrument(inst.get(), 0.8f);
-    
-    // Notes between 50-150 Hz — above most laptop speaker cutoff (~80 Hz)
-    // B1=61.7, E2=82.4, A2=110, D3=146.8
-    std::vector<double> notes = getTestFreqsDouble({ 61.74, 82.41, 110.00, 130.81, 146.83 });
-    for (double freq : notes) {
-        std::cout << "  -> Plucking Bass: " << freq << " Hz" << std::endl;
-        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
-        usleep(1500000); // 1.5 seconds decay
-        inst->noteOff();
-        usleep(300000);
+    std::vector<double> notes;
+    std::vector<float> amps;
+    if (gTestFrequency > 0.0) {
+        notes = { gTestFrequency };
+        amps = { gTestAmplitude > 0.0f ? gTestAmplitude : 0.8f };
+        std::cout << "\n=== [Test] Bass Guitar (single: " << notes[0] << " Hz @ " << amps[0] << ") ===" << std::endl;
+    } else {
+        std::cout << "\n=== [Test] Bass Guitar (B1-D3: 50-150 Hz, 3 amp levels) ===" << std::endl;
+        notes = { 61.74, 82.41, 110.00, 130.81, 146.83 };
+        amps = { 0.2f, 0.5f, 0.9f };
     }
-    
+    for (double freq : notes) {
+        for (float amp : amps) {
+            std::cout << "  -> freq=" << freq << " Hz  amp=" << amp << std::endl;
+            inst->noteOn(freq, amp, -1.0f, amp);
+            usleep(1500000);
+            inst->noteOff();
+            if (&amp != &amps.back()) usleep(300000);
+        }
+    }
     usleep(1000000);
     mixer.unregisterInstrument(inst.get());
 }
@@ -664,41 +683,49 @@ void testMarimba(FaustMixer& mixer, DSPExecutionType execType) {
 }
 
 void testConga(FaustMixer& mixer, DSPExecutionType execType) {
-    std::cout << "\n=== [Test] Conga ===" << std::endl;
+    std::cout << "\n=== [Test] Conga (Tuning Range 100-200Hz) ===" << std::endl;
     auto inst = std::make_shared<FaustInstrument>(30, execType, InstrumentMapper::DEFAULT_SAMPLE_RATE);
     mixer.registerInstrument(inst.get(), 0.8f);
     
-    std::vector<float> freqs = getTestFreqsFloat({130.0f, 150.0f, 150.0f});
-    std::vector<float> positions = {0.0f, 2.0f, 1.0f};
+    std::vector<float> freqs = getTestFreqsFloat({100.0f, 120.0f, 140.0f, 160.0f, 180.0f, 200.0f});
     std::vector<int> strikes = {0, 1, 2};
-    for (size_t i = 0; i < freqs.size(); ++i) {
-        std::cout << "  -> Strike: " << strikes[i] << ", Freq: " << freqs[i] << " Hz, Position: " << positions[i] << std::endl;
-        inst->setParam("position", positions[i]);
-        inst->setParam("strike", strikes[i]);
-        inst->noteOn(freqs[i], gTestVelocity, -1.0f, gTestAmplitude);
-        usleep(1500000);
-        inst->noteOff();
-        usleep(500000);
+    std::vector<float> positions = {0.0f, 1.0f, 2.0f};
+    
+    for (float freq : freqs) {
+        for (int strike : strikes) {
+            float pos = positions[strike];
+            std::cout << "  -> Strike: " << strike << ", Freq: " << freq << " Hz, Position: " << pos << std::endl;
+            inst->setParam("position", pos);
+            inst->setParam("strike", strike);
+            inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
+            usleep(1000000);
+            inst->noteOff();
+            usleep(300000);
+        }
     }
     mixer.unregisterInstrument(inst.get());
 }
 
 void testBongo(FaustMixer& mixer, DSPExecutionType execType) {
-    std::cout << "\n=== [Test] Bongo ===" << std::endl;
+    std::cout << "\n=== [Test] Bongo (Tuning Range 100-200Hz) ===" << std::endl;
     auto inst = std::make_shared<FaustInstrument>(31, execType, InstrumentMapper::DEFAULT_SAMPLE_RATE);
     mixer.registerInstrument(inst.get(), 0.8f);
     
-    std::vector<float> freqs = getTestFreqsFloat({220.0f, 350.0f, 350.0f});
-    std::vector<float> positions = {0.0f, 0.0f, 2.0f};
-    std::vector<int> strikes = {0, 0, 1};
-    for (size_t i = 0; i < freqs.size(); ++i) {
-        std::cout << "  -> Strike: " << strikes[i] << ", Freq: " << freqs[i] << " Hz, Position: " << positions[i] << std::endl;
-        inst->setParam("position", positions[i]);
-        inst->setParam("strike", strikes[i]);
-        inst->noteOn(freqs[i], gTestVelocity, -1.0f, gTestAmplitude);
-        usleep(1200000);
-        inst->noteOff();
-        usleep(400000);
+    std::vector<float> freqs = getTestFreqsFloat({100.0f, 120.0f, 140.0f, 160.0f, 180.0f, 200.0f});
+    std::vector<int> strikes = {0, 1, 2};
+    std::vector<float> positions = {0.0f, 1.0f, 2.0f};
+    
+    for (float freq : freqs) {
+        for (int strike : strikes) {
+            float pos = positions[strike];
+            std::cout << "  -> Strike: " << strike << ", Freq: " << freq << " Hz, Position: " << pos << std::endl;
+            inst->setParam("position", pos);
+            inst->setParam("strike", strike);
+            inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
+            usleep(1000000);
+            inst->noteOff();
+            usleep(300000);
+        }
     }
     mixer.unregisterInstrument(inst.get());
 }
@@ -729,6 +756,41 @@ void testVoice(FaustMixer& mixer, DSPExecutionType execType) {
         inst->noteOff();
         usleep(400000);
     }
+    mixer.unregisterInstrument(inst.get());
+}
+
+void testShaker(FaustMixer& mixer, DSPExecutionType execType) {
+    std::cout << "\n=== [Test] Shaker ===" << std::endl;
+    auto inst = std::make_shared<FaustInstrument>(33, execType, InstrumentMapper::DEFAULT_SAMPLE_RATE);
+    mixer.registerInstrument(inst.get(), 0.8f);
+    inst->noteOn(-1.0f, gTestVelocity, -1.0f, gTestAmplitude);
+    usleep(2000000);
+    inst->noteOff();
+    usleep(1000000);
+    mixer.unregisterInstrument(inst.get());
+}
+
+void testSeaWave(FaustMixer& mixer, DSPExecutionType execType) {
+    std::cout << "\n=== [Test] Sea Wave ===" << std::endl;
+    auto inst = std::make_shared<FaustInstrument>(34, execType, InstrumentMapper::DEFAULT_SAMPLE_RATE);
+    mixer.registerInstrument(inst.get(), 0.8f);
+    inst->noteOn(-1.0f, gTestVelocity, -1.0f, gTestAmplitude);
+    usleep(5000000);
+    inst->noteOff();
+    usleep(2000000);
+    mixer.unregisterInstrument(inst.get());
+}
+
+void testChouGong(FaustMixer& mixer, DSPExecutionType execType) {
+    std::cout << "\n=== [Test] Chou Gong ===" << std::endl;
+    auto inst = std::make_shared<FaustInstrument>(35, execType, InstrumentMapper::DEFAULT_SAMPLE_RATE);
+    mixer.registerInstrument(inst.get(), 0.8f);
+    float testFreq = (gTestFrequency > 0.0) ? (float)gTestFrequency : 100.0f;
+    std::cout << "[Direct Run] Testing Chou Gong at freq: " << testFreq << " Hz" << std::endl;
+    inst->noteOn(testFreq, gTestVelocity, -1.0f, gTestAmplitude);
+    usleep(4000000);
+    inst->noteOff();
+    usleep(2000000);
     mixer.unregisterInstrument(inst.get());
 }
 
@@ -817,7 +879,10 @@ int main(int argc, char* argv[]) {
         {29, "Marimba"},
         {30, "Conga"},
         {31, "Bongo"},
-        {32, "Voice"}
+        {32, "Voice"},
+        {33, "Shaker"},
+        {34, "SeaWave"},
+        {35, "ChouGong"}
     };
 
     std::cout << "\n--- Available Instruments ---" << std::endl;
@@ -865,6 +930,9 @@ int main(int argc, char* argv[]) {
                 case 30: testConga(mixer, execType); break;
                 case 31: testBongo(mixer, execType); break;
                 case 32: testVoice(mixer, execType); break;
+                case 33: testShaker(mixer, execType); break;
+                case 34: testSeaWave(mixer, execType); break;
+                case 35: testChouGong(mixer, execType); break;
                 default: break;
             }
         } else {
@@ -946,6 +1014,9 @@ int main(int argc, char* argv[]) {
                     case 30: testConga(mixer, execType); break;
                     case 31: testBongo(mixer, execType); break;
                     case 32: testVoice(mixer, execType); break;
+                    case 33: testShaker(mixer, execType); break;
+                    case 34: testSeaWave(mixer, execType); break;
+                    case 35: testChouGong(mixer, execType); break;
                     default: break;
                 }
             } else {

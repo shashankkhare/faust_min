@@ -69,6 +69,9 @@ std::string InstrumentMapper::getNameFromID(int id) {
         case 30: return "CG";
         case 31: return "BG";
         case 32: return "VO";
+        case 33: return "SK";
+        case 34: return "SW";
+        case 35: return "CG"; // Chou Gong
         default: return "DA";
     }
 }
@@ -117,6 +120,9 @@ int InstrumentMapper::getIDFromName(const std::string& name) {
     if (lowerName == "cg" || lowerName == "conga") return 30;
     if (lowerName == "bg" || lowerName == "bongo" || lowerName == "bonga") return 31;
     if (lowerName == "vo" || lowerName == "voice" || lowerName == "vocals" || lowerName == "singing") return 32;
+    if (lowerName == "sk" || lowerName == "shaker") return 33;
+    if (lowerName == "sw" || lowerName == "seawave" || lowerName == "wave" || lowerName == "ocean") return 34;
+    if (lowerName == "chougong" || lowerName == "chou_gong" || lowerName == "gong") return 35;
 
     return -1;
 }
@@ -124,6 +130,16 @@ int InstrumentMapper::getIDFromName(const std::string& name) {
 bool InstrumentMapper::isPercussionID(int id) {
     // Drum nodes map sequentially from 0 (Dayan) through 6 (Ride)
     return (id >= 0 && id <= 6);
+}
+
+int InstrumentMapper::getPolyphonyVoices(int id) {
+    switch (id) {
+        case 12: return 6; // Piano
+        case 21: return 6; // Acoustic Guitar
+        case 22: return 6; // Electric Guitar
+        case 23: return 4; // Bass
+        default: return 1; // Monophonic by default
+    }
 }
 
 std::string InstrumentMapper::getDSPPathForID(int id, const std::string& assetBasePath) {
@@ -162,6 +178,9 @@ std::string InstrumentMapper::getDSPPathForID(int id, const std::string& assetBa
         case 30: return base + "conga.dsp";
         case 31: return base + "bongo.dsp";
         case 32: return base + "voice.dsp";
+        case 33: return base + "shaker.dsp";
+        case 34: return base + "seawave.dsp";
+        case 35: return base + "chougong.dsp";
         default: return base + "dayan.dsp";
     }
 }

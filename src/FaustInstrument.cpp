@@ -62,6 +62,9 @@
 #include "FaustCongaDSP.hpp"
 #include "FaustBongoDSP.hpp"
 #include "FaustVoiceDSP.hpp"
+#include "FaustShakerDSP.hpp"
+#include "FaustSeawaveDSP.hpp"
+#include "FaustChougongDSP.hpp"
 #include <faust/dsp/interpreter-dsp.h>
 #include <cstring>
 #include <iostream>
@@ -78,6 +81,7 @@ FaustInstrument::FaustInstrument(int instrumentID, DSPExecutionType execType,
       mVelGlideActive(false), mVelGlideStart(velocity), mVelGlideTarget(velocity), mVelGlideFramesTotal(0), mVelGlideFramesElapsed(0),
       mFreqGlideActive(false), mFreqGlideStart(freq), mFreqGlideTarget(freq), mFreqGlideFramesTotal(0), mFreqGlideFramesElapsed(0),
       mGainGlideActive(false), mGainGlideStart(gain), mGainGlideTarget(gain), mGainGlideFramesTotal(0), mGainGlideFramesElapsed(0),
+      mIsPolyphonic(false), mNumVoices(1), mNextVoice(0), mVoiceScratchBuffer(nullptr),
       mStreamDevice(nullptr), mDSPFactory(nullptr) {
           
     mRenderBuffer = new float[InstrumentMapper::MAX_FRAMES_PER_BUFFER * 2];
@@ -92,23 +96,36 @@ FaustInstrument::~FaustInstrument() {
     stopInternalStream();
     unloadDSP();
     if (mRenderBuffer) delete[] mRenderBuffer;
+    if (mVoiceScratchBuffer) delete[] mVoiceScratchBuffer;
 }
 
 void FaustInstrument::setDSP(dsp* newDSP, DSPExecutionType execType) {
     if (!newDSP) return;
-    std::lock_guard<std::recursive_mutex> lock(mDSPLock);
     mExecType = execType;
-    mDSP.reset(newDSP);
-    mDSP->init(static_cast<int>(mSampleRate));
-    mUI.reset(new MapUI());
-    mDSP->buildUserInterface(mUI.get());
+    addVoice(newDSP);
+    initializeVoices();
+}
+
+void FaustInstrument::addVoice(dsp* newDSP) {
+    if (!newDSP) return;
+    std::lock_guard<std::recursive_mutex> lock(mDSPLock);
+    mVoices.emplace_back(newDSP);
+    mVoices.back()->init(static_cast<int>(mSampleRate));
+    mVoiceUIs.emplace_back(new MapUI());
+    mVoices.back()->buildUserInterface(mVoiceUIs.back().get());
+}
+
+void FaustInstrument::initializeVoices() {
+    std::lock_guard<std::recursive_mutex> lock(mDSPLock);
+    if (mVoices.empty()) return;
+    
     if (mFrequency >= 0.0f) {
         setFrequency(mFrequency);
     } else {
-        if (mUI->getParamZone("freq") != nullptr) {
-            mFrequency = mUI->getParamValue("freq");
-        } else if (mUI->getParamZone("frequency") != nullptr) {
-            mFrequency = mUI->getParamValue("frequency");
+        if (mVoiceUIs[0]->getParamZone("freq") != nullptr) {
+            mFrequency = mVoiceUIs[0]->getParamValue("freq");
+        } else if (mVoiceUIs[0]->getParamZone("frequency") != nullptr) {
+            mFrequency = mVoiceUIs[0]->getParamValue("frequency");
         } else {
             mFrequency = 261.63f;
         }
@@ -116,10 +133,10 @@ void FaustInstrument::setDSP(dsp* newDSP, DSPExecutionType execType) {
     if (mVelocity >= 0.0f) {
         setVelocity(mVelocity);
     } else {
-        if (mUI->getParamZone("velocity") != nullptr) {
-            mVelocity = mUI->getParamValue("velocity");
-        } else if (mUI->getParamZone("vel") != nullptr) {
-            mVelocity = mUI->getParamValue("vel");
+        if (mVoiceUIs[0]->getParamZone("velocity") != nullptr) {
+            mVelocity = mVoiceUIs[0]->getParamValue("velocity");
+        } else if (mVoiceUIs[0]->getParamZone("vel") != nullptr) {
+            mVelocity = mVoiceUIs[0]->getParamValue("vel");
         } else {
             mVelocity = 1.0f;
         }
@@ -132,10 +149,10 @@ void FaustInstrument::setDSP(dsp* newDSP, DSPExecutionType execType) {
     if (mGain >= 0.0f) {
         setGain(mGain);
     } else {
-        if (mUI->getParamZone("gain") != nullptr) {
-            mGain = mUI->getParamValue("gain");
-        } else if (mUI->getParamZone("vol") != nullptr) {
-            mGain = mUI->getParamValue("vol");
+        if (mVoiceUIs[0]->getParamZone("gain") != nullptr) {
+            mGain = mVoiceUIs[0]->getParamValue("gain");
+        } else if (mVoiceUIs[0]->getParamZone("vol") != nullptr) {
+            mGain = mVoiceUIs[0]->getParamValue("vol");
         } else {
             mGain = 1.0f;
         }
@@ -144,8 +161,8 @@ void FaustInstrument::setDSP(dsp* newDSP, DSPExecutionType execType) {
 
 void FaustInstrument::unloadDSP() {
     std::lock_guard<std::recursive_mutex> lock(mDSPLock);
-    mUI.reset();
-    mDSP.reset();
+    mVoiceUIs.clear();
+    mVoices.clear();
     if (mExecType == DSPExecutionType::InterpretedByte && mDSPFactory) {
         deleteInterpreterDSPFactory(static_cast<interpreter_dsp_factory*>(mDSPFactory));
         mDSPFactory = nullptr;
@@ -153,8 +170,14 @@ void FaustInstrument::unloadDSP() {
 }
 
 void FaustInstrument::loadTargetDSP() {
-    if (mDSP) return;
+    if (!mVoices.empty()) return;
     unloadDSP();
+
+    mNumVoices = InstrumentMapper::getPolyphonyVoices(mInstrumentID);
+    mIsPolyphonic = (mNumVoices > 1);
+    if (mIsPolyphonic && mVoiceScratchBuffer == nullptr) {
+        mVoiceScratchBuffer = new float[InstrumentMapper::MAX_FRAMES_PER_BUFFER * 2];
+    }
 
     std::string candidateDSPPath = InstrumentMapper::getDSPPathForID(mInstrumentID, "");
     std::string csvPath = candidateDSPPath;
@@ -218,42 +241,48 @@ void FaustInstrument::loadTargetDSP() {
     }
 
     if (mExecType == DSPExecutionType::StaticCompiled) {
-        switch (mInstrumentID) {
-            case 0:  setDSP(new FaustDayanDSP(), mExecType); break;
-            case 1:  setDSP(new FaustBayanDSP(), mExecType); break;
-            case 2:  setDSP(new FaustKickDSP(), mExecType); break;
-            case 3:  setDSP(new FaustSnareDSP(), mExecType); break;
-            case 4:  setDSP(new FaustHihatDSP(), mExecType); break;
-            case 5:  setDSP(new FaustTomDSP(), mExecType); break;
-            case 6:  setDSP(new FaustRideDSP(), mExecType); break;
-            case 7:  setDSP(new FaustBellDSP(), mExecType); break;
-            case 8:  setDSP(new FaustBowlDSP(), mExecType); break;
-            case 9:  setDSP(new FaustSitarDSP(), mExecType); break;
-            case 10: setDSP(new FaustFluteDSP(), mExecType); break;
-            case 11: setDSP(new FaustTanpuraDSP(), mExecType); break;
-            case 12: setDSP(new FaustPianoDSP(), mExecType); break;
-            case 13: setDSP(new FaustSaxDSP(), mExecType); break;
-            case 14: setDSP(new FaustCowbellDSP(), mExecType); break;
-            case 15: setDSP(new FaustTrumpetDSP(), mExecType); break;
-            case 16: setDSP(new FaustShakuhachiDSP(), mExecType); break;
-            case 17: setDSP(new FaustBansuriDSP(), mExecType); break;
-            case 18: setDSP(new FaustViolinDSP(), mExecType); break;
-            case 19: setDSP(new FaustRainmakerDSP(), mExecType); break;
-            case 20: setDSP(new FaustChurchBellDSP(), mExecType); break;
-            case 21: setDSP(new FaustAcoustic_guitarDSP(), mExecType); break;
-            case 22: setDSP(new FaustElectric_guitarDSP(), mExecType); break;
-            case 23: setDSP(new FaustBassDSP(), mExecType); break;
-            case 24: setDSP(new FaustCelloDSP(), mExecType); break;
-            case 25: setDSP(new FaustCricketDSP(), mExecType); break;
-            case 26: setDSP(new FaustCuckooDSP(), mExecType); break;
-            case 27: setDSP(new FaustWaterfallDSP(), mExecType); break;
-            case 28: setDSP(new FaustDjembeDSP(), mExecType); break;
-            case 29: setDSP(new FaustMarimbaDSP(), mExecType); break;
-            case 30: setDSP(new FaustCongaDSP(), mExecType); break;
-            case 31: setDSP(new FaustBongoDSP(), mExecType); break;
-            case 32: setDSP(new FaustVoiceDSP(), mExecType); break;
-            default: setDSP(new FaustDayanDSP(), mExecType); break;
+        for (int v = 0; v < mNumVoices; ++v) {
+            switch (mInstrumentID) {
+                case 0:  addVoice(new FaustDayanDSP()); break;
+                case 1:  addVoice(new FaustBayanDSP()); break;
+                case 2:  addVoice(new FaustKickDSP()); break;
+                case 3:  addVoice(new FaustSnareDSP()); break;
+                case 4:  addVoice(new FaustHihatDSP()); break;
+                case 5:  addVoice(new FaustTomDSP()); break;
+                case 6:  addVoice(new FaustRideDSP()); break;
+                case 7:  addVoice(new FaustBellDSP()); break;
+                case 8:  addVoice(new FaustBowlDSP()); break;
+                case 9:  addVoice(new FaustSitarDSP()); break;
+                case 10: addVoice(new FaustFluteDSP()); break;
+                case 11: addVoice(new FaustTanpuraDSP()); break;
+                case 12: addVoice(new FaustPianoDSP()); break;
+                case 13: addVoice(new FaustSaxDSP()); break;
+                case 14: addVoice(new FaustCowbellDSP()); break;
+                case 15: addVoice(new FaustTrumpetDSP()); break;
+                case 16: addVoice(new FaustShakuhachiDSP()); break;
+                case 17: addVoice(new FaustBansuriDSP()); break;
+                case 18: addVoice(new FaustViolinDSP()); break;
+                case 19: addVoice(new FaustRainmakerDSP()); break;
+                case 20: addVoice(new FaustChurchBellDSP()); break;
+                case 21: addVoice(new FaustAcoustic_guitarDSP()); break;
+                case 22: addVoice(new FaustElectric_guitarDSP()); break;
+                case 23: addVoice(new FaustBassDSP()); break;
+                case 24: addVoice(new FaustCelloDSP()); break;
+                case 25: addVoice(new FaustCricketDSP()); break;
+                case 26: addVoice(new FaustCuckooDSP()); break;
+                case 27: addVoice(new FaustWaterfallDSP()); break;
+                case 28: addVoice(new FaustDjembeDSP()); break;
+                case 29: addVoice(new FaustMarimbaDSP()); break;
+                case 30: addVoice(new FaustCongaDSP()); break;
+                case 31: addVoice(new FaustBongoDSP()); break;
+                case 32: addVoice(new FaustVoiceDSP()); break;
+                case 33: addVoice(new FaustShakerDSP()); break;
+                case 34: addVoice(new FaustSeawaveDSP()); break;
+                case 35: addVoice(new FaustChougongDSP()); break;
+                default: addVoice(new FaustDayanDSP()); break;
+            }
         }
+        initializeVoices();
     } else if (mExecType == DSPExecutionType::InterpretedByte) {
         std::string path = InstrumentMapper::getDSPPathForID(mInstrumentID, "");
         std::ifstream ifs(path);
@@ -267,56 +296,24 @@ void FaustInstrument::loadTargetDSP() {
             const char* argv[] = { "-I", libDir.c_str() };
             interpreter_dsp_factory* factory = createInterpreterDSPFactoryFromFile(path, 2, argv, err);
             if (factory) {
-                dsp* instDSP = factory->createDSPInstance();
-                if (instDSP) {
-                    printf("[Native] SUCCESS: Faust Bytecode Interpreter successfully compiled DSP file '%s'\n", path.c_str());
+                mDSPFactory = factory;
+                bool success = true;
+                for (int v = 0; v < mNumVoices; ++v) {
+                    dsp* instDSP = factory->createDSPInstance();
+                    if (instDSP) {
+                        addVoice(instDSP);
+                    } else {
+                        success = false;
+                        break;
+                    }
+                }
+                if (success) {
+                    printf("[Native] SUCCESS: Faust Bytecode Interpreter successfully compiled DSP file '%s' with %d voices\n", path.c_str(), mNumVoices);
                     if (!err.empty()) {
                         printf("[Native] Compiler Warnings: %s\n", err.c_str());
                     }
                     fflush(stdout);
-                    mDSPFactory = factory;
-                    mDSP.reset(instDSP);
-                    mDSP->init(static_cast<int>(mSampleRate));
-                    mUI.reset(new MapUI());
-                    mDSP->buildUserInterface(mUI.get());
-                    if (mFrequency >= 0.0f) {
-                        setFrequency(mFrequency);
-                    } else {
-                        if (mUI->getParamZone("freq") != nullptr) {
-                            mFrequency = mUI->getParamValue("freq");
-                        } else if (mUI->getParamZone("frequency") != nullptr) {
-                            mFrequency = mUI->getParamValue("frequency");
-                        } else {
-                            mFrequency = 261.63f;
-                        }
-                    }
-                    if (mVelocity >= 0.0f) {
-                        setVelocity(mVelocity);
-                    } else {
-                        if (mUI->getParamZone("velocity") != nullptr) {
-                            mVelocity = mUI->getParamValue("velocity");
-                        } else if (mUI->getParamZone("vel") != nullptr) {
-                            mVelocity = mUI->getParamValue("vel");
-                        } else {
-                            mVelocity = 1.0f;
-                        }
-                    }
-                    if (mAmplitude >= 0.0f) {
-                        setAmplitude(mAmplitude);
-                    } else {
-                        mAmplitude = 1.0f;
-                    }
-                    if (mGain >= 0.0f) {
-                        setGain(mGain);
-                    } else {
-                        if (mUI->getParamZone("gain") != nullptr) {
-                            mGain = mUI->getParamValue("gain");
-                        } else if (mUI->getParamZone("vol") != nullptr) {
-                            mGain = mUI->getParamValue("vol");
-                        } else {
-                            mGain = 1.0f;
-                        }
-                    }
+                    initializeVoices();
                 } else {
                     std::cerr << "[Native] WARNING: Interpreter factory failed to instantiate DSP (libfaust limitation). Falling back to StaticCompiled mode." << std::endl;
                     deleteInterpreterDSPFactory(factory);
@@ -337,10 +334,10 @@ void FaustInstrument::loadTargetDSP() {
 }
 
 void FaustInstrument::setSampleRate(float sampleRate) {
-    if (mSampleRate == sampleRate && mDSP) return;
+    if (mSampleRate == sampleRate && !mVoices.empty()) return;
     mSampleRate = sampleRate;
-    if (mDSP) {
-        mDSP->init(static_cast<int>(sampleRate));
+    if (!mVoices.empty()) {
+        for (auto& v : mVoices) v->init(static_cast<int>(sampleRate));
         if (mFrequency >= 0.0f) setFrequency(mFrequency);
         if (mVelocity >= 0.0f) setVelocity(mVelocity);
         if (mAmplitude >= 0.0f) setAmplitude(mAmplitude);
@@ -348,44 +345,49 @@ void FaustInstrument::setSampleRate(float sampleRate) {
     }
 }
 
-void FaustInstrument::setParamImmediate(const char* shortName, float val) {
-    if (!mUI) return;
+void FaustInstrument::setParamImmediate(const char* shortName, float val, int voiceIndex) {
+    if (mVoiceUIs.empty()) return;
 
     std::string key(shortName);
     auto it = mParamAddressCache.find(key);
+    std::string addr = "";
     if (it != mParamAddressCache.end()) {
-        // Cache Hit: Silent in production, but let's keep it minimal for proof
-        mUI->setParamValue(it->second, val);
-        return;
-    }
-
-    for (int i = 0; i < mUI->getParamsCount(); i++) {
-        std::string addr = mUI->getParamAddress(i);
-        if (addr.find(shortName) != std::string::npos) {
-            // printf("[Native Trace] CACHE MISS: Parameter '%s' resolved to '%s'\n", shortName, addr.c_str());
-            mParamAddressCache[key] = addr;
-            mUI->setParamValue(addr, val);
-            break;
+        addr = it->second;
+    } else {
+        for (int i = 0; i < mVoiceUIs[0]->getParamsCount(); i++) {
+            std::string tempAddr = mVoiceUIs[0]->getParamAddress(i);
+            if (tempAddr.find(shortName) != std::string::npos) {
+                mParamAddressCache[key] = tempAddr;
+                addr = tempAddr;
+                break;
+            }
         }
     }
-    // fflush(stdout);
+
+    if (!addr.empty()) {
+        if (voiceIndex == -1) {
+            for (auto& ui : mVoiceUIs) ui->setParamValue(addr, val);
+        } else if (voiceIndex >= 0 && voiceIndex < mVoiceUIs.size()) {
+            mVoiceUIs[voiceIndex]->setParamValue(addr, val);
+        }
+    }
 }
 
-void FaustInstrument::setParam(const char* shortName, float val) {
+void FaustInstrument::setParam(const char* shortName, float val, int voiceIndex) {
     std::lock_guard<std::recursive_mutex> lock(mDSPLock);
-    mEventQueue.push_back({shortName, val});
+    mEventQueue.push_back({shortName, val, voiceIndex});
 }
 
 void FaustInstrument::setFrequency(float freq) {
     mFrequency = freq;
-    setParam("freq", freq);
-    applyDynamicLUTParams(freq, mAmplitude);
+    setParam("freq", freq, -1);
+    applyDynamicLUTParams(freq, mAmplitude, -1);
 }
 
 void FaustInstrument::setFrequencyImmediate(float freq) {
     mFrequency = freq;
-    setParamImmediate("freq", freq);
-    applyDynamicLUTParams(freq, mAmplitude);
+    setParamImmediate("freq", freq, -1);
+    applyDynamicLUTParams(freq, mAmplitude, -1);
 }
 
 void FaustInstrument::setGain(float gain) {
@@ -410,14 +412,14 @@ void FaustInstrument::setVelocityImmediate(float velocity) {
 
 void FaustInstrument::setAmplitude(float amplitude) {
     mAmplitude = amplitude;
-    if (!mLUTActive) setParam("gain", amplitude);
-    applyDynamicLUTParams(mFrequency, mAmplitude);
+    if (!mLUTActive) setParam("gain", amplitude, -1);
+    applyDynamicLUTParams(mFrequency, mAmplitude, -1);
 }
 
 void FaustInstrument::setAmplitudeImmediate(float amplitude) {
     mAmplitude = amplitude;
-    if (!mLUTActive) setParamImmediate("gain", amplitude);
-    applyDynamicLUTParams(mFrequency, mAmplitude);
+    if (!mLUTActive) setParamImmediate("gain", amplitude, -1);
+    applyDynamicLUTParams(mFrequency, mAmplitude, -1);
 }
 
 void FaustInstrument::setDuration(float seconds) {
@@ -489,18 +491,34 @@ void FaustInstrument::noteOn(float freq, float vel, float strikeVal, float amp) 
     mFreqGlideActive = false;
     mGainGlideActive = false;
 
-    if (freq > 0.0f) setFrequency(freq);
-    if (vel >= 0.0f) setVelocity(vel);
-    if (amp >= 0.0f) setAmplitudeImmediate(amp);
-    
-    if (strikeVal >= 0.0f) setParam("strike", strikeVal);
+    int v = mNextVoice;
+    if (mNumVoices > 0) {
+        mNextVoice = (mNextVoice + 1) % mNumVoices;
+    } else {
+        v = 0;
+    }
 
-    if (mLUTActive) {
-        applyDynamicLUTParams(mFrequency, mAmplitude);
+    if (freq > 0.0f) {
+        mFrequency = freq;
+        setParam("freq", freq, v);
+    }
+    if (vel >= 0.0f) {
+        mVelocity = vel;
+        setParam("velocity", vel, v);
+    }
+    if (amp >= 0.0f) {
+        mAmplitude = amp;
+        if (!mLUTActive) setParamImmediate("gain", amp, v);
     }
     
-    setParam("gate", 0.0f);
-    setParam("gate", 1.0f);
+    if (strikeVal >= 0.0f) setParam("strike", strikeVal, v);
+
+    if (mLUTActive) {
+        applyDynamicLUTParams(mFrequency, mAmplitude, v);
+    }
+    
+    setParam("gate", 0.0f, v);
+    setParam("gate", 1.0f, v);
 }
 
 void FaustInstrument::noteOff(float decayTailMs) {
@@ -557,27 +575,33 @@ void FaustInstrument::processInternalGlides(int numFrames) {
 }
 
 void FaustInstrument::render(int numFrames, float* buffer) {
-    if (!mDSP) return;
+    if (mVoices.empty()) return;
     processInternalGlides(numFrames);
     
-    FAUSTFLOAT* outputs[2] = { mRenderBuffer, mRenderBuffer + numFrames };
-    int nOuts = mDSP->getNumOutputs();
-    mDSP->compute(numFrames, nullptr, outputs);
+    for (int i = 0; i < numFrames * 2; ++i) buffer[i] = 0.0f;
 
-    if (nOuts == 1) {
-        for (int i = 0; i < numFrames; ++i) {
-            float val = mRenderBuffer[i];
-            if (mGain != 1.0f) val *= mGain;
-            buffer[i * 2] = val;
-            buffer[i * 2 + 1] = val;
-        }
-    } else if (nOuts == 2) {
-        for (int i = 0; i < numFrames; ++i) {
-            float valL = outputs[0][i];
-            float valR = outputs[1][i];
-            if (mGain != 1.0f) { valL *= mGain; valR *= mGain; }
-            buffer[i * 2] = valL;
-            buffer[i * 2 + 1] = valR;
+    int nOuts = mVoices[0]->getNumOutputs();
+    float scale = mIsPolyphonic ? (1.0f / (float)mNumVoices) : 1.0f;
+    
+    for (int v = 0; v < mNumVoices; ++v) {
+        FAUSTFLOAT* outputs[2] = { mRenderBuffer, mRenderBuffer + numFrames };
+        mVoices[v]->compute(numFrames, nullptr, outputs);
+
+        if (nOuts == 1) {
+            for (int i = 0; i < numFrames; ++i) {
+                float val = mRenderBuffer[i] * scale;
+                if (mGain != 1.0f) val *= mGain;
+                buffer[i * 2] += val;
+                buffer[i * 2 + 1] += val;
+            }
+        } else if (nOuts == 2) {
+            for (int i = 0; i < numFrames; ++i) {
+                float valL = outputs[0][i] * scale;
+                float valR = outputs[1][i] * scale;
+                if (mGain != 1.0f) { valL *= mGain; valR *= mGain; }
+                buffer[i * 2] += valL;
+                buffer[i * 2 + 1] += valR;
+            }
         }
     }
 }
@@ -588,40 +612,41 @@ void FaustInstrument::onNoteFinish() {
 
 void FaustInstrument::processRealtimeStream(float* buffer, int numFrames) {
     std::lock_guard<std::recursive_mutex> lock(mDSPLock);
-    if (!mDSP) {
-        std::memset(buffer, 0, sizeof(float) * numFrames);
+    if (mVoices.empty()) {
+        std::memset(buffer, 0, sizeof(float) * numFrames * 2);
         return;
     }
 
-    // To prevent parameter updates from dividing the render block into large silent gaps/latency,
-    // we use a sub-block size of 1 sample for intermediate events, leaving the
-    // remaining frames for the final state.
+    std::memset(buffer, 0, sizeof(float) * numFrames * 2);
     int framesPerSubBlock = 1;
     int framesProcessed = 0;
-
-    int nOuts = mDSP->getNumOutputs();
-    FAUSTFLOAT* outputs[2] = { mRenderBuffer, mRenderBuffer + numFrames };
+    int nOuts = mVoices[0]->getNumOutputs();
+    float scale = mIsPolyphonic ? (1.0f / (float)mNumVoices) : 1.0f;
 
     for (const auto& ev : mEventQueue) {
         if (framesPerSubBlock > 0 && (framesProcessed + framesPerSubBlock <= numFrames)) {
             processInternalGlides(framesPerSubBlock);
-            mDSP->compute(framesPerSubBlock, nullptr, outputs);
+            
             float* chunkBuffer = buffer + (framesProcessed * 2);
+            for (int v = 0; v < mNumVoices; ++v) {
+                FAUSTFLOAT* outputs[2] = { mRenderBuffer, mRenderBuffer + framesPerSubBlock };
+                mVoices[v]->compute(framesPerSubBlock, nullptr, outputs);
 
-            if (nOuts == 1) {
-                for (int i = 0; i < framesPerSubBlock; ++i) {
-                    float val = mRenderBuffer[i];
-                    if (mGain != 1.0f) val *= mGain;
-                    chunkBuffer[i * 2] = val;
-                    chunkBuffer[i * 2 + 1] = val;
-                }
-            } else if (nOuts == 2) {
-                for (int i = 0; i < framesPerSubBlock; ++i) {
-                    float valL = outputs[0][i];
-                    float valR = outputs[1][i];
-                    if (mGain != 1.0f) { valL *= mGain; valR *= mGain; }
-                    chunkBuffer[i * 2] = valL;
-                    chunkBuffer[i * 2 + 1] = valR;
+                if (nOuts == 1) {
+                    for (int i = 0; i < framesPerSubBlock; ++i) {
+                        float val = mRenderBuffer[i] * scale;
+                        if (mGain != 1.0f) val *= mGain;
+                        chunkBuffer[i * 2] += val;
+                        chunkBuffer[i * 2 + 1] += val;
+                    }
+                } else if (nOuts == 2) {
+                    for (int i = 0; i < framesPerSubBlock; ++i) {
+                        float valL = outputs[0][i] * scale;
+                        float valR = outputs[1][i] * scale;
+                        if (mGain != 1.0f) { valL *= mGain; valR *= mGain; }
+                        chunkBuffer[i * 2] += valL;
+                        chunkBuffer[i * 2 + 1] += valR;
+                    }
                 }
             }
 
@@ -634,29 +659,33 @@ void FaustInstrument::processRealtimeStream(float* buffer, int numFrames) {
             }
             framesProcessed += framesPerSubBlock;
         }
-        setParamImmediate(ev.paramName.c_str(), ev.value);
+        setParamImmediate(ev.paramName.c_str(), ev.value, ev.voiceIndex);
     }
 
     int remaining = numFrames - framesProcessed;
     if (remaining > 0) {
         processInternalGlides(remaining);
-        mDSP->compute(remaining, nullptr, outputs);
+        
         float* chunkBuffer = buffer + (framesProcessed * 2);
+        for (int v = 0; v < mNumVoices; ++v) {
+            FAUSTFLOAT* outputs[2] = { mRenderBuffer, mRenderBuffer + remaining };
+            mVoices[v]->compute(remaining, nullptr, outputs);
 
-        if (nOuts == 1) {
-            for (int i = 0; i < remaining; ++i) {
-                float val = mRenderBuffer[i];
-                if (mGain != 1.0f) val *= mGain;
-                chunkBuffer[i * 2] = val;
-                chunkBuffer[i * 2 + 1] = val;
-            }
-        } else if (nOuts == 2) {
-            for (int i = 0; i < remaining; ++i) {
-                float valL = outputs[0][i];
-                float valR = outputs[1][i];
-                if (mGain != 1.0f) { valL *= mGain; valR *= mGain; }
-                chunkBuffer[i * 2] = valL;
-                chunkBuffer[i * 2 + 1] = valR;
+            if (nOuts == 1) {
+                for (int i = 0; i < remaining; ++i) {
+                    float val = mRenderBuffer[i] * scale;
+                    if (mGain != 1.0f) val *= mGain;
+                    chunkBuffer[i * 2] += val;
+                    chunkBuffer[i * 2 + 1] += val;
+                }
+            } else if (nOuts == 2) {
+                for (int i = 0; i < remaining; ++i) {
+                    float valL = outputs[0][i] * scale;
+                    float valR = outputs[1][i] * scale;
+                    if (mGain != 1.0f) { valL *= mGain; valR *= mGain; }
+                    chunkBuffer[i * 2] += valL;
+                    chunkBuffer[i * 2 + 1] += valR;
+                }
             }
         }
 
@@ -680,7 +709,7 @@ void FaustInstrument::stopInternalStream() {
     mIsStreamActive = false;
 }
 
-void FaustInstrument::applyDynamicLUTParams(float freq, float amp) {
+void FaustInstrument::applyDynamicLUTParams(float freq, float amp, int voiceIndex) {
     if (!mLUTActive || mLUTRecords.empty()) return;
 
     // Utilize normalized vector proximity distance: d = sqrt( ((f-f1)/(f+f1))^2 + ((a-a1)/(a+a1))^2 )
@@ -700,7 +729,7 @@ void FaustInstrument::applyDynamicLUTParams(float freq, float amp) {
         // If extremely close to a calibrated node, snap directly to its targets to preserve boundary perfection
         if (dist < 0.00001f) {
             for (const auto& pair : rec.targetParams) {
-                setParam(pair.first.c_str(), pair.second);
+                setParam(pair.first.c_str(), pair.second, voiceIndex);
             }
             return;
         }
@@ -716,7 +745,7 @@ void FaustInstrument::applyDynamicLUTParams(float freq, float amp) {
         float wSum = totalWeights[pair.first];
         if (wSum > 0.0f) {
             float val = pair.second / wSum;
-            setParam(pair.first.c_str(), val);
+            setParam(pair.first.c_str(), val, voiceIndex);
         }
     }
 }

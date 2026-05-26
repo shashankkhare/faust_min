@@ -248,6 +248,7 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
                 mappedInstID = InstrumentMapper::getIDFromName(seq.instrument);
             }
 
+            bool hasExplicitPrefix = (ti.rawStr != ti.noteName);
             if (InstrumentMapper::isPercussionID(mappedInstID)) {
                 handlePercussionToken(ti.noteName, vel, sampleOffset, calculatedDurationSamples, seq.baseFreq, seq.instrument, seq.events);
             } else if (mappedInstID == 32) { // Voice — vowel-driven token
@@ -270,13 +271,14 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
     return seq;
 }
 
-void UMLParser::handlePercussionToken(const std::string& tokenNoteName, float velocityScalar, long sampleOffset, long durationSamples, double baseFreq, const std::string& instrument, std::vector<UMLEvent>& outEvents) {
+void UMLParser::handlePercussionToken(const std::string& tokenNoteName, float amplitudeScalar, long sampleOffset, long durationSamples, double baseFreq, const std::string& instrument, std::vector<UMLEvent>& outEvents) {
     // Percussion instances utilize unpitched triggering mechanics where note string defines stroke style.
     // The frequency is inherited from the sequence base frequency.
     UMLEvent ev; 
     ev.sampleOffset = sampleOffset;
     ev.frequency = static_cast<float>(baseFreq);
-    ev.velocity = velocityScalar;
+    ev.velocity = -1.0f;  // not in UML yet — use DSP default
+    ev.amplitude = amplitudeScalar;
     ev.type = UMLEventType::NoteOn;
     ev.note = tokenNoteName;
     ev.durationSamples = durationSamples;
@@ -316,19 +318,32 @@ void UMLParser::handlePercussionToken(const std::string& tokenNoteName, float ve
     outEvents.push_back(ev);
 }
 
-void UMLParser::handlePitchedToken(const TokenItem& ti, float velocityScalar, long sampleOffset, long durationSamples, 
+void UMLParser::handlePitchedToken(const TokenItem& ti, float amplitudeScalar, long sampleOffset, long durationSamples, 
                                    const std::string& notation, double baseFreq, const std::string& instrument,
                                    double samplesPerGrid, size_t nextTokenIndex, const std::vector<TokenItem>& tokenItemsArray, std::vector<UMLEvent>& outEvents) {
-    float freq = static_cast<float>(getFrequency(ti.noteName, notation, baseFreq, instrument));
     
-    UMLEvent noteEv;
-    noteEv.sampleOffset = sampleOffset;
-    noteEv.frequency = freq;
-    noteEv.velocity = velocityScalar;
-    noteEv.type = UMLEventType::NoteOn;
-    noteEv.note = ti.noteName;
-    noteEv.durationSamples = durationSamples;
-    outEvents.push_back(noteEv);
+    std::vector<std::string> notes;
+    std::stringstream ss(ti.noteName);
+    std::string item;
+    while (std::getline(ss, item, '|')) {
+        notes.push_back(item);
+    }
+
+    if (notes.empty()) return;
+
+    for (const auto& noteStr : notes) {
+        float freq = static_cast<float>(getFrequency(noteStr, notation, baseFreq, instrument));
+        
+        UMLEvent noteEv;
+        noteEv.sampleOffset = sampleOffset;
+        noteEv.frequency = freq;
+        noteEv.velocity = -1.0f;
+        noteEv.amplitude = amplitudeScalar;
+        noteEv.type = UMLEventType::NoteOn;
+        noteEv.note = noteStr;
+        noteEv.durationSamples = durationSamples;
+        outEvents.push_back(noteEv);
+    }
 
     // Execute automated glides targeting next standalone operational pitch boundary
     if (ti.hasGlide) {
@@ -337,11 +352,17 @@ void UMLParser::handlePitchedToken(const TokenItem& ti, float velocityScalar, lo
             targetIdx++;
         }
         if (targetIdx < tokenItemsArray.size() && tokenItemsArray[targetIdx].type == TokenType::NoteWithControl) {
-            float tFreq = (float)getFrequency(tokenItemsArray[targetIdx].noteName, notation, baseFreq, instrument);
+            std::string tNote = tokenItemsArray[targetIdx].noteName;
+            size_t slashPos = tNote.find('/');
+            if (slashPos != std::string::npos) tNote = tNote.substr(0, slashPos);
+            
+            float tFreq = (float)getFrequency(tNote, notation, baseFreq, instrument);
             float tVel = (float)tokenItemsArray[targetIdx].controlParam / 9.0f;
             
+            float freq0 = static_cast<float>(getFrequency(notes[0], notation, baseFreq, instrument));
+            
             // Enforce lookahead constraint: glide triggers ONLY if target frequency or velocity differs
-            if (std::abs(tFreq - freq) > 0.01f || std::abs(tVel - velocityScalar) > 0.01f) {
+            if (std::abs(tFreq - freq0) > 0.01f || std::abs(tVel - amplitudeScalar) > 0.01f) {
                 UMLEvent glideEv;
                 glideEv.sampleOffset = sampleOffset;
                 glideEv.type = UMLEventType::Glide;
@@ -418,15 +439,17 @@ double UMLParser::getFrequency(const std::string& token, const std::string& nota
 }
 
 
-void UMLParser::handleVoiceToken(const TokenItem& ti, float velocityScalar, long sampleOffset, long durationSamples,
+void UMLParser::handleVoiceToken(const TokenItem& ti, float amplitudeScalar, long sampleOffset, long durationSamples,
                                  const std::string& notation, double baseFreq,
                                  double samplesPerGrid, size_t nextTokenIndex, const std::vector<TokenItem>& tokenItemsArray, std::vector<UMLEvent>& outEvents) {
-
+    // tokenNoteName is the raw string from the UML token (e.g., "6Sa")
+    // For voice, we need to extract vowel formant scale from numerical prefix
     const std::string& token = ti.noteName;
 
     UMLEvent ev;
     ev.sampleOffset   = sampleOffset;
-    ev.velocity       = velocityScalar;
+    ev.velocity       = -1.0f;
+    ev.amplitude      = amplitudeScalar;
     ev.type           = UMLEventType::NoteOn;
     ev.note           = token;
     ev.durationSamples = durationSamples;
@@ -460,7 +483,7 @@ void UMLParser::handleVoiceToken(const TokenItem& ti, float velocityScalar, long
                 tFreq = static_cast<float>(getFrequency(nextTok, notation, baseFreq, "voice"));
             }
             float tVel = static_cast<float>(tokenItemsArray[targetIdx].controlParam) / 9.0f;
-            if (std::abs(tFreq - ev.frequency) > 0.01f || std::abs(tVel - velocityScalar) > 0.01f) {
+            if (std::abs(tFreq - ev.frequency) > 0.01f || std::abs(tVel - amplitudeScalar) > 0.01f) {
                 UMLEvent glideEv;
                 glideEv.sampleOffset     = sampleOffset;
                 glideEv.type             = UMLEventType::Glide;

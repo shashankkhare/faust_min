@@ -47,4 +47,4 @@ with {
 drumOutput = excitation : congaModel(freq, decayScale);
 
 // Conga has a thick leather head, so we lowpass slightly to keep it warm and woody (no high-Q bandpass cavity)
-process = (drumOutput : fi.lowpass(2, freq * 4.0)) * 1.5 * gain;
+process = (drumOutput : fi.lowpass(2, freq * 4.0)) : ma.tanh * 1.5 * gain;

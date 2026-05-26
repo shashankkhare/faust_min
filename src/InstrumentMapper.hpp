@@ -39,7 +39,7 @@ public:
     static constexpr const char* DEFAULT_LIB_DIR = "./assets/libraries";
 
     // Maximum simultaneous instruments the parallel engine supports
-    static constexpr int MAX_INSTRUMENTS = 35;
+    static constexpr int MAX_INSTRUMENTS = 36;
     // Pre-allocated scratch buffer size per instrument — never reallocated at runtime
     static constexpr int MAX_FRAMES_PER_BUFFER = 8192;
 
@@ -51,6 +51,9 @@ public:
 
     // Determines if the given numeric patch ID belongs to an unpitched/percussion domain model
     static bool isPercussionID(int id);
+
+    // Retrieves the number of polyphonic voices supported by a given instrument ID
+    static int getPolyphonyVoices(int id);
 
     // Resolves absolute/relative target source file URI based on numeric ID
     static std::string getDSPPathForID(int id, const std::string& assetBasePath = "");

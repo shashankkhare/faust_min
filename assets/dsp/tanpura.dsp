@@ -5,7 +5,7 @@ import("stdfaust.lib");
 // =====================================================
 
 baseFreq = hslider("freq", 130.81, 40, 600, 0.01);
-firstFreq = hslider("freq1", 196.22, 40, 600, 0.01);
+firstFreq = hslider("freq1", 0.0, 0.0, 1000.0, 0.01);
 
 gain = hslider("gain", 0.8, 0, 1, 0.01);
 
@@ -14,7 +14,10 @@ velocity = hslider("velocity", 0.8, 0, 1, 0.01);
 gate = button("gate");
 
 // Parameter Sliders (Mappable via companion CSV)
-sustain = hslider("sustain", 35.0, 0.1, 1000.0, 0.01);
+sustain0 = hslider("sustain0", 55.0, 0.1, 1000.0, 0.01);
+sustain1 = hslider("sustain1", 35.0, 0.1, 1000.0, 0.01);
+sustain2 = hslider("sustain2", 35.0, 0.1, 1000.0, 0.01);
+sustain3 = hslider("sustain3", 20.0, 0.1, 1000.0, 0.01);
 jivariThreshold = hslider("jivariThreshold", 0.015, 0.0, 1.0, 0.0001);
 jivari = hslider("jivari", 0.55, 0.0, 10.0, 0.01);
 excDur = hslider("excDur", 0.0115, 0.0001, 1.0, 0.0001);
@@ -42,8 +45,8 @@ t3 = rawTrig @ ba.sec2samp(1.5);
 
 // Pa Sa Sa LowSa
 
-smoothedBaseFreq = baseFreq : si.smoo;
-smoothedFirstFreq = firstFreq : si.smoo;
+smoothedBaseFreq = baseFreq;
+smoothedFirstFreq = ba.if(firstFreq > 0.0, firstFreq, baseFreq * 1.5);
 
 stringFreq(i) =
       (i == 0) * (smoothedFirstFreq)
@@ -55,7 +58,7 @@ stringFreq(i) =
 // LOOP FEEDBACK COEFFICIENT FROM SUSTAIN (T60 DECAY)
 // =====================================================
 
-feedback(freqVal) = exp(-3.0 / (max(0.1, sustain) * freqVal));
+feedback(freqVal, susVal) = exp(-3.0 / (max(0.1, susVal) * freqVal));
 
 // =====================================================
 // EXCITATION (gated by exciteActive)
@@ -87,7 +90,7 @@ with {
 // STRING MODEL
 // =====================================================
 
-jivariString(freqVal, trigSig) =
+jivariString(freqVal, trigSig, susVal) =
     pluckExcitation(freqVal, exciteActive)
     :
     + ~
@@ -95,7 +98,7 @@ jivariString(freqVal, trigSig) =
         de.fdelay(8192, ma.SR / max(20.0, freqVal) - 2.0)
         : jivariBridge(freqVal)
         : fi.allpassnn(1, dispersion)
-        : *(feedback(freqVal))
+        : *(feedback(freqVal, susVal))
         : *(1.0 - perStringTrig)
     )
 with {
@@ -120,10 +123,10 @@ with {
 // STRINGS
 // =====================================================
 
-s0 = jivariString(stringFreq(0), t0) * stringGainVal;
-s1 = jivariString(stringFreq(1), t1) * stringGainVal;
-s2 = jivariString(stringFreq(2), t2) * stringGainVal;
-s3 = jivariString(stringFreq(3), t3) * stringGainVal;
+s0 = jivariString(stringFreq(0), t0, sustain0) * stringGainVal;
+s1 = jivariString(stringFreq(1), t1, sustain1) * stringGainVal;
+s2 = jivariString(stringFreq(2), t2, sustain2) * stringGainVal;
+s3 = jivariString(stringFreq(3), t3, sustain3) * stringGainVal;
 
 // =====================================================
 // MIX

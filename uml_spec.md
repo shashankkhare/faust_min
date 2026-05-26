@@ -1,0 +1,271 @@
+# UML (Universal Music Language) Specification
+
+UML is a text-based format designed for high-fidelity woodwind, string, percussion, and vocal synthesis orchestration. It separates musical performance into two primary components: **Notes** (triggers and pitch) and **Control** (continuous parameter automation).
+
+### Core Design Objectives
+1. **Human and Machine Readable**: Unlike MIDI (which is binary and machine-focused) or traditional sheet music (which is visual and human-focused), UML is designed to be easily read and written by both humans and parsers.
+2. **AI-Training Optimized**: Because UML is entirely text-based and structured, it makes training LLMs and generative AI models on musical sequences significantly easier and more efficient.
+3. **Multilinguistic Support**: Musical traditions use vastly different notations. UML bridges this gap by supporting multiple linguistic frameworks (e.g., Western `C4`, Indian Classical `Sa`, and Percussive Bols `Dha`) within the same unified engine.
+
+
+## 1. Header Metadata
+
+Global settings that define the temporal and harmonic grid.
+
+- `notation: [Type]` - Defines the notation system: `Indian` (Default) or `Western`.
+- `instrument: [Name/Code]` - Instrument identifier. Resolved via `InstrumentMapper`. See §5.
+- `instrumentID: [int]` - Numeric instrument ID (alternative to name).
+- `basefreq: [Hz]` - Base frequency anchor (Sa / C). Default: `261.63`.
+- `bpm: [Number]` - Tempo in beats per minute. Default: `120`.
+- `grid: [int]` - Grid subdivisions per beat. Default: `4` (sixteenth notes).
+- `gain: [Number]` - Global gain multiplier for this sequence.
+
+- `parameters: ([Param1]=[Val], [Param2]=[Val])` - Initial DSP parameters applied at load time.
+- `exectype: [static|interpreter]` - DSP execution mode. Default: `static`.
+
+---
+
+## 2. Notes Component
+
+The notes component handles discrete triggers and melodic movement for the sequence.
+
+### Syntax: `([Amplitude])[NoteToken]` or `[ArticToken]`
+
+- **Amplitude**: Optional single digit `1-9` (Default: 5). Marks the amplitude of the play. Maps as `amplitude = digit / 9.0`.
+  - **Indian Notation (22 Shrutis)**:
+    - `Sa`, `Pa` (Fixed)
+    - `r1`, `r2`, `R1`, `R2` (Re)
+    - `g1`, `g2`, `G1`, `G2` (Ga)
+    - `M1`, `M2`, `m1`, `m2` (Ma)
+    - `d1`, `d2`, `D1`, `D2` (Dha)
+    - `n1`, `n2`, `N1`, `N2` (Ni)
+    - `SaLow` — one octave below Sa (ratio 0.5)
+  - **Western Notation**: `C4`, `C#`, `Db`, `D4`, etc.
+  - **Direct Hz**: Any numeric token (e.g. `440.0`) is used as a literal frequency.
+  - **Chords (Polyphony)**: Use `|` (Pipe) to join multiple notes to be played simultaneously.
+    - Example: `C4|E4|G4` (Plays C major chord).
+- `ArticToken`:
+  - `.` (Dot): Continuity. Extends the previous state (note or silence).
+  - `_` (Underscore): Full Stop. Ends the current note and starts silence.
+  - `/` (Slash): Polyphonic separation. Used to define individual multiple notes that sound simultaneously.
+    - Example: `f3/a4/`
+  - `^` (Caret): Glide (Meend). Starts a simultaneous sweep of both **Pitch** and **Amplitude** toward the next specified note. The duration is determined by the sustain of the current note (all following `.` tokens).
+    - Example: `1R1^..9G1` (Simultaneous pitch glide and volume swell from 1 to 9 over 3 grid units).
+
+**Example**: `Sa..R1^G1.`
+*(Plays Sa for 3 units, then glides from R1 to G1 for 2 units)*
+
+**Chord Example**: `C4|E4|G4.. _.. F4|A4|C5..`
+*(Plays C major chord for 3 units, silence for 3 units, then F major chord)*
+
+---
+
+## 3. Percussion Component — Tabla Bols
+
+Used when `instrument` resolves to a percussion ID (IDs 0–6). Tokens map to a `strikeVal` controlling physical model articulation. Pitch is not used; `basefreq` passes through as a static tuning reference.
+
+### 3.1 Dayan Bols (ID 0)
+
+| Token(s) | strikeVal | Character |
+|---|---|---|
+| `Na`, `na`, `Ta`, `ta` | 0.0 | Open centre ring |
+| `Dha`, `dha` | 0.0 | Compound — dayan open ring component |
+| `tk` | 1.0 | Edge flick |
+| `Tit`, `tit` | 1.0 | Sharp muted |
+| `Ti`, `ti`, `Tin`, `tin` | 2.0 | Ringing centre |
+| `Dhin`, `dhin` | 2.0 | Compound — dayan Tin-style resonance |
+| `Tu`, `tu`, `Tun`, `tun` | 3.0 | Deep bass resonance |
+
+### 3.2 Bayan Bols (ID 1)
+
+| Token(s) | strikeVal | Character |
+|---|---|---|
+| `Ge`, `ge`, `Ghe`, `ghe` | 0.0 | Open resonant bass |
+| `Tit`, `tit` | 0.0 | Silent / ghost stroke |
+| `Dha`, `dha`, `Ghi`, `ghi` | 1.0 | Deep bass press / half-open |
+| `Dhin`, `dhin` | 2.0 | Half-muffled bass |
+| `Tu`, `tu`, `Tun`, `tun` | 3.0 | Deep bass resonance |
+
+### 3.3 Djembe (ID 28)
+
+Djembe uses a continuous `strike` 0–1 mapping (soft/bass → sharp/slap):
+
+| Token(s) | strikeVal | Stroke | Character |
+|---|---|---|---|
+| `Gu`, `gu` | 0.0 | Gu | Djembe deep bass (West African) |
+| `Ba`, `ba` | 0.0 | Bass | Full palm centre — deep resonant boom |
+| `Don`, `don` | 0.0 | Don | Dun-dun open bass |
+| `Go`, `go` | 1.0 | Go | Djembe open tone (West African) |
+| `Pa` | 1.0 | Pa | Djembe mid open tone |
+| `Sl`, `sl` | 1.0 | Slap | Sharp edge slap — high crack |
+| `De`, `de` | 2.0 | De | Djembe muted / stopped tone |
+
+### 3.4 Conga (ID 30)
+
+Conga uses a discrete `strike` 0–2 mapping (Open Tone → Slap → Muted):
+
+| Token(s) | strikeVal | Stroke | Character |
+|---|---|---|---|
+| `To`, `to` | 0.0 | Tone | Open finger tone — bright ring |
+| `Gh`, `gh` | 0.0 | Ghost | Near-silent brush stroke |
+| `Sl`, `sl` | 1.0 | Slap | Sharp edge slap — high crack |
+| `Mu`, `mu` | 2.0 | Mute | Muffled / touch stroke |
+| `Tap`, `tap` | 2.0 | Tap | Light finger tap |
+
+### 3.5 Bongo (ID 31)
+
+Bongo uses the same `strike` 0–2 mapping as Conga (Open Tone → Slap → Muted), typically tuned higher:
+
+| Token(s) | strikeVal | Stroke | Character |
+|---|---|---|---|
+| `To`, `to` | 0.0 | Tone | Open finger tone — bright ring |
+| `Gh`, `gh` | 0.0 | Ghost | Near-silent brush stroke |
+| `Sl`, `sl` | 1.0 | Slap | Sharp edge slap — high crack |
+| `Mu`, `mu` | 2.0 | Mute | Muffled / touch stroke |
+| `Tap`, `tap` | 2.0 | Tap | Light finger tap |
+
+### 3.6 Ambient Effects & Textures (Rainmaker, Sea Wave, Shaker, Chou Gong)
+
+Ambient instruments operate slightly differently. 
+- **Shaker (ID 33)** & **Chou Gong (ID 35)**: Can be triggered using standard General Percussion bols (e.g., `Na`, `Ta`, `Ti`, `Tun`).
+- **Sea Wave (ID 34)** & **Rainmaker (ID 19)**: Can be triggered using Indian/Western pitched notes (e.g., `Sa`, `C4`) to set their resonant frequency filters, or using standard General bols to trigger a wash of sound. Their durations should be extended using sustain dots (`.`) to let the physics engine run continuously.
+
+> Generic tabla tokens (`Na`, `tk`, `Ti`, `Tun`) still work as a fallback for all IDs in the 19, 28, 30, 31, 33, 34, 35 range.
+
+### 3.4 General Percussion Fallback (IDs 2–6: Kick, Snare, HiHat, Tom, Ride)
+
+| Token(s) | strikeVal |
+|---|---|
+| `Na`, `Ta` | 0.0 |
+| `tk`, `Ka` | 1.0 |
+| `Ti`, `Tin` | 2.0 |
+| `Tu`, `Tun` | 3.0 |
+
+**Tabla Example**:
+```
+instrument: dayan
+bpm: 120
+grid: 4
+
+Na . Ta . Dhin . Dhin . Na . Ta . Tin .
+```
+
+**Djembe Example**:
+```
+instrument: djembe
+bpm: 100
+grid: 4
+
+Gu . Go Sl . Gu . Go . Sl Mu . Go Gu .
+```
+
+**Conga Example**:
+```
+instrument: conga
+bpm: 110
+grid: 4
+
+To . To Sl . Mu . To . To Sl . Mu To .
+```
+
+---
+
+## 4. Voice Component — Vowel Notation (ID 32)
+
+Used when `instrument: voice`. Tokens can be **vowel syllables** (formant morph) or **Indian solfège** (pitch). Both are freely mixed; the orchestrator holds the last vowel across pitch changes.
+
+### 4.1 Vowel Tokens
+
+| Token(s) | vowelVal | Sound | Character |
+|---|---|---|---|
+| `aa`, `Aa`, `AA`, `a` | 0.0 | "aah" | Open bright — F1≈800 Hz, F2≈1200 Hz |
+| `ee`, `Ee`, `EE`, `e` | 1.0 | "eh" | Mid-front — F1≈400 Hz, F2≈1800 Hz |
+| `ii`, `Ii`, `II`, `i` | 2.0 | "ee" | Closed front — F1≈300 Hz, F2≈2300 Hz |
+| `oo`, `Oo`, `OO`, `o` | 3.0 | "oh" | Back-rounded — F1≈400 Hz, F2≈800 Hz |
+| `uu`, `Uu`, `UU`, `u` | 4.0 | "oo" | Closed-back — F1≈300 Hz, F2≈800 Hz |
+
+### 4.2 Voice DSP Parameters (via `parameters` header)
+
+| Parameter | Range | Description |
+|---|---|---|
+| `freq` | 50–2000 Hz | Sung pitch |
+| `amplitude` | 0.0–1.0 | Loudness + attack speed |
+| `vowel` | 0.0–4.0 | Continuous formant morph (set by vowel tokens) |
+| `breathiness` | 0.0–1.0 | 0 = operatic/pressed, 1 = breathy/whisper |
+| `vibrato_rate` | 0–12 Hz | Vibrato speed (default 5.5 Hz) |
+| `vibrato_depth` | 0.0–0.08 | Vibrato intensity |
+
+**Example**:
+
+```
+instrument: voice
+notation: Indian
+basefreq: 220
+bpm: 50
+grid: 4
+parameters: (breathiness=0.2, vibrato_depth=0.015)
+
+// Sing "aah" on Sa, glide to Pa while morphing to "oo"
+aa Sa^ . . oo Pa . . ii Ni . . aa Sa . . .
+```
+
+---
+
+## 5. Full Sequence Structure (Notesheet)
+
+```uml
+notation: Indian
+basefreq: 220
+bpm: 90
+grid: 4
+instrument: বাঁশি // Resolved to bansuri.dsp via InstrumentMapper
+parameters: (pressure=0.8, vibrato_depth=0.02)
+
+// Notes Section
+9Sa..^5R1..7G1.._...
+```
+
+*(Plays Sa at amplitude 9, glides to R1 at amplitude 5, sustains, then stops)*
+
+---
+
+## 6. Instrument Registry
+
+| Short Code | Full Name | ID | Notes Body Type |
+|---|---|---|---|
+| `DA` / `dayan` | Dayan (Tabla) | 0 | Bols §3.1 |
+| `BA` / `bayan` | Bayan (Tabla) | 1 | Bols §3.2 |
+| `kick` | Kick Drum | 2 | General bols §3.3 |
+| `snare` | Snare Drum | 3 | General bols §3.3 |
+| `hihat` | Hi-Hat | 4 | General bols §3.3 |
+| `tom` | Tom | 5 | General bols §3.3 |
+| `ride` | Ride Cymbal | 6 | General bols §3.3 |
+| `BE` / `bell` | Bell | 7 | Indian solfège §2 |
+| `BO` / `bowl` | Singing Bowl | 8 | Indian solfège §2 |
+| `SI` / `sitar` | Sitar | 9 | Indian solfège §2 |
+| `FL` / `flute` | Flute | 10 | Indian solfège §2 |
+| `TA` / `tanpura` | Tanpura | 11 | Indian solfège §2 |
+| `PI` / `piano` | Piano | 12 | Indian solfège §2 |
+| `SX` / `sax` | Saxophone | 13 | Indian solfège §2 |
+| `CB` / `cowbell` | Cowbell | 14 | Indian solfège §2 |
+| `TR` / `trumpet` | Trumpet | 15 | Indian solfège §2 |
+| `SH` / `shakuhachi` | Shakuhachi | 16 | Indian solfège §2 |
+| `BN` / `bansuri` | Bansuri | 17 | Indian solfège §2 |
+| `VI` / `violin` | Violin | 18 | Indian solfège §2 |
+| `RM` / `rainmaker` | Rainmaker | 19 | Indian solfège §2 |
+| `CH` / `churchbell` | Church Bell | 20 | Indian solfège §2 |
+| `AG` / `acoustic_guitar` | Acoustic Guitar | 21 | Indian solfège §2 |
+| `EG` / `electric_guitar` | Electric Guitar | 22 | Indian solfège §2 |
+| `BS` / `bass` | Bass Guitar | 23 | Indian solfège §2 |
+| `CE` / `cello` | Cello | 24 | Indian solfège §2 |
+| `CR` / `cricket` | Cricket | 25 | Indian solfège §2 |
+| `CU` / `cuckoo` | Cuckoo | 26 | Indian solfège §2 |
+| `WF` / `waterfall` | Waterfall | 27 | Indian solfège §2 |
+| `DJ` / `djembe` | Djembe | 28 | General bols §3.3 |
+| `MA` / `marimba` | Marimba | 29 | Indian solfège §2 |
+| `CG` / `conga` | Conga | 30 | General bols §3.3 |
+| `BG` / `bongo` | Bongo | 31 | General bols §3.3 |
+| `VO` / `voice` / `vocals` / `singing` | Singing Voice | 32 | Vowels + Indian solfège §4 |
+| `SK` / `shaker` | Shaker | 33 | General bols §3.4 |
+| `SW` / `seawave` | Sea Wave | 34 | General bols §3.4 |
+| `CG` / `chougong` | Chou Gong | 35 | General bols §3.4 |

@@ -117,6 +117,12 @@ public:
     void resume();
 
     /**
+     * @brief Toggle the global Humanize property (adds random micro-timing jitter).
+     */
+    void setHumanize(bool state) { mHumanize.store(state, std::memory_order_relaxed); }
+    bool isHumanized() const { return mHumanize.load(std::memory_order_relaxed); }
+
+    /**
      * @brief Mute or unmute a specific track.
      */
     void muteTrack(const std::string& name, bool mute = true);
@@ -190,6 +196,7 @@ private:
     std::map<std::string, std::shared_ptr<ActiveSequence>> mActiveSequences;
     std::mutex mStateMutex;
     std::atomic<bool> mIsPaused{false};
+    std::atomic<bool> mHumanize{true};
 
     using SnapshotVec = std::vector<std::shared_ptr<ActiveSequence>>;
     std::shared_ptr<SnapshotVec> mRenderSnapshot; 
