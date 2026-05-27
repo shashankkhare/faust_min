@@ -648,18 +648,18 @@ int main(int argc, char* argv[]) {
                 "basefreq: 110.0\n"
                 "instrument: dholak\n"
                 "\n"
-                "Dha _ _ _ _ _ Na _ Na _ _ _ _ _ Na _ "
-                "Na _ _ _ _ _ Dha _ Dha _ _ _ _ _ Na _ "
-                "Dha _ _ _ _ _ Na _ Na _ _ _ _ _ Na _ "
-                "Na _ _ _ _ _ Dha _ Dha _ _ _ _ _ Na _ "
-                "Dha _ _ Na Na _ _ Na Na _ _ Dha Dha _ _ Na "
-                "Dha _ _ Na Na _ _ Na Na _ _ Dha Dha _ _ Na "
-                "Dha _ _ Na Na _ _ Tin Na _ _ Dha Dha _ _ Na "
-                "Dha _ _ Na Na _ _ Tin Na _ _ Dha Dha _ _ Na "
-                "Dha _ _ Na Dha Dha _ Na Dha _ _ Na Dha Dha _ Na "
-                "Dha _ _ Na Dha Dha _ Na Dha _ _ Na Dha Dha _ Na "
-                "Dha _ _ Na Dha Dha _ Tin Dha _ _ Na Dha Dha _ Tin "
-                "Dha _ _ Na Dha Dha _ Tin Dha _ _ Na Dha Dha _ Tin";
+                "Dha _ Ge _ Na _ Ti _ Na _ Ke _ Dhin _ Na _ _ _ "
+                "Dha _ Ge _ Na _ Ti _ Na _ Ke _ Dhin _ Na _ _ _ "
+                "Dha _ Ge _ Na _ Ti _ Na _ Ke _ Dhin _ Na _ _ _ "
+                "Dha _ Ge _ Na _ Ti _ Na _ Ke _ Dhin _ Na _ _ _ "
+                "Dha _ Na Ti Dha _ Na Ti Na _ Ke Dhin Na _ Ti _ "
+                "Dha _ Na Ti Dha _ Na Ti Na _ Ke Dhin Na _ Ti _ "
+                "Dha _ Na Ti Dha _ Na Ti Na _ Ke Dhin Na _ Ti _ "
+                "Dha _ Na Ti Dha _ Na Ti Na _ Ke Dhin Na _ Ti _ "
+                "Dha Na Ge Na Dha Na Ti _ Na Ti Ke Ti Na Ti Dha _ "
+                "Dha Na Ge Na Dha Na Ti _ Na Ti Ke Ti Na Ti Dha _ "
+                "Dha Na Ge Na Dha Na Ti _ Na Ti Ke Ti Na Ti Dha _ "
+                "Dha Na Ge Na Dha Na Ti _ Na Ti Ke Ti Na Ti Dha _";
                 
             group.sequences.push_back({"Dholak", new UMLSequence("Dholak", 37, umlDholak)});
             group.volumes = { 0.8f };
