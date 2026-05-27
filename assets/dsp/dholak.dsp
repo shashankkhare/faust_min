@@ -50,7 +50,7 @@ dayan_mode4 = resonator(freq1 * 2.30, 0.04 * dayanDecay, 0.10, excitationDayan);
 dayan_body = dayan_mode1 + dayan_mode2 + dayan_mode3 + dayan_mode4;
 
 // Output: Summed response of active heads
-drum_body = bayan_body * 1.0 + dayan_body * 1.2;
+drum_body = bayan_body * 0.9 + dayan_body * 1.1;
 
 // Process: Waveshaping and 1st-order low-pass (cutoff at 1200 Hz to let Dayan ring through)
-process = (drum_body * 18.0 : ma.tanh : fi.lowpass(1, 1200.0)) * (gain * 1.50);
+process = (drum_body * 14.0 : ma.tanh : fi.lowpass(1, 1200.0)) * (gain * 1.05);
