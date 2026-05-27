@@ -1,8 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "Checking DSP files for compilation..."
-for dspFile in assets/dsp/kick.dsp assets/dsp/piano.dsp assets/dsp/sax.dsp; do
+for dspFile in assets/dsp/*.dsp; do
     basename=$(basename "$dspFile" .dsp)
     # Capitalize first letter for class name
     capName="$(tr '[:lower:]' '[:upper:]' <<< ${basename:0:1})${basename:1}"

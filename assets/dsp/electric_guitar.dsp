@@ -10,8 +10,21 @@ gain = hslider("gain", 0.5, 0, 1, 0.01) : si.smoo;
 pluckPosition = hslider("pluckPosition", 0.8, 0.01, 0.99, 0.01) : si.smoo;
 mute = hslider("mute", 1.0, 0.0, 1.0, 0.01) : si.smoo; // 1 for no mute, 0 for instant mute
 
+// Distortion and sustain controls
+drive = hslider("drive", 0.5, 0, 1, 0.01) : si.smoo;
+sustain = hslider("sustain", 0.5, 0, 1, 0.01) : si.smoo;
+pregain = 1.0 + sustain * 19.0;
+
 // String length in meters
 stringLength = freq : mypm.f2l;
 
-// We use the steel string electric guitar model, passing gate directly
-process = mypm.elecGuitar(stringLength, pluckPosition, mute, velocity, gate) : fi.dcblocker : ma.tanh * gain;
+// Cabinet simulator using a 2nd order lowpass filter to eliminate high-frequency fizz and simulate real speakers
+cabinet = fi.lowpass(2, 4000);
+
+process = mypm.elecGuitar(stringLength, pluckPosition, mute, velocity, gate)
+        : fi.dcblocker 
+        : *(pregain) 
+        : ef.cubicnl(drive, 0) 
+        : ma.tanh 
+        : cabinet 
+        : *(gain * 2.5);

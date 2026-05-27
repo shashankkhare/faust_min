@@ -74,6 +74,7 @@ pluckExcitation(freqVal, exciteActive) =
     * en.ar(excDur, excDur * 0.5, exciteActive)
     * excGain
     * velocity
+    * (baseFreq / max(20.0, freqVal))
     * 0.3
     : fi.lowpass(2, freqVal * 3.0);
 

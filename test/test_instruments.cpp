@@ -263,17 +263,17 @@ void testTanpura(FaustMixer& mixer, DSPExecutionType execType) {
     auto inst = std::make_shared<FaustInstrument>(11, execType, InstrumentMapper::DEFAULT_SAMPLE_RATE);
     mixer.registerInstrument(inst.get(), 0.8f);
     
-    std::vector<double> freqs = getTestFreqsDouble({ 130.81, 196.00, 261.63 });
+    std::vector<double> freqs = getTestFreqsDouble({ 130.00, 180.50, 231.00 });
     for (size_t i = 0; i < freqs.size(); ++i) {
         double freq = freqs[i];
         inst->setParam("freq1", freq * 1.5f);
         std::cout << "  -> Note Sa: " << freq << " Hz, Pa: " << freq * 1.5f << " Hz" << std::endl;
         inst->noteOn(freq, 0.8f);
-        usleep(12000000);
+        usleep(4000000); // reduced from 12s to play faster
         inst->noteOff();
-        if (i < freqs.size() - 1) usleep(2000000);
+        if (i < freqs.size() - 1) usleep(500000); // reduced spacing
     }
-    usleep(1500000);
+    usleep(500000);
     mixer.unregisterInstrument(inst.get());
 }
 
@@ -528,6 +528,10 @@ void testElectricGuitar(FaustMixer& mixer, DSPExecutionType execType) {
     std::cout << "\n=== [Test] Electric Guitar (A2 Power Chords / Notes) ===" << std::endl;
     auto inst = std::make_shared<FaustInstrument>(22, execType, InstrumentMapper::DEFAULT_SAMPLE_RATE);
     mixer.registerInstrument(inst.get(), 0.8f);
+    
+    // Set drive and sustain parameters to verify they are processed correctly
+    inst->setParam("drive", 0.8f);
+    inst->setParam("sustain", 0.7f);
     
     std::vector<double> notes = getTestFreqsDouble({ 110.00, 165.00, 220.00 }); // A2, E3, A3
     for (double freq : notes) {
@@ -794,6 +798,73 @@ void testChouGong(FaustMixer& mixer, DSPExecutionType execType) {
     mixer.unregisterInstrument(inst.get());
 }
 
+void testLagNga(FaustMixer& mixer, DSPExecutionType execType) {
+    std::cout << "\n=== [Test] Lag Nga ===" << std::endl;
+    auto inst = std::make_shared<FaustInstrument>(36, execType, InstrumentMapper::DEFAULT_SAMPLE_RATE);
+    mixer.registerInstrument(inst.get(), 0.8f);
+    
+    std::vector<double> notes;
+    if (gTestFrequency > 0.0) {
+        notes = { gTestFrequency };
+    } else {
+        notes = { 50.0, 60.0, 72.0, 85.0 };
+    }
+    
+    for (double freq : notes) {
+        std::cout << "[Direct Run] Testing Lag Nga at freq: " << freq << " Hz" << std::endl;
+        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
+        usleep(3000000);
+        inst->noteOff();
+        usleep(1000000);
+    }
+    
+    mixer.unregisterInstrument(inst.get());
+}
+
+void testDholak(FaustMixer& mixer, DSPExecutionType execType) {
+    std::cout << "\n=== [Test] Dholak ===" << std::endl;
+    auto inst = std::make_shared<FaustInstrument>(37, execType, InstrumentMapper::DEFAULT_SAMPLE_RATE);
+    mixer.registerInstrument(inst.get(), 0.8f);
+    
+    std::vector<std::pair<float, std::string>> strokes = {
+        { 0.0f, "Bayan Open (Bass)" },
+        { 1.0f, "Bayan Closed (Bass Slap)" },
+        { 2.0f, "Dayan Open (Treble)" },
+        { 3.0f, "Dayan Closed (Treble Click)" },
+        { 4.0f, "Composite (Dha/Dhin)" }
+    };
+    for (const auto& stroke : strokes) {
+        std::cout << "[Direct Run] Testing Dholak stroke: " << stroke.second << " (strikeVal=" << stroke.first << ")" << std::endl;
+        inst->noteOn(110.0f, gTestVelocity, stroke.first, gTestAmplitude);
+        usleep(1500000);
+        inst->noteOff();
+        usleep(500000);
+    }
+    mixer.unregisterInstrument(inst.get());
+}
+
+void testDhol(FaustMixer& mixer, DSPExecutionType execType) {
+    std::cout << "\n=== [Test] Dhol ===" << std::endl;
+    auto inst = std::make_shared<FaustInstrument>(38, execType, InstrumentMapper::DEFAULT_SAMPLE_RATE);
+    mixer.registerInstrument(inst.get(), 0.8f);
+    
+    std::vector<std::pair<float, std::string>> strokes = {
+        { 0.0f, "Dagga Open (Bass Stick)" },
+        { 1.0f, "Dagga Closed (Bass Slap)" },
+        { 2.0f, "Tilli Open (Treble Stick Center)" },
+        { 3.0f, "Tilli Closed (Treble Stick Edge/Rim)" },
+        { 4.0f, "Composite (Dha/Dhin)" }
+    };
+    for (const auto& stroke : strokes) {
+        std::cout << "[Direct Run] Testing Dhol stroke: " << stroke.second << " (strikeVal=" << stroke.first << ")" << std::endl;
+        inst->noteOn(110.0f, gTestVelocity, stroke.first, gTestAmplitude);
+        usleep(1500000);
+        inst->noteOff();
+        usleep(500000);
+    }
+    mixer.unregisterInstrument(inst.get());
+}
+
 // =====================================================
 // MAIN EXECUTION
 // =====================================================
@@ -882,7 +953,10 @@ int main(int argc, char* argv[]) {
         {32, "Voice"},
         {33, "Shaker"},
         {34, "SeaWave"},
-        {35, "ChouGong"}
+        {35, "ChouGong"},
+        {36, "LagNga"},
+        {37, "Dholak"},
+        {38, "Dhol"}
     };
 
     std::cout << "\n--- Available Instruments ---" << std::endl;
@@ -933,6 +1007,9 @@ int main(int argc, char* argv[]) {
                 case 33: testShaker(mixer, execType); break;
                 case 34: testSeaWave(mixer, execType); break;
                 case 35: testChouGong(mixer, execType); break;
+                case 36: testLagNga(mixer, execType); break;
+                case 37: testDholak(mixer, execType); break;
+                case 38: testDhol(mixer, execType); break;
                 default: break;
             }
         } else {
@@ -1017,6 +1094,9 @@ int main(int argc, char* argv[]) {
                     case 33: testShaker(mixer, execType); break;
                     case 34: testSeaWave(mixer, execType); break;
                     case 35: testChouGong(mixer, execType); break;
+                    case 36: testLagNga(mixer, execType); break;
+                    case 37: testDholak(mixer, execType); break;
+                    case 38: testDhol(mixer, execType); break;
                     default: break;
                 }
             } else {

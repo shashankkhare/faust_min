@@ -176,17 +176,30 @@ void SequenceOrchestrator::setParameter(const std::string& name, const std::stri
 }
 
 
-
-
 void SequenceOrchestrator::updateTimeline(int numFrames) {
     if (mIsPaused.load(std::memory_order_relaxed)) return;
     
     auto snapshot = getRenderSnapshot();
     if (!snapshot || snapshot->empty()) return;
 
-
     for (auto& seqWrapper : *snapshot) {
-        if (!seqWrapper->isPlaying.load(std::memory_order_relaxed) || seqWrapper->isMuted.load(std::memory_order_relaxed)) continue;
+        if (!seqWrapper->isPlaying.load(std::memory_order_acquire)) {
+            continue;
+        }
+
+        if (seqWrapper->isMuted.load(std::memory_order_relaxed)) {
+            seqWrapper->currentSample += numFrames;
+            if (seqWrapper->currentSample >= seqWrapper->sequenceObj->totalDurationSamples) {
+                if (mLooping.load(std::memory_order_relaxed)) {
+                    seqWrapper->currentSample = 0;
+                    seqWrapper->nextEventIndex = 0;
+                } else {
+                    seqWrapper->isPlaying.store(false, std::memory_order_release);
+                    notifyFinished(seqWrapper->sequenceObj->name);
+                }
+            }
+            continue;
+        }
         
         UMLSequence* seq = seqWrapper->sequenceObj;
         FaustInstrument* inst = seq->getFaustInstrument();
@@ -206,9 +219,6 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
             // If the event happens within this block (or happened in the past due to a skip)
             if (effectiveOffset <= seqWrapper->currentSample + numFrames) {
                 if (ev.type == UMLEventType::NoteOn) {
-                    // printf("[Native Trace] TRIGGER: Seq='%s' | EvIdx=%zu | Offset=%ld\n", 
-                    //        seqWrapper->sequenceObj->name.c_str(), seqWrapper->nextEventIndex, ev.sampleOffset);
-                    // fflush(stdout);
                     int instID = seqWrapper->sequenceObj->instrumentID;
                     if (instID == 32) { // Voice — use vowel-aware param dispatch
                         updateDSPParamsVoice(seqWrapper, ev.frequency, ev.velocity, ev.vowelVal);
@@ -217,9 +227,6 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
                     }
                     if (inst) inst->noteOn(ev.frequency, ev.velocity, ev.strikeVal, ev.amplitude);
                 } else if (ev.type == UMLEventType::NoteOff) {
-                    // printf("[Native Trace] TRIGGER (OFF): Seq='%s' | EvIdx=%zu | Offset=%ld\n", 
-                    //        seqWrapper->sequenceObj->name.c_str(), seqWrapper->nextEventIndex, ev.sampleOffset);
-                    // fflush(stdout);
                     if (inst) inst->noteOff();
                 } else if (ev.type == UMLEventType::Glide) {
                     if (inst) {
@@ -238,8 +245,13 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
         seqWrapper->currentSample += numFrames;
 
         if (seqWrapper->currentSample >= seq->totalDurationSamples) {
-            seqWrapper->isPlaying.store(false, std::memory_order_release);
-            notifyFinished(seq->name);
+            if (mLooping.load(std::memory_order_relaxed)) {
+                seqWrapper->currentSample = 0;
+                seqWrapper->nextEventIndex = 0;
+            } else {
+                seqWrapper->isPlaying.store(false, std::memory_order_release);
+                notifyFinished(seq->name);
+            }
         }
     }
 }

@@ -65,6 +65,9 @@
 #include "FaustShakerDSP.hpp"
 #include "FaustSeawaveDSP.hpp"
 #include "FaustChougongDSP.hpp"
+#include "FaustLagngaDSP.hpp"
+#include "FaustDholakDSP.hpp"
+#include "FaustDholDSP.hpp"
 #include <faust/dsp/interpreter-dsp.h>
 #include <cstring>
 #include <iostream>
@@ -176,7 +179,8 @@ void FaustInstrument::loadTargetDSP() {
             mInstrumentID == 12 || mInstrumentID == 13 || mInstrumentID == 15 || mInstrumentID == 16 || 
             mInstrumentID == 17 || mInstrumentID == 18 || mInstrumentID == 21 || mInstrumentID == 22 || 
             mInstrumentID == 23 || mInstrumentID == 24 || mInstrumentID == 28 || mInstrumentID == 29 || 
-            mInstrumentID == 30 || mInstrumentID == 31 || mInstrumentID == 32 || mInstrumentID == 35) {
+            mInstrumentID == 30 || mInstrumentID == 31 || mInstrumentID == 32 || mInstrumentID == 35 ||
+            mInstrumentID == 36 || mInstrumentID == 37 || mInstrumentID == 38) {
             mExecType = DSPExecutionType::StaticCompiled;
         }
     }
@@ -290,6 +294,9 @@ void FaustInstrument::loadTargetDSP() {
                 case 33: addVoice(new FaustShakerDSP()); break;
                 case 34: addVoice(new FaustSeawaveDSP()); break;
                 case 35: addVoice(new FaustChougongDSP()); break;
+                case 36: addVoice(new FaustLagngaDSP()); break;
+                case 37: addVoice(new FaustDholakDSP()); break;
+                case 38: addVoice(new FaustDholDSP()); break;
                 default: addVoice(new FaustDayanDSP()); break;
             }
         }
@@ -516,6 +523,11 @@ void FaustInstrument::noteOn(float freq, float vel, float strikeVal, float amp) 
     if (freq > 0.0f) {
         mFrequency = freq;
         setParam("freq", freq, v);
+        if (mInstrumentID == 37) {
+            setParam("freq1", freq * 2.828f, v);
+        } else if (mInstrumentID == 38) {
+            setParam("freq1", freq * 6.0f, v);
+        }
     }
     if (vel >= 0.0f) {
         mVelocity = vel;

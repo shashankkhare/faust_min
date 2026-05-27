@@ -1,0 +1,56 @@
+import("stdfaust.lib");
+
+// --- Indian Dholak Physical Model (Multiphonic/Dual-Freq) ---
+
+freq = hslider("freq [unit:Hz]", 98.0, 50.0, 400.0, 0.1);      // Left Head (Bayan/Bass)
+freq1 = hslider("freq1 [unit:Hz]", 277.2, 100.0, 800.0, 0.1);   // Right Head (Dayan/Treble)
+strike = hslider("strike", 0, 0, 4, 1);                       // 0=Bayan open, 1=Bayan closed, 2=Dayan open, 3=Dayan closed, 4=Composite Dha
+gain = hslider("gain", 1.0, 0.0, 2.0, 0.01);
+velocity = hslider("velocity", 1.0, 0.0, 1.0, 0.01);
+gate = button("gate");
+
+decayScaleSlider = hslider("decay_scale", 1.0, 0.1, 4.0, 0.05);
+
+// Robust 2-Pole Resonator function (Direct Form II style)
+resonator(f, t60, g, x) = x * 0.002 : + ~ (routing) : *(g)
+with {
+    T60 = max(0.001, t60);
+    r = pow(0.001, 1.0 / (T60 * ma.SR));
+    omega = 2.0 * ma.PI * f / ma.SR;
+    b1 = 2.0 * r * cos(omega);
+    b2 = r * r;
+    routing(fb) = b1 * fb - b2 * fb';
+};
+
+// Gate and excitation routing based on strike code
+trig = gate : ba.impulsify;
+trigBayan = trig * ((strike == 0) + (strike == 1) + (strike == 4) > 0);
+trigDayan = trig * ((strike == 2) + (strike == 3) + (strike == 4) > 0);
+
+bayanDecay = decayScaleSlider * ba.if(strike == 1, 0.3, 1.0);
+dayanDecay = decayScaleSlider * ba.if(strike == 3, 0.25, 1.0);
+
+// Excitation mallet: Bayan is soft (80 Hz lowpass), Dayan is sharp (300 Hz lowpass)
+excitationBayan = trigBayan * velocity * 0.15 : fi.lowpass(4, 80.0);
+excitationDayan = trigDayan * velocity * 0.15 : fi.lowpass(4, 300.0);
+
+// 1. Bayan (Bass) - Includes hand heel pitch sliding
+bayan_pitch_env = en.ar(0.01, 0.25, trigBayan);
+bayan_freq = freq * (1.0 + 0.25 * bayan_pitch_env * velocity);
+bayan_mode1 = resonator(bayan_freq * 1.0, 0.90 * bayanDecay, 1.00, excitationBayan);
+bayan_mode2 = resonator(bayan_freq * 1.8, 0.50 * bayanDecay, 0.50, excitationBayan);
+bayan_mode3 = resonator(bayan_freq * 2.3, 0.25 * bayanDecay, 0.20, excitationBayan);
+bayan_body = bayan_mode1 + bayan_mode2 + bayan_mode3;
+
+// 2. Dayan (Treble) - Bright, high-pitched, inharmonic membrane ring
+dayan_mode1 = resonator(freq1 * 1.00, 0.35 * dayanDecay, 1.00, excitationDayan);
+dayan_mode2 = resonator(freq1 * 1.59, 0.18 * dayanDecay, 0.55, excitationDayan);
+dayan_mode3 = resonator(freq1 * 2.14, 0.08 * dayanDecay, 0.25, excitationDayan);
+dayan_mode4 = resonator(freq1 * 2.30, 0.04 * dayanDecay, 0.10, excitationDayan);
+dayan_body = dayan_mode1 + dayan_mode2 + dayan_mode3 + dayan_mode4;
+
+// Output: Summed response of active heads
+drum_body = bayan_body + dayan_body;
+
+// Process: Waveshaping and 1st-order low-pass (cutoff at 450 Hz to keep Dayan ring clean)
+process = (drum_body * 12.0 : ma.tanh : fi.lowpass(1, 450.0)) * (gain * 0.85);

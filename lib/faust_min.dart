@@ -84,6 +84,9 @@ typedef _dart_inst_set_weight = void Function(Pointer<NativeInstrumentOpaque>, d
 typedef _c_inst_get_weight = Float Function(Pointer<NativeInstrumentOpaque>);
 typedef _dart_inst_get_weight = double Function(Pointer<NativeInstrumentOpaque>);
 
+typedef _c_inst_render = Void Function(Pointer<NativeInstrumentOpaque>, Pointer<Float>, Int32);
+typedef _dart_inst_render = void Function(Pointer<NativeInstrumentOpaque>, Pointer<Float>, int);
+
 typedef _c_orch_create = Pointer<NativeOrchestratorOpaque> Function();
 typedef _dart_orch_create = Pointer<NativeOrchestratorOpaque> Function();
 
@@ -113,6 +116,9 @@ typedef _dart_orch_mute_track = void Function(Pointer<NativeOrchestratorOpaque>,
 typedef _c_orch_set_param = Void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>, Pointer<Utf8>, Float);
 typedef _dart_orch_set_param = void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>, Pointer<Utf8>, double);
 
+typedef _c_orch_set_weight = Void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>, Float);
+typedef _dart_orch_set_weight = void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>, double);
+
 typedef _c_orch_render_master = Void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Float>, Int32);
 typedef _dart_orch_render_master = void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Float>, int);
 
@@ -131,9 +137,10 @@ class FaustInstrument {
   static late final _funcNoteOff = _dylib.lookupFunction<_c_inst_note_off, _dart_inst_note_off>('instrument_note_off');
   static late final _funcSetWeight = _dylib.lookupFunction<_c_inst_set_weight, _dart_inst_set_weight>('instrument_set_weight');
   static late final _funcGetWeight = _dylib.lookupFunction<_c_inst_get_weight, _dart_inst_get_weight>('instrument_get_weight');
+  static late final _funcRender = _dylib.lookupFunction<_c_inst_render, _dart_inst_render>('instrument_render');
 
-  FaustInstrument._(this._handle);
-  factory FaustInstrument.fromNative(Pointer<NativeInstrumentOpaque> handle) => FaustInstrument._(handle);
+  FaustInstrument(this._handle);
+  factory FaustInstrument.fromNative(Pointer<NativeInstrumentOpaque> handle) => FaustInstrument(handle);
 
   void setParameter(String name, double value) {
     if (_isDisposed || _handle == nullptr) return;
@@ -161,6 +168,18 @@ class FaustInstrument {
   }
 
   double get weight => _isDisposed ? 0.0 : _funcGetWeight(_handle);
+
+  void render(Float32List buffer) {
+    if (_isDisposed || _handle == nullptr) return;
+    final ptr = malloc<Float>(buffer.length);
+    try {
+      _funcRender(_handle, ptr, buffer.length);
+      final view = ptr.asTypedList(buffer.length);
+      buffer.setAll(0, view);
+    } finally {
+      malloc.free(ptr);
+    }
+  }
 
   void dispose() {
     _isDisposed = true;

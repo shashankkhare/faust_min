@@ -289,7 +289,14 @@ DART_EXPORT void mixer_set_master_gain(FaustMixer* mixer, float gain);
 DART_EXPORT UMLSequence* sequence_create(const char* name, int instID, const char* umlDataString);
 DART_EXPORT void sequence_destroy(UMLSequence* seq);
 DART_EXPORT FaustInstrument* sequence_get_instrument(UMLSequence* seq);
+DART_EXPORT FaustInstrument* instrument_create(int instrumentID, int execType, float sampleRate);
+DART_EXPORT void instrument_destroy(FaustInstrument* inst);
 DART_EXPORT void instrument_set_parameter(FaustInstrument* inst, const char* name, float value);
+DART_EXPORT void instrument_set_weight(FaustInstrument* inst, float weight);
+DART_EXPORT float instrument_get_weight(FaustInstrument* inst);
+DART_EXPORT void instrument_note_on(FaustInstrument* inst, float freq, float velocity, float strike);
+DART_EXPORT void instrument_note_off(FaustInstrument* inst);
+DART_EXPORT void instrument_render(FaustInstrument* inst, float* buffer, int numFrames);
 DART_EXPORT double sequence_get_bpm(UMLSequence* seq);
 DART_EXPORT int sequence_get_grid(UMLSequence* seq);
 

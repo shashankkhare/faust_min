@@ -132,6 +132,12 @@ public:
      */
     void setParameter(const std::string& name, const std::string& param, float value);
 
+    /**
+     * @brief Enable or disable global looping. When true, all sequences restart once all have finished.
+     */
+    void setLooping(bool state) { mLooping.store(state, std::memory_order_relaxed); }
+    bool isLooping() const { return mLooping.load(std::memory_order_relaxed); }
+
 
 
 
@@ -197,6 +203,7 @@ private:
     std::mutex mStateMutex;
     std::atomic<bool> mIsPaused{false};
     std::atomic<bool> mHumanize{true};
+    std::atomic<bool> mLooping{false};
 
     using SnapshotVec = std::vector<std::shared_ptr<ActiveSequence>>;
     std::shared_ptr<SnapshotVec> mRenderSnapshot; 

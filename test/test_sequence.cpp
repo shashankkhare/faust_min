@@ -51,16 +51,21 @@ void playSequenceGroup(FaustMixer& mixer, SequenceOrchestrator& orch, SequenceGr
         mixer.registerInstrument(seqPair.second->getFaustInstrument(), group.volumes[i]);
     }
 
+    // Enable looping feature
+    orch.setLooping(true);
+
     // 2. Play
     for (auto& seqPair : group.sequences) {
         orch.play(seqPair.first);
     }
 
-    std::cout << "[Playback] Playing for " << durationSeconds << " seconds. Listen closely..." << std::endl;
-    for (int i = 0; i < durationSeconds; ++i) {
-        std::cout << "  " << (durationSeconds - i) << "s remaining..." << std::endl;
-        sleep(1);
-    }
+    // Play indefinitely until user presses a key
+    std::cout << "[Playback] Playing Sequence (Looping Enabled). Press ENTER to stop..." << std::endl;
+    
+    // Clear the input buffer from the previous selection
+    std::cin.ignore(10000, '\n');
+    // Wait for the user to press ENTER
+    std::cin.get();
 
     // 3. Stop and Unload
     orch.stop();
@@ -108,14 +113,16 @@ int main(int argc, char* argv[]) {
             std::cout << "  4. Tibetan Bowl with Rain (Bowl, Bell, Rainmaker)" << std::endl;
             std::cout << "  5. Acoustic Hotel California (Acoustic Guitar, 3 Congas, Bass, Drums)" << std::endl;
             std::cout << "  6. Sitar — Raag Yaman + Tabla" << std::endl;
-            std::cout << "  7. Exit" << std::endl;
-            std::cout << ">>> Enter selection (1-7): ";
+            std::cout << "  7. Indian Folk (Dholak Percussion)" << std::endl;
+            std::cout << "  8. Punjabi Folk (Dhol Percussion)" << std::endl;
+            std::cout << "  9. Exit" << std::endl;
+            std::cout << ">>> Enter selection (1-9): ";
             if (!(std::cin >> selection)) {
                 break;
             }
         }
 
-        if (selection == 7) {
+        if (selection == 9) {
             break;
         }
 
@@ -127,17 +134,19 @@ int main(int argc, char* argv[]) {
             
             std::string umlTanpura = 
                 "grid: 2\n"
-                "basefreq: 130.81\n"
+                "basefreq: 111.0\n"
                 "instrument: tanpura\n"
                 "notation: Indian\n"
                 "\n"
-                "5Sa...... 5Sa...... 5Sa...... 5Sa......";
+                "5Sa............... _............... "
+                "5Sa............... _...............";
                 
             std::string umlBansuri = 
                 "grid: 4\n"
-                "basefreq: 261.63\n"
+                "basefreq: 222\n"
                 "instrument: bansuri\n"
                 "notation: Indian\n"
+                "parameters: vibrato=0.8\n"
                 "\n"
                 "6Sa...6Re...6Ga...6Pa...6Dha...6Pa...6Ga...6Re... "
                 "6Sa...6Ga...6Pa...6Dha...6Pa...6Ga...6Re...6Sa..._ "
@@ -150,6 +159,7 @@ int main(int argc, char* argv[]) {
                 
             std::string umlDayan = 
                 "grid: 4\n"
+                "basefreq: 222\n"
                 "instrument: dayan\n"
                 "\n"
                 "Na... Tin... Tun... tk... Na... Tin... Na... tk... "
@@ -160,6 +170,7 @@ int main(int argc, char* argv[]) {
 
             std::string umlBayan = 
                 "grid: 4\n"
+                "basefreq: 111\n"
                 "instrument: bayan\n"
                 "\n"
                 "Ghe... _... _... Ka... _... Ka... Ghe... _... "
@@ -173,7 +184,7 @@ int main(int argc, char* argv[]) {
             group.sequences.push_back({"Dayan", new UMLSequence("Dayan", 0, umlDayan)});
             group.sequences.push_back({"Bayan", new UMLSequence("Bayan", 1, umlBayan)});
             
-            group.volumes = { 1.2f, 0.9f, 0.9f, 1.0f };
+            group.volumes = { 2.2f, 0.9f, 0.9f, 1.0f };
             duration = 16;
         } else if (selection == 2) {
             group.name = "Jazz Ensemble";
@@ -255,6 +266,7 @@ int main(int argc, char* argv[]) {
                 "bpm: 60\n"
                 "instrument: electricguitar\n"
                 "notation: Western\n"
+                "parameters: drive=0.75,sustain=0.8\n"
                 "\n"
                 // Measure 1-4 (Bm, F#, A, E)
                 "B3 D4 F#4 D4 B3 D4 F#4 D4 "
@@ -286,7 +298,10 @@ int main(int argc, char* argv[]) {
                 // Measures 1-8 (Bm, F#, A, E, G, D, Em, F#)
                 "B1. B1. F#1. F#1. A1. A1. E1. E1. "
                 "G1. G1. D2. D2. E1. E1. F#1. F#1. "
-                // Repeat Measures 1-8
+                "B1. B1. F#1. F#1. A1. A1. E1. E1. "
+                "G1. G1. D2. D2. E1. E1. F#1. F#1. "
+                "B1. B1. F#1. F#1. A1. A1. E1. E1. "
+                "G1. G1. D2. D2. E1. E1. F#1. F#1. "
                 "B1. B1. F#1. F#1. A1. A1. E1. E1. "
                 "G1. G1. D2. D2. E1. E1. F#1. F#1.";
                 
@@ -295,20 +310,28 @@ int main(int argc, char* argv[]) {
                 "bpm: 60\n"
                 "instrument: kick\n"
                 "\n"
-                "8x. 8x. 8x. 8x. 8x. 8x. 8x. 8x. "
-                "8x. 8x. 8x. 8x. 8x. 8x. 8x. 8x. "
-                "8x. 8x. 8x. 8x. 8x. 8x. 8x. 8x. "
-                "8x. 8x. 8x. 8x. 8x. 8x. 8x. 8x.";
+                "8x _ _ 8x  _ 8x _ _  8x _ _ 8x  _ _ 8x _ "
+                "8x _ _ _  8x 8x _ _  8x _ 8x _  _ _ 8x _ "
+                "8x _ 8x _  _ 8x _ 8x  8x _ _ _  8x 8x _ _ "
+                "8x _ _ 8x  _ _ 8x _  8x 8x _ 8x  _ 8x 8x _ "
+                "8x _ _ 8x  _ 8x _ _  8x _ _ 8x  _ _ 8x _ "
+                "8x _ _ _  8x 8x _ _  8x _ 8x _  _ _ 8x _ "
+                "8x _ 8x _  _ 8x _ 8x  8x _ _ _  8x 8x _ _ "
+                "8x _ _ 8x  _ _ 8x _  8x 8x _ 8x  _ 8x 8x _";
                 
             std::string umlSnare = 
                 "grid: 4\n"
                 "bpm: 60\n"
                 "instrument: snare\n"
                 "\n"
-                "_. 8x. _. 8x. _. 8x. _. 8x. "
-                "_. 8x. _. 8x. _. 8x. _. 8x. "
-                "_. 8x. _. 8x. _. 8x. _. 8x. "
-                "_. 8x. _. 8x. _. 8x. _. 8x.";
+                "_ _ _ _ 8x _ _ 8x _ _ _ _ 8x _ _ _ "
+                "_ _ _ 8x 8x _ _ _ _ 8x _ _ 8x _ 8x 8x "
+                "_ _ _ _ 8x _ _ _ _ _ 8x _ 8x _ _ _ "
+                "_ _ 8x _ 8x _ _ 8x _ 8x _ 8x 8x 8x 8x 8x "
+                "_ _ _ _ 8x _ _ 8x _ _ _ _ 8x _ _ _ "
+                "_ _ _ 8x 8x _ _ _ _ 8x _ _ 8x _ 8x 8x "
+                "_ _ _ _ 8x _ _ _ _ _ 8x _ 8x _ _ _ "
+                "_ 8x _ 8x 8x _ 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x";
                 
             std::string umlHihat = 
                 "grid: 4\n"
@@ -316,9 +339,13 @@ int main(int argc, char* argv[]) {
                 "instrument: hihat\n"
                 "\n"
                 "8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x "
+                "8x _ 8x _ 8x 8x 8x 8x 8x _ 8x _ 8x 8x 8x 8x "
+                "8x 8x 8x 8x _ 8x 8x 8x 8x 8x 8x 8x _ 8x 8x 8x "
+                "8x 8x 8x 8x 8x 8x 8x 8x 8x _ _ _ _ _ _ _ "
                 "8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x "
-                "8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x "
-                "8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x";
+                "8x _ 8x _ 8x 8x 8x 8x 8x _ 8x _ 8x 8x 8x 8x "
+                "8x 8x 8x 8x _ 8x 8x 8x 8x 8x 8x 8x _ 8x 8x 8x "
+                "8x 8x _ _ _ _ _ _ _ _ _ _ _ _ _ _";
 
             group.sequences.push_back({"RockEGuitar", new UMLSequence("RockEGuitar", 22, umlEGuitar)});
             group.sequences.push_back({"RockBGuitar", new UMLSequence("RockBGuitar", 23, umlBGuitar)});
@@ -336,29 +363,29 @@ int main(int argc, char* argv[]) {
                 "grid: 1\n"
                 "instrument: rainmaker\n"
                 "\n"
-                "8x................................";
+                "7x..............................7x.";
                 
             std::string umlBowl = 
                 "grid: 2\n"
-                "basefreq: 140.0\n"
+                "basefreq: 111.0\n"
                 "instrument: bowl\n"
                 "notation: Indian\n"
                 "\n"
-                "8Sa................ 8Ga................ 8Pa................ 8Sa................";
+                "8Sa................ 8Sa................ 8Sa................ 8Sa................";
                 
-            std::string umlBell = 
+            std::string umlBell =  
                 "grid: 2\n"
-                "basefreq: 440.0\n"
+                "basefreq: 222.0\n"
                 "instrument: bell\n"
                 "notation: Indian\n"
                 "\n"
-                "_... 6Sa................ 6Pa................ 6Ni................";
+                "6Sa.... 6r2.... 6Re.... 6g2.... 6Ga.... 6Ma.... 6M2.... 6Pa.... 6d2.... 6Dha.... 6n2.... 6Ni.... _...";
 
             group.sequences.push_back({"AmbientRain", new UMLSequence("AmbientRain", 19, umlRainmaker)});
             group.sequences.push_back({"AmbientBowl", new UMLSequence("AmbientBowl", 8, umlBowl)});
             group.sequences.push_back({"AmbientBell", new UMLSequence("AmbientBell", 7, umlBell)});
 
-            group.volumes = { 0.9f, 0.7f, 0.6f };
+            group.volumes = { 0.9f, 0.7f, 0.3f };
             duration = 20;
         } else if (selection == 5) {
             group.name = "Acoustic Hotel California (Acoustic Guitar, 3 Congas, Bass, Drums)";
@@ -612,6 +639,40 @@ int main(int argc, char* argv[]) {
             
             group.volumes = { 0.4f, 0.6f, 0.5f, 0.7f };
             duration = 20;
+        } else if (selection == 7) {
+            group.name = "Indian Folk (Dholak Percussion)";
+            
+            std::string umlDholak = 
+                "grid: 8\n"
+                "bpm: 60\n"
+                "basefreq: 110.0\n"
+                "instrument: dholak\n"
+                "\n"
+                "Dha _ Ge _ Na _ Ti _ Na _ Ke _ Dhin _ Na "
+                "Dha _ Ge _ Na _ Ti _ Na _ Ke _ Dhin _ Na "
+                "Dha _ Ge _ Na _ Ti _ Na _ Ke _ Dhin _ Na "
+                "Dha _ Ge _ Na _ Ti _ Na _ Ke _ Dhin _ Na";
+                
+            group.sequences.push_back({"Dholak", new UMLSequence("Dholak", 37, umlDholak)});
+            group.volumes = { 0.8f };
+            duration = 16;
+        } else if (selection == 8) {
+            group.name = "Punjabi Folk (Dhol Percussion)";
+            
+            std::string umlDhol = 
+                "grid: 8\n"
+                "bpm: 60\n"
+                "basefreq: 110.0\n"
+                "instrument: dhol\n"
+                "\n"
+                "Dha _ Na _ Tin _ Na _ Dha _ Ge _ Na _ Ti "
+                "Dha _ Na _ Tin _ Na _ Dha _ Ge _ Na _ Ti "
+                "Dha _ Na _ Tin _ Na _ Dha _ Ge _ Na _ Ti "
+                "Dha _ Na _ Tin _ Na _ Dha _ Ge _ Na _ Ti";
+
+            group.sequences.push_back({"Dhol", new UMLSequence("Dhol", 38, umlDhol)});
+            group.volumes = { 0.8f };
+            duration = 16;
         }
 
         if (!group.sequences.empty()) {

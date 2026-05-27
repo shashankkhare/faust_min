@@ -199,6 +199,10 @@ DART_EXPORT void instrument_note_off(FaustInstrument* inst) {
     if (inst) inst->noteOff();
 }
 
+DART_EXPORT void instrument_render(FaustInstrument* inst, float* buffer, int numFrames) {
+    if (inst && buffer) inst->render(numFrames, buffer);
+}
+
 // --- Manual Factory Endpoints (Optional bypass for specialized UI) ---
 
 DART_EXPORT FaustFlute* flute_create(float sampleRate) { return new FaustFlute(sampleRate); }

@@ -311,6 +311,59 @@ void UMLParser::handlePercussionToken(const std::string& tokenNoteName, float am
             // Fallback: allow generic tabla tokens to still work
             ev.strikeVal = static_cast<float>(percussionBols.at(tokenNoteName));
         }
+    } else if (instID == 37) { // Dholak
+        float bassF = 98.0f;
+        if (baseFreq > 0.0 && std::abs(baseFreq - 261.63) > 0.01) {
+            bassF = static_cast<float>(baseFreq);
+        }
+        ev.frequency = bassF;
+
+        bool isOpenBass = (tokenNoteName == "Ge" || tokenNoteName == "ge" || tokenNoteName == "Ghe" || tokenNoteName == "ghe" || tokenNoteName == "bass");
+        bool isClosedBass = (tokenNoteName == "Ke" || tokenNoteName == "ke" || tokenNoteName == "Ka" || tokenNoteName == "ka");
+        bool isOpenTreble = (tokenNoteName == "Na" || tokenNoteName == "na" || tokenNoteName == "Ta" || tokenNoteName == "ta" || tokenNoteName == "treble");
+        bool isClosedTreble = (tokenNoteName == "Tin" || tokenNoteName == "tin" || tokenNoteName == "Ti" || tokenNoteName == "ti" ||
+                               tokenNoteName == "Tun" || tokenNoteName == "tun" || tokenNoteName == "Tu" || tokenNoteName == "tu");
+        bool isComposite = (tokenNoteName == "Dha" || tokenNoteName == "dha" || tokenNoteName == "Dhin" || tokenNoteName == "dhin");
+
+        if (isComposite) {
+            ev.strikeVal = 4.0f;
+        } else if (isOpenBass) {
+            ev.strikeVal = 0.0f;
+        } else if (isClosedBass) {
+            ev.strikeVal = 1.0f;
+        } else if (isOpenTreble) {
+            ev.strikeVal = 2.0f;
+        } else if (isClosedTreble) {
+            ev.strikeVal = 3.0f;
+        } else {
+            ev.strikeVal = 0.0f;
+        }
+    } else if (instID == 38) { // Dhol
+        float bassF = 65.4f;
+        if (baseFreq > 0.0 && std::abs(baseFreq - 261.63) > 0.01) {
+            bassF = static_cast<float>(baseFreq);
+        }
+        ev.frequency = bassF;
+
+        bool isOpenBass = (tokenNoteName == "Ge" || tokenNoteName == "ge" || tokenNoteName == "Ghe" || tokenNoteName == "ghe" || tokenNoteName == "Dagga" || tokenNoteName == "dagga" || tokenNoteName == "bass");
+        bool isClosedBass = (tokenNoteName == "Ke" || tokenNoteName == "ke" || tokenNoteName == "Ka" || tokenNoteName == "ka");
+        bool isOpenTreble = (tokenNoteName == "Na" || tokenNoteName == "na" || tokenNoteName == "Ta" || tokenNoteName == "ta" || tokenNoteName == "Tilli" || tokenNoteName == "tilli" || tokenNoteName == "treble");
+        bool isClosedTreble = (tokenNoteName == "Tin" || tokenNoteName == "tin" || tokenNoteName == "Ti" || tokenNoteName == "ti");
+        bool isComposite = (tokenNoteName == "Dha" || tokenNoteName == "dha" || tokenNoteName == "Dhin" || tokenNoteName == "dhin");
+
+        if (isComposite) {
+            ev.strikeVal = 4.0f;
+        } else if (isOpenBass) {
+            ev.strikeVal = 0.0f;
+        } else if (isClosedBass) {
+            ev.strikeVal = 1.0f;
+        } else if (isOpenTreble) {
+            ev.strikeVal = 2.0f;
+        } else if (isClosedTreble) {
+            ev.strikeVal = 3.0f;
+        } else {
+            ev.strikeVal = 0.0f;
+        }
     } else if (percussionBols.count(tokenNoteName)) {
         ev.strikeVal = static_cast<float>(percussionBols.at(tokenNoteName));
     }
