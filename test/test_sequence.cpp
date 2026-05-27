@@ -643,7 +643,7 @@ int main(int argc, char* argv[]) {
             group.name = "Indian Folk (Dholak Percussion)";
             
             std::string umlDholak = 
-                "grid: 16\n"
+                "grid: 4\n"
                 "bpm: 120\n"
                 "basefreq: 110.0\n"
                 "instrument: dholak\n"
@@ -668,7 +668,7 @@ int main(int argc, char* argv[]) {
             group.name = "Punjabi Folk (Dhol Percussion)";
             
             std::string umlDhol = 
-                "grid: 16\n"
+                "grid: 4\n"
                 "bpm: 120\n"
                 "basefreq: 110.0\n"
                 "instrument: dhol\n"
