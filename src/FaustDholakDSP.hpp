@@ -270,7 +270,7 @@ class FaustDholakDSP : public dsp {
 	
 	virtual void compute(int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs) {
 		FAUSTFLOAT* output0 = outputs[0];
-		float fSlow0 = (1.04999995f * float(fHslider0));
+		float fSlow0 = (1.25f * float(fHslider0));
 		float fSlow1 = float(fHslider1);
 		float fSlow2 = float(fHslider2);
 		int iSlow3 = (fSlow2 == 1.0f);
@@ -322,7 +322,7 @@ class FaustDholakDSP : public dsp {
 			fRec10[0] = (fTemp6 + (fSlow24 * ((fSlow25 * fRec10[1]) - (fSlow24 * fRec10[2]))));
 			fRec11[0] = (fTemp6 + (fSlow26 * ((fSlow27 * fRec11[1]) - (fSlow26 * fRec11[2]))));
 			fRec12[0] = (fTemp6 + (fSlow28 * ((fSlow29 * fRec12[1]) - (fSlow28 * fRec12[2]))));
-			float fTemp7 = float(tanhf(float((14.0f * ((0.899999976f * ((fRec1[0] + (0.5f * fRec5[0])) + (0.200000003f * fRec6[0]))) + (1.10000002f * (((fRec7[0] + (0.550000012f * fRec10[0])) + (0.25f * fRec11[0])) + (0.100000001f * fRec12[0]))))))));
+			float fTemp7 = float(tanhf(float((16.0f * ((0.949999988f * ((fRec1[0] + (0.5f * fRec5[0])) + (0.200000003f * fRec6[0]))) + (1.14999998f * (((fRec7[0] + (0.550000012f * fRec10[0])) + (0.25f * fRec11[0])) + (0.100000001f * fRec12[0]))))))));
 			fVec2[0] = fTemp7;
 			fRec0[0] = (0.0f - (fConst2 * ((fConst3 * fRec0[1]) - (fTemp7 + fVec2[1]))));
 			output0[i0] = FAUSTFLOAT((fSlow0 * fRec0[0]));
