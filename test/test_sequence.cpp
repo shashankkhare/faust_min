@@ -660,15 +660,15 @@ int main(int argc, char* argv[]) {
             group.name = "Punjabi Folk (Dhol Percussion)";
             
             std::string umlDhol = 
-                "grid: 8\n"
-                "bpm: 60\n"
+                "grid: 16\n"
+                "bpm: 120\n"
                 "basefreq: 110.0\n"
                 "instrument: dhol\n"
                 "\n"
-                "Dha _ Na _ Tin _ Na _ Dha _ Ge _ Na _ Ti "
-                "Dha _ Na _ Tin _ Na _ Dha _ Ge _ Na _ Ti "
-                "Dha _ Na _ Tin _ Na _ Dha _ Ge _ Na _ Ti "
-                "Dha _ Na _ Tin _ Na _ Dha _ Ge _ Na _ Ti";
+                "Dha _ _ Na Na _ _ Na Na _ _ Dha Dha _ _ Na "
+                "Dha _ _ Na Na _ _ Na Na _ _ Dha Dha _ _ Na "
+                "Dha _ _ Na Na _ _ Tin Na _ _ Dha Dha _ _ Na "
+                "Dha _ _ Na Na _ _ Tin Na _ _ Dha Dha _ _ Na";
 
             group.sequences.push_back({"Dhol", new UMLSequence("Dhol", 38, umlDhol)});
             group.volumes = { 0.8f };

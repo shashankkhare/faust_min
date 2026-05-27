@@ -3,7 +3,7 @@ import("stdfaust.lib");
 // --- Punjabi Dhol (Bhangra Drum) Physical Model (Multiphonic/Dual-Freq) ---
 
 freq = hslider("freq [unit:Hz]", 110.0, 40.0, 600.0, 0.1);      // Left Head (Dagga/Bass)
-freq1 = hslider("freq1 [unit:Hz]", 660.0, 100.0, 1200.0, 0.1);  // Right Head (Tilli/Treble)
+freq1 = hslider("freq1 [unit:Hz]", 880.0, 100.0, 1500.0, 0.1);  // Right Head (Tilli/Treble - thin skin)
 strike = hslider("strike", 0, 0, 4, 1);                       // 0=Dagga open, 1=Dagga closed, 2=Tilli open, 3=Tilli closed, 4=Composite Dha
 gain = hslider("gain", 1.0, 0.0, 2.0, 0.01);
 velocity = hslider("velocity", 1.0, 0.0, 1.0, 0.01);
@@ -56,10 +56,11 @@ tilli_m2_g = ba.if(strike == 3, 0.80, 0.75);
 tilli_m3_g = ba.if(strike == 3, 1.00, 0.50);
 tilli_m4_g = ba.if(strike == 3, 0.60, 0.25);
 
-tilli_mode1 = resonator(freq1 * 1.00, 0.12 * tilliDecay, tilli_m1_g, excitationTilli);
-tilli_mode2 = resonator(freq1 * 1.59, 0.06 * tilliDecay, tilli_m2_g, excitationTilli);
-tilli_mode3 = resonator(freq1 * 2.14, 0.03 * tilliDecay, tilli_m3_g, excitationTilli);
-tilli_mode4 = resonator(freq1 * 2.65, 0.01 * tilliDecay, tilli_m4_g, excitationTilli);
+// Modeled after an extremely thin, high-tension skin that oscillates faster (freq1=880Hz) and bounces/resonates more
+tilli_mode1 = resonator(freq1 * 1.00, 0.26 * tilliDecay, tilli_m1_g, excitationTilli);
+tilli_mode2 = resonator(freq1 * 1.59, 0.15 * tilliDecay, tilli_m2_g, excitationTilli);
+tilli_mode3 = resonator(freq1 * 2.14, 0.09 * tilliDecay, tilli_m3_g, excitationTilli);
+tilli_mode4 = resonator(freq1 * 2.65, 0.04 * tilliDecay, tilli_m4_g, excitationTilli);
 tilli_body = tilli_mode1 + tilli_mode2 + tilli_mode3 + tilli_mode4;
 
 // Output: Summed response of active heads (Tilli has higher relative gain to cut through)

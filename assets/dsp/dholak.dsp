@@ -30,9 +30,9 @@ trigDayan = trig * ((strike == 2) + (strike == 3) + (strike == 4) > 0);
 bayanDecay = decayScaleSlider * ba.if(strike == 1, 0.3, 1.0);
 dayanDecay = decayScaleSlider * ba.if(strike == 3, 0.25, 1.0);
 
-// Excitation mallet: Bayan is soft (80 Hz lowpass), Dayan is sharp (300 Hz lowpass)
-excitationBayan = trigBayan * velocity * 0.15 : fi.lowpass(4, 80.0);
-excitationDayan = trigDayan * velocity * 0.15 : fi.lowpass(4, 300.0);
+// Excitation mallet: Bayan is soft (110 Hz lowpass), Dayan is sharp (800 Hz lowpass)
+excitationBayan = trigBayan * velocity * 0.35 : fi.lowpass(4, 110.0);
+excitationDayan = trigDayan * velocity * 0.35 : fi.lowpass(4, 800.0);
 
 // 1. Bayan (Bass) - Includes hand heel pitch sliding
 bayan_pitch_env = en.ar(0.01, 0.25, trigBayan);
@@ -50,7 +50,7 @@ dayan_mode4 = resonator(freq1 * 2.30, 0.04 * dayanDecay, 0.10, excitationDayan);
 dayan_body = dayan_mode1 + dayan_mode2 + dayan_mode3 + dayan_mode4;
 
 // Output: Summed response of active heads
-drum_body = bayan_body + dayan_body;
+drum_body = bayan_body * 1.0 + dayan_body * 1.2;
 
-// Process: Waveshaping and 1st-order low-pass (cutoff at 450 Hz to keep Dayan ring clean)
-process = (drum_body * 12.0 : ma.tanh : fi.lowpass(1, 450.0)) * (gain * 0.85);
+// Process: Waveshaping and 1st-order low-pass (cutoff at 1200 Hz to let Dayan ring through)
+process = (drum_body * 18.0 : ma.tanh : fi.lowpass(1, 1200.0)) * (gain * 1.50);
