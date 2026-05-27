@@ -24,20 +24,25 @@ excDur = hslider("excDur", 0.0115, 0.0001, 1.0, 0.0001);
 excGain = hslider("excGain", 0.40, 0.0, 10.0, 0.01);
 excLPF = hslider("excLPF", 2000.0, 100.0, 20000.0, 1.0);
 dispersion = hslider("dispersion", 0.07, 0.0, 1.0, 0.0001);
-stringGainVal = hslider("stringGainVal", 1.0, 0.0, 2.0, 0.01);
+stringGainVal0 = hslider("stringGainVal0", 1.0, 0.0, 2.0, 0.01);
+stringGainVal1 = hslider("stringGainVal1", 1.0, 0.0, 2.0, 0.01);
+stringGainVal2 = hslider("stringGainVal2", 1.0, 0.0, 2.0, 0.01);
+stringGainVal3 = hslider("stringGainVal3", 1.0, 0.0, 2.0, 0.01);
 
 // =====================================================
 // SEQUENTIAL PLUCKS
 // =====================================================
 
-// Rising edge detector (1-sample impulse per note-on)
-rawTrig = (gate - gate') > 0.0;
+// Internal delay timer controls the gate of each string from the global gate
+gate0 = gate;
+gate1 = gate @ ba.sec2samp(0.5);
+gate2 = gate @ ba.sec2samp(1.0);
+gate3 = gate @ ba.sec2samp(1.5);
 
-// Each string gets the raw trigger with staggered delays
-t0 = rawTrig;
-t1 = rawTrig @ ba.sec2samp(0.5);
-t2 = rawTrig @ ba.sec2samp(1.0);
-t3 = rawTrig @ ba.sec2samp(1.5);
+t0 = (gate0 - gate0') > 0.0;
+t1 = (gate1 - gate1') > 0.0;
+t2 = (gate2 - gate2') > 0.0;
+t3 = (gate3 - gate3') > 0.0;
 
 // =====================================================
 // STRING TUNING
@@ -58,7 +63,7 @@ stringFreq(i) =
 // LOOP FEEDBACK COEFFICIENT FROM SUSTAIN (T60 DECAY)
 // =====================================================
 
-feedback(freqVal, susVal) = exp(-3.0 / (max(0.1, susVal) * freqVal));
+feedback(freqVal, susVal) = exp(-3.0 / (max(0.001, susVal) * ma.SR));
 
 // =====================================================
 // EXCITATION (gated by exciteActive)
@@ -66,54 +71,41 @@ feedback(freqVal, susVal) = exp(-3.0 / (max(0.1, susVal) * freqVal));
 
 pluckExcitation(freqVal, exciteActive) =
     no.noise
-    * exciteActive
+    * en.ar(excDur, excDur * 0.5, exciteActive)
     * excGain
     * velocity
-    : fi.lowpass(1, excLPF);
+    * 0.3
+    : fi.lowpass(2, freqVal * 3.0);
+
 
 // =====================================================
-// FREQUENCY-NORMALIZED JAWARI
+// STRING MODEL WITH JAWARI AT BRIDGE TERMINATION
 // =====================================================
 
-jivariBridge(freqVal, y) =
-    (y * 0.9997) + sparkle
+// Jawari bridge reflection (matches sitar's fold-over approach)
+bridgeReflection(y) = ba.if(y > jivariThreshold, jivariThreshold - delta * (dispersion + jivari * dispersion), y) : min(1.2) : max(-1.2)
 with {
-    thresh = jivariThreshold;
-    jAmt = jivari;
-    env = abs(y) : si.smooth(0.997);
-    excite = max(0.0, env - thresh);
-    transient = (y - y') : fi.highpass(1, 2200);
-    sparkle = transient * excite * jAmt;
+    delta = y - jivariThreshold;
 };
 
-// =====================================================
-// STRING MODEL
-// =====================================================
-
-jivariString(freqVal, trigSig, susVal) =
+stringLoop(freqVal, trigSig, susVal) =
     pluckExcitation(freqVal, exciteActive)
     :
     + ~
     (
         de.fdelay(8192, ma.SR / max(20.0, freqVal) - 2.0)
-        : jivariBridge(freqVal)
         : fi.allpassnn(1, dispersion)
+        : bridgeReflection
         : *(feedback(freqVal, susVal))
         : *(1.0 - perStringTrig)
     )
 with {
-    // Rising edge of this string's trigger
     perStringTrig = (trigSig - trigSig') > 0.0;
-
-    // Counter-based pulse
     exciteTimer = perStringTrig : trig_pulse
     with {
         trig_pulse(t) = loop ~ _
         with {
-            loop(cnt) = ba.if(t > 0.0,
-                ba.sec2samp(excDur),
-                max(0.0, cnt - 1.0)
-            );
+            loop(cnt) = ba.if(t > 0.0, ba.sec2samp(excDur), max(0.0, cnt - 1.0));
         };
     };
     exciteActive = exciteTimer : >(0.0);
@@ -123,10 +115,10 @@ with {
 // STRINGS
 // =====================================================
 
-s0 = jivariString(stringFreq(0), t0, sustain0) * stringGainVal;
-s1 = jivariString(stringFreq(1), t1, sustain1) * stringGainVal;
-s2 = jivariString(stringFreq(2), t2, sustain2) * stringGainVal;
-s3 = jivariString(stringFreq(3), t3, sustain3) * stringGainVal;
+s0 = stringLoop(stringFreq(0), t0, sustain0) * stringGainVal0;
+s1 = stringLoop(stringFreq(1), t1, sustain1) * stringGainVal1;
+s2 = stringLoop(stringFreq(2), t2, sustain2) * stringGainVal2;
+s3 = stringLoop(stringFreq(3), t3, sustain3) * stringGainVal3;
 
 // =====================================================
 // MIX
@@ -137,6 +129,7 @@ mix =
         s0 + s1 + s2 + s3
     )
     * 0.25
+    * 30.0
     * gain;
 
 // =====================================================

@@ -170,6 +170,17 @@ void FaustInstrument::unloadDSP() {
 }
 
 void FaustInstrument::loadTargetDSP() {
+    // Force StaticCompiled execution mode for complex physical model DSPs that cause libfaust interpreter stack overflows
+    if (mExecType == DSPExecutionType::InterpretedByte) {
+        if (mInstrumentID == 0 || mInstrumentID == 1 || mInstrumentID == 9 || mInstrumentID == 11 || 
+            mInstrumentID == 12 || mInstrumentID == 13 || mInstrumentID == 15 || mInstrumentID == 16 || 
+            mInstrumentID == 17 || mInstrumentID == 18 || mInstrumentID == 21 || mInstrumentID == 22 || 
+            mInstrumentID == 23 || mInstrumentID == 24 || mInstrumentID == 28 || mInstrumentID == 29 || 
+            mInstrumentID == 30 || mInstrumentID == 31 || mInstrumentID == 32 || mInstrumentID == 35) {
+            mExecType = DSPExecutionType::StaticCompiled;
+        }
+    }
+
     if (!mVoices.empty()) return;
     unloadDSP();
 
@@ -316,6 +327,8 @@ void FaustInstrument::loadTargetDSP() {
                     initializeVoices();
                 } else {
                     std::cerr << "[Native] WARNING: Interpreter factory failed to instantiate DSP (libfaust limitation). Falling back to StaticCompiled mode." << std::endl;
+                    mVoiceUIs.clear();
+                    mVoices.clear();
                     deleteInterpreterDSPFactory(factory);
                     mDSPFactory = nullptr;
                     mExecType = DSPExecutionType::StaticCompiled;
@@ -324,6 +337,8 @@ void FaustInstrument::loadTargetDSP() {
             } else {
                 std::cerr << "[Native] Faust Compilation failed for ID " << mInstrumentID << ": " << err << std::endl;
                 std::cerr << "[Native] Falling back to StaticCompiled mode." << std::endl;
+                mVoiceUIs.clear();
+                mVoices.clear();
                 mExecType = DSPExecutionType::StaticCompiled;
                 loadTargetDSP();
             }
