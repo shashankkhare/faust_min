@@ -643,19 +643,27 @@ int main(int argc, char* argv[]) {
             group.name = "Indian Folk (Dholak Percussion)";
             
             std::string umlDholak = 
-                "grid: 8\n"
-                "bpm: 60\n"
+                "grid: 16\n"
+                "bpm: 120\n"
                 "basefreq: 110.0\n"
                 "instrument: dholak\n"
                 "\n"
-                "Dha _ Ge _ Na _ Ti _ Na _ Ke _ Dhin _ Na "
-                "Dha _ Ge _ Na _ Ti _ Na _ Ke _ Dhin _ Na "
-                "Dha _ Ge _ Na _ Ti _ Na _ Ke _ Dhin _ Na "
-                "Dha _ Ge _ Na _ Ti _ Na _ Ke _ Dhin _ Na";
+                "Dha _ _ Na Na _ _ Na Na _ _ Dha Dha _ _ Na "
+                "Dha _ _ Na Na _ _ Na Na _ _ Dha Dha _ _ Na "
+                "Dha _ _ Na Na _ _ Tin Na _ _ Dha Dha _ _ Na "
+                "Dha _ _ Na Na _ _ Tin Na _ _ Dha Dha _ _ Na "
+                "Dha _ Ge _ Dha _ _ Na Dha _ Ge _ Dha _ _ Na "
+                "Dha _ Ge _ Dha _ _ Na Dha _ Ge _ Dha _ _ Na "
+                "Dha _ Ge _ Dha _ _ Tin Dha _ Ge _ Dha _ _ Tin "
+                "Dha _ Ge _ Dha _ _ Tin Dha _ Ge _ Dha _ _ Tin "
+                "Dha _ _ Na Dha Dha _ Na Dha _ _ Na Dha Dha _ Na "
+                "Dha _ _ Na Dha Dha _ Na Dha _ _ Na Dha Dha _ Na "
+                "Dha _ _ Na Dha Dha _ Tin Dha _ _ Na Dha Dha _ Tin "
+                "Dha _ _ Na Dha Dha _ Tin Dha _ _ Na Dha Dha _ Tin";
                 
             group.sequences.push_back({"Dholak", new UMLSequence("Dholak", 37, umlDholak)});
             group.volumes = { 0.8f };
-            duration = 16;
+            duration = 48;
         } else if (selection == 8) {
             group.name = "Punjabi Folk (Dhol Percussion)";
             
@@ -668,11 +676,19 @@ int main(int argc, char* argv[]) {
                 "Dha _ _ Na Na _ _ Na Na _ _ Dha Dha _ _ Na "
                 "Dha _ _ Na Na _ _ Na Na _ _ Dha Dha _ _ Na "
                 "Dha _ _ Na Na _ _ Tin Na _ _ Dha Dha _ _ Na "
-                "Dha _ _ Na Na _ _ Tin Na _ _ Dha Dha _ _ Na";
+                "Dha _ _ Na Na _ _ Tin Na _ _ Dha Dha _ _ Na "
+                "Dha _ Ge _ Dha _ _ Na Dha _ Ge _ Dha _ _ Na "
+                "Dha _ Ge _ Dha _ _ Na Dha _ Ge _ Dha _ _ Na "
+                "Dha _ Ge _ Dha _ _ Tin Dha _ Ge _ Dha _ _ Tin "
+                "Dha _ Ge _ Dha _ _ Tin Dha _ Ge _ Dha _ _ Tin "
+                "Dha _ _ Na Dha Dha _ Na Dha _ _ Na Dha Dha _ Na "
+                "Dha _ _ Na Dha Dha _ Na Dha _ _ Na Dha Dha _ Na "
+                "Dha _ _ Na Dha Dha _ Tin Dha _ _ Na Dha Dha _ Tin "
+                "Dha _ _ Na Dha Dha _ Tin Dha _ _ Na Dha Dha _ Tin";
 
             group.sequences.push_back({"Dhol", new UMLSequence("Dhol", 38, umlDhol)});
             group.volumes = { 0.8f };
-            duration = 16;
+            duration = 48;
         }
 
         if (!group.sequences.empty()) {
