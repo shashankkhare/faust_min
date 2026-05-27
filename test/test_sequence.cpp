@@ -113,8 +113,8 @@ int main(int argc, char* argv[]) {
             std::cout << "  4. Tibetan Bowl with Rain (Bowl, Bell, Rainmaker)" << std::endl;
             std::cout << "  5. Acoustic Hotel California (Acoustic Guitar, 3 Congas, Bass, Drums)" << std::endl;
             std::cout << "  6. Sitar — Raag Yaman + Tabla" << std::endl;
-            std::cout << "  7. Indian Folk (Dholak Percussion)" << std::endl;
-            std::cout << "  8. Punjabi Folk (Dhol Percussion)" << std::endl;
+            std::cout << "  7. North Indian Folk (Dholak Percussion)" << std::endl;
+            std::cout << "  8. Punjabi Folk (Bhangra beats)" << std::endl;
             std::cout << "  9. Exit" << std::endl;
             std::cout << ">>> Enter selection (1-9): ";
             if (!(std::cin >> selection)) {
@@ -648,14 +648,14 @@ int main(int argc, char* argv[]) {
                 "basefreq: 110.0\n"
                 "instrument: dholak\n"
                 "\n"
+                "Dha _ _ _ _ _ Na _ Na _ _ _ _ _ Na _ "
+                "Na _ _ _ _ _ Dha _ Dha _ _ _ _ _ Na _ "
+                "Dha _ _ _ _ _ Na _ Na _ _ _ _ _ Na _ "
+                "Na _ _ _ _ _ Dha _ Dha _ _ _ _ _ Na _ "
                 "Dha _ _ Na Na _ _ Na Na _ _ Dha Dha _ _ Na "
                 "Dha _ _ Na Na _ _ Na Na _ _ Dha Dha _ _ Na "
                 "Dha _ _ Na Na _ _ Tin Na _ _ Dha Dha _ _ Na "
                 "Dha _ _ Na Na _ _ Tin Na _ _ Dha Dha _ _ Na "
-                "Dha _ Ge _ Dha _ _ Na Dha _ Ge _ Dha _ _ Na "
-                "Dha _ Ge _ Dha _ _ Na Dha _ Ge _ Dha _ _ Na "
-                "Dha _ Ge _ Dha _ _ Tin Dha _ Ge _ Dha _ _ Tin "
-                "Dha _ Ge _ Dha _ _ Tin Dha _ Ge _ Dha _ _ Tin "
                 "Dha _ _ Na Dha Dha _ Na Dha _ _ Na Dha Dha _ Na "
                 "Dha _ _ Na Dha Dha _ Na Dha _ _ Na Dha Dha _ Na "
                 "Dha _ _ Na Dha Dha _ Tin Dha _ _ Na Dha Dha _ Tin "
@@ -673,14 +673,14 @@ int main(int argc, char* argv[]) {
                 "basefreq: 110.0\n"
                 "instrument: dhol\n"
                 "\n"
+                "Dha _ _ _ _ _ Na _ Na _ _ _ _ _ Na _ "
+                "Na _ _ _ _ _ Dha _ Dha _ _ _ _ _ Na _ "
+                "Dha _ _ _ _ _ Na _ Na _ _ _ _ _ Na _ "
+                "Na _ _ _ _ _ Dha _ Dha _ _ _ _ _ Na _ "
                 "Dha _ _ Na Na _ _ Na Na _ _ Dha Dha _ _ Na "
                 "Dha _ _ Na Na _ _ Na Na _ _ Dha Dha _ _ Na "
                 "Dha _ _ Na Na _ _ Tin Na _ _ Dha Dha _ _ Na "
                 "Dha _ _ Na Na _ _ Tin Na _ _ Dha Dha _ _ Na "
-                "Dha _ Ge _ Dha _ _ Na Dha _ Ge _ Dha _ _ Na "
-                "Dha _ Ge _ Dha _ _ Na Dha _ Ge _ Dha _ _ Na "
-                "Dha _ Ge _ Dha _ _ Tin Dha _ Ge _ Dha _ _ Tin "
-                "Dha _ Ge _ Dha _ _ Tin Dha _ Ge _ Dha _ _ Tin "
                 "Dha _ _ Na Dha Dha _ Na Dha _ _ Na Dha Dha _ Na "
                 "Dha _ _ Na Dha Dha _ Na Dha _ _ Na Dha Dha _ Na "
                 "Dha _ _ Na Dha Dha _ Tin Dha _ _ Na Dha Dha _ Tin "
