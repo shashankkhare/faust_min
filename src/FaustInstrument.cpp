@@ -68,6 +68,16 @@
 #include "FaustLagngaDSP.hpp"
 #include "FaustDholakDSP.hpp"
 #include "FaustDholDSP.hpp"
+#include "FaustTibetanbowlDSP.hpp"
+#include "FaustGuzhengDSP.hpp"
+#include "FaustErhuDSP.hpp"
+#include "FaustWindDSP.hpp"
+#include "FaustThunderDSP.hpp"
+#include "FaustDaguDSP.hpp"
+#include "FaustSarodDSP.hpp"
+#include "FaustSantoorDSP.hpp"
+#include "FaustTumbiDSP.hpp"
+#include "FaustNgachenDSP.hpp"
 #include <faust/dsp/interpreter-dsp.h>
 #include <cstring>
 #include <iostream>
@@ -160,6 +170,27 @@ void FaustInstrument::initializeVoices() {
             mGain = 1.0f;
         }
     }
+
+    // Pre-warm the DSP to settle any internal parameter smoothers (like the 80ms glide)
+    if (mSampleRate > 0) {
+        int numOutputs = mVoices[0]->getNumOutputs();
+        if (numOutputs > 0) {
+            int settleFrames = static_cast<int>(mSampleRate * 0.1f); // 100ms
+            float** dummyOutputs = new float*[numOutputs];
+            for (int i = 0; i < numOutputs; i++) {
+                dummyOutputs[i] = new float[settleFrames];
+            }
+            
+            for (auto& v : mVoices) {
+                v->compute(settleFrames, nullptr, dummyOutputs);
+            }
+            
+            for (int i = 0; i < numOutputs; i++) {
+                delete[] dummyOutputs[i];
+            }
+            delete[] dummyOutputs;
+        }
+    }
 }
 
 void FaustInstrument::unloadDSP() {
@@ -180,7 +211,10 @@ void FaustInstrument::loadTargetDSP() {
             mInstrumentID == 17 || mInstrumentID == 18 || mInstrumentID == 21 || mInstrumentID == 22 || 
             mInstrumentID == 23 || mInstrumentID == 24 || mInstrumentID == 28 || mInstrumentID == 29 || 
             mInstrumentID == 30 || mInstrumentID == 31 || mInstrumentID == 32 || mInstrumentID == 35 ||
-            mInstrumentID == 36 || mInstrumentID == 37 || mInstrumentID == 38) {
+            mInstrumentID == 36 || mInstrumentID == 37 || mInstrumentID == 38 || mInstrumentID == 39 ||
+            mInstrumentID == 40 || mInstrumentID == 41 || mInstrumentID == 42 || mInstrumentID == 43 ||
+            mInstrumentID == 44 || mInstrumentID == 45 || mInstrumentID == 46 || mInstrumentID == 47 ||
+            mInstrumentID == 48) {
             mExecType = DSPExecutionType::StaticCompiled;
         }
     }
@@ -297,6 +331,16 @@ void FaustInstrument::loadTargetDSP() {
                 case 36: addVoice(new FaustLagngaDSP()); break;
                 case 37: addVoice(new FaustDholakDSP()); break;
                 case 38: addVoice(new FaustDholDSP()); break;
+                case 39: addVoice(new FaustGuzhengDSP()); break;
+                case 40: addVoice(new FaustErhuDSP()); break;
+                case 41: addVoice(new FaustWindDSP()); break;
+                case 42: addVoice(new FaustThunderDSP()); break;
+                case 43: addVoice(new FaustDaguDSP()); break;
+                case 44: addVoice(new FaustSarodDSP()); break;
+                case 45: addVoice(new FaustSantoorDSP()); break;
+                case 46: addVoice(new FaustTumbiDSP()); break;
+                case 47: addVoice(new FaustTibetanbowlDSP()); break;
+                case 48: addVoice(new FaustNgachenDSP()); break;
                 default: addVoice(new FaustDayanDSP()); break;
             }
         }
@@ -739,10 +783,10 @@ void FaustInstrument::stopInternalStream() {
 void FaustInstrument::applyDynamicLUTParams(float freq, float amp, int voiceIndex) {
     if (!mLUTActive || mLUTRecords.empty()) return;
 
-    // Utilize normalized vector proximity distance: d = sqrt( ((f-f1)/(f+f1))^2 + ((a-a1)/(a+a1))^2 )
-    // Perform robust Inverse Distance Weighting (IDW) interpolation across all dynamic parameter columns
-    std::map<std::string, float> accumulatedParams;
-    std::map<std::string, float> totalWeights;
+    // Utilize normalized vector proximity squared distance: d = ((f-f1)/(f+f1))^2 + ((a-a1)/(a+a1))^2
+    // Snap parameters directly to the closest record (global minimum deviation)
+    const LUTRecord* bestRecord = nullptr;
+    float minDev = std::numeric_limits<float>::max();
 
     for (const auto& rec : mLUTRecords) {
         float fDenom = freq + rec.frequency;
@@ -751,28 +795,16 @@ void FaustInstrument::applyDynamicLUTParams(float freq, float amp, int voiceInde
         float aDenom = amp + rec.amplitude;
         float aNorm = (aDenom > 0.0001f) ? (amp - rec.amplitude) / aDenom : 0.0f;
 
-        float dist = std::sqrt(fNorm * fNorm + aNorm * aNorm);
-
-        // If extremely close to a calibrated node, snap directly to its targets to preserve boundary perfection
-        if (dist < 0.00001f) {
-            for (const auto& pair : rec.targetParams) {
-                setParam(pair.first.c_str(), pair.second, voiceIndex);
-            }
-            return;
-        }
-
-        float weight = 1.0f / (dist * dist);
-        for (const auto& pair : rec.targetParams) {
-            accumulatedParams[pair.first] += pair.second * weight;
-            totalWeights[pair.first] += weight;
+        float dev = fNorm * fNorm + aNorm * aNorm;
+        if (dev < minDev) {
+            minDev = dev;
+            bestRecord = &rec;
         }
     }
 
-    for (const auto& pair : accumulatedParams) {
-        float wSum = totalWeights[pair.first];
-        if (wSum > 0.0f) {
-            float val = pair.second / wSum;
-            setParam(pair.first.c_str(), val, voiceIndex);
+    if (bestRecord) {
+        for (const auto& pair : bestRecord->targetParams) {
+            setParamImmediate(pair.first.c_str(), pair.second, voiceIndex);
         }
     }
 }

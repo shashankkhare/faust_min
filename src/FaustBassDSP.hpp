@@ -1,7 +1,7 @@
 /* ------------------------------------------------------------
 name: "bass"
 Code generated with Faust 2.37.3 (https://faust.grame.fr)
-Compilation options: -lang cpp -es 1 -single -ftz 0
+Compilation options: -lang cpp -es 1 -single -ftz 1
 ------------------------------------------------------------ */
 
 #ifndef  __FaustBassDSP_H__
@@ -15,6 +15,7 @@ Compilation options: -lang cpp -es 1 -single -ftz 0
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <float.h>
 #include <math.h>
 
 static float FaustBassDSP_faustpower2_f(float value) {
@@ -65,7 +66,7 @@ class FaustBassDSP : public dsp {
 	void metadata(Meta* m) { 
 		m->declare("basics.lib/name", "Faust Basic Element Library");
 		m->declare("basics.lib/version", "0.2");
-		m->declare("compile_options", "-lang cpp -es 1 -single -ftz 0");
+		m->declare("compile_options", "-lang cpp -es 1 -single -ftz 1");
 		m->declare("delays.lib/name", "Faust Delay Library");
 		m->declare("delays.lib/version", "0.1");
 		m->declare("filename", "bass.dsp");
@@ -236,24 +237,31 @@ class FaustBassDSP : public dsp {
 		float fSlow17 = (fConst1 * float(fHslider4));
 		for (int i0 = 0; (i0 < count); i0 = (i0 + 1)) {
 			fVec0[0] = fSlow5;
-			fRec3[0] = (fSlow8 + (fConst2 * fRec3[1]));
+			float fTempFTZ0 = (fSlow8 + (fConst2 * fRec3[1]));
+			fRec3[0] = ((std::fabs(fTempFTZ0) > 1.17549435e-38f) ? fTempFTZ0 : 0.0f);
 			iRec5[0] = ((1103515245 * iRec5[1]) + 12345);
 			float fTemp0 = float(iRec5[0]);
 			fVec1[0] = fTemp0;
-			fRec4[0] = (fSlow11 * ((4.65661287e-10f * (fTemp0 + fVec1[1])) - (fSlow12 * fRec4[1])));
+			float fTempFTZ1 = (fSlow11 * ((4.65661287e-10f * (fTemp0 + fVec1[1])) - (fSlow12 * fRec4[1])));
+			fRec4[0] = ((std::fabs(fTempFTZ1) > 1.17549435e-38f) ? fTempFTZ1 : 0.0f);
 			float fThen1 = std::max<float>(0.0f, (fRec6[1] + -1.0f));
-			fRec6[0] = ((fSlow5 > fVec0[1]) ? fConst4 : fThen1);
+			float fTempFTZ2 = ((fSlow5 > fVec0[1]) ? fConst4 : fThen1);
+			fRec6[0] = ((std::fabs(fTempFTZ2) > 1.17549435e-38f) ? fTempFTZ2 : 0.0f);
 			float fTemp1 = ((0.5f * ((fSlow6 * (fRec2[1] + fRec2[2])) * std::pow(0.00100000005f, (fSlow7 / ((7.8499999f * fRec3[0]) + 0.150000006f))))) + (fSlow9 * (fRec4[0] * float((fRec6[0] > 0.0f)))));
 			fVec2[(IOTA & 16383)] = fTemp1;
-			fRec2[0] = ((fSlow4 * fVec2[((IOTA - iSlow14) & 16383)]) + (fSlow15 * fVec2[((IOTA - iSlow16) & 16383)]));
-			fRec7[0] = (fSlow17 + (fConst2 * fRec7[1]));
+			float fTempFTZ3 = ((fSlow4 * fVec2[((IOTA - iSlow14) & 16383)]) + (fSlow15 * fVec2[((IOTA - iSlow16) & 16383)]));
+			fRec2[0] = ((std::fabs(fTempFTZ3) > 1.17549435e-38f) ? fTempFTZ3 : 0.0f);
+			float fTempFTZ4 = (fSlow17 + (fConst2 * fRec7[1]));
+			fRec7[0] = ((std::fabs(fTempFTZ4) > 1.17549435e-38f) ? fTempFTZ4 : 0.0f);
 			float fTemp2 = std::tan((fConst3 * fRec7[0]));
 			float fTemp3 = (1.0f / fTemp2);
 			float fTemp4 = (((fTemp3 + 1.41421354f) / fTemp2) + 1.0f);
-			fRec1[0] = ((fSlow0 * fRec2[0]) - (((fRec1[2] * (((fTemp3 + -1.41421354f) / fTemp2) + 1.0f)) + (2.0f * (fRec1[1] * (1.0f - (1.0f / FaustBassDSP_faustpower2_f(fTemp2)))))) / fTemp4));
+			float fTempFTZ5 = ((fSlow0 * fRec2[0]) - (((fRec1[2] * (((fTemp3 + -1.41421354f) / fTemp2) + 1.0f)) + (2.0f * (fRec1[1] * (1.0f - (1.0f / FaustBassDSP_faustpower2_f(fTemp2)))))) / fTemp4));
+			fRec1[0] = ((std::fabs(fTempFTZ5) > 1.17549435e-38f) ? fTempFTZ5 : 0.0f);
 			float fTemp5 = ((fRec1[2] + (fRec1[0] + (2.0f * fRec1[1]))) / fTemp4);
 			fVec3[0] = fTemp5;
-			fRec0[0] = (((0.995000005f * fRec0[1]) + fTemp5) - fVec3[1]);
+			float fTempFTZ6 = (((0.995000005f * fRec0[1]) + fTemp5) - fVec3[1]);
+			fRec0[0] = ((std::fabs(fTempFTZ6) > 1.17549435e-38f) ? fTempFTZ6 : 0.0f);
 			output0[i0] = FAUSTFLOAT(float(tanhf(float(fRec0[0]))));
 			fVec0[1] = fVec0[0];
 			fRec3[1] = fRec3[0];

@@ -19,7 +19,7 @@ foreach(DSP_FILE ${DSP_FILES})
     
     add_custom_command(
         OUTPUT ${HPP_FILE}
-        COMMAND faust -lang cpp -es 1 -single -ftz 1 -cn Faust${CAP_NAME}DSP ${DSP_FILE} -o ${HPP_FILE}
+        COMMAND faust -lang cpp -es 1 -single -ftz 1 -I /home/shashankkhare/faust_sdk/faust_src/examples/physicalModeling/faust-stk -cn Faust${CAP_NAME}DSP ${DSP_FILE} -o ${HPP_FILE}
         DEPENDS ${DSP_FILE}
         COMMENT "Auto-compiling Faust DSP: ${DSP_NAME} -> Faust${CAP_NAME}DSP.hpp"
     )
@@ -55,7 +55,9 @@ add_library(faust_min SHARED
   "FaustShakuhachi.cpp"
   "FaustBansuri.cpp"
   "FaustViolin.cpp"
+  "FaustTibetanbowl.cpp"
   "UMLParser.cpp"
+  "UMLSequence.cpp"
   "SequenceOrchestrator.cpp"
   "FaustMixer.cpp"
   "InstrumentMapper.cpp"
@@ -89,3 +91,49 @@ if (ANDROID)
   target_link_options(faust_min PRIVATE "-Wl,-z,max-page-size=16384")
   target_link_libraries(faust_min PRIVATE oboe::oboe)
 endif()
+
+# =====================================================
+# TEST BINARIES
+# =====================================================
+set(FAUST_INCLUDE_DIR "/home/shashankkhare/faust_sdk/faust_src/architecture")
+set(FAUST_LIB "/home/shashankkhare/faust_sdk/lib/libfaust.so")
+
+set(TEST_COMMON_LINK
+    faust_min
+    ${FAUST_LIB}
+    pthread
+    dl
+)
+
+set(TEST_COMMON_COMPILE -O3 -ffast-math)
+
+add_executable(test_instruments "../test/test_instruments.cpp")
+target_compile_options(test_instruments PRIVATE ${TEST_COMMON_COMPILE})
+target_include_directories(test_instruments PRIVATE "." ${FAUST_INCLUDE_DIR})
+target_link_libraries(test_instruments PRIVATE ${TEST_COMMON_LINK})
+set_target_properties(test_instruments PROPERTIES
+    INSTALL_RPATH "${CMAKE_BINARY_DIR}:/home/shashankkhare/faust_sdk/lib"
+    BUILD_WITH_INSTALL_RPATH TRUE
+    LINK_FLAGS "-rdynamic"
+)
+
+add_executable(test_sequence "../test/test_sequence.cpp")
+target_compile_options(test_sequence PRIVATE ${TEST_COMMON_COMPILE})
+target_include_directories(test_sequence PRIVATE "." ${FAUST_INCLUDE_DIR})
+target_link_libraries(test_sequence PRIVATE ${TEST_COMMON_LINK})
+set_target_properties(test_sequence PROPERTIES
+    INSTALL_RPATH "${CMAKE_BINARY_DIR}:/home/shashankkhare/faust_sdk/lib"
+    BUILD_WITH_INSTALL_RPATH TRUE
+    LINK_FLAGS "-rdynamic"
+)
+
+add_executable(test_orchestrator "../test/test_orchestrator.cpp")
+target_compile_options(test_orchestrator PRIVATE ${TEST_COMMON_COMPILE})
+target_include_directories(test_orchestrator PRIVATE "." ${FAUST_INCLUDE_DIR})
+target_link_libraries(test_orchestrator PRIVATE ${TEST_COMMON_LINK} faust_min)
+set_target_properties(test_orchestrator PROPERTIES
+    INSTALL_RPATH "${CMAKE_BINARY_DIR}:/home/shashankkhare/faust_sdk/lib"
+    BUILD_WITH_INSTALL_RPATH TRUE
+    LINK_FLAGS "-rdynamic"
+    EXCLUDE_FROM_ALL ON
+)

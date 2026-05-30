@@ -1,17 +1,17 @@
 import("stdfaust.lib");
 
 // --- Corrected Lag Nga (Tibetan Frame Drum Physical Model) ---
-// Models a low, hollow, deeply reverberating double-headed frame drum
-// Struck with a thick, heavily-padded cloth mallet.
+// Models a small, tight, double-headed frame drum
+// Struck with a hard wooden mallet.
 
-freq = hslider("freq [unit:Hz]", 55.0, 50.0, 85.0, 0.1);
+freq = hslider("freq [unit:Hz]", 111.0, 85.0, 200.0, 0.1);
 gain = hslider("gain", 1.0, 0.0, 2.0, 0.01);
 velocity = hslider("velocity", 1.0, 0.0, 1.0, 0.01);
 gate = button("gate");
 
-// Expressive controls for a deep, grounding meditation tone
-decayScale = hslider("decay_scale", 1.5, 0.1, 4.0, 0.05); // Extended for sub-bass bloom
-malletSoftness = hslider("mallet_softness", 75.0, 40.0, 150.0, 1.0); // Dropped heavily (Heavy Muffle)
+// Expressive controls for a tight, wooden mallet strike
+decayScale = hslider("decay_scale", 0.8, 0.1, 4.0, 0.05); // Shorter decay for a tight drum
+malletSoftness = hslider("mallet_softness", 1200.0, 400.0, 3000.0, 1.0); // High cutoff for sharp wooden attack
 
 // Robust 2-Pole Resonator function (Direct Form II style) - scaled by 0.002 to prevent internal overload
 resonator(f, t60, g, x) = x * 0.002 : + ~ (routing) : *(g)
@@ -46,4 +46,4 @@ mode4  = resonator(dyn_freq * 2.30, 0.05, 0.02, excitation);  // Tiny trace of e
 drum_body = mode1a + mode1b + mode2a + mode2b + mode3 + mode4;
 
 // MIX FIX: Saturate first (skin dynamics), 1st-order lowpass second (body absorption, zero overshoot), and apply 0.85 headroom
-process = (drum_body * 12.0 : ma.tanh : fi.lowpass(1, 220.0)) * (gain * 0.85);
+process = (drum_body * 12.0 : ma.tanh : fi.lowpass(1, 220.0)) * (gain * 6.0);

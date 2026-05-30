@@ -60,20 +60,27 @@ public:
     bool isHardwareStarted() const { return mIsHardwareStarted; }
 
     // Standalone Node Registration
-    void registerInstrument(FaustInstrument* inst, float assignedWeight);
-    void unregisterInstrument(FaustInstrument* inst);
+    int addTrack(float initialWeight);
+    void removeTrack(int trackID);
+    
+    void addInstrumentToTrack(int trackID, FaustInstrument* inst, float instWeight = 1.0f);
+    void removeInstrumentFromTrack(int trackID, FaustInstrument* inst);
 
     // Explicit DJ Fader Automation API (Real-time Sweeps)
-    void fadeIn(FaustInstrument* inst, float durationSeconds);
-    void fadeOut(FaustInstrument* inst, float durationSeconds);
-    void setInstrumentWeight(FaustInstrument* inst, float dynamicWeight);
-    float getInstrumentWeight(FaustInstrument* inst);
+    void fadeInTrack(int trackID, float durationSeconds);
+    void fadeOutTrack(int trackID, float durationSeconds);
+    void setTrackWeight(int trackID, float dynamicWeight);
+    float getTrackWeight(int trackID);
 
     // Global Master-Bus Automation
     void masterFadeIn(float durationSeconds);
     void masterFadeOut(float durationSeconds);
     void setMasterGain(float gain);
     float getMasterGain() const { return mMasterGain; }
+    
+    // FX Bus Return Automation
+    void setFXReturnWeight(float weight);
+    float getFXReturnWeight() const { return mFXReturnWeight; }
 
     // Multi-Track Offline Signal Mixing API
     static void mixRawSignals(
@@ -110,6 +117,24 @@ private:
     FaustMixer(const FaustMixer&) = delete;
     FaustMixer& operator=(const FaustMixer&) = delete;
 
+    enum class MixerWeightMode {
+        STATIC_WEIGHTS,   // Pure, un-interpolated weights (bypasses sweeps and auto-recalibration)
+        DYNAMIC_WEIGHTS   // Supports automated fades, crossfades, and auto-recalibration
+    };
+
+    struct TrackInstrument {
+        FaustInstrument* instrument;
+        float instrumentWeight;
+        float effectiveWeight = 1.0f;
+    };
+
+    struct MixerTrack {
+        int trackID;
+        float assignedWeight;
+        float dynamicWeight;
+        std::vector<TrackInstrument> instruments;
+    };
+
     // Real-Time Audio Interrupt Accumulator Endpoint
     void onAudioReady(float* stereoOutput, int numFrames);
 
@@ -119,9 +144,11 @@ private:
     long mMasterSampleTime;
     float mMasterGain;
     float mLimiterGain;
+    float mFXReturnWeight;
 
-    std::vector<FaustInstrument*> mRegisteredInstruments;
-    std::map<FaustInstrument*, float> mDynamicWeights;
+    MixerWeightMode mWeightMode = MixerWeightMode::DYNAMIC_WEIGHTS;
+    std::map<int, MixerTrack> mTracks;
+    int mNextTrackID = 1;
 
     struct WeightSweep {
         bool isActive = false;
@@ -130,7 +157,7 @@ private:
         long startSample = 0;
         long durationSamples = 0;
     };
-    std::map<FaustInstrument*, WeightSweep> mWeightSweeps;
+    std::map<int, WeightSweep> mWeightSweeps;
 
     struct MasterSweep {
         bool isActive = false;
@@ -184,8 +211,9 @@ private:
     // Modular Inline Helpers for Control-Rate Block Interrupt Handling
     inline void processMasterSweep(long currentS);
     inline void processChannelSweeps(long currentS);
-    inline float computeAutoRecalibrationMultiplier(const std::vector<FaustInstrument*>& activeList);
-    inline void accumulateInstrumentChannels(float* stereoOutput, int numFrames, float balanceMultiplier, const std::vector<FaustInstrument*>& activeList);
+    inline float computeAutoRecalibrationMultiplier();
+    void recalculateWeights();
+    inline void accumulateInstrumentChannels(float* stereoOutput, int numFrames, float balanceMultiplier);
     inline void applyMasterGainAndLimiter(float* stereoOutput, int numFrames);
     inline void applyMasterLimiter(float* buffer, int totalSamples);
 

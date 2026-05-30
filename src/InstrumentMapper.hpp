@@ -39,7 +39,7 @@ public:
     static constexpr const char* DEFAULT_LIB_DIR = "./assets/libraries";
 
     // Maximum simultaneous instruments the parallel engine supports
-    static constexpr int MAX_INSTRUMENTS = 39;
+    static constexpr int MAX_INSTRUMENTS = 299;
     // Pre-allocated scratch buffer size per instrument — never reallocated at runtime
     static constexpr int MAX_FRAMES_PER_BUFFER = 8192;
 

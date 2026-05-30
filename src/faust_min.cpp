@@ -147,11 +147,13 @@ DART_EXPORT void mixer_set_instrument_weight(FaustMixer* mixer, FaustInstrument*
 }
 
 DART_EXPORT void mixer_register_instrument(FaustMixer* mixer, FaustInstrument* inst, float weight) {
-    if (mixer && inst) mixer->registerInstrument(inst, weight);
+    int trackID = mixer->addTrack(weight);
+    mixer->addInstrumentToTrack(trackID, inst);
 }
 
 DART_EXPORT void mixer_unregister_instrument(FaustMixer* mixer, FaustInstrument* inst) {
-    if (mixer && inst) mixer->unregisterInstrument(inst);
+    // Note: Since we don't track the ID here, we might need a reverse lookup in the future.
+    // For now, removing an instrument from all tracks isn't explicitly supported in this single call.
 }
 
 // --- UMLSequence Flat Endpoints ---

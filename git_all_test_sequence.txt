@@ -1,0 +1,1924 @@
+commit 2a18353194059f6a00ccedbaed1181019539629e
+Author: skhareindepay <skhare@indepay.com>
+Date:   Wed May 27 22:59:47 2026 +0530
+
+    fix: correct Dholak Keherwa meter by fixing accidental 18-step pattern back to 16 steps
+
+diff --git a/test/test_sequence.cpp b/test/test_sequence.cpp
+index 14053f8..e62be86 100644
+--- a/test/test_sequence.cpp
++++ b/test/test_sequence.cpp
+@@ -648,10 +648,10 @@ int main(int argc, char* argv[]) {
+                 "basefreq: 110.0\n"
+                 "instrument: dholak\n"
+                 "\n"
+-                "Dha _ Ge _ Na _ Ti _ Na _ Ke _ Dhin _ Na _ _ _ "
+-                "Dha _ Ge _ Na _ Ti _ Na _ Ke _ Dhin _ Na _ _ _ "
+-                "Dha _ Ge _ Na _ Ti _ Na _ Ke _ Dhin _ Na _ _ _ "
+-                "Dha _ Ge _ Na _ Ti _ Na _ Ke _ Dhin _ Na _ _ _ "
++                "Dha _ Ge _ Na _ Ti _ Na _ Ke _ Dhin _ Na _ "
++                "Dha _ Ge _ Na _ Ti _ Na _ Ke _ Dhin _ Na _ "
++                "Dha _ Ge _ Na _ Ti _ Na _ Ke _ Dhin _ Na _ "
++                "Dha _ Ge _ Na _ Ti _ Na _ Ke _ Dhin _ Na _ "
+                 "Dha _ Na Ti Dha _ Na Ti Na _ Ke Dhin Na _ Ti _ "
+                 "Dha _ Na Ti Dha _ Na Ti Na _ Ke Dhin Na _ Ti _ "
+                 "Dha _ Na Ti Dha _ Na Ti Na _ Ke Dhin Na _ Ti _ "
+
+commit d49b66bbd9ce68da1b7339dc62569b7b6c649509
+Author: skhareindepay <skhare@indepay.com>
+Date:   Wed May 27 22:57:51 2026 +0530
+
+    feat: restore Dholak sequence with authentic North Indian Folk variations (Keherwa, Laggi, Bhajan)
+
+diff --git a/test/test_sequence.cpp b/test/test_sequence.cpp
+index cbbb627..14053f8 100644
+--- a/test/test_sequence.cpp
++++ b/test/test_sequence.cpp
+@@ -648,18 +648,18 @@ int main(int argc, char* argv[]) {
+                 "basefreq: 110.0\n"
+                 "instrument: dholak\n"
+                 "\n"
+-                "Dha _ _ _ _ _ Na _ Na _ _ _ _ _ Na _ "
+-                "Na _ _ _ _ _ Dha _ Dha _ _ _ _ _ Na _ "
+-                "Dha _ _ _ _ _ Na _ Na _ _ _ _ _ Na _ "
+-                "Na _ _ _ _ _ Dha _ Dha _ _ _ _ _ Na _ "
+-                "Dha _ _ Na Na _ _ Na Na _ _ Dha Dha _ _ Na "
+-                "Dha _ _ Na Na _ _ Na Na _ _ Dha Dha _ _ Na "
+-                "Dha _ _ Na Na _ _ Tin Na _ _ Dha Dha _ _ Na "
+-                "Dha _ _ Na Na _ _ Tin Na _ _ Dha Dha _ _ Na "
+-                "Dha _ _ Na Dha Dha _ Na Dha _ _ Na Dha Dha _ Na "
+-                "Dha _ _ Na Dha Dha _ Na Dha _ _ Na Dha Dha _ Na "
+-                "Dha _ _ Na Dha Dha _ Tin Dha _ _ Na Dha Dha _ Tin "
+-                "Dha _ _ Na Dha Dha _ Tin Dha _ _ Na Dha Dha _ Tin";
++                "Dha _ Ge _ Na _ Ti _ Na _ Ke _ Dhin _ Na _ _ _ "
++                "Dha _ Ge _ Na _ Ti _ Na _ Ke _ Dhin _ Na _ _ _ "
++                "Dha _ Ge _ Na _ Ti _ Na _ Ke _ Dhin _ Na _ _ _ "
++                "Dha _ Ge _ Na _ Ti _ Na _ Ke _ Dhin _ Na _ _ _ "
++                "Dha _ Na Ti Dha _ Na Ti Na _ Ke Dhin Na _ Ti _ "
++                "Dha _ Na Ti Dha _ Na Ti Na _ Ke Dhin Na _ Ti _ "
++                "Dha _ Na Ti Dha _ Na Ti Na _ Ke Dhin Na _ Ti _ "
++                "Dha _ Na Ti Dha _ Na Ti Na _ Ke Dhin Na _ Ti _ "
++                "Dha Na Ge Na Dha Na Ti _ Na Ti Ke Ti Na Ti Dha _ "
++                "Dha Na Ge Na Dha Na Ti _ Na Ti Ke Ti Na Ti Dha _ "
++                "Dha Na Ge Na Dha Na Ti _ Na Ti Ke Ti Na Ti Dha _ "
++                "Dha Na Ge Na Dha Na Ti _ Na Ti Ke Ti Na Ti Dha _";
+                 
+             group.sequences.push_back({"Dholak", new UMLSequence("Dholak", 37, umlDholak)});
+             group.volumes = { 0.8f };
+
+commit e4207e01aadde18d0e285d4bdfe18538bd40990c
+Author: skhareindepay <skhare@indepay.com>
+Date:   Wed May 27 22:54:10 2026 +0530
+
+    fix: set correct grid resolution to 4 so Bhangra patterns advance correctly and at musical speed
+
+diff --git a/test/test_sequence.cpp b/test/test_sequence.cpp
+index 4fdc892..cbbb627 100644
+--- a/test/test_sequence.cpp
++++ b/test/test_sequence.cpp
+@@ -643,7 +643,7 @@ int main(int argc, char* argv[]) {
+             group.name = "Indian Folk (Dholak Percussion)";
+             
+             std::string umlDholak = 
+-                "grid: 16\n"
++                "grid: 4\n"
+                 "bpm: 120\n"
+                 "basefreq: 110.0\n"
+                 "instrument: dholak\n"
+@@ -668,7 +668,7 @@ int main(int argc, char* argv[]) {
+             group.name = "Punjabi Folk (Dhol Percussion)";
+             
+             std::string umlDhol = 
+-                "grid: 16\n"
++                "grid: 4\n"
+                 "bpm: 120\n"
+                 "basefreq: 110.0\n"
+                 "instrument: dhol\n"
+
+commit 3b97cccf724442bbf4459559c5811c4459f4c648
+Author: skhareindepay <skhare@indepay.com>
+Date:   Wed May 27 22:51:26 2026 +0530
+
+    feat: redesign Bhangra patterns to start slow half-time and accelerate to fast Luddi
+
+diff --git a/test/test_sequence.cpp b/test/test_sequence.cpp
+index ad01197..4fdc892 100644
+--- a/test/test_sequence.cpp
++++ b/test/test_sequence.cpp
+@@ -113,8 +113,8 @@ int main(int argc, char* argv[]) {
+             std::cout << "  4. Tibetan Bowl with Rain (Bowl, Bell, Rainmaker)" << std::endl;
+             std::cout << "  5. Acoustic Hotel California (Acoustic Guitar, 3 Congas, Bass, Drums)" << std::endl;
+             std::cout << "  6. Sitar — Raag Yaman + Tabla" << std::endl;
+-            std::cout << "  7. Indian Folk (Dholak Percussion)" << std::endl;
+-            std::cout << "  8. Punjabi Folk (Dhol Percussion)" << std::endl;
++            std::cout << "  7. North Indian Folk (Dholak Percussion)" << std::endl;
++            std::cout << "  8. Punjabi Folk (Bhangra beats)" << std::endl;
+             std::cout << "  9. Exit" << std::endl;
+             std::cout << ">>> Enter selection (1-9): ";
+             if (!(std::cin >> selection)) {
+@@ -648,14 +648,14 @@ int main(int argc, char* argv[]) {
+                 "basefreq: 110.0\n"
+                 "instrument: dholak\n"
+                 "\n"
++                "Dha _ _ _ _ _ Na _ Na _ _ _ _ _ Na _ "
++                "Na _ _ _ _ _ Dha _ Dha _ _ _ _ _ Na _ "
++                "Dha _ _ _ _ _ Na _ Na _ _ _ _ _ Na _ "
++                "Na _ _ _ _ _ Dha _ Dha _ _ _ _ _ Na _ "
+                 "Dha _ _ Na Na _ _ Na Na _ _ Dha Dha _ _ Na "
+                 "Dha _ _ Na Na _ _ Na Na _ _ Dha Dha _ _ Na "
+                 "Dha _ _ Na Na _ _ Tin Na _ _ Dha Dha _ _ Na "
+                 "Dha _ _ Na Na _ _ Tin Na _ _ Dha Dha _ _ Na "
+-                "Dha _ Ge _ Dha _ _ Na Dha _ Ge _ Dha _ _ Na "
+-                "Dha _ Ge _ Dha _ _ Na Dha _ Ge _ Dha _ _ Na "
+-                "Dha _ Ge _ Dha _ _ Tin Dha _ Ge _ Dha _ _ Tin "
+-                "Dha _ Ge _ Dha _ _ Tin Dha _ Ge _ Dha _ _ Tin "
+                 "Dha _ _ Na Dha Dha _ Na Dha _ _ Na Dha Dha _ Na "
+                 "Dha _ _ Na Dha Dha _ Na Dha _ _ Na Dha Dha _ Na "
+                 "Dha _ _ Na Dha Dha _ Tin Dha _ _ Na Dha Dha _ Tin "
+@@ -673,14 +673,14 @@ int main(int argc, char* argv[]) {
+                 "basefreq: 110.0\n"
+                 "instrument: dhol\n"
+                 "\n"
++                "Dha _ _ _ _ _ Na _ Na _ _ _ _ _ Na _ "
++                "Na _ _ _ _ _ Dha _ Dha _ _ _ _ _ Na _ "
++                "Dha _ _ _ _ _ Na _ Na _ _ _ _ _ Na _ "
++                "Na _ _ _ _ _ Dha _ Dha _ _ _ _ _ Na _ "
+                 "Dha _ _ Na Na _ _ Na Na _ _ Dha Dha _ _ Na "
+                 "Dha _ _ Na Na _ _ Na Na _ _ Dha Dha _ _ Na "
+                 "Dha _ _ Na Na _ _ Tin Na _ _ Dha Dha _ _ Na "
+                 "Dha _ _ Na Na _ _ Tin Na _ _ Dha Dha _ _ Na "
+-                "Dha _ Ge _ Dha _ _ Na Dha _ Ge _ Dha _ _ Na "
+-                "Dha _ Ge _ Dha _ _ Na Dha _ Ge _ Dha _ _ Na "
+-                "Dha _ Ge _ Dha _ _ Tin Dha _ Ge _ Dha _ _ Tin "
+-                "Dha _ Ge _ Dha _ _ Tin Dha _ Ge _ Dha _ _ Tin "
+                 "Dha _ _ Na Dha Dha _ Na Dha _ _ Na Dha Dha _ Na "
+                 "Dha _ _ Na Dha Dha _ Na Dha _ _ Na Dha Dha _ Na "
+                 "Dha _ _ Na Dha Dha _ Tin Dha _ _ Na Dha Dha _ Tin "
+
+commit ff9af9942ff6e6f16e1a6ab5abd67ce1f6066c31
+Author: skhareindepay <skhare@indepay.com>
+Date:   Wed May 27 22:48:10 2026 +0530
+
+    feat: add 3 diverse Bhangra patterns to Dhol and Dholak sequences
+
+diff --git a/test/test_sequence.cpp b/test/test_sequence.cpp
+index 81f8974..ad01197 100644
+--- a/test/test_sequence.cpp
++++ b/test/test_sequence.cpp
+@@ -643,19 +643,27 @@ int main(int argc, char* argv[]) {
+             group.name = "Indian Folk (Dholak Percussion)";
+             
+             std::string umlDholak = 
+-                "grid: 8\n"
+-                "bpm: 60\n"
++                "grid: 16\n"
++                "bpm: 120\n"
+                 "basefreq: 110.0\n"
+                 "instrument: dholak\n"
+                 "\n"
+-                "Dha _ Ge _ Na _ Ti _ Na _ Ke _ Dhin _ Na "
+-                "Dha _ Ge _ Na _ Ti _ Na _ Ke _ Dhin _ Na "
+-                "Dha _ Ge _ Na _ Ti _ Na _ Ke _ Dhin _ Na "
+-                "Dha _ Ge _ Na _ Ti _ Na _ Ke _ Dhin _ Na";
++                "Dha _ _ Na Na _ _ Na Na _ _ Dha Dha _ _ Na "
++                "Dha _ _ Na Na _ _ Na Na _ _ Dha Dha _ _ Na "
++                "Dha _ _ Na Na _ _ Tin Na _ _ Dha Dha _ _ Na "
++                "Dha _ _ Na Na _ _ Tin Na _ _ Dha Dha _ _ Na "
++                "Dha _ Ge _ Dha _ _ Na Dha _ Ge _ Dha _ _ Na "
++                "Dha _ Ge _ Dha _ _ Na Dha _ Ge _ Dha _ _ Na "
++                "Dha _ Ge _ Dha _ _ Tin Dha _ Ge _ Dha _ _ Tin "
++                "Dha _ Ge _ Dha _ _ Tin Dha _ Ge _ Dha _ _ Tin "
++                "Dha _ _ Na Dha Dha _ Na Dha _ _ Na Dha Dha _ Na "
++                "Dha _ _ Na Dha Dha _ Na Dha _ _ Na Dha Dha _ Na "
++                "Dha _ _ Na Dha Dha _ Tin Dha _ _ Na Dha Dha _ Tin "
++                "Dha _ _ Na Dha Dha _ Tin Dha _ _ Na Dha Dha _ Tin";
+                 
+             group.sequences.push_back({"Dholak", new UMLSequence("Dholak", 37, umlDholak)});
+             group.volumes = { 0.8f };
+-            duration = 16;
++            duration = 48;
+         } else if (selection == 8) {
+             group.name = "Punjabi Folk (Dhol Percussion)";
+             
+@@ -668,11 +676,19 @@ int main(int argc, char* argv[]) {
+                 "Dha _ _ Na Na _ _ Na Na _ _ Dha Dha _ _ Na "
+                 "Dha _ _ Na Na _ _ Na Na _ _ Dha Dha _ _ Na "
+                 "Dha _ _ Na Na _ _ Tin Na _ _ Dha Dha _ _ Na "
+-                "Dha _ _ Na Na _ _ Tin Na _ _ Dha Dha _ _ Na";
++                "Dha _ _ Na Na _ _ Tin Na _ _ Dha Dha _ _ Na "
++                "Dha _ Ge _ Dha _ _ Na Dha _ Ge _ Dha _ _ Na "
++                "Dha _ Ge _ Dha _ _ Na Dha _ Ge _ Dha _ _ Na "
++                "Dha _ Ge _ Dha _ _ Tin Dha _ Ge _ Dha _ _ Tin "
++                "Dha _ Ge _ Dha _ _ Tin Dha _ Ge _ Dha _ _ Tin "
++                "Dha _ _ Na Dha Dha _ Na Dha _ _ Na Dha Dha _ Na "
++                "Dha _ _ Na Dha Dha _ Na Dha _ _ Na Dha Dha _ Na "
++                "Dha _ _ Na Dha Dha _ Tin Dha _ _ Na Dha Dha _ Tin "
++                "Dha _ _ Na Dha Dha _ Tin Dha _ _ Na Dha Dha _ Tin";
+ 
+             group.sequences.push_back({"Dhol", new UMLSequence("Dhol", 38, umlDhol)});
+             group.volumes = { 0.8f };
+-            duration = 16;
++            duration = 48;
+         }
+ 
+         if (!group.sequences.empty()) {
+
+commit 422742c13c737866a8ead37b42a9fc53907bad82
+Author: skhareindepay <skhare@indepay.com>
+Date:   Wed May 27 19:31:09 2026 +0530
+
+    feat: increase Dholak overall gain, refine Tilli thin-skin bounce model, and swing Bhangra sequence
+
+diff --git a/test/test_sequence.cpp b/test/test_sequence.cpp
+index 5c92fd5..81f8974 100644
+--- a/test/test_sequence.cpp
++++ b/test/test_sequence.cpp
+@@ -660,15 +660,15 @@ int main(int argc, char* argv[]) {
+             group.name = "Punjabi Folk (Dhol Percussion)";
+             
+             std::string umlDhol = 
+-                "grid: 8\n"
+-                "bpm: 60\n"
++                "grid: 16\n"
++                "bpm: 120\n"
+                 "basefreq: 110.0\n"
+                 "instrument: dhol\n"
+                 "\n"
+-                "Dha _ Na _ Tin _ Na _ Dha _ Ge _ Na _ Ti "
+-                "Dha _ Na _ Tin _ Na _ Dha _ Ge _ Na _ Ti "
+-                "Dha _ Na _ Tin _ Na _ Dha _ Ge _ Na _ Ti "
+-                "Dha _ Na _ Tin _ Na _ Dha _ Ge _ Na _ Ti";
++                "Dha _ _ Na Na _ _ Na Na _ _ Dha Dha _ _ Na "
++                "Dha _ _ Na Na _ _ Na Na _ _ Dha Dha _ _ Na "
++                "Dha _ _ Na Na _ _ Tin Na _ _ Dha Dha _ _ Na "
++                "Dha _ _ Na Na _ _ Tin Na _ _ Dha Dha _ _ Na";
+ 
+             group.sequences.push_back({"Dhol", new UMLSequence("Dhol", 38, umlDhol)});
+             group.volumes = { 0.8f };
+
+commit 50c2154827abb9c22565ca706e968bc189bc6256
+Author: skhareindepay <skhare@indepay.com>
+Date:   Wed May 27 19:20:26 2026 +0530
+
+    feat: integrate Dholak and Dhol physical models, mapping, sequences, and tests
+
+diff --git a/test/test_sequence.cpp b/test/test_sequence.cpp
+index 2a01c1d..5c92fd5 100644
+--- a/test/test_sequence.cpp
++++ b/test/test_sequence.cpp
+@@ -51,16 +51,21 @@ void playSequenceGroup(FaustMixer& mixer, SequenceOrchestrator& orch, SequenceGr
+         mixer.registerInstrument(seqPair.second->getFaustInstrument(), group.volumes[i]);
+     }
+ 
++    // Enable looping feature
++    orch.setLooping(true);
++
+     // 2. Play
+     for (auto& seqPair : group.sequences) {
+         orch.play(seqPair.first);
+     }
+ 
+-    std::cout << "[Playback] Playing for " << durationSeconds << " seconds. Listen closely..." << std::endl;
+-    for (int i = 0; i < durationSeconds; ++i) {
+-        std::cout << "  " << (durationSeconds - i) << "s remaining..." << std::endl;
+-        sleep(1);
+-    }
++    // Play indefinitely until user presses a key
++    std::cout << "[Playback] Playing Sequence (Looping Enabled). Press ENTER to stop..." << std::endl;
++    
++    // Clear the input buffer from the previous selection
++    std::cin.ignore(10000, '\n');
++    // Wait for the user to press ENTER
++    std::cin.get();
+ 
+     // 3. Stop and Unload
+     orch.stop();
+@@ -108,14 +113,16 @@ int main(int argc, char* argv[]) {
+             std::cout << "  4. Tibetan Bowl with Rain (Bowl, Bell, Rainmaker)" << std::endl;
+             std::cout << "  5. Acoustic Hotel California (Acoustic Guitar, 3 Congas, Bass, Drums)" << std::endl;
+             std::cout << "  6. Sitar — Raag Yaman + Tabla" << std::endl;
+-            std::cout << "  7. Exit" << std::endl;
+-            std::cout << ">>> Enter selection (1-7): ";
++            std::cout << "  7. Indian Folk (Dholak Percussion)" << std::endl;
++            std::cout << "  8. Punjabi Folk (Dhol Percussion)" << std::endl;
++            std::cout << "  9. Exit" << std::endl;
++            std::cout << ">>> Enter selection (1-9): ";
+             if (!(std::cin >> selection)) {
+                 break;
+             }
+         }
+ 
+-        if (selection == 7) {
++        if (selection == 9) {
+             break;
+         }
+ 
+@@ -127,17 +134,19 @@ int main(int argc, char* argv[]) {
+             
+             std::string umlTanpura = 
+                 "grid: 2\n"
+-                "basefreq: 130.81\n"
++                "basefreq: 111.0\n"
+                 "instrument: tanpura\n"
+                 "notation: Indian\n"
+                 "\n"
+-                "5Sa...... 5Sa...... 5Sa...... 5Sa......";
++                "5Sa............... _............... "
++                "5Sa............... _...............";
+                 
+             std::string umlBansuri = 
+                 "grid: 4\n"
+-                "basefreq: 261.63\n"
++                "basefreq: 222\n"
+                 "instrument: bansuri\n"
+                 "notation: Indian\n"
++                "parameters: vibrato=0.8\n"
+                 "\n"
+                 "6Sa...6Re...6Ga...6Pa...6Dha...6Pa...6Ga...6Re... "
+                 "6Sa...6Ga...6Pa...6Dha...6Pa...6Ga...6Re...6Sa..._ "
+@@ -150,6 +159,7 @@ int main(int argc, char* argv[]) {
+                 
+             std::string umlDayan = 
+                 "grid: 4\n"
++                "basefreq: 222\n"
+                 "instrument: dayan\n"
+                 "\n"
+                 "Na... Tin... Tun... tk... Na... Tin... Na... tk... "
+@@ -160,6 +170,7 @@ int main(int argc, char* argv[]) {
+ 
+             std::string umlBayan = 
+                 "grid: 4\n"
++                "basefreq: 111\n"
+                 "instrument: bayan\n"
+                 "\n"
+                 "Ghe... _... _... Ka... _... Ka... Ghe... _... "
+@@ -173,7 +184,7 @@ int main(int argc, char* argv[]) {
+             group.sequences.push_back({"Dayan", new UMLSequence("Dayan", 0, umlDayan)});
+             group.sequences.push_back({"Bayan", new UMLSequence("Bayan", 1, umlBayan)});
+             
+-            group.volumes = { 1.2f, 0.9f, 0.9f, 1.0f };
++            group.volumes = { 2.2f, 0.9f, 0.9f, 1.0f };
+             duration = 16;
+         } else if (selection == 2) {
+             group.name = "Jazz Ensemble";
+@@ -255,6 +266,7 @@ int main(int argc, char* argv[]) {
+                 "bpm: 60\n"
+                 "instrument: electricguitar\n"
+                 "notation: Western\n"
++                "parameters: drive=0.75,sustain=0.8\n"
+                 "\n"
+                 // Measure 1-4 (Bm, F#, A, E)
+                 "B3 D4 F#4 D4 B3 D4 F#4 D4 "
+@@ -286,7 +298,10 @@ int main(int argc, char* argv[]) {
+                 // Measures 1-8 (Bm, F#, A, E, G, D, Em, F#)
+                 "B1. B1. F#1. F#1. A1. A1. E1. E1. "
+                 "G1. G1. D2. D2. E1. E1. F#1. F#1. "
+-                // Repeat Measures 1-8
++                "B1. B1. F#1. F#1. A1. A1. E1. E1. "
++                "G1. G1. D2. D2. E1. E1. F#1. F#1. "
++                "B1. B1. F#1. F#1. A1. A1. E1. E1. "
++                "G1. G1. D2. D2. E1. E1. F#1. F#1. "
+                 "B1. B1. F#1. F#1. A1. A1. E1. E1. "
+                 "G1. G1. D2. D2. E1. E1. F#1. F#1.";
+                 
+@@ -295,20 +310,28 @@ int main(int argc, char* argv[]) {
+                 "bpm: 60\n"
+                 "instrument: kick\n"
+                 "\n"
+-                "8x. 8x. 8x. 8x. 8x. 8x. 8x. 8x. "
+-                "8x. 8x. 8x. 8x. 8x. 8x. 8x. 8x. "
+-                "8x. 8x. 8x. 8x. 8x. 8x. 8x. 8x. "
+-                "8x. 8x. 8x. 8x. 8x. 8x. 8x. 8x.";
++                "8x _ _ 8x  _ 8x _ _  8x _ _ 8x  _ _ 8x _ "
++                "8x _ _ _  8x 8x _ _  8x _ 8x _  _ _ 8x _ "
++                "8x _ 8x _  _ 8x _ 8x  8x _ _ _  8x 8x _ _ "
++                "8x _ _ 8x  _ _ 8x _  8x 8x _ 8x  _ 8x 8x _ "
++                "8x _ _ 8x  _ 8x _ _  8x _ _ 8x  _ _ 8x _ "
++                "8x _ _ _  8x 8x _ _  8x _ 8x _  _ _ 8x _ "
++                "8x _ 8x _  _ 8x _ 8x  8x _ _ _  8x 8x _ _ "
++                "8x _ _ 8x  _ _ 8x _  8x 8x _ 8x  _ 8x 8x _";
+                 
+             std::string umlSnare = 
+                 "grid: 4\n"
+                 "bpm: 60\n"
+                 "instrument: snare\n"
+                 "\n"
+-                "_. 8x. _. 8x. _. 8x. _. 8x. "
+-                "_. 8x. _. 8x. _. 8x. _. 8x. "
+-                "_. 8x. _. 8x. _. 8x. _. 8x. "
+-                "_. 8x. _. 8x. _. 8x. _. 8x.";
++                "_ _ _ _ 8x _ _ 8x _ _ _ _ 8x _ _ _ "
++                "_ _ _ 8x 8x _ _ _ _ 8x _ _ 8x _ 8x 8x "
++                "_ _ _ _ 8x _ _ _ _ _ 8x _ 8x _ _ _ "
++                "_ _ 8x _ 8x _ _ 8x _ 8x _ 8x 8x 8x 8x 8x "
++                "_ _ _ _ 8x _ _ 8x _ _ _ _ 8x _ _ _ "
++                "_ _ _ 8x 8x _ _ _ _ 8x _ _ 8x _ 8x 8x "
++                "_ _ _ _ 8x _ _ _ _ _ 8x _ 8x _ _ _ "
++                "_ 8x _ 8x 8x _ 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x";
+                 
+             std::string umlHihat = 
+                 "grid: 4\n"
+@@ -316,9 +339,13 @@ int main(int argc, char* argv[]) {
+                 "instrument: hihat\n"
+                 "\n"
+                 "8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x "
++                "8x _ 8x _ 8x 8x 8x 8x 8x _ 8x _ 8x 8x 8x 8x "
++                "8x 8x 8x 8x _ 8x 8x 8x 8x 8x 8x 8x _ 8x 8x 8x "
++                "8x 8x 8x 8x 8x 8x 8x 8x 8x _ _ _ _ _ _ _ "
+                 "8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x "
+-                "8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x "
+-                "8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x";
++                "8x _ 8x _ 8x 8x 8x 8x 8x _ 8x _ 8x 8x 8x 8x "
++                "8x 8x 8x 8x _ 8x 8x 8x 8x 8x 8x 8x _ 8x 8x 8x "
++                "8x 8x _ _ _ _ _ _ _ _ _ _ _ _ _ _";
+ 
+             group.sequences.push_back({"RockEGuitar", new UMLSequence("RockEGuitar", 22, umlEGuitar)});
+             group.sequences.push_back({"RockBGuitar", new UMLSequence("RockBGuitar", 23, umlBGuitar)});
+@@ -336,29 +363,29 @@ int main(int argc, char* argv[]) {
+                 "grid: 1\n"
+                 "instrument: rainmaker\n"
+                 "\n"
+-                "8x................................";
++                "7x..............................7x.";
+                 
+             std::string umlBowl = 
+                 "grid: 2\n"
+-                "basefreq: 140.0\n"
++                "basefreq: 111.0\n"
+                 "instrument: bowl\n"
+                 "notation: Indian\n"
+                 "\n"
+-                "8Sa................ 8Ga................ 8Pa................ 8Sa................";
++                "8Sa................ 8Sa................ 8Sa................ 8Sa................";
+                 
+-            std::string umlBell = 
++            std::string umlBell =  
+                 "grid: 2\n"
+-                "basefreq: 440.0\n"
++                "basefreq: 222.0\n"
+                 "instrument: bell\n"
+                 "notation: Indian\n"
+                 "\n"
+-                "_... 6Sa................ 6Pa................ 6Ni................";
++                "6Sa.... 6r2.... 6Re.... 6g2.... 6Ga.... 6Ma.... 6M2.... 6Pa.... 6d2.... 6Dha.... 6n2.... 6Ni.... _...";
+ 
+             group.sequences.push_back({"AmbientRain", new UMLSequence("AmbientRain", 19, umlRainmaker)});
+             group.sequences.push_back({"AmbientBowl", new UMLSequence("AmbientBowl", 8, umlBowl)});
+             group.sequences.push_back({"AmbientBell", new UMLSequence("AmbientBell", 7, umlBell)});
+ 
+-            group.volumes = { 0.9f, 0.7f, 0.6f };
++            group.volumes = { 0.9f, 0.7f, 0.3f };
+             duration = 20;
+         } else if (selection == 5) {
+             group.name = "Acoustic Hotel California (Acoustic Guitar, 3 Congas, Bass, Drums)";
+@@ -612,6 +639,40 @@ int main(int argc, char* argv[]) {
+             
+             group.volumes = { 0.4f, 0.6f, 0.5f, 0.7f };
+             duration = 20;
++        } else if (selection == 7) {
++            group.name = "Indian Folk (Dholak Percussion)";
++            
++            std::string umlDholak = 
++                "grid: 8\n"
++                "bpm: 60\n"
++                "basefreq: 110.0\n"
++                "instrument: dholak\n"
++                "\n"
++                "Dha _ Ge _ Na _ Ti _ Na _ Ke _ Dhin _ Na "
++                "Dha _ Ge _ Na _ Ti _ Na _ Ke _ Dhin _ Na "
++                "Dha _ Ge _ Na _ Ti _ Na _ Ke _ Dhin _ Na "
++                "Dha _ Ge _ Na _ Ti _ Na _ Ke _ Dhin _ Na";
++                
++            group.sequences.push_back({"Dholak", new UMLSequence("Dholak", 37, umlDholak)});
++            group.volumes = { 0.8f };
++            duration = 16;
++        } else if (selection == 8) {
++            group.name = "Punjabi Folk (Dhol Percussion)";
++            
++            std::string umlDhol = 
++                "grid: 8\n"
++                "bpm: 60\n"
++                "basefreq: 110.0\n"
++                "instrument: dhol\n"
++                "\n"
++                "Dha _ Na _ Tin _ Na _ Dha _ Ge _ Na _ Ti "
++                "Dha _ Na _ Tin _ Na _ Dha _ Ge _ Na _ Ti "
++                "Dha _ Na _ Tin _ Na _ Dha _ Ge _ Na _ Ti "
++                "Dha _ Na _ Tin _ Na _ Dha _ Ge _ Na _ Ti";
++
++            group.sequences.push_back({"Dhol", new UMLSequence("Dhol", 38, umlDhol)});
++            group.volumes = { 0.8f };
++            duration = 16;
+         }
+ 
+         if (!group.sequences.empty()) {
+
+commit 0e5080b3b2f51a01eacfc38aa05d1f5db25864ff
+Author: skhareindepay <skhare@indepay.com>
+Date:   Tue May 26 09:47:35 2026 +0530
+
+    Refine Chou Gong physical model for realistic fundamental wash and distortion-free playback
+
+diff --git a/test/test_sequence.cpp b/test/test_sequence.cpp
+index 1e916a9..2a01c1d 100644
+--- a/test/test_sequence.cpp
++++ b/test/test_sequence.cpp
+@@ -102,19 +102,20 @@ int main(int argc, char* argv[]) {
+     while (true) {
+         if (selection == -1) {
+             std::cout << "\nSelect a sequence to play:" << std::endl;
+-            std::cout << "  1. Indian Classical (Sitar, Tanpura, Tabla, Bansuri)" << std::endl;
++            std::cout << "  1. Indian Classical — Bhopali (Bansuri, Tanpura, Tabla)" << std::endl;
+             std::cout << "  2. Jazz Ensemble (Piano, Sax, Bass, Drums)" << std::endl;
+             std::cout << "  3. Rock Band (Electric Guitar, Bass, Drums)" << std::endl;
+             std::cout << "  4. Tibetan Bowl with Rain (Bowl, Bell, Rainmaker)" << std::endl;
+             std::cout << "  5. Acoustic Hotel California (Acoustic Guitar, 3 Congas, Bass, Drums)" << std::endl;
+-            std::cout << "  6. Exit" << std::endl;
+-            std::cout << ">>> Enter selection (1-6): ";
++            std::cout << "  6. Sitar — Raag Yaman + Tabla" << std::endl;
++            std::cout << "  7. Exit" << std::endl;
++            std::cout << ">>> Enter selection (1-7): ";
+             if (!(std::cin >> selection)) {
+                 break;
+             }
+         }
+ 
+-        if (selection == 6) {
++        if (selection == 7) {
+             break;
+         }
+ 
+@@ -122,7 +123,7 @@ int main(int argc, char* argv[]) {
+         int duration = 15; // default duration 15s
+ 
+         if (selection == 1) {
+-            group.name = "Indian Classical";
++            group.name = "Indian Classical — Raag Bhopali (Bansuri, Tanpura) + Tabla Jawab-Talab";
+             
+             std::string umlTanpura = 
+                 "grid: 2\n"
+@@ -130,15 +131,7 @@ int main(int argc, char* argv[]) {
+                 "instrument: tanpura\n"
+                 "notation: Indian\n"
+                 "\n"
+-                "5Pa...... 5Sa...... 5Pa...... 5Sa......";
+-                
+-            std::string umlSitar = 
+-                "grid: 4\n"
+-                "basefreq: 130.81\n"
+-                "instrument: sitar\n"
+-                "notation: Indian\n"
+-                "\n"
+-                "6Sa..6Re..6Ga.._.. 6Pa..6Dha..8Sa.._.. 8Sa..6Dha..6Pa.._.. 6Ga..6Re..6Sa.._..";
++                "5Sa...... 5Sa...... 5Sa...... 5Sa......";
+                 
+             std::string umlBansuri = 
+                 "grid: 4\n"
+@@ -146,31 +139,42 @@ int main(int argc, char* argv[]) {
+                 "instrument: bansuri\n"
+                 "notation: Indian\n"
+                 "\n"
+-                "_.... 6Sa...... 6Ga...... 6Pa...... 6Dha...... 8Sa...... 6Dha...... 6Pa...... 6Ga...... 6Re...... 6Sa......";
++                "6Sa...6Re...6Ga...6Pa...6Dha...6Pa...6Ga...6Re... "
++                "6Sa...6Ga...6Pa...6Dha...6Pa...6Ga...6Re...6Sa..._ "
++                "_... _... _... _... "
++                "6Sa...6Re...6Ga...6Pa... "
++                "_... _... _... _... "
++                "6Dha...6Pa...6Ga...6Re... "
++                "_... _... _... _... "
++                "6Sa..._...";
+                 
+             std::string umlDayan = 
+                 "grid: 4\n"
+-                "basefreq: 293.66\n"
+                 "instrument: dayan\n"
+                 "\n"
+-                "1Na..1tk..2Tin..2Tun.. 3Na..4tk..5Tin..5Tun.. 6Na..7tk..8Tin..8Tun.. 9Na..9tk..9Tin..9Tun..";
+-                
++                "Na... Tin... Tun... tk... Na... Tin... Na... tk... "
++                "Tun... Tin... Na... Tun... Na... tk... Tin... Tun... "
++                "Na... Tin... Tun... tk... _... _... _... _... "
++                "Tun... Tin... Na... Tun... _... _... _... _... "
++                "Na... Tin... Tun... tk... _... _... _... _...";
++
+             std::string umlBayan = 
+                 "grid: 4\n"
+-                "basefreq: 110.0\n"
+                 "instrument: bayan\n"
+                 "\n"
+-                "1Ghe.._..2Ka.._.. 3Ghe.._..4Ka.._.. 5Ghe.._..6Ka.._.. 8Ghe.._..9Ka.._..";
++                "Ghe... _... _... Ka... _... Ka... Ghe... _... "
++                "Ghe... Ka... Ghe... Ke... Ghi... Ghe... Ka... Ghe... "
++                "Ghe... _... _... Ka... _... _... _... _... "
++                "Ghe... Ka... Ghe... Ke... _... _... _... _... "
++                "Ghi... Ghe... Ka... Ghe... _... _... _... _...";
+ 
+             group.sequences.push_back({"Tanpura", new UMLSequence("Tanpura", 11, umlTanpura)});
+-            group.sequences.push_back({"Sitar", new UMLSequence("Sitar", 9, umlSitar)});
+             group.sequences.push_back({"Bansuri", new UMLSequence("Bansuri", 17, umlBansuri)});
+             group.sequences.push_back({"Dayan", new UMLSequence("Dayan", 0, umlDayan)});
+             group.sequences.push_back({"Bayan", new UMLSequence("Bayan", 1, umlBayan)});
+             
+-            group.volumes = { 0.5f, 0.7f, 0.6f, 0.6f, 0.8f };
+-            duration = 20;
+-
++            group.volumes = { 1.2f, 0.9f, 0.9f, 1.0f };
++            duration = 16;
+         } else if (selection == 2) {
+             group.name = "Jazz Ensemble";
+ 
+@@ -178,44 +182,70 @@ int main(int argc, char* argv[]) {
+                 "grid: 4\n"
+                 "basefreq: 261.63\n"
+                 "instrument: piano\n"
+-                "notation: Indian\n"
++                "notation: Western\n"
+                 "\n"
+-                "6Sa...... 6Ga...... 6Pa...... 6Ni...... 8Sa...... 6Ni...... 6Pa...... 6Ga......";
++                "C4... E4... G4... B4... D4... F4... A4... C5... "
++                "B3... D4... F4... G4... C4... E4... G4... C5... "
++                "E5.. D5.. C5.. B4.. A4.. G4.. F4.. E4.. "
++                "D4.. C4.. B3.. A3.. G3.. F3.. E3.. C3..";
+                 
+             std::string umlSax = 
+                 "grid: 4\n"
+                 "basefreq: 261.63\n"
+                 "instrument: sax\n"
+-                "notation: Indian\n"
++                "notation: Western\n"
++                "\n"
++                "_... G4... B4... D5... _... F4... A4... C5... "
++                "_... E4... G4... B4... _... D4... F4... A4... "
++                "G4.. A4.. B4.. C5.. D5.. C5.. B4.. A4.. "
++                "G4.. F4.. E4.. D4.. C4.. B3.. C4.. _...";
++                
++            std::string umlBass = 
++                "grid: 4\n"
++                "instrument: bassguitar\n"
++                "notation: Western\n"
+                 "\n"
+-                "_... 6Re...... 6Ma...... 6Dha...... 6Ni...... 8Sa...... 6Dha...... 6Ma...... 6Re......";
++                "C2.. _.. E2.. _.. G2.. _.. B2.. _.. "
++                "D2.. _.. F2.. _.. A2.. _.. C3.. _.. "
++                "B1.. _.. D2.. _.. F2.. _.. G2.. _.. "
++                "C2.. _.. E2.. _.. G2.. _.. C3.. _..";
+                 
+             std::string umlKick = 
+                 "grid: 4\n"
+                 "instrument: kick\n"
+                 "\n"
+-                "8x.._.._.._.. 8x.._.._.._.. 8x.._..8x.._.. 8x.._.._.._..";
++                "8x... _... _... _... 8x... _... 8x... _... "
++                "_... 8x... _... _... 8x... _... _... 8x... "
++                "8x... _... _... _... 8x... _... 8x... _... "
++                "_... 8x... _... _... 8x... _... _... _...";
+                 
+             std::string umlSnare = 
+                 "grid: 4\n"
+                 "instrument: snare\n"
+                 "\n"
+-                "_.._..8x.._.. _.._..8x.._.. _.._..8x.._.. _.._..8x.._..";
++                "_... _... 8x... _... _... _... 8x... _... "
++                "_... 8x... _... _... 8x... _... _... _... "
++                "_... _... 8x... 8x.. _... _... 8x... _... "
++                "_... 8x... _... _... 8x... _... _... _...";
+                 
+-            std::string umlHihat = 
++            std::string umlRide = 
+                 "grid: 4\n"
+-                "instrument: hihat\n"
++                "instrument: ride\n"
+                 "\n"
+-                "6x.._..6x..7x.. 6x.._..6x..7x.. 6x.._..6x..7x.. 6x.._..6x..7x..";
++                "8x... 8x.8x. 8x... 8x.8x. 8x... 8x.8x. 8x... 8x.8x. "
++                "8x... 8x.8x. 8x... 8x.8x. 8x... 8x.8x. 8x... 8x.8x. "
++                "8x... 8x.8x. 8x... 8x.8x. 8x... 8x.8x. 8x... 8x.8x. "
++                "8x... 8x.8x. 8x... 8x.8x. 8x... 8x.8x. 8x... 8x.8x.";
+ 
+             group.sequences.push_back({"JazzPiano", new UMLSequence("JazzPiano", 12, umlPiano)});
+             group.sequences.push_back({"JazzSax", new UMLSequence("JazzSax", 13, umlSax)});
++            group.sequences.push_back({"JazzBass", new UMLSequence("JazzBass", 23, umlBass)});
+             group.sequences.push_back({"JazzKick", new UMLSequence("JazzKick", 2, umlKick)});
+             group.sequences.push_back({"JazzSnare", new UMLSequence("JazzSnare", 3, umlSnare)});
+-            group.sequences.push_back({"JazzHihat", new UMLSequence("JazzHihat", 4, umlHihat)});
++            group.sequences.push_back({"JazzRide", new UMLSequence("JazzRide", 6, umlRide)});
+             
+-            group.volumes = { 0.6f, 0.7f, 0.8f, 0.7f, 0.5f };
+-            duration = 15;
++            group.volumes = { 0.5f, 0.7f, 0.7f, 0.6f, 0.5f, 0.4f };
++            duration = 20;
+ 
+         } else if (selection == 3) {
+             group.name = "Rock Band (Hotel California)";
+@@ -366,90 +396,89 @@ int main(int argc, char* argv[]) {
+                 "instrument: bassguitar\n"
+                 "notation: Western\n"
+                 "\n"
+-                // Measures 1-4: Silence (64 steps)
+-                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
+-                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
+-                // Measures 5-8: Active chord-aligned sustain notes (64 steps total: 16 steps per chord)
++                // Measures 1-4: Bm, F#, A, E (intro/verse 1)
++                "B1............... F#1............... A1............... E1............... "
++                // Measures 5-8: G, D, Em, F# (verse 2)
+                 "G1............... D2............... E1............... F#1............... "
+-                // Measures 9-12: Active chord-aligned sustain notes (64 steps total: 16 steps per chord)
++                // Measures 9-12: Bm, F#, A, E (verse 3)
+                 "B1............... F#1............... A1............... E1............... "
+-                // Measures 13-16: Active chord-aligned sustain notes (64 steps total: 16 steps per chord)
++                // Measures 13-16: G, D, Em, F# (verse 4)
+                 "G1............... D2............... E1............... F#1...............";
+ 
+-            // Tumba (Low Conga, e.g. 130 Hz): plays deep, syncopated accents on beats 1, 3, and "and" of 2/4
++            // Tumba (Low Conga, e.g. 130 Hz): matches MIDI Low Conga pattern (1a, 2+, 3+)
+             std::string umlCongaLow = 
+                 "grid: 4\n"
+                 "bpm: 60\n"
+                 "basefreq: 130.0\n"
+                 "instrument: conga\n"
+                 "\n"
+-                // Measures 1-4: Silence (64 steps)
+-                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
+-                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
+-                // Measures 5-8: Active patterns (64 steps)
+-                "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
+-                "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
+-                "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
+-                "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
+-                // Measures 9-16: Active patterns (128 steps)
+-                "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
+-                "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
+-                "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
+-                "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
+-                "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
+-                "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
+-                "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
+-                "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _";
+-
+-            // Segundo (Mid Conga, e.g. 175 Hz): steady mid open tones on beats 3 and 4
++                // Measures 1-16: MIDI Low Conga pattern — hits on 1a, 2+, 3+
++                "_ _ _ to  _ _ to _  _ _ to _  _ _ _ _ "
++                "_ _ _ to  _ _ to _  _ _ to _  _ _ _ _ "
++                "_ _ _ to  _ _ to _  _ _ to _  _ _ _ _ "
++                "_ _ _ to  _ _ to _  _ _ to _  _ _ _ _ "
++                "_ _ _ to  _ _ to _  _ _ to _  _ _ _ _ "
++                "_ _ _ to  _ _ to _  _ _ to _  _ _ _ _ "
++                "_ _ _ to  _ _ to _  _ _ to _  _ _ _ _ "
++                "_ _ _ to  _ _ to _  _ _ to _  _ _ _ _ "
++                "_ _ _ to  _ _ to _  _ _ to _  _ _ _ _ "
++                "_ _ _ to  _ _ to _  _ _ to _  _ _ _ _ "
++                "_ _ _ to  _ _ to _  _ _ to _  _ _ _ _ "
++                "_ _ _ to  _ _ to _  _ _ to _  _ _ _ _ "
++                "_ _ _ to  _ _ to _  _ _ to _  _ _ _ _ "
++                "_ _ _ to  _ _ to _  _ _ to _  _ _ _ _ "
++                "_ _ _ to  _ _ to _  _ _ to _  _ _ _ _ "
++                "_ _ _ to  _ _ to _  _ _ to _  _ _ _ _";
++
++            // Segundo (Mid Conga, e.g. 175 Hz): matches MIDI Open Hi Conga pattern (1, 1+, 2, 3, 4, 4+)
+             std::string umlCongaMid = 
+                 "grid: 4\n"
+                 "bpm: 60\n"
+                 "basefreq: 175.0\n"
+                 "instrument: conga\n"
+                 "\n"
+-                // Measures 1-4: Silence (64 steps)
+-                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
+-                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
+-                // Measures 5-8: Active patterns (64 steps)
+-                "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
+-                "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
+-                "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
+-                "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
+-                // Measures 9-16: Active patterns (128 steps)
+-                "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
+-                "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
+-                "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
+-                "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
+-                "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
+-                "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
+-                "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
+-                "mu mu to _  mu mu to _  mu mu to _  mu mu to _";
+-
+-            // Quinto (High Conga, e.g. 225 Hz): sharp edge slaps (sl) and muted taps (mu)
++                // Measures 1-16: MIDI Open Hi Conga pattern — hits on 1, 1+, 2, 3, 4, 4+
++                "to _ to _  to _ _ _  to _ _ _  to _ to _ "
++                "to _ to _  to _ _ _  to _ _ _  to _ to _ "
++                "to _ to _  to _ _ _  to _ _ _  to _ to _ "
++                "to _ to _  to _ _ _  to _ _ _  to _ to _ "
++                "to _ to _  to _ _ _  to _ _ _  to _ to _ "
++                "to _ to _  to _ _ _  to _ _ _  to _ to _ "
++                "to _ to _  to _ _ _  to _ _ _  to _ to _ "
++                "to _ to _  to _ _ _  to _ _ _  to _ to _ "
++                "to _ to _  to _ _ _  to _ _ _  to _ to _ "
++                "to _ to _  to _ _ _  to _ _ _  to _ to _ "
++                "to _ to _  to _ _ _  to _ _ _  to _ to _ "
++                "to _ to _  to _ _ _  to _ _ _  to _ to _ "
++                "to _ to _  to _ _ _  to _ _ _  to _ to _ "
++                "to _ to _  to _ _ _  to _ _ _  to _ to _ "
++                "to _ to _  to _ _ _  to _ _ _  to _ to _ "
++                "to _ to _  to _ _ _  to _ _ _  to _ to _";
++
++            // Quinto (High Conga, e.g. 225 Hz): complementary slap accents on beats 2 and 4
+             std::string umlCongaHigh = 
+                 "grid: 4\n"
+                 "bpm: 60\n"
+                 "basefreq: 225.0\n"
+                 "instrument: conga\n"
+                 "\n"
+-                // Measures 1-4: Silence (64 steps)
+-                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
+-                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
+-                // Measures 5-8: Active patterns (64 steps)
+-                "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
+-                "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
+-                "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
+-                "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
+-                // Measures 9-16: Active patterns (128 steps)
+-                "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
+-                "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
+-                "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
+-                "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
+-                "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
+-                "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
+-                "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
+-                "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu";
++                // Measures 1-16: complementary slap/mute pattern on beats 2 and 4
++                "_ _ _ _  sl _ mu _  _ _ _ _  sl _ mu _ "
++                "_ _ _ _  sl _ mu _  _ _ _ _  sl _ mu _ "
++                "_ _ _ _  sl _ mu _  _ _ _ _  sl _ mu _ "
++                "_ _ _ _  sl _ mu _  _ _ _ _  sl _ mu _ "
++                "_ _ _ _  sl _ mu _  _ _ _ _  sl _ mu _ "
++                "_ _ _ _  sl _ mu _  _ _ _ _  sl _ mu _ "
++                "_ _ _ _  sl _ mu _  _ _ _ _  sl _ mu _ "
++                "_ _ _ _  sl _ mu _  _ _ _ _  sl _ mu _ "
++                "_ _ _ _  sl _ mu _  _ _ _ _  sl _ mu _ "
++                "_ _ _ _  sl _ mu _  _ _ _ _  sl _ mu _ "
++                "_ _ _ _  sl _ mu _  _ _ _ _  sl _ mu _ "
++                "_ _ _ _  sl _ mu _  _ _ _ _  sl _ mu _ "
++                "_ _ _ _  sl _ mu _  _ _ _ _  sl _ mu _ "
++                "_ _ _ _  sl _ mu _  _ _ _ _  sl _ mu _ "
++                "_ _ _ _  sl _ mu _  _ _ _ _  sl _ mu _ "
++                "_ _ _ _  sl _ mu _  _ _ _ _  sl _ mu _";
+ 
+             std::string umlKick = 
+                 "grid: 4\n"
+@@ -495,6 +524,29 @@ int main(int argc, char* argv[]) {
+                 "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  "
+                 "_ _ _ _ _ _ _ _  _ _ _ _ _ _ 8x. _";
+ 
++            std::string umlShaker = 
++                "grid: 4\n"
++                "bpm: 60\n"
++                "basefreq: 3000.0\n"
++                "instrument: shaker\n"
++                "\n"
++                // Measures 1-4: Silence (64 steps)
++                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
++                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
++                // Measures 5-16: Active patterns (192 steps total)
++                "8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  "
++                "8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  "
++                "8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  "
++                "8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  "
++                "8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  "
++                "8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  "
++                "8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  "
++                "8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  "
++                "8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  "
++                "8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  "
++                "8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  "
++                "8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _";
++
+             group.sequences.push_back({"AcousticGuitar", new UMLSequence("AcousticGuitar", 21, umlAGuitar)});
+             group.sequences.push_back({"AcousticBass", new UMLSequence("AcousticBass", 23, umlBGuitar)});
+             group.sequences.push_back({"CongaLow", new UMLSequence("CongaLow", 30, umlCongaLow)});
+@@ -502,9 +554,64 @@ int main(int argc, char* argv[]) {
+             group.sequences.push_back({"CongaHigh", new UMLSequence("CongaHigh", 30, umlCongaHigh)});
+             group.sequences.push_back({"AcousticKick", new UMLSequence("AcousticKick", 2, umlKick)});
+             group.sequences.push_back({"AcousticSnare", new UMLSequence("AcousticSnare", 3, umlSnare)});
++            group.sequences.push_back({"Shaker", new UMLSequence("Shaker", 33, umlShaker)});
+ 
+-            group.volumes = { 2.5f, 1.1f, 0.3f, 0.3f, 0.3f, 0.4f, 0.15f };
++            group.volumes = { 2.5f, 1.1f, 0.3f, 0.3f, 0.3f, 0.4f, 0.15f, 0.25f };
+             duration = 64;
++
++        } else if (selection == 6) {
++            group.name = "Sitar — Raag Yaman + Tabla Jawab-Talab";
++            
++            std::string umlTanpura = 
++                "grid: 2\n"
++                "basefreq: 130.81\n"
++                "instrument: tanpura\n"
++                "notation: Indian\n"
++                "\n"
++                "5Pa...... 5Sa...... 5Pa...... 5Sa......";
++                
++            std::string umlSitar = 
++                "grid: 4\n"
++                "basefreq: 130.81\n"
++                "instrument: sitar\n"
++                "notation: Indian\n"
++                "\n"
++                "6Ni...6Re...6Ga...6Ma...6Dha...6Ni...6Re...6Sa... "
++                "6Ni...6Dha...6Pa...6Ma...6Ga...6Re...6Sa...6Sa... "
++                "_... _... _... _... "
++                "6Ni...6Re...6Ga...6Ma... "
++                "_... _... _... _... "
++                "6Dha...6Ni...6Re...6Sa... "
++                "_... _... _... _... "
++                "6Ni..._...";
++                
++            std::string umlDayan = 
++                "grid: 4\n"
++                "instrument: dayan\n"
++                "\n"
++                "Na... Tin... Tun... tk... Na... Tin... Na... tk... "
++                "Tun... Tin... Na... Tun... Na... tk... Tin... Tun... "
++                "Na... Tin... Tun... tk... _... _... _... _... "
++                "Tun... Tin... Na... Tun... _... _... _... _... "
++                "Na... Tin... Tun... tk... _... _... _... _...";
++                
++            std::string umlBayan = 
++                "grid: 4\n"
++                "instrument: bayan\n"
++                "\n"
++                "Ghe... _... _... Ka... _... Ka... Ghe... _... "
++                "Ghe... Ka... Ghe... Ke... Ghi... Ghe... Ka... Ghe... "
++                "Ghe... _... _... Ka... _... _... _... _... "
++                "Ghe... Ka... Ghe... Ke... _... _... _... _... "
++                "Ghi... Ghe... Ka... Ghe... _... _... _... _...";
++
++            group.sequences.push_back({"Tanpura", new UMLSequence("Tanpura", 11, umlTanpura)});
++            group.sequences.push_back({"Sitar", new UMLSequence("Sitar", 9, umlSitar)});
++            group.sequences.push_back({"Dayan", new UMLSequence("Dayan", 0, umlDayan)});
++            group.sequences.push_back({"Bayan", new UMLSequence("Bayan", 1, umlBayan)});
++            
++            group.volumes = { 0.4f, 0.6f, 0.5f, 0.7f };
++            duration = 20;
+         }
+ 
+         if (!group.sequences.empty()) {
+
+commit e1b3c6d7f2e49506ba0d595de1bcaf22d2a45053
+Author: skhareindepay <skhare@indepay.com>
+Date:   Mon May 25 11:00:52 2026 +0530
+
+    [ignoring loop detection] Re-arrange snare sequence to play exclusively at the end of each 8-measure chord progression loop
+
+diff --git a/test/test_sequence.cpp b/test/test_sequence.cpp
+index 982c092..1e916a9 100644
+--- a/test/test_sequence.cpp
++++ b/test/test_sequence.cpp
+@@ -481,19 +481,19 @@ int main(int argc, char* argv[]) {
+                 // Measures 1-4: Silence (64 steps)
+                 "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
+                 "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
+-                // Measures 5-16: Active patterns (192 steps total)
+-                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
+-                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
+-                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
+-                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
+-                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
+-                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
+-                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
+-                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
+-                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
+-                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
+-                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
+-                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _";
++                // Measures 5-8: Active patterns (64 steps: 3 measures silence, 1 measure with snare at end)
++                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  "
++                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  "
++                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  "
++                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ 8x. _  "
++                // Repeat Measures 1-4 (Measures 9-12): Silence (64 steps)
++                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
++                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
++                // Repeat Measures 5-8 (Measures 13-16): Active patterns (64 steps: 3 measures silence, 1 measure with snare at end)
++                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  "
++                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  "
++                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  "
++                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ 8x. _";
+ 
+             group.sequences.push_back({"AcousticGuitar", new UMLSequence("AcousticGuitar", 21, umlAGuitar)});
+             group.sequences.push_back({"AcousticBass", new UMLSequence("AcousticBass", 23, umlBGuitar)});
+
+commit 6ad1133d49cb15450800c8ca64faa0cdb3efe7e8
+Author: skhareindepay <skhare@indepay.com>
+Date:   Mon May 25 10:39:30 2026 +0530
+
+    [ignoring loop detection] Increase acoustic guitar volume weight in Selection 5 mix to 2.5f
+
+diff --git a/test/test_sequence.cpp b/test/test_sequence.cpp
+index e7362c4..982c092 100644
+--- a/test/test_sequence.cpp
++++ b/test/test_sequence.cpp
+@@ -503,7 +503,7 @@ int main(int argc, char* argv[]) {
+             group.sequences.push_back({"AcousticKick", new UMLSequence("AcousticKick", 2, umlKick)});
+             group.sequences.push_back({"AcousticSnare", new UMLSequence("AcousticSnare", 3, umlSnare)});
+ 
+-            group.volumes = { 1.5f, 1.1f, 0.3f, 0.3f, 0.3f, 0.4f, 0.15f };
++            group.volumes = { 2.5f, 1.1f, 0.3f, 0.3f, 0.3f, 0.4f, 0.15f };
+             duration = 64;
+         }
+ 
+
+commit 3c2e09d8398a4a4b5c5164a2e14e6c86e5d8897f
+Author: skhareindepay <skhare@indepay.com>
+Date:   Mon May 25 10:37:39 2026 +0530
+
+    [ignoring loop detection] Increase acoustic guitar volume weight in Selection 5 mix to 1.5f
+
+diff --git a/test/test_sequence.cpp b/test/test_sequence.cpp
+index eca5a2f..e7362c4 100644
+--- a/test/test_sequence.cpp
++++ b/test/test_sequence.cpp
+@@ -503,7 +503,7 @@ int main(int argc, char* argv[]) {
+             group.sequences.push_back({"AcousticKick", new UMLSequence("AcousticKick", 2, umlKick)});
+             group.sequences.push_back({"AcousticSnare", new UMLSequence("AcousticSnare", 3, umlSnare)});
+ 
+-            group.volumes = { 0.8f, 1.1f, 0.3f, 0.3f, 0.3f, 0.4f, 0.15f };
++            group.volumes = { 1.5f, 1.1f, 0.3f, 0.3f, 0.3f, 0.4f, 0.15f };
+             duration = 64;
+         }
+ 
+
+commit 6d5919f676dfc179812b3379ac918e2efd5bf34b
+Author: skhareindepay <skhare@indepay.com>
+Date:   Mon May 25 10:36:07 2026 +0530
+
+    [ignoring loop detection] Implement exact MIDI-extracted note events, velocities and syncopated spacing for Hotel California live intro
+
+diff --git a/test/test_sequence.cpp b/test/test_sequence.cpp
+index 3a27269..eca5a2f 100644
+--- a/test/test_sequence.cpp
++++ b/test/test_sequence.cpp
+@@ -340,25 +340,25 @@ int main(int argc, char* argv[]) {
+                 "notation: Western\n"
+                 "\n"
+                 // Measure 1-4 (Bm, F#, A, E)
+-                "B3 D4 F#4 C#5 F#4 D4 B3 D4 F#4 B4 F#4 D4 B3 D4 F#4 D4 "
+-                "A#3 C#4 F#4 A#4 F#4 C#4 A#3 C#4 F#4 G#4 F#4 C#4 A#3 C#4 F#4 C#4 "
+-                "A3 C#4 E4 A4 E4 C#4 A3 C#4 E4 B4 E4 C#4 A3 C#4 E4 C#4 "
+-                "G#3 B3 E4 G#4 E4 B3 G#3 B3 E4 F#4 E4 B3 G#3 B3 E4 B3 "
++                "5B2. 5F#3 6B3 6B2 5F#3 6B3. 6F#4... 5D4... "
++                "5F#2. 5F#3 6A#3. 5C#4. 6A#3 5F#4....... "
++                "6A2. 6E3 6A3. 5C#4. 5A3 5A4... 6C#4... "
++                "6B2. 5E3 5G#3. 5B2 6E2 5B2 6E4....... "
+                 // Measure 5-8 (G, D, Em, F#)
+-                "G3 B3 D4 G4 D4 B3 G3 B3 D4 A4 D4 B3 G3 B3 D4 B3 "
+-                "F#3 A3 D4 F#4 D4 A3 F#3 A3 D4 G4 D4 A3 F#3 A3 D4 A3 "
+-                "E3 G3 B3 E4 B3 G3 E3 G3 B3 F#4 B3 G3 E3 G3 B3 G3 "
+-                "F#3 A#3 C#4 F#4 C#4 A#3 F#3 A#3 C#4 G#4 C#4 A#3 F#3 A#3 C#4 A#3 "
++                "6G3. 6B3 6G3. 5B3. 6G3 5C#4... 5D4... "
++                "_ . 6A3 6D4. 5F#4.. 6F#4... 6D4... "
++                "_ . 6B3 5G3. 5B3 6A3. 5B3... 5G3... "
++                "6F#2. 6F#3 6A#3. 5C#4. 6A#3 6F#4....... "
+                 // Repeat Measure 1-4
+-                "B3 D4 F#4 C#5 F#4 D4 B3 D4 F#4 B4 F#4 D4 B3 D4 F#4 D4 "
+-                "A#3 C#4 F#4 A#4 F#4 C#4 A#3 C#4 F#4 G#4 F#4 C#4 A#3 C#4 F#4 C#4 "
+-                "A3 C#4 E4 A4 E4 C#4 A3 C#4 E4 B4 E4 C#4 A3 C#4 E4 C#4 "
+-                "G#3 B3 E4 G#4 E4 B3 G#3 B3 E4 F#4 E4 B3 G#3 B3 E4 B3 "
++                "5B2. 5F#3 6B3 6B2 5F#3 6B3. 6F#4... 5D4... "
++                "5F#2. 5F#3 6A#3. 5C#4. 6A#3 5F#4....... "
++                "6A2. 6E3 6A3. 5C#4. 5A3 5A4... 6C#4... "
++                "6B2. 5E3 5G#3. 5B2 6E2 5B2 6E4....... "
+                 // Repeat Measure 5-8
+-                "G3 B3 D4 G4 D4 B3 G3 B3 D4 A4 D4 B3 G3 B3 D4 B3 "
+-                "F#3 A3 D4 F#4 D4 A3 F#3 A3 D4 G4 D4 A3 F#3 A3 D4 A3 "
+-                "E3 G3 B3 E4 B3 G3 E3 G3 B3 F#4 B3 G3 E3 G3 B3 G3 "
+-                "F#3 A#3 C#4 F#4 C#4 A#3 F#3 A#3 C#4 G#4 C#4 A#3 F#3 A#3 C#4 A#3";
++                "6G3. 6B3 6G3. 5B3. 6G3 5C#4... 5D4... "
++                "_ . 6A3 6D4. 5F#4.. 6F#4... 6D4... "
++                "_ . 6B3 5G3. 5B3 6A3. 5B3... 5G3... "
++                "6F#2. 6F#3 6A#3. 5C#4. 6A#3 6F#4.......";
+ 
+             std::string umlBGuitar = 
+                 "grid: 4\n"
+
+commit 4af3a4689cd43f45ed07512dfc25a357e2972907
+Author: skhareindepay <skhare@indepay.com>
+Date:   Mon May 25 10:24:23 2026 +0530
+
+    [ignoring loop detection] Implement complete 16-step sixteenth note chord arpeggiations for Hotel California intro
+
+diff --git a/test/test_sequence.cpp b/test/test_sequence.cpp
+index 3289895..3a27269 100644
+--- a/test/test_sequence.cpp
++++ b/test/test_sequence.cpp
+@@ -340,25 +340,25 @@ int main(int argc, char* argv[]) {
+                 "notation: Western\n"
+                 "\n"
+                 // Measure 1-4 (Bm, F#, A, E)
+-                "F#4 D4 B3.  F#4 D4 B3.  "
+-                "E4 C#4 A#3.  E4 C#4 A#3.  "
+-                "E4 C#4 A3.  E4 C#4 A3.  "
+-                "D4 B3 G#3.  D4 B3 G#3.  "
++                "B3 D4 F#4 C#5 F#4 D4 B3 D4 F#4 B4 F#4 D4 B3 D4 F#4 D4 "
++                "A#3 C#4 F#4 A#4 F#4 C#4 A#3 C#4 F#4 G#4 F#4 C#4 A#3 C#4 F#4 C#4 "
++                "A3 C#4 E4 A4 E4 C#4 A3 C#4 E4 B4 E4 C#4 A3 C#4 E4 C#4 "
++                "G#3 B3 E4 G#4 E4 B3 G#3 B3 E4 F#4 E4 B3 G#3 B3 E4 B3 "
+                 // Measure 5-8 (G, D, Em, F#)
+-                "D4 B3 G3.  D4 B3 G3.  "
+-                "F#4 D4 A3.  F#4 D4 A3.  "
+-                "G4 E4 B3.  G4 E4 B3.  "
+-                "E4 C#4 A#3.  E4 C#4 A#3.  "
++                "G3 B3 D4 G4 D4 B3 G3 B3 D4 A4 D4 B3 G3 B3 D4 B3 "
++                "F#3 A3 D4 F#4 D4 A3 F#3 A3 D4 G4 D4 A3 F#3 A3 D4 A3 "
++                "E3 G3 B3 E4 B3 G3 E3 G3 B3 F#4 B3 G3 E3 G3 B3 G3 "
++                "F#3 A#3 C#4 F#4 C#4 A#3 F#3 A#3 C#4 G#4 C#4 A#3 F#3 A#3 C#4 A#3 "
+                 // Repeat Measure 1-4
+-                "F#4 D4 B3.  F#4 D4 B3.  "
+-                "E4 C#4 A#3.  E4 C#4 A#3.  "
+-                "E4 C#4 A3.  E4 C#4 A3.  "
+-                "D4 B3 G#3.  D4 B3 G#3.  "
++                "B3 D4 F#4 C#5 F#4 D4 B3 D4 F#4 B4 F#4 D4 B3 D4 F#4 D4 "
++                "A#3 C#4 F#4 A#4 F#4 C#4 A#3 C#4 F#4 G#4 F#4 C#4 A#3 C#4 F#4 C#4 "
++                "A3 C#4 E4 A4 E4 C#4 A3 C#4 E4 B4 E4 C#4 A3 C#4 E4 C#4 "
++                "G#3 B3 E4 G#4 E4 B3 G#3 B3 E4 F#4 E4 B3 G#3 B3 E4 B3 "
+                 // Repeat Measure 5-8
+-                "D4 B3 G3.  D4 B3 G3.  "
+-                "F#4 D4 A3.  F#4 D4 A3.  "
+-                "G4 E4 B3.  G4 E4 B3.  "
+-                "E4 C#4 A#3.  E4 C#4 A#3.";
++                "G3 B3 D4 G4 D4 B3 G3 B3 D4 A4 D4 B3 G3 B3 D4 B3 "
++                "F#3 A3 D4 F#4 D4 A3 F#3 A3 D4 G4 D4 A3 F#3 A3 D4 A3 "
++                "E3 G3 B3 E4 B3 G3 E3 G3 B3 F#4 B3 G3 E3 G3 B3 G3 "
++                "F#3 A#3 C#4 F#4 C#4 A#3 F#3 A#3 C#4 G#4 C#4 A#3 F#3 A#3 C#4 A#3";
+ 
+             std::string umlBGuitar = 
+                 "grid: 4\n"
+@@ -369,9 +369,12 @@ int main(int argc, char* argv[]) {
+                 // Measures 1-4: Silence (64 steps)
+                 "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
+                 "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
+-                // Measures 5-8: Active chord-aligned sustain notes (64 steps total: 8 steps per chord)
+-                "G1....... D2....... E1....... F#1....... "
+-                "B1....... F#1....... A1....... E1.......";
++                // Measures 5-8: Active chord-aligned sustain notes (64 steps total: 16 steps per chord)
++                "G1............... D2............... E1............... F#1............... "
++                // Measures 9-12: Active chord-aligned sustain notes (64 steps total: 16 steps per chord)
++                "B1............... F#1............... A1............... E1............... "
++                // Measures 13-16: Active chord-aligned sustain notes (64 steps total: 16 steps per chord)
++                "G1............... D2............... E1............... F#1...............";
+ 
+             // Tumba (Low Conga, e.g. 130 Hz): plays deep, syncopated accents on beats 1, 3, and "and" of 2/4
+             std::string umlCongaLow = 
+@@ -383,7 +386,16 @@ int main(int argc, char* argv[]) {
+                 // Measures 1-4: Silence (64 steps)
+                 "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
+                 "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
+-                // Measures 5-8: Active patterns (4 repeats of 16-step pattern = 64 steps)
++                // Measures 5-8: Active patterns (64 steps)
++                "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
++                "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
++                "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
++                "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
++                // Measures 9-16: Active patterns (128 steps)
++                "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
++                "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
++                "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
++                "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
+                 "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
+                 "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
+                 "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
+@@ -399,7 +411,16 @@ int main(int argc, char* argv[]) {
+                 // Measures 1-4: Silence (64 steps)
+                 "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
+                 "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
+-                // Measures 5-8: Active patterns (4 repeats of 16-step pattern = 64 steps)
++                // Measures 5-8: Active patterns (64 steps)
++                "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
++                "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
++                "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
++                "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
++                // Measures 9-16: Active patterns (128 steps)
++                "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
++                "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
++                "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
++                "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
+                 "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
+                 "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
+                 "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
+@@ -415,7 +436,16 @@ int main(int argc, char* argv[]) {
+                 // Measures 1-4: Silence (64 steps)
+                 "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
+                 "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
+-                // Measures 5-8: Active patterns (4 repeats of 16-step pattern = 64 steps)
++                // Measures 5-8: Active patterns (64 steps)
++                "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
++                "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
++                "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
++                "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
++                // Measures 9-16: Active patterns (128 steps)
++                "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
++                "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
++                "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
++                "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
+                 "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
+                 "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
+                 "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
+@@ -429,15 +459,19 @@ int main(int argc, char* argv[]) {
+                 // Measures 1-4: Silence (64 steps)
+                 "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
+                 "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
+-                // Measures 5-8: Active patterns (8 repeats of 8-step pattern = 64 steps)
+-                "8x. _ 8x. _  8x. _ 8x. _  "
+-                "8x. _ 8x. _  8x. _ 8x. _  "
+-                "8x. _ 8x. _  8x. _ 8x. _  "
+-                "8x. _ 8x. _  8x. _ 8x. _  "
+-                "8x. _ 8x. _  8x. _ 8x. _  "
+-                "8x. _ 8x. _  8x. _ 8x. _  "
+-                "8x. _ 8x. _  8x. _ 8x. _  "
+-                "8x. _ 8x. _  8x. _ 8x. _";
++                // Measures 5-16: Active patterns (192 steps total)
++                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  "
++                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  "
++                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  "
++                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  "
++                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  "
++                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  "
++                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  "
++                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  "
++                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  "
++                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  "
++                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  "
++                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _";
+                 
+             std::string umlSnare = 
+                 "grid: 4\n"
+@@ -447,15 +481,19 @@ int main(int argc, char* argv[]) {
+                 // Measures 1-4: Silence (64 steps)
+                 "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
+                 "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
+-                // Measures 5-8: Active patterns (8 repeats of 8-step pattern = 64 steps)
+-                "_ _ 8x. _  _ _ 8x. _  "
+-                "_ _ 8x. _  _ _ 8x. _  "
+-                "_ _ 8x. _  _ _ 8x. _  "
+-                "_ _ 8x. _  _ _ 8x. _  "
+-                "_ _ 8x. _  _ _ 8x. _  "
+-                "_ _ 8x. _  _ _ 8x. _  "
+-                "_ _ 8x. _  _ _ 8x. _  "
+-                "_ _ 8x. _  _ _ 8x. _";
++                // Measures 5-16: Active patterns (192 steps total)
++                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
++                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
++                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
++                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
++                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
++                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
++                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
++                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
++                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
++                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
++                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _  "
++                "_ _ 8x. _  _ _ 8x. _  _ _ 8x. _  _ _ 8x. _";
+ 
+             group.sequences.push_back({"AcousticGuitar", new UMLSequence("AcousticGuitar", 21, umlAGuitar)});
+             group.sequences.push_back({"AcousticBass", new UMLSequence("AcousticBass", 23, umlBGuitar)});
+@@ -466,7 +504,7 @@ int main(int argc, char* argv[]) {
+             group.sequences.push_back({"AcousticSnare", new UMLSequence("AcousticSnare", 3, umlSnare)});
+ 
+             group.volumes = { 0.8f, 1.1f, 0.3f, 0.3f, 0.3f, 0.4f, 0.15f };
+-            duration = 32;
++            duration = 64;
+         }
+ 
+         if (!group.sequences.empty()) {
+
+commit 8f79178d0b13090cef34c27e990cd907d53cfb63
+Author: skhareindepay <skhare@indepay.com>
+Date:   Mon May 25 10:21:22 2026 +0530
+
+    Implement syncopated flamenco-style arpeggio spacing for acoustic guitar in selection 5
+
+diff --git a/test/test_sequence.cpp b/test/test_sequence.cpp
+index a6b4f51..3289895 100644
+--- a/test/test_sequence.cpp
++++ b/test/test_sequence.cpp
+@@ -340,25 +340,25 @@ int main(int argc, char* argv[]) {
+                 "notation: Western\n"
+                 "\n"
+                 // Measure 1-4 (Bm, F#, A, E)
+-                "B3. D4. F#4. D4. "
+-                "A#3. C#4. F#4. C#4. "
+-                "A3. C#4. E4. C#4. "
+-                "G#3. B3. E4. B3. "
++                "F#4 D4 B3.  F#4 D4 B3.  "
++                "E4 C#4 A#3.  E4 C#4 A#3.  "
++                "E4 C#4 A3.  E4 C#4 A3.  "
++                "D4 B3 G#3.  D4 B3 G#3.  "
+                 // Measure 5-8 (G, D, Em, F#)
+-                "G3. B3. D4. B3. "
+-                "F#3. A3. D4. A3. "
+-                "E3. G3. B3. G3. "
+-                "F#3. A#3. C#4. A#3. "
++                "D4 B3 G3.  D4 B3 G3.  "
++                "F#4 D4 A3.  F#4 D4 A3.  "
++                "G4 E4 B3.  G4 E4 B3.  "
++                "E4 C#4 A#3.  E4 C#4 A#3.  "
+                 // Repeat Measure 1-4
+-                "B3. D4. F#4. D4. "
+-                "A#3. C#4. F#4. C#4. "
+-                "A3. C#4. E4. C#4. "
+-                "G#3. B3. E4. B3. "
++                "F#4 D4 B3.  F#4 D4 B3.  "
++                "E4 C#4 A#3.  E4 C#4 A#3.  "
++                "E4 C#4 A3.  E4 C#4 A3.  "
++                "D4 B3 G#3.  D4 B3 G#3.  "
+                 // Repeat Measure 5-8
+-                "G3. B3. D4. B3. "
+-                "F#3. A3. D4. A3. "
+-                "E3. G3. B3. G3. "
+-                "F#3. A#3. C#4. A#3.";
++                "D4 B3 G3.  D4 B3 G3.  "
++                "F#4 D4 A3.  F#4 D4 A3.  "
++                "G4 E4 B3.  G4 E4 B3.  "
++                "E4 C#4 A#3.  E4 C#4 A#3.";
+ 
+             std::string umlBGuitar = 
+                 "grid: 4\n"
+
+commit bc03d55f736910075832551f8cf260f3aa39e337
+Author: skhareindepay <skhare@indepay.com>
+Date:   Mon May 25 10:19:18 2026 +0530
+
+    Update selection 5 to use acoustic eighth-note fingerpicking pattern and refine volume weights (snare 0.15f, bass 1.1f)
+
+diff --git a/test/test_sequence.cpp b/test/test_sequence.cpp
+index 110bfaf..a6b4f51 100644
+--- a/test/test_sequence.cpp
++++ b/test/test_sequence.cpp
+@@ -340,25 +340,25 @@ int main(int argc, char* argv[]) {
+                 "notation: Western\n"
+                 "\n"
+                 // Measure 1-4 (Bm, F#, A, E)
+-                "B3 D4 F#4 D4 B3 D4 F#4 D4 "
+-                "A#3 C#4 F#4 C#4 A#3 C#4 F#4 C#4 "
+-                "A3 C#4 E4 C#4 A3 C#4 E4 C#4 "
+-                "G#3 B3 E4 B3 G#3 B3 E4 B3 "
++                "B3. D4. F#4. D4. "
++                "A#3. C#4. F#4. C#4. "
++                "A3. C#4. E4. C#4. "
++                "G#3. B3. E4. B3. "
+                 // Measure 5-8 (G, D, Em, F#)
+-                "G3 B3 D4 B3 G3 B3 D4 B3 "
+-                "F#3 A3 D4 A3 F#3 A3 D4 A3 "
+-                "E3 G3 B3 G3 E3 G3 B3 G3 "
+-                "F#3 A#3 C#4 A#3 F#3 A#3 C#4 A#3 "
++                "G3. B3. D4. B3. "
++                "F#3. A3. D4. A3. "
++                "E3. G3. B3. G3. "
++                "F#3. A#3. C#4. A#3. "
+                 // Repeat Measure 1-4
+-                "B3 D4 F#4 D4 B3 D4 F#4 D4 "
+-                "A#3 C#4 F#4 C#4 A#3 C#4 F#4 C#4 "
+-                "A3 C#4 E4 C#4 A3 C#4 E4 C#4 "
+-                "G#3 B3 E4 B3 G#3 B3 E4 B3 "
++                "B3. D4. F#4. D4. "
++                "A#3. C#4. F#4. C#4. "
++                "A3. C#4. E4. C#4. "
++                "G#3. B3. E4. B3. "
+                 // Repeat Measure 5-8
+-                "G3 B3 D4 B3 G3 B3 D4 B3 "
+-                "F#3 A3 D4 A3 F#3 A3 D4 A3 "
+-                "E3 G3 B3 G3 E3 G3 B3 G3 "
+-                "F#3 A#3 C#4 A#3 F#3 A#3 C#4 A#3";
++                "G3. B3. D4. B3. "
++                "F#3. A3. D4. A3. "
++                "E3. G3. B3. G3. "
++                "F#3. A#3. C#4. A#3.";
+ 
+             std::string umlBGuitar = 
+                 "grid: 4\n"
+@@ -465,7 +465,7 @@ int main(int argc, char* argv[]) {
+             group.sequences.push_back({"AcousticKick", new UMLSequence("AcousticKick", 2, umlKick)});
+             group.sequences.push_back({"AcousticSnare", new UMLSequence("AcousticSnare", 3, umlSnare)});
+ 
+-            group.volumes = { 0.7f, 1.4f, 0.4f, 0.4f, 0.4f, 0.4f, 0.4f };
++            group.volumes = { 0.8f, 1.1f, 0.3f, 0.3f, 0.3f, 0.4f, 0.15f };
+             duration = 32;
+         }
+ 
+
+commit 5a4223a9eddaf0eff541dba2046e8a79bedc2766
+Author: skhareindepay <skhare@indepay.com>
+Date:   Mon May 25 10:13:24 2026 +0530
+
+    Adjust selection 5 mix volumes: boost AcousticBass to 1.4f, lower congas and drums to 0.4f
+
+diff --git a/test/test_sequence.cpp b/test/test_sequence.cpp
+index 29e444b..110bfaf 100644
+--- a/test/test_sequence.cpp
++++ b/test/test_sequence.cpp
+@@ -465,7 +465,7 @@ int main(int argc, char* argv[]) {
+             group.sequences.push_back({"AcousticKick", new UMLSequence("AcousticKick", 2, umlKick)});
+             group.sequences.push_back({"AcousticSnare", new UMLSequence("AcousticSnare", 3, umlSnare)});
+ 
+-            group.volumes = { 0.7f, 0.8f, 0.8f, 0.8f, 0.8f, 0.9f, 0.8f };
++            group.volumes = { 0.7f, 1.4f, 0.4f, 0.4f, 0.4f, 0.4f, 0.4f };
+             duration = 32;
+         }
+ 
+
+commit 8dfcee6058c6d41ed54bd1ac09a2a7c3f332f8bf
+Author: skhareindepay <skhare@indepay.com>
+Date:   Mon May 25 10:01:28 2026 +0530
+
+    Implement Acoustic Hotel California intro sequence with 3-conga tuning and entry delay in test_sequence.cpp
+
+diff --git a/test/test_sequence.cpp b/test/test_sequence.cpp
+new file mode 100644
+index 0000000..29e444b
+--- /dev/null
++++ b/test/test_sequence.cpp
+@@ -0,0 +1,489 @@
++/*
++ * Copyright (c) 2026 Shashank Khare
++ * 
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the "Software"), to deal
++ * in the Software without restriction, including without limitation the rights
++ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ * copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions:
++ * 
++ * The above copyright notice and this permission notice shall be included in all
++ * copies or substantial portions of the Software.
++ * 
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
++ * SOFTWARE.
++ */
++
++#include <iostream>
++#include <vector>
++#include <string>
++#include <cmath>
++#include <unistd.h>
++#include <algorithm>
++#include "../src/SequenceOrchestrator.hpp"
++#include "../src/FaustMixer.hpp"
++#include "../src/UMLParser.hpp"
++#include "../src/InstrumentMapper.hpp"
++
++// Helper structure to group sequences for a style
++struct SequenceGroup {
++    std::string name;
++    std::vector<std::pair<std::string, UMLSequence*>> sequences;
++    std::vector<float> volumes;
++};
++
++// Global stop flag for playback thread wait
++static bool gStopPlayback = false;
++
++void playSequenceGroup(FaustMixer& mixer, SequenceOrchestrator& orch, SequenceGroup& group, int durationSeconds) {
++    std::cout << "\n=== Starting Sequence: " << group.name << " ===" << std::endl;
++    
++    // 1. Register sequences and instruments
++    for (size_t i = 0; i < group.sequences.size(); ++i) {
++        auto& seqPair = group.sequences[i];
++        orch.addSequence(seqPair.first, seqPair.second);
++        mixer.registerInstrument(seqPair.second->getFaustInstrument(), group.volumes[i]);
++    }
++
++    // 2. Play
++    for (auto& seqPair : group.sequences) {
++        orch.play(seqPair.first);
++    }
++
++    std::cout << "[Playback] Playing for " << durationSeconds << " seconds. Listen closely..." << std::endl;
++    for (int i = 0; i < durationSeconds; ++i) {
++        std::cout << "  " << (durationSeconds - i) << "s remaining..." << std::endl;
++        sleep(1);
++    }
++
++    // 3. Stop and Unload
++    orch.stop();
++    for (auto& seqPair : group.sequences) {
++        mixer.unregisterInstrument(seqPair.second->getFaustInstrument());
++    }
++    orch.clearSequences();
++
++    // 4. Free memory
++    for (auto& seqPair : group.sequences) {
++        delete seqPair.second;
++    }
++    group.sequences.clear();
++    
++    std::cout << "=== Finished Sequence: " << group.name << " ===\n" << std::endl;
++}
++
++int main(int argc, char* argv[]) {
++    std::cout << "--- Standalone Multi-Style Sequence Validation Runner ---" << std::endl;
++
++    // 1. Setup Orchestrator and Mixer
++    SequenceOrchestrator& orch = SequenceOrchestrator::getInstance();
++    FaustMixer& mixer = FaustMixer::getInstance();
++    
++    mixer.init(InstrumentMapper::DEFAULT_SAMPLE_RATE);
++    mixer.setPreRenderCallback(SequenceOrchestrator::staticPreRender, &orch);
++    mixer.start(); 
++
++    // Command-line or interactive selection
++    int selection = -1;
++    if (argc > 1) {
++        try {
++            selection = std::stoi(argv[1]);
++        } catch (...) {
++            selection = -1;
++        }
++    }
++
++    while (true) {
++        if (selection == -1) {
++            std::cout << "\nSelect a sequence to play:" << std::endl;
++            std::cout << "  1. Indian Classical (Sitar, Tanpura, Tabla, Bansuri)" << std::endl;
++            std::cout << "  2. Jazz Ensemble (Piano, Sax, Bass, Drums)" << std::endl;
++            std::cout << "  3. Rock Band (Electric Guitar, Bass, Drums)" << std::endl;
++            std::cout << "  4. Tibetan Bowl with Rain (Bowl, Bell, Rainmaker)" << std::endl;
++            std::cout << "  5. Acoustic Hotel California (Acoustic Guitar, 3 Congas, Bass, Drums)" << std::endl;
++            std::cout << "  6. Exit" << std::endl;
++            std::cout << ">>> Enter selection (1-6): ";
++            if (!(std::cin >> selection)) {
++                break;
++            }
++        }
++
++        if (selection == 6) {
++            break;
++        }
++
++        SequenceGroup group;
++        int duration = 15; // default duration 15s
++
++        if (selection == 1) {
++            group.name = "Indian Classical";
++            
++            std::string umlTanpura = 
++                "grid: 2\n"
++                "basefreq: 130.81\n"
++                "instrument: tanpura\n"
++                "notation: Indian\n"
++                "\n"
++                "5Pa...... 5Sa...... 5Pa...... 5Sa......";
++                
++            std::string umlSitar = 
++                "grid: 4\n"
++                "basefreq: 130.81\n"
++                "instrument: sitar\n"
++                "notation: Indian\n"
++                "\n"
++                "6Sa..6Re..6Ga.._.. 6Pa..6Dha..8Sa.._.. 8Sa..6Dha..6Pa.._.. 6Ga..6Re..6Sa.._..";
++                
++            std::string umlBansuri = 
++                "grid: 4\n"
++                "basefreq: 261.63\n"
++                "instrument: bansuri\n"
++                "notation: Indian\n"
++                "\n"
++                "_.... 6Sa...... 6Ga...... 6Pa...... 6Dha...... 8Sa...... 6Dha...... 6Pa...... 6Ga...... 6Re...... 6Sa......";
++                
++            std::string umlDayan = 
++                "grid: 4\n"
++                "basefreq: 293.66\n"
++                "instrument: dayan\n"
++                "\n"
++                "1Na..1tk..2Tin..2Tun.. 3Na..4tk..5Tin..5Tun.. 6Na..7tk..8Tin..8Tun.. 9Na..9tk..9Tin..9Tun..";
++                
++            std::string umlBayan = 
++                "grid: 4\n"
++                "basefreq: 110.0\n"
++                "instrument: bayan\n"
++                "\n"
++                "1Ghe.._..2Ka.._.. 3Ghe.._..4Ka.._.. 5Ghe.._..6Ka.._.. 8Ghe.._..9Ka.._..";
++
++            group.sequences.push_back({"Tanpura", new UMLSequence("Tanpura", 11, umlTanpura)});
++            group.sequences.push_back({"Sitar", new UMLSequence("Sitar", 9, umlSitar)});
++            group.sequences.push_back({"Bansuri", new UMLSequence("Bansuri", 17, umlBansuri)});
++            group.sequences.push_back({"Dayan", new UMLSequence("Dayan", 0, umlDayan)});
++            group.sequences.push_back({"Bayan", new UMLSequence("Bayan", 1, umlBayan)});
++            
++            group.volumes = { 0.5f, 0.7f, 0.6f, 0.6f, 0.8f };
++            duration = 20;
++
++        } else if (selection == 2) {
++            group.name = "Jazz Ensemble";
++
++            std::string umlPiano = 
++                "grid: 4\n"
++                "basefreq: 261.63\n"
++                "instrument: piano\n"
++                "notation: Indian\n"
++                "\n"
++                "6Sa...... 6Ga...... 6Pa...... 6Ni...... 8Sa...... 6Ni...... 6Pa...... 6Ga......";
++                
++            std::string umlSax = 
++                "grid: 4\n"
++                "basefreq: 261.63\n"
++                "instrument: sax\n"
++                "notation: Indian\n"
++                "\n"
++                "_... 6Re...... 6Ma...... 6Dha...... 6Ni...... 8Sa...... 6Dha...... 6Ma...... 6Re......";
++                
++            std::string umlKick = 
++                "grid: 4\n"
++                "instrument: kick\n"
++                "\n"
++                "8x.._.._.._.. 8x.._.._.._.. 8x.._..8x.._.. 8x.._.._.._..";
++                
++            std::string umlSnare = 
++                "grid: 4\n"
++                "instrument: snare\n"
++                "\n"
++                "_.._..8x.._.. _.._..8x.._.. _.._..8x.._.. _.._..8x.._..";
++                
++            std::string umlHihat = 
++                "grid: 4\n"
++                "instrument: hihat\n"
++                "\n"
++                "6x.._..6x..7x.. 6x.._..6x..7x.. 6x.._..6x..7x.. 6x.._..6x..7x..";
++
++            group.sequences.push_back({"JazzPiano", new UMLSequence("JazzPiano", 12, umlPiano)});
++            group.sequences.push_back({"JazzSax", new UMLSequence("JazzSax", 13, umlSax)});
++            group.sequences.push_back({"JazzKick", new UMLSequence("JazzKick", 2, umlKick)});
++            group.sequences.push_back({"JazzSnare", new UMLSequence("JazzSnare", 3, umlSnare)});
++            group.sequences.push_back({"JazzHihat", new UMLSequence("JazzHihat", 4, umlHihat)});
++            
++            group.volumes = { 0.6f, 0.7f, 0.8f, 0.7f, 0.5f };
++            duration = 15;
++
++        } else if (selection == 3) {
++            group.name = "Rock Band (Hotel California)";
++
++            std::string umlEGuitar = 
++                "grid: 4\n"
++                "bpm: 60\n"
++                "instrument: electricguitar\n"
++                "notation: Western\n"
++                "\n"
++                // Measure 1-4 (Bm, F#, A, E)
++                "B3 D4 F#4 D4 B3 D4 F#4 D4 "
++                "A#3 C#4 F#4 C#4 A#3 C#4 F#4 C#4 "
++                "A3 C#4 E4 C#4 A3 C#4 E4 C#4 "
++                "G#3 B3 E4 B3 G#3 B3 E4 B3 "
++                // Measure 5-8 (G, D, Em, F#)
++                "G3 B3 D4 B3 G3 B3 D4 B3 "
++                "F#3 A3 D4 A3 F#3 A3 D4 A3 "
++                "E3 G3 B3 G3 E3 G3 B3 G3 "
++                "F#3 A#3 C#4 A#3 F#3 A#3 C#4 A#3 "
++                // Repeat Measure 1-4
++                "B3 D4 F#4 D4 B3 D4 F#4 D4 "
++                "A#3 C#4 F#4 C#4 A#3 C#4 F#4 C#4 "
++                "A3 C#4 E4 C#4 A3 C#4 E4 C#4 "
++                "G#3 B3 E4 B3 G#3 B3 E4 B3 "
++                // Repeat Measure 5-8
++                "G3 B3 D4 B3 G3 B3 D4 B3 "
++                "F#3 A3 D4 A3 F#3 A3 D4 A3 "
++                "E3 G3 B3 G3 E3 G3 B3 G3 "
++                "F#3 A#3 C#4 A#3 F#3 A#3 C#4 A#3";
++                
++            std::string umlBGuitar = 
++                "grid: 4\n"
++                "bpm: 60\n"
++                "instrument: bassguitar\n"
++                "notation: Western\n"
++                "\n"
++                // Measures 1-8 (Bm, F#, A, E, G, D, Em, F#)
++                "B1. B1. F#1. F#1. A1. A1. E1. E1. "
++                "G1. G1. D2. D2. E1. E1. F#1. F#1. "
++                // Repeat Measures 1-8
++                "B1. B1. F#1. F#1. A1. A1. E1. E1. "
++                "G1. G1. D2. D2. E1. E1. F#1. F#1.";
++                
++            std::string umlKick = 
++                "grid: 4\n"
++                "bpm: 60\n"
++                "instrument: kick\n"
++                "\n"
++                "8x. 8x. 8x. 8x. 8x. 8x. 8x. 8x. "
++                "8x. 8x. 8x. 8x. 8x. 8x. 8x. 8x. "
++                "8x. 8x. 8x. 8x. 8x. 8x. 8x. 8x. "
++                "8x. 8x. 8x. 8x. 8x. 8x. 8x. 8x.";
++                
++            std::string umlSnare = 
++                "grid: 4\n"
++                "bpm: 60\n"
++                "instrument: snare\n"
++                "\n"
++                "_. 8x. _. 8x. _. 8x. _. 8x. "
++                "_. 8x. _. 8x. _. 8x. _. 8x. "
++                "_. 8x. _. 8x. _. 8x. _. 8x. "
++                "_. 8x. _. 8x. _. 8x. _. 8x.";
++                
++            std::string umlHihat = 
++                "grid: 4\n"
++                "bpm: 60\n"
++                "instrument: hihat\n"
++                "\n"
++                "8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x "
++                "8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x "
++                "8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x "
++                "8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x";
++
++            group.sequences.push_back({"RockEGuitar", new UMLSequence("RockEGuitar", 22, umlEGuitar)});
++            group.sequences.push_back({"RockBGuitar", new UMLSequence("RockBGuitar", 23, umlBGuitar)});
++            group.sequences.push_back({"RockKick", new UMLSequence("RockKick", 2, umlKick)});
++            group.sequences.push_back({"RockSnare", new UMLSequence("RockSnare", 3, umlSnare)});
++            group.sequences.push_back({"RockHihat", new UMLSequence("RockHihat", 4, umlHihat)});
++
++            group.volumes = { 0.7f, 0.8f, 0.9f, 0.8f, 0.6f };
++            duration = 24;
++
++        } else if (selection == 4) {
++            group.name = "Tibetan Bowl with Rain";
++
++            std::string umlRainmaker = 
++                "grid: 1\n"
++                "instrument: rainmaker\n"
++                "\n"
++                "8x................................";
++                
++            std::string umlBowl = 
++                "grid: 2\n"
++                "basefreq: 140.0\n"
++                "instrument: bowl\n"
++                "notation: Indian\n"
++                "\n"
++                "8Sa................ 8Ga................ 8Pa................ 8Sa................";
++                
++            std::string umlBell = 
++                "grid: 2\n"
++                "basefreq: 440.0\n"
++                "instrument: bell\n"
++                "notation: Indian\n"
++                "\n"
++                "_... 6Sa................ 6Pa................ 6Ni................";
++
++            group.sequences.push_back({"AmbientRain", new UMLSequence("AmbientRain", 19, umlRainmaker)});
++            group.sequences.push_back({"AmbientBowl", new UMLSequence("AmbientBowl", 8, umlBowl)});
++            group.sequences.push_back({"AmbientBell", new UMLSequence("AmbientBell", 7, umlBell)});
++
++            group.volumes = { 0.9f, 0.7f, 0.6f };
++            duration = 20;
++        } else if (selection == 5) {
++            group.name = "Acoustic Hotel California (Acoustic Guitar, 3 Congas, Bass, Drums)";
++
++            std::string umlAGuitar = 
++                "grid: 4\n"
++                "bpm: 60\n"
++                "instrument: acousticguitar\n"
++                "notation: Western\n"
++                "\n"
++                // Measure 1-4 (Bm, F#, A, E)
++                "B3 D4 F#4 D4 B3 D4 F#4 D4 "
++                "A#3 C#4 F#4 C#4 A#3 C#4 F#4 C#4 "
++                "A3 C#4 E4 C#4 A3 C#4 E4 C#4 "
++                "G#3 B3 E4 B3 G#3 B3 E4 B3 "
++                // Measure 5-8 (G, D, Em, F#)
++                "G3 B3 D4 B3 G3 B3 D4 B3 "
++                "F#3 A3 D4 A3 F#3 A3 D4 A3 "
++                "E3 G3 B3 G3 E3 G3 B3 G3 "
++                "F#3 A#3 C#4 A#3 F#3 A#3 C#4 A#3 "
++                // Repeat Measure 1-4
++                "B3 D4 F#4 D4 B3 D4 F#4 D4 "
++                "A#3 C#4 F#4 C#4 A#3 C#4 F#4 C#4 "
++                "A3 C#4 E4 C#4 A3 C#4 E4 C#4 "
++                "G#3 B3 E4 B3 G#3 B3 E4 B3 "
++                // Repeat Measure 5-8
++                "G3 B3 D4 B3 G3 B3 D4 B3 "
++                "F#3 A3 D4 A3 F#3 A3 D4 A3 "
++                "E3 G3 B3 G3 E3 G3 B3 G3 "
++                "F#3 A#3 C#4 A#3 F#3 A#3 C#4 A#3";
++
++            std::string umlBGuitar = 
++                "grid: 4\n"
++                "bpm: 60\n"
++                "instrument: bassguitar\n"
++                "notation: Western\n"
++                "\n"
++                // Measures 1-4: Silence (64 steps)
++                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
++                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
++                // Measures 5-8: Active chord-aligned sustain notes (64 steps total: 8 steps per chord)
++                "G1....... D2....... E1....... F#1....... "
++                "B1....... F#1....... A1....... E1.......";
++
++            // Tumba (Low Conga, e.g. 130 Hz): plays deep, syncopated accents on beats 1, 3, and "and" of 2/4
++            std::string umlCongaLow = 
++                "grid: 4\n"
++                "bpm: 60\n"
++                "basefreq: 130.0\n"
++                "instrument: conga\n"
++                "\n"
++                // Measures 1-4: Silence (64 steps)
++                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
++                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
++                // Measures 5-8: Active patterns (4 repeats of 16-step pattern = 64 steps)
++                "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
++                "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
++                "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _ "
++                "ba _ _ _  _ ba _ _  ba _ _ _  _ ba _ _";
++
++            // Segundo (Mid Conga, e.g. 175 Hz): steady mid open tones on beats 3 and 4
++            std::string umlCongaMid = 
++                "grid: 4\n"
++                "bpm: 60\n"
++                "basefreq: 175.0\n"
++                "instrument: conga\n"
++                "\n"
++                // Measures 1-4: Silence (64 steps)
++                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
++                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
++                // Measures 5-8: Active patterns (4 repeats of 16-step pattern = 64 steps)
++                "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
++                "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
++                "mu mu to _  mu mu to _  mu mu to _  mu mu to _ "
++                "mu mu to _  mu mu to _  mu mu to _  mu mu to _";
++
++            // Quinto (High Conga, e.g. 225 Hz): sharp edge slaps (sl) and muted taps (mu)
++            std::string umlCongaHigh = 
++                "grid: 4\n"
++                "bpm: 60\n"
++                "basefreq: 225.0\n"
++                "instrument: conga\n"
++                "\n"
++                // Measures 1-4: Silence (64 steps)
++                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
++                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
++                // Measures 5-8: Active patterns (4 repeats of 16-step pattern = 64 steps)
++                "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
++                "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
++                "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu "
++                "sl _ mu mu  _ sl mu mu  sl _ mu mu  _ sl mu mu";
++
++            std::string umlKick = 
++                "grid: 4\n"
++                "bpm: 60\n"
++                "instrument: kick\n"
++                "\n"
++                // Measures 1-4: Silence (64 steps)
++                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
++                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
++                // Measures 5-8: Active patterns (8 repeats of 8-step pattern = 64 steps)
++                "8x. _ 8x. _  8x. _ 8x. _  "
++                "8x. _ 8x. _  8x. _ 8x. _  "
++                "8x. _ 8x. _  8x. _ 8x. _  "
++                "8x. _ 8x. _  8x. _ 8x. _  "
++                "8x. _ 8x. _  8x. _ 8x. _  "
++                "8x. _ 8x. _  8x. _ 8x. _  "
++                "8x. _ 8x. _  8x. _ 8x. _  "
++                "8x. _ 8x. _  8x. _ 8x. _";
++                
++            std::string umlSnare = 
++                "grid: 4\n"
++                "bpm: 60\n"
++                "instrument: snare\n"
++                "\n"
++                // Measures 1-4: Silence (64 steps)
++                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
++                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
++                // Measures 5-8: Active patterns (8 repeats of 8-step pattern = 64 steps)
++                "_ _ 8x. _  _ _ 8x. _  "
++                "_ _ 8x. _  _ _ 8x. _  "
++                "_ _ 8x. _  _ _ 8x. _  "
++                "_ _ 8x. _  _ _ 8x. _  "
++                "_ _ 8x. _  _ _ 8x. _  "
++                "_ _ 8x. _  _ _ 8x. _  "
++                "_ _ 8x. _  _ _ 8x. _  "
++                "_ _ 8x. _  _ _ 8x. _";
++
++            group.sequences.push_back({"AcousticGuitar", new UMLSequence("AcousticGuitar", 21, umlAGuitar)});
++            group.sequences.push_back({"AcousticBass", new UMLSequence("AcousticBass", 23, umlBGuitar)});
++            group.sequences.push_back({"CongaLow", new UMLSequence("CongaLow", 30, umlCongaLow)});
++            group.sequences.push_back({"CongaMid", new UMLSequence("CongaMid", 30, umlCongaMid)});
++            group.sequences.push_back({"CongaHigh", new UMLSequence("CongaHigh", 30, umlCongaHigh)});
++            group.sequences.push_back({"AcousticKick", new UMLSequence("AcousticKick", 2, umlKick)});
++            group.sequences.push_back({"AcousticSnare", new UMLSequence("AcousticSnare", 3, umlSnare)});
++
++            group.volumes = { 0.7f, 0.8f, 0.8f, 0.8f, 0.8f, 0.9f, 0.8f };
++            duration = 32;
++        }
++
++        if (!group.sequences.empty()) {
++            playSequenceGroup(mixer, orch, group, duration);
++        } else {
++            std::cout << "Invalid selection. Please try again." << std::endl;
++        }
++
++        // If run with command line arg, exit after playing once
++        if (argc > 1) {
++            break;
++        }
++        
++        selection = -1; // Reset for next loop in interactive mode
++    }
++
++    mixer.stop();
++    std::cout << "--- Runner Complete ---" << std::endl;
++    return 0;
++}

@@ -132,7 +132,27 @@ Ambient instruments operate slightly differently.
 
 > Generic tabla tokens (`Na`, `tk`, `Ti`, `Tun`) still work as a fallback for all IDs in the 19, 28, 30, 31, 33, 34, 35 range.
 
-### 3.4 General Percussion Fallback (IDs 2–6: Kick, Snare, HiHat, Tom, Ride)
+### 3.7 Tibetan Singing Bowl (ID 47)
+
+The Tibetan Singing Bowl is articulated purely using discrete Strike/Rub inputs. The pitch of the bowl is statically derived from the `basefreq` parameter in the header.
+
+| Token(s) | strikeVal | Character |
+|---|---|---|
+| `r`, `R`, `rub` | 0.0 | **Rub**: Continuous rim friction (Bowing). Needs a long sustain (`r . . .`) to build up resonance. |
+| `s`, `S`, `strike` | 1.0 | **Strike**: Instantaneous felt mallet strike. Rings out organically. |
+
+**Tibetan Bowl Example**:
+```
+instrument: tibetanbowl
+basefreq: 111.0
+bpm: 60
+grid: 4
+
+// Strike, let ring for 3 beats, then start rubbing for 4 beats
+s . . . . . . . r . . . . . . . . . . . . . . .
+```
+
+### 3.8 General Percussion Fallback (IDs 2–6: Kick, Snare, HiHat, Tom, Ride)
 
 | Token(s) | strikeVal |
 |---|---|
@@ -266,6 +286,7 @@ parameters: (pressure=0.8, vibrato_depth=0.02)
 | `CG` / `conga` | Conga | 30 | General bols §3.3 |
 | `BG` / `bongo` | Bongo | 31 | General bols §3.3 |
 | `VO` / `voice` / `vocals` / `singing` | Singing Voice | 32 | Vowels + Indian solfège §4 |
-| `SK` / `shaker` | Shaker | 33 | General bols §3.4 |
-| `SW` / `seawave` | Sea Wave | 34 | General bols §3.4 |
-| `CG` / `chougong` | Chou Gong | 35 | General bols §3.4 |
+| `SK` / `shaker` | Shaker | 33 | General bols §3.8 |
+| `SW` / `seawave` | Sea Wave | 34 | General bols §3.8 |
+| `CG` / `chougong` | Chou Gong | 35 | General bols §3.8 |
+| `TB` / `tibetanbowl` | Tibetan Singing Bowl | 47 | Articulation tokens (s/r) §3.7 |

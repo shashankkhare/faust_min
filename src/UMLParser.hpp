@@ -27,58 +27,7 @@
 #include <vector>
 #include <map>
 
-enum class UMLEventType {
-    NoteOn,
-    NoteOff,
-    Glide
-};
-
-struct UMLEvent {
-    long sampleOffset = 0;
-    UMLEventType type = UMLEventType::NoteOn;
-    float frequency = 0.0f;
-    float velocity = -1.0f;  // -1.0 = not set (use DSP default)
-    float amplitude = -1.0f; // -1.0 = not set (use DSP default)
-    float strikeVal = -1.0f;   // -1.0 implies no explicit strike value
-    float vowelVal  = -1.0f;   // -1.0 = not a voice event; 0=aa 1=ee 2=ii 3=oo 4=uu
-    std::string note = "";
-    long durationSamples = 0;  // For glides
-    float targetFrequency = 0.0f;  // For glides
-    float targetVelocity  = 0.0f;  // For glides
-    float targetStrikeVal = -1.0f; // For glides if needed
-};
-
-#include <memory>
-#include "FaustInstrument.hpp"
-
-class UMLSequence {
-public:
-    std::string name;
-    std::string instrument;
-    int instrumentID;
-    std::map<std::string, float> initialParams;
-    std::vector<UMLEvent> events;
-    double bpm;
-    int grid;
-    double baseFreq;
-    double gain;
-    long totalDurationSamples;
-    std::string notation;
-    std::string execType;
-    std::string umlData;
-
-    std::shared_ptr<FaustInstrument> mInstrument;
-
-    UMLSequence() : instrumentID(-1), bpm(120.0), grid(4), baseFreq(261.63), gain(1.0), totalDurationSamples(0), notation("Indian"), execType("static") {}
-
-    UMLSequence(const std::string& seqName, int instID, const std::string& umlDataString, double defaultBaseFreq = 261.63);
-
-    FaustInstrument* getFaustInstrument() {
-        return mInstrument.get();
-    }
-    
-    ~UMLSequence();
-};
+#include "UMLSequence.hpp"
 
 class UMLParser {
 public:
@@ -95,6 +44,7 @@ public:
     static UMLSequence parse(const std::string& name, const std::string& input, double sampleRate, double defaultBaseFreq = 261.63);
 
 private:
+    static void parseHeader(std::stringstream& ss, UMLSequence& seq, int& grid, std::string& notesSection);
     static double getFrequency(const std::string& token, const std::string& notation, double baseFreq, const std::string& instrument);
     static void handlePercussionToken(const std::string& tokenNoteName, float amplitudeScalar, long sampleOffset, long durationSamples, 
                                      double baseFreq, const std::string& instrument, std::vector<UMLEvent>& outEvents);
@@ -106,6 +56,7 @@ private:
                                  double samplesPerGrid, size_t nextTokenIndex, const std::vector<TokenItem>& tokenItemsArray, std::vector<UMLEvent>& outEvents);
 
     static const std::map<std::string, double> indianRatios;
+    static const std::map<std::string, double> gongcheRatios;
     static const std::map<std::string, double> westernPitches;
     static const std::map<std::string, double> percussionBols;
     // Vowel syllable table: aa/ee/ii/oo/uu → continuous 0–4 index for formant morphing

@@ -126,6 +126,22 @@ void SequenceOrchestrator::play(const std::string& name) {
     if (mActiveSequences.count(name)) {
         printf("[Native] Starting Playback: %s\n", name.c_str());
         fflush(stdout);
+        
+        auto seqWrapper = mActiveSequences[name];
+        if (seqWrapper && seqWrapper->sequenceObj) {
+            auto inst = seqWrapper->sequenceObj->getFaustInstrument();
+            if (inst) {
+                // Initialize the instrument frequency immediately to the first note's frequency
+                // to prevent high-pitched slides from the default 440Hz when starting.
+                for (const auto& ev : seqWrapper->sequenceObj->events) {
+                    if (ev.type == UMLEventType::NoteOn && ev.frequency > 0.0f) {
+                        inst->setFrequencyImmediate(ev.frequency);
+                        break;
+                    }
+                }
+            }
+        }
+
         mActiveSequences[name]->isPlaying.store(true);
         mActiveSequences[name]->currentSample = 0;
         mActiveSequences[name]->nextEventIndex = 0;
@@ -170,8 +186,14 @@ void SequenceOrchestrator::muteTrack(const std::string& name, bool mute) {
 void SequenceOrchestrator::setParameter(const std::string& name, const std::string& param, float value) {
     std::lock_guard<std::mutex> lock(mStateMutex);
     if (mActiveSequences.count(name) && mActiveSequences[name]->sequenceObj) {
-        auto inst = mActiveSequences[name]->sequenceObj->getFaustInstrument();
-        if (inst) inst->setParameter(param.c_str(), value);
+        if (param == "bpm") {
+            mActiveSequences[name]->sequenceObj->setBpm(value);
+        } else if (param == "basefreq") {
+            mActiveSequences[name]->sequenceObj->setBaseFrequency(value);
+        } else {
+            auto inst = mActiveSequences[name]->sequenceObj->getFaustInstrument();
+            if (inst) inst->setParameter(param.c_str(), value);
+        }
     }
 }
 
@@ -191,7 +213,7 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
             seqWrapper->currentSample += numFrames;
             if (seqWrapper->currentSample >= seqWrapper->sequenceObj->totalDurationSamples) {
                 if (mLooping.load(std::memory_order_relaxed)) {
-                    seqWrapper->currentSample = 0;
+                    seqWrapper->currentSample %= seqWrapper->sequenceObj->totalDurationSamples;
                     seqWrapper->nextEventIndex = 0;
                 } else {
                     seqWrapper->isPlaying.store(false, std::memory_order_release);
@@ -246,7 +268,7 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
 
         if (seqWrapper->currentSample >= seq->totalDurationSamples) {
             if (mLooping.load(std::memory_order_relaxed)) {
-                seqWrapper->currentSample = 0;
+                seqWrapper->currentSample %= seq->totalDurationSamples;
                 seqWrapper->nextEventIndex = 0;
             } else {
                 seqWrapper->isPlaying.store(false, std::memory_order_release);

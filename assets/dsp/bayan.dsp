@@ -11,7 +11,7 @@ gain     = hslider("gain",     0.9,   0,  1,   0.01);
 velocity = hslider("velocity", 1.0,   0,  1,   0.01);
 gate     = button("gate");
 strike   = hslider("strike",   1,     0,  3,   1);
-meend    = hslider("meend",    1.0,   0.5, 4.0, 0.01);
+meend    = hslider("meend",    1.2,   0.5, 4.0, 0.01);
 
 // =====================================================
 // Meend (Pitch Glide) — Only active for Ghe (1) and Ghi (2)

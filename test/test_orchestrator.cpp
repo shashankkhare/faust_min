@@ -94,9 +94,12 @@ int main() {
     
     // 3.1 SUPPLY INSTRUMENTS TO MIXER (The Heartbeat)
     std::cout << "[Test] Supplying instruments to Mixer..." << std::endl;
-    mixer.registerInstrument(seqDayan->getFaustInstrument(), 0.8f);
-    mixer.registerInstrument(seqBayan->getFaustInstrument(), 0.9f);
-    mixer.registerInstrument(seqFlute->getFaustInstrument(), 0.6f);
+    int percussionTrack = mixer.addTrack(1.0f);
+    int melodyTrack = mixer.addTrack(0.8f);
+    
+    mixer.addInstrumentToTrack(percussionTrack, seqDayan->getFaustInstrument(), 0.8f);
+    mixer.addInstrumentToTrack(percussionTrack, seqBayan->getFaustInstrument(), 0.9f);
+    mixer.addInstrumentToTrack(melodyTrack, seqFlute->getFaustInstrument(), 0.6f);
 
     // 4. Trigger Playback
     std::cout << "[Test] Starting Playback (Real-time hardware)..." << std::endl;
@@ -113,9 +116,8 @@ int main() {
 
     std::cout << "\n[Test] --- TRANSITION: Unloading Tabla ---" << std::endl;
     // 1. Unregister from Mixer (The Muscle)
-    mixer.unregisterInstrument(seqDayan->getFaustInstrument());
-    mixer.unregisterInstrument(seqBayan->getFaustInstrument());
-    mixer.unregisterInstrument(seqFlute->getFaustInstrument());
+    mixer.removeTrack(percussionTrack);
+    mixer.removeTrack(melodyTrack);
 
     // 2. Clear from Orchestrator (The Brain)
     orch.clearSequences(); 
@@ -173,11 +175,14 @@ int main() {
     orch.addSequence("JazzSnare", seqSnare);
     orch.addSequence("JazzHihat", seqHihat);
 
-    mixer.registerInstrument(seqPiano->getFaustInstrument(), 0.7f);
-    mixer.registerInstrument(seqSax->getFaustInstrument(), 0.8f);
-    mixer.registerInstrument(seqKick->getFaustInstrument(), 0.9f);
-    mixer.registerInstrument(seqSnare->getFaustInstrument(), 0.8f);
-    mixer.registerInstrument(seqHihat->getFaustInstrument(), 0.6f);
+    int jazzMelodyTrack = mixer.addTrack(1.0f);
+    int jazzDrumTrack = mixer.addTrack(1.0f);
+
+    mixer.addInstrumentToTrack(jazzMelodyTrack, seqPiano->getFaustInstrument(), 0.7f);
+    mixer.addInstrumentToTrack(jazzMelodyTrack, seqSax->getFaustInstrument(), 0.8f);
+    mixer.addInstrumentToTrack(jazzDrumTrack, seqKick->getFaustInstrument(), 0.9f);
+    mixer.addInstrumentToTrack(jazzDrumTrack, seqSnare->getFaustInstrument(), 0.8f);
+    mixer.addInstrumentToTrack(jazzDrumTrack, seqHihat->getFaustInstrument(), 0.6f);
 
     std::cout << "[Test] Playing Jazz Piano for 4 seconds..." << std::endl;
     orch.play("JazzPiano");
@@ -213,6 +218,8 @@ int main() {
     for (int i = 0; i < 6; i++) { sleep(1); }
 
     mixer.stop();
+    mixer.removeTrack(jazzMelodyTrack);
+    mixer.removeTrack(jazzDrumTrack);
     orch.clearSequences();
     delete seqPiano;
     delete seqSax;

@@ -190,6 +190,9 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
     // Group 1 matches standalone dots (.) -> ContinuityDot
     // Group 2 matches standalone underscores (_) -> StopRest
     // Group 3 matches general notes starting with optional digits/chars ending with optional glide marker (^) -> NoteWithControl
+    // IMPORTANT: Instrument-specific parsing logic MUST NEVER be placed inside this `parse()` method. 
+    // This method handles raw syntax tokenization. Instrument-specific processing (like mapping 
+    // specific letters to strike values) MUST be done in `handlePercussionToken` or `handlePitchedToken`.
     std::regex tokenRegex(R"((\.)|(\_)|([^\s\.\_]+))");
     auto words_begin = std::sregex_iterator(notesSection.begin(), notesSection.end(), tokenRegex);
     auto words_end = std::sregex_iterator();
@@ -364,6 +367,17 @@ void UMLParser::handlePercussionToken(const std::string& tokenNoteName, float am
         } else {
             ev.strikeVal = 0.0f;
         }
+    } else if (instID == 47 || instID == 8 || instID == 7) { // Tibetan Bowl, Bowl, Bell
+        // Uses header's basefreq for pitch
+        ev.frequency = static_cast<float>(baseFreq);
+        
+        if (tokenNoteName == "s" || tokenNoteName == "S" || tokenNoteName == "strike" || tokenNoteName == "Strike") {
+            ev.strikeVal = 1.0f;
+        } else if (tokenNoteName == "r" || tokenNoteName == "R" || tokenNoteName == "rub" || tokenNoteName == "Rub") {
+            ev.strikeVal = 0.0f;
+        } else {
+            ev.strikeVal = 1.0f; // Default to strike
+        }
     } else if (percussionBols.count(tokenNoteName)) {
         ev.strikeVal = static_cast<float>(percussionBols.at(tokenNoteName));
     }
@@ -406,9 +420,7 @@ void UMLParser::handlePitchedToken(const TokenItem& ti, float amplitudeScalar, l
         }
         if (targetIdx < tokenItemsArray.size() && tokenItemsArray[targetIdx].type == TokenType::NoteWithControl) {
             std::string tNote = tokenItemsArray[targetIdx].noteName;
-            size_t slashPos = tNote.find('/');
-            if (slashPos != std::string::npos) tNote = tNote.substr(0, slashPos);
-            
+            // Pass full token (including any *N or /N suffix) to getFrequency — it handles octave operators internally
             float tFreq = (float)getFrequency(tNote, notation, baseFreq, instrument);
             float tVel = (float)tokenItemsArray[targetIdx].controlParam / 9.0f;
             
@@ -424,6 +436,16 @@ void UMLParser::handlePitchedToken(const TokenItem& ti, float amplitudeScalar, l
                 glideEv.durationSamples = durationSamples;
                 outEvents.push_back(glideEv);
             }
+        }
+    } else {
+        // If no glide is present, schedule a NoteOff event at the end of the note's duration
+        // using a small gap (20ms at 48kHz is 960 samples, or 10% of duration, whichever is smaller) to ensure the gate resets.
+        long gapSamples = std::min(static_cast<long>(0.020 * 48000.0), static_cast<long>(durationSamples * 0.10));
+        if (durationSamples > gapSamples) {
+            UMLEvent offEv;
+            offEv.sampleOffset = sampleOffset + durationSamples - gapSamples;
+            offEv.type = UMLEventType::NoteOff;
+            outEvents.push_back(offEv);
         }
     }
 }
@@ -475,20 +497,38 @@ double UMLParser::getFrequency(const std::string& token, const std::string& nota
     // 1. Universal Percussion Check via Translation Mapper (IDs 0 to 6 are non-pitched drums)
     int instID = InstrumentMapper::getIDFromName(instrument);
     if (instID >= 0 && instID <= 6) {
-        // For percussion, the bol/stroke name itself controls articulation mappings.
-        // We return baseFreq directly as a static unpitched target.
         return baseFreq;
     }
 
-    // 2. Melodic Check
-    if (notation == "Indian") {
-        if (indianRatios.count(token)) return baseFreq * indianRatios.at(token);
-    } else {
-        if (westernPitches.count(token)) return westernPitches.at(token);
-        double parsed = parseWesternPitch(token);
-        if (parsed > 0.0) return parsed;
+    // 2. Parse optional *N or /N octave multiplier/divider suffix
+    // e.g. "Sa*2" = Sa one octave up, "n2/2" = Komal Ni one octave down
+    std::string baseToken = token;
+    double octaveScale = 1.0;
+    size_t starPos = token.rfind('*');
+    size_t slashPos = token.rfind('/');
+    if (starPos != std::string::npos && starPos > 0) {
+        std::string scalePart = token.substr(starPos + 1);
+        try {
+            double s = std::stod(scalePart);
+            if (s > 0.0) { octaveScale = s; baseToken = token.substr(0, starPos); }
+        } catch (...) {}
+    } else if (slashPos != std::string::npos && slashPos > 0) {
+        std::string scalePart = token.substr(slashPos + 1);
+        try {
+            double s = std::stod(scalePart);
+            if (s > 0.0) { octaveScale = 1.0 / s; baseToken = token.substr(0, slashPos); }
+        } catch (...) {}
     }
-    return baseFreq;
+
+    // 3. Melodic Check on base token
+    if (notation == "Indian") {
+        if (indianRatios.count(baseToken)) return baseFreq * indianRatios.at(baseToken) * octaveScale;
+    } else {
+        if (westernPitches.count(baseToken)) return westernPitches.at(baseToken) * octaveScale;
+        double parsed = parseWesternPitch(baseToken);
+        if (parsed > 0.0) return parsed * octaveScale;
+    }
+    return baseFreq * octaveScale;
 }
 
 
@@ -547,43 +587,4 @@ void UMLParser::handleVoiceToken(const TokenItem& ti, float amplitudeScalar, lon
             }
         }
     }
-}
-
-UMLSequence::UMLSequence(const std::string& seqName, int instID, const std::string& umlDataString, double defaultBaseFreq) {
-    UMLSequence parsed = UMLParser::parse(seqName, umlDataString, InstrumentMapper::DEFAULT_SAMPLE_RATE, defaultBaseFreq);
-    this->name = parsed.name;
-    this->instrument = parsed.instrument;
-    this->instrumentID = instID != -1 ? instID : parsed.instrumentID;
-    this->initialParams = parsed.initialParams;
-    this->events = parsed.events;
-    this->bpm = parsed.bpm;
-    this->grid = parsed.grid;
-    this->baseFreq = parsed.baseFreq;
-    this->gain = parsed.gain;
-    this->totalDurationSamples = parsed.totalDurationSamples;
-    this->notation = parsed.notation;
-    this->execType = parsed.execType;
-    this->umlData = umlDataString;
-
-    int targetID = this->instrumentID;
-    if (targetID == -1 && !this->instrument.empty()) {
-        targetID = InstrumentMapper::getIDFromName(this->instrument);
-    }
-    if (targetID != -1) {
-        DSPExecutionType mode = (this->execType == "interpreter" || this->execType == "interpreted") 
-                              ? DSPExecutionType::InterpretedByte 
-                              : DSPExecutionType::StaticCompiled;
-        this->mInstrument = std::make_shared<FaustInstrument>(targetID, mode, InstrumentMapper::DEFAULT_SAMPLE_RATE);
-        for (const auto& pair : this->initialParams) {
-            this->mInstrument->setParameter(pair.first.c_str(), pair.second);
-        }
-    } else {
-        printf("[Native] WARNING: UMLSequence created with invalid instrument ID mapping.\n");
-        fflush(stdout);
-    }
-}
-
-UMLSequence::~UMLSequence() {
-    // Note: FaustMixer unregistration must be handled by the caller/owner
-    // to strictly preserve zero-coupling architecture.
 }

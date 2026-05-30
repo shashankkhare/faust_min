@@ -75,6 +75,7 @@ std::string InstrumentMapper::getNameFromID(int id) {
         case 36: return "LN"; // Lag Nga
         case 37: return "DK"; // Dholak
         case 38: return "DH"; // Dhol
+        case 48: return "NC"; // Ngachen
         default: return "DA";
     }
 }
@@ -129,13 +130,14 @@ int InstrumentMapper::getIDFromName(const std::string& name) {
     if (lowerName == "ln" || lowerName == "lagnga" || lowerName == "lag_nga" || lowerName == "lag nga") return 36;
     if (lowerName == "dk" || lowerName == "dholak") return 37;
     if (lowerName == "dh" || lowerName == "dhol") return 38;
+    if (lowerName == "nc" || lowerName == "ngachen" || lowerName == "nga_chen" || lowerName == "nga chen") return 48;
 
     return -1;
 }
 
 bool InstrumentMapper::isPercussionID(int id) {
-    // Standard drums (0-6), Djembe (28), Conga (30), Bongo (31), Dholak (37), Dhol (38)
-    return (id >= 0 && id <= 6) || id == 28 || id == 30 || id == 31 || id == 37 || id == 38;
+    // Standard drums (0-6), Bell (7), Bowl (8), Djembe (28), Conga (30), Bongo (31), LagNga (36), Dholak (37), Dhol (38), Tibetan Bowl (47), Ngachen (48)
+    return (id >= 0 && id <= 8) || id == 28 || id == 30 || id == 31 || id == 36 || id == 37 || id == 38 || id == 47 || id == 48;
 }
 
 int InstrumentMapper::getPolyphonyVoices(int id) {
@@ -190,6 +192,7 @@ std::string InstrumentMapper::getDSPPathForID(int id, const std::string& assetBa
         case 36: return base + "lagnga.dsp";
         case 37: return base + "dholak.dsp";
         case 38: return base + "dhol.dsp";
+        case 48: return base + "ngachen.dsp";
         default: return base + "dayan.dsp";
     }
 }

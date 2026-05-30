@@ -9,7 +9,7 @@ for dspFile in assets/dsp/*.dsp; do
     
     if [ "$dspFile" -nt "$hppFile" ]; then
         echo "Faust: Compiling $dspFile to $hppFile..."
-        faust -lang cpp -es 1 -single -ftz 0 -cn "Faust${capName}DSP" "$dspFile" -o "$hppFile"
+        faust -lang cpp -es 1 -single -ftz 0 -I /home/shashankkhare/faust_sdk/faust_src/examples/physicalModeling/faust-stk -cn "Faust${capName}DSP" "$dspFile" -o "$hppFile"
     fi
 done
 
@@ -26,6 +26,7 @@ g++ -o test/test_orchestrator_new \
     build/CMakeFiles/faust_min.dir/FaustMixer.cpp.o \
     build/CMakeFiles/faust_min.dir/FaustInstrument.cpp.o \
     build/CMakeFiles/faust_min.dir/UMLParser.cpp.o \
+    build/CMakeFiles/faust_min.dir/UMLSequence.cpp.o \
     build/CMakeFiles/faust_min.dir/InstrumentMapper.cpp.o \
     build/CMakeFiles/faust_min.dir/FaustDayan.cpp.o \
     build/CMakeFiles/faust_min.dir/FaustBayan.cpp.o \
@@ -34,6 +35,7 @@ g++ -o test/test_orchestrator_new \
     build/CMakeFiles/faust_min.dir/FaustSnare.cpp.o \
     build/CMakeFiles/faust_min.dir/FaustBell.cpp.o \
     build/CMakeFiles/faust_min.dir/FaustBowl.cpp.o \
+    build/CMakeFiles/faust_min.dir/FaustTibetanbowl.cpp.o \
     -Isrc \
     -I/home/shashankkhare/faust_sdk/faust_src/architecture \
     -L/home/shashankkhare/faust_sdk/lib -lfaust \
@@ -54,6 +56,7 @@ g++ -o test/test_instruments \
     build/CMakeFiles/faust_min.dir/FaustSnare.cpp.o \
     build/CMakeFiles/faust_min.dir/FaustBell.cpp.o \
     build/CMakeFiles/faust_min.dir/FaustBowl.cpp.o \
+    build/CMakeFiles/faust_min.dir/FaustTibetanbowl.cpp.o \
     build/CMakeFiles/faust_min.dir/FaustPiano.cpp.o \
     build/CMakeFiles/faust_min.dir/FaustTanpura.cpp.o \
     build/CMakeFiles/faust_min.dir/FaustSitar.cpp.o \
@@ -77,6 +80,7 @@ g++ -o test/test_sequence \
     build/CMakeFiles/faust_min.dir/FaustMixer.cpp.o \
     build/CMakeFiles/faust_min.dir/FaustInstrument.cpp.o \
     build/CMakeFiles/faust_min.dir/UMLParser.cpp.o \
+    build/CMakeFiles/faust_min.dir/UMLSequence.cpp.o \
     build/CMakeFiles/faust_min.dir/InstrumentMapper.cpp.o \
     build/CMakeFiles/faust_min.dir/FaustDayan.cpp.o \
     build/CMakeFiles/faust_min.dir/FaustBayan.cpp.o \
@@ -85,6 +89,7 @@ g++ -o test/test_sequence \
     build/CMakeFiles/faust_min.dir/FaustSnare.cpp.o \
     build/CMakeFiles/faust_min.dir/FaustBell.cpp.o \
     build/CMakeFiles/faust_min.dir/FaustBowl.cpp.o \
+    build/CMakeFiles/faust_min.dir/FaustTibetanbowl.cpp.o \
     build/CMakeFiles/faust_min.dir/FaustPiano.cpp.o \
     build/CMakeFiles/faust_min.dir/FaustTanpura.cpp.o \
     build/CMakeFiles/faust_min.dir/FaustSitar.cpp.o \

@@ -35,7 +35,9 @@
 struct SequenceGroup {
     std::string name;
     std::vector<std::pair<std::string, UMLSequence*>> sequences;
-    std::vector<float> volumes;
+    float percussionTrackWeight = 1.0f;
+    float melodyTrackWeight = 1.0f;
+    float backgroundTrackWeight = 1.0f;
 };
 
 // Global stop flag for playback thread wait
@@ -44,11 +46,39 @@ static bool gStopPlayback = false;
 void playSequenceGroup(FaustMixer& mixer, SequenceOrchestrator& orch, SequenceGroup& group, int durationSeconds) {
     std::cout << "\n=== Starting Sequence: " << group.name << " ===" << std::endl;
     
+    // Create Demo Tracks
+    int percussionTrack = mixer.addTrack(group.percussionTrackWeight);
+    int melodyTrack = mixer.addTrack(group.melodyTrackWeight);
+    int backgroundTrack = mixer.addTrack(group.backgroundTrackWeight);
+
     // 1. Register sequences and instruments
     for (size_t i = 0; i < group.sequences.size(); ++i) {
         auto& seqPair = group.sequences[i];
+        std::cout << "[Native] Adding Sequence Object: " << seqPair.first 
+                  << " (InstID: " << seqPair.second->instrumentID << ")" 
+                  << " | BPM: " << seqPair.second->bpm 
+                  << " | BaseFreq: " << seqPair.second->baseFreq << " Hz" << std::endl;
         orch.addSequence(seqPair.first, seqPair.second);
-        mixer.registerInstrument(seqPair.second->getFaustInstrument(), group.volumes[i]);
+
+        std::cout << "[Diagnostic] Parsed NoteOn events for " << seqPair.first << ":" << std::endl;
+        for (size_t eIdx = 0; eIdx < seqPair.second->events.size(); ++eIdx) {
+            const auto& ev = seqPair.second->events[eIdx];
+            if (ev.type == UMLEventType::NoteOn) {
+                std::cout << "  Event " << eIdx << ": Note: " << ev.note 
+                          << " | Freq: " << ev.frequency << " Hz" 
+                          << " | Amp: " << ev.amplitude 
+                          << " | SampleOffset: " << ev.sampleOffset << std::endl;
+            }
+        }
+        
+        int id = seqPair.second->instrumentID;
+        int targetTrack = melodyTrack;
+        // Percussion
+        if (InstrumentMapper::isPercussionID(id)) targetTrack = percussionTrack;
+        // Background
+        else if (id == 11 || id == 27 || id == 34 || id == 41 || id == 42) targetTrack = backgroundTrack;
+        
+        mixer.addInstrumentToTrack(targetTrack, seqPair.second->getFaustInstrument());
     }
 
     // Enable looping feature
@@ -69,9 +99,9 @@ void playSequenceGroup(FaustMixer& mixer, SequenceOrchestrator& orch, SequenceGr
 
     // 3. Stop and Unload
     orch.stop();
-    for (auto& seqPair : group.sequences) {
-        mixer.unregisterInstrument(seqPair.second->getFaustInstrument());
-    }
+    mixer.removeTrack(percussionTrack);
+    mixer.removeTrack(melodyTrack);
+    mixer.removeTrack(backgroundTrack);
     orch.clearSequences();
 
     // 4. Free memory
@@ -107,7 +137,7 @@ int main(int argc, char* argv[]) {
     while (true) {
         if (selection == -1) {
             std::cout << "\nSelect a sequence to play:" << std::endl;
-            std::cout << "  1. Indian Classical — Bhopali (Bansuri, Tanpura, Tabla)" << std::endl;
+            std::cout << "  1. Indian Classical — Darbari (Bansuri, Tanpura, Tabla)" << std::endl;
             std::cout << "  2. Jazz Ensemble (Piano, Sax, Bass, Drums)" << std::endl;
             std::cout << "  3. Rock Band (Electric Guitar, Bass, Drums)" << std::endl;
             std::cout << "  4. Tibetan Bowl with Rain (Bowl, Bell, Rainmaker)" << std::endl;
@@ -130,10 +160,11 @@ int main(int argc, char* argv[]) {
         int duration = 15; // default duration 15s
 
         if (selection == 1) {
-            group.name = "Indian Classical — Raag Bhopali (Bansuri, Tanpura) + Tabla Jawab-Talab";
+            group.name = "Indian Classical — Raag Darbari (Bansuri, Tanpura) + Tabla";
             
             std::string umlTanpura = 
-                "grid: 2\n"
+                "grid: 4\n"
+                "bpm: 120\n"
                 "basefreq: 111.0\n"
                 "instrument: tanpura\n"
                 "notation: Indian\n"
@@ -143,23 +174,26 @@ int main(int argc, char* argv[]) {
                 
             std::string umlBansuri = 
                 "grid: 4\n"
-                "basefreq: 222\n"
+                "bpm: 120\n"
+                "basefreq: 222.0\n"
                 "instrument: bansuri\n"
                 "notation: Indian\n"
-                "parameters: vibrato=0.8\n"
+                "vibrato: 0.9\n"
+                "glide: 0.0\n"
                 "\n"
-                "6Sa...6Re...6Ga...6Pa...6Dha...6Pa...6Ga...6Re... "
-                "6Sa...6Ga...6Pa...6Dha...6Pa...6Ga...6Re...6Sa..._ "
-                "_... _... _... _... "
-                "6Sa...6Re...6Ga...6Pa... "
-                "_... _... _... _... "
-                "6Dha...6Pa...6Ga...6Re... "
-                "_... _... _... _... "
-                "6Sa..._...";
+                "6Sa . . . 6r2^ . 6g2 . . . 6r2 . 6Sa . . . . . . . \n"
+                "6M1 . . . 6g2^ . . 6g2 . 6r2^ . 6Sa . . . . . \n"
+                "6Pa . . 6M1 . 6g2^ . 6r2 . 6Sa . . . 6Pa . . . . . \n"
+                "6n2/2^ . 6d2/2 . 6n2/2 . 6Pa/2 . . . . . . . . . \n"
+                "6M1 . 6g2^ . 6r2 . 6Sa . . 6r2 . 6M1 . 6Pa . . . . \n"
+                "6d2 . . 6n2 . . 7Sa . . . . . . . . . \n"
+                "7Sa^ . 6n2 . 6d2^ . 6n2 . 6Pa . . . . . . . \n"
+                "6M1^ . 6Pa . 6M1 . 6g2^ . . . 6g2 . 6r2 . 6Sa . . . .";
                 
             std::string umlDayan = 
                 "grid: 4\n"
-                "basefreq: 222\n"
+                "bpm: 120\n"
+                "basefreq: 222.0\n"
                 "instrument: dayan\n"
                 "\n"
                 "Na... Tin... Tun... tk... Na... Tin... Na... tk... "
@@ -170,7 +204,8 @@ int main(int argc, char* argv[]) {
 
             std::string umlBayan = 
                 "grid: 4\n"
-                "basefreq: 111\n"
+                "bpm: 120\n"
+                "basefreq: 111.0\n"
                 "instrument: bayan\n"
                 "\n"
                 "Ghe... _... _... Ka... _... Ka... Ghe... _... "
@@ -184,8 +219,10 @@ int main(int argc, char* argv[]) {
             group.sequences.push_back({"Dayan", new UMLSequence("Dayan", 0, umlDayan)});
             group.sequences.push_back({"Bayan", new UMLSequence("Bayan", 1, umlBayan)});
             
-            group.volumes = { 2.2f, 0.9f, 0.9f, 1.0f };
-            duration = 16;
+            group.percussionTrackWeight = 1.0f;
+            group.backgroundTrackWeight = 0.7f;
+            group.melodyTrackWeight = 1.2f;
+            duration = 30;
         } else if (selection == 2) {
             group.name = "Jazz Ensemble";
 
@@ -255,7 +292,6 @@ int main(int argc, char* argv[]) {
             group.sequences.push_back({"JazzSnare", new UMLSequence("JazzSnare", 3, umlSnare)});
             group.sequences.push_back({"JazzRide", new UMLSequence("JazzRide", 6, umlRide)});
             
-            group.volumes = { 0.5f, 0.7f, 0.7f, 0.6f, 0.5f, 0.4f };
             duration = 20;
 
         } else if (selection == 3) {
@@ -353,7 +389,6 @@ int main(int argc, char* argv[]) {
             group.sequences.push_back({"RockSnare", new UMLSequence("RockSnare", 3, umlSnare)});
             group.sequences.push_back({"RockHihat", new UMLSequence("RockHihat", 4, umlHihat)});
 
-            group.volumes = { 0.7f, 0.8f, 0.9f, 0.8f, 0.6f };
             duration = 24;
 
         } else if (selection == 4) {
@@ -385,7 +420,6 @@ int main(int argc, char* argv[]) {
             group.sequences.push_back({"AmbientBowl", new UMLSequence("AmbientBowl", 8, umlBowl)});
             group.sequences.push_back({"AmbientBell", new UMLSequence("AmbientBell", 7, umlBell)});
 
-            group.volumes = { 0.9f, 0.7f, 0.3f };
             duration = 20;
         } else if (selection == 5) {
             group.name = "Acoustic Hotel California (Acoustic Guitar, 3 Congas, Bass, Drums)";
@@ -583,7 +617,6 @@ int main(int argc, char* argv[]) {
             group.sequences.push_back({"AcousticSnare", new UMLSequence("AcousticSnare", 3, umlSnare)});
             group.sequences.push_back({"Shaker", new UMLSequence("Shaker", 33, umlShaker)});
 
-            group.volumes = { 2.5f, 1.1f, 0.3f, 0.3f, 0.3f, 0.4f, 0.15f, 0.25f };
             duration = 64;
 
         } else if (selection == 6) {
@@ -637,7 +670,6 @@ int main(int argc, char* argv[]) {
             group.sequences.push_back({"Dayan", new UMLSequence("Dayan", 0, umlDayan)});
             group.sequences.push_back({"Bayan", new UMLSequence("Bayan", 1, umlBayan)});
             
-            group.volumes = { 0.4f, 0.6f, 0.5f, 0.7f };
             duration = 20;
         } else if (selection == 7) {
             group.name = "Indian Folk (Dholak Percussion)";
@@ -662,7 +694,6 @@ int main(int argc, char* argv[]) {
                 "Dha Na Ge Na Dha Na Ti _ Na Ti Ke Ti Na Ti Dha _";
                 
             group.sequences.push_back({"Dholak", new UMLSequence("Dholak", 37, umlDholak)});
-            group.volumes = { 0.8f };
             duration = 48;
         } else if (selection == 8) {
             group.name = "Punjabi Folk (Dhol Percussion)";
@@ -687,7 +718,6 @@ int main(int argc, char* argv[]) {
                 "Dha _ _ Na Dha Dha _ Tin Dha _ _ Na Dha Dha _ Tin";
 
             group.sequences.push_back({"Dhol", new UMLSequence("Dhol", 38, umlDhol)});
-            group.volumes = { 0.8f };
             duration = 48;
         }
 

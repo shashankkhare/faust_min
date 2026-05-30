@@ -35,8 +35,8 @@ noise = no.noise;
 
 // Dagga (Bass stick) excitation: deep impulse + low-passed noise burst for thick skin contact
 dagga_noise_env = en.ar(0.002, 0.015, trigDagga);
-dagga_noise = noise * dagga_noise_env * velocity * 0.12 : fi.lowpass(2, 200.0);
-excitationDagga = (trigDagga * velocity * 0.35 + dagga_noise) : fi.lowpass(4, 180.0);
+dagga_noise = noise * dagga_noise_env * velocity * 0.08 : fi.lowpass(2, 200.0);
+excitationDagga = (trigDagga * velocity * 0.22 + dagga_noise) : fi.lowpass(4, 180.0);
 
 // Tilli (Treble stick) excitation: clean, extremely sharp impulse for clean wood-to-membrane strike (no noisy fuzz)
 excitationTilli = trigTilli * velocity * 0.65;
@@ -64,7 +64,7 @@ tilli_mode4 = resonator(freq1 * 2.65, 0.04 * tilliDecay, tilli_m4_g, excitationT
 tilli_body = tilli_mode1 + tilli_mode2 + tilli_mode3 + tilli_mode4;
 
 // Output: Summed response of active heads (Tilli has higher relative gain to cut through)
-drum_body = dagga_body * 1.0 + tilli_body * 2.8;
+drum_body = dagga_body * 1.0 + tilli_body * 2.2;
 
 // Process: Nonlinear saturation waveshaping and low-pass filtering to bring out warm chest punch
-process = (drum_body * 18.0 : ma.tanh : fi.lowpass(1, 2000.0)) * (gain * 0.95);
+process = (drum_body * 5.0 : ma.tanh : fi.lowpass(1, 2000.0)) * (gain * 0.80);
