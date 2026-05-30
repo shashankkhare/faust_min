@@ -1052,9 +1052,18 @@ void testTumbi(FaustMixer& mixer, DSPExecutionType execType) {
     mixer.addInstrumentToTrack(track, inst.get());
     
     std::vector<double> freqs = getTestFreqsDouble({ 659.25, 739.99, 830.61 });
+    if (gTestFrequency > 0.0) {
+        freqs = { gTestFrequency };
+    }
     for (double freq : freqs) {
-        std::cout << "  -> Note: " << freq << " Hz" << std::endl;
-        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
+        std::cout << "  -> Note: " << freq << " Hz (strike=0.0 flesh)" << std::endl;
+        inst->noteOn(freq, gTestVelocity, 0.0f, gTestAmplitude);
+        usleep(1000000);
+        inst->noteOff();
+        usleep(300000);
+        
+        std::cout << "  -> Note: " << freq << " Hz (strike=1.0 nail)" << std::endl;
+        inst->noteOn(freq, gTestVelocity, 1.0f, gTestAmplitude);
         usleep(1000000);
         inst->noteOff();
         usleep(300000);
