@@ -59,6 +59,9 @@ static FaustTumbiDSPSIG0* newFaustTumbiDSPSIG0() { return (FaustTumbiDSPSIG0*)ne
 static void deleteFaustTumbiDSPSIG0(FaustTumbiDSPSIG0* dsp) { delete dsp; }
 
 static float ftbl0FaustTumbiDSPSIG0[65536];
+static float FaustTumbiDSP_faustpower2_f(float value) {
+	return (value * value);
+}
 
 #ifndef FAUSTCLASS 
 #define FAUSTCLASS FaustTumbiDSP
@@ -89,9 +92,15 @@ class FaustTumbiDSP : public dsp {
 	float fVec1[2];
 	float fRec5[2];
 	float fRec6[2];
+	float fConst7;
+	float fConst8;
+	float fConst9;
+	float fConst10;
+	float fRec7[3];
+	float fConst11;
 	FAUSTFLOAT fHslider4;
-	float fRec7[2];
-	int iRec8[2];
+	float fRec8[2];
+	int iRec9[2];
 	int IOTA;
 	float fVec2[8192];
 	float fRec0[2];
@@ -105,6 +114,24 @@ class FaustTumbiDSP : public dsp {
 		m->declare("delays.lib/name", "Faust Delay Library");
 		m->declare("delays.lib/version", "0.1");
 		m->declare("filename", "tumbi.dsp");
+		m->declare("filters.lib/fir:author", "Julius O. Smith III");
+		m->declare("filters.lib/fir:copyright", "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>");
+		m->declare("filters.lib/fir:license", "MIT-style STK-4.3 license");
+		m->declare("filters.lib/iir:author", "Julius O. Smith III");
+		m->declare("filters.lib/iir:copyright", "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>");
+		m->declare("filters.lib/iir:license", "MIT-style STK-4.3 license");
+		m->declare("filters.lib/lowpass0_highpass1", "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>");
+		m->declare("filters.lib/name", "Faust Filters Library");
+		m->declare("filters.lib/resonbp:author", "Julius O. Smith III");
+		m->declare("filters.lib/resonbp:copyright", "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>");
+		m->declare("filters.lib/resonbp:license", "MIT-style STK-4.3 license");
+		m->declare("filters.lib/tf2:author", "Julius O. Smith III");
+		m->declare("filters.lib/tf2:copyright", "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>");
+		m->declare("filters.lib/tf2:license", "MIT-style STK-4.3 license");
+		m->declare("filters.lib/tf2s:author", "Julius O. Smith III");
+		m->declare("filters.lib/tf2s:copyright", "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>");
+		m->declare("filters.lib/tf2s:license", "MIT-style STK-4.3 license");
+		m->declare("filters.lib/version", "0.3");
 		m->declare("maths.lib/author", "GRAME");
 		m->declare("maths.lib/copyright", "GRAME");
 		m->declare("maths.lib/license", "LGPL with exception");
@@ -141,11 +168,19 @@ class FaustTumbiDSP : public dsp {
 		fConst1 = (44.0999985f / fConst0);
 		fConst2 = (1.0f - fConst1);
 		fConst3 = (1.0f / fConst0);
+		float fConst4 = std::tan((628.318542f / fConst0));
+		float fConst5 = (1.0f / fConst4);
+		float fConst6 = (((fConst5 + 0.25f) / fConst4) + 1.0f);
+		fConst7 = (1.0f / (fConst4 * fConst6));
+		fConst8 = (1.0f / fConst6);
+		fConst9 = (((fConst5 + -0.25f) / fConst4) + 1.0f);
+		fConst10 = (2.0f * (1.0f - (1.0f / FaustTumbiDSP_faustpower2_f(fConst4))));
+		fConst11 = (0.0f - fConst7);
 	}
 	
 	virtual void instanceResetUserInterface() {
 		fHslider0 = FAUSTFLOAT(1.0f);
-		fHslider1 = FAUSTFLOAT(523.25f);
+		fHslider1 = FAUSTFLOAT(329.63f);
 		fHslider2 = FAUSTFLOAT(0.050000000000000003f);
 		fHslider3 = FAUSTFLOAT(6.0f);
 		fButton0 = FAUSTFLOAT(0.0f);
@@ -171,18 +206,21 @@ class FaustTumbiDSP : public dsp {
 		for (int l7 = 0; (l7 < 2); l7 = (l7 + 1)) {
 			fRec6[l7] = 0.0f;
 		}
-		for (int l8 = 0; (l8 < 2); l8 = (l8 + 1)) {
+		for (int l8 = 0; (l8 < 3); l8 = (l8 + 1)) {
 			fRec7[l8] = 0.0f;
 		}
 		for (int l9 = 0; (l9 < 2); l9 = (l9 + 1)) {
-			iRec8[l9] = 0;
+			fRec8[l9] = 0.0f;
+		}
+		for (int l10 = 0; (l10 < 2); l10 = (l10 + 1)) {
+			iRec9[l10] = 0;
 		}
 		IOTA = 0;
-		for (int l10 = 0; (l10 < 8192); l10 = (l10 + 1)) {
-			fVec2[l10] = 0.0f;
+		for (int l11 = 0; (l11 < 8192); l11 = (l11 + 1)) {
+			fVec2[l11] = 0.0f;
 		}
-		for (int l11 = 0; (l11 < 2); l11 = (l11 + 1)) {
-			fRec0[l11] = 0.0f;
+		for (int l12 = 0; (l12 < 2); l12 = (l12 + 1)) {
+			fRec0[l12] = 0.0f;
 		}
 	}
 	
@@ -206,7 +244,7 @@ class FaustTumbiDSP : public dsp {
 	
 	virtual void buildUserInterface(UI* ui_interface) {
 		ui_interface->openVerticalBox("tumbi");
-		ui_interface->addHorizontalSlider("freq", &fHslider1, FAUSTFLOAT(523.25f), FAUSTFLOAT(80.0f), FAUSTFLOAT(2000.0f), FAUSTFLOAT(0.100000001f));
+		ui_interface->addHorizontalSlider("freq", &fHslider1, FAUSTFLOAT(329.630005f), FAUSTFLOAT(80.0f), FAUSTFLOAT(2000.0f), FAUSTFLOAT(0.100000001f));
 		ui_interface->addHorizontalSlider("gain", &fHslider0, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addButton("gate", &fButton0);
 		ui_interface->addHorizontalSlider("velocity", &fHslider4, FAUSTFLOAT(0.800000012f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
@@ -240,13 +278,16 @@ class FaustTumbiDSP : public dsp {
 			float fTemp4 = float(iTemp3);
 			float fTempFTZ4 = ((0.0500000007f * fRec6[1]) + (0.949999988f * fRec0[1]));
 			fRec6[0] = ((std::fabs(fTempFTZ4) > 1.17549435e-38f) ? fTempFTZ4 : 0.0f);
-			float fTempFTZ5 = (fTemp1 + (0.995000005f * fRec7[1]));
+			float fTemp5 = (fRec6[0] * (1.0f - (0.00499999989f * std::fabs(fRec6[0]))));
+			float fTempFTZ5 = (fTemp5 - (fConst8 * ((fConst9 * fRec7[2]) + (fConst10 * fRec7[1]))));
 			fRec7[0] = ((std::fabs(fTempFTZ5) > 1.17549435e-38f) ? fTempFTZ5 : 0.0f);
-			iRec8[0] = ((1103515245 * iRec8[1]) + 12345);
-			float fTemp5 = ((0.998000026f * (fRec6[0] * (1.0f - (0.00499999989f * std::fabs(fRec6[0]))))) + float(tanhf(float((fSlow5 * (fTemp1 + (2.32830644e-10f * (fRec7[0] * float(iRec8[0])))))))));
-			fVec2[(IOTA & 8191)] = fTemp5;
-			float fTempFTZ6 = (((fTemp4 + (2.0f - fTemp2)) * fVec2[((IOTA - std::min<int>(4096, int(std::max<int>(0, int(iTemp3))))) & 8191)]) + ((fTemp2 + (-1.0f - fTemp4)) * fVec2[((IOTA - std::min<int>(4096, int(std::max<int>(0, int((iTemp3 + 1)))))) & 8191)]));
-			fRec0[0] = ((std::fabs(fTempFTZ6) > 1.17549435e-38f) ? fTempFTZ6 : 0.0f);
+			float fTempFTZ6 = (fTemp1 + (0.995000005f * fRec8[1]));
+			fRec8[0] = ((std::fabs(fTempFTZ6) > 1.17549435e-38f) ? fTempFTZ6 : 0.0f);
+			iRec9[0] = ((1103515245 * iRec9[1]) + 12345);
+			float fTemp6 = ((0.998000026f * ((0.970000029f * fTemp5) + (0.0299999993f * ((fConst7 * fRec7[0]) + (fConst11 * fRec7[2]))))) + float(tanhf(float((fSlow5 * (fTemp1 + (2.32830644e-10f * (fRec8[0] * float(iRec9[0])))))))));
+			fVec2[(IOTA & 8191)] = fTemp6;
+			float fTempFTZ7 = (((fTemp4 + (2.0f - fTemp2)) * fVec2[((IOTA - std::min<int>(4096, int(std::max<int>(0, int(iTemp3))))) & 8191)]) + ((fTemp2 + (-1.0f - fTemp4)) * fVec2[((IOTA - std::min<int>(4096, int(std::max<int>(0, int((iTemp3 + 1)))))) & 8191)]));
+			fRec0[0] = ((std::fabs(fTempFTZ7) > 1.17549435e-38f) ? fTempFTZ7 : 0.0f);
 			output0[i0] = FAUSTFLOAT(std::max<float>(-1.0f, std::min<float>(1.0f, (fSlow0 * float(tanhf(float((1.5f * fRec0[0]))))))));
 			fRec1[1] = fRec1[0];
 			fRec4[1] = fRec4[0];
@@ -254,8 +295,10 @@ class FaustTumbiDSP : public dsp {
 			fVec1[1] = fVec1[0];
 			fRec5[1] = fRec5[0];
 			fRec6[1] = fRec6[0];
+			fRec7[2] = fRec7[1];
 			fRec7[1] = fRec7[0];
-			iRec8[1] = iRec8[0];
+			fRec8[1] = fRec8[0];
+			iRec9[1] = iRec9[0];
 			IOTA = (IOTA + 1);
 			fRec0[1] = fRec0[0];
 		}

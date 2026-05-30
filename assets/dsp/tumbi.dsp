@@ -1,6 +1,6 @@
 import("stdfaust.lib");
 
-freq = hslider("freq", 523.25, 80, 2000, 0.1);
+freq = hslider("freq", 329.63, 80, 2000, 0.1);
 gate = button("gate");
 velocity = hslider("velocity", 0.8, 0, 1, 0.01);
 gain = hslider("gain", 1.0, 0, 1, 0.01);
@@ -30,11 +30,12 @@ with {
     x2 = de.delay(maxDel, int_del + 1, x);
 };
 
-// Minimal lowpass — preserves high harmonics for piercing tumbi tone
 lp = * (0.95) : + ~ * (0.05);
+
 bridge(x) = x * (1.0 - 0.005 * abs(x));
 
-stringLoop = exc : (+ : linear_fdelay(4096, del - 1.0)) ~ (lp : bridge : _ * 0.998);
+membrane(x) = x * 0.97 + fi.resonbp(200.0, 4.0, 1.0, x) * 0.03;
+
+stringLoop = exc : (+ : linear_fdelay(4096, del - 1.0)) ~ (lp : bridge : membrane : _ * 0.998);
 
 process = stringLoop * 1.5 : ma.tanh : *(gain) : min(1.0) : max(-1.0);
-
