@@ -1,0 +1,474 @@
+FaustMin: Native Library Loaded Successfully
+--- Standalone Multi-Style Sequence Validation Runner ---
+[Native] FaustMixer persistent thread pool fully armed: 6 workers
+[Native Trace] CALLBACK REGISTERED: Ptr=0x56884d1e6a70 | UserData=0x56884d1ed2a0
+[Native Trace] miniaudio callback frameCount: 1024
+[Native Trace] miniaudio hardware device started successfully. SR=48000
+
+Select a sequence to play:
+  1. Indian Classical — Darbari (Bansuri, Tanpura, Tabla)
+  2. Jazz Ensemble (Piano, Sax, Bass, Drums)
+  3. Rock Band (Electric Guitar, Bass, Drums)
+  4. Tibetan Bowl with Rain + LagNga (Bowl, Rainmaker, LagNga)
+  5. Acoustic Hotel California (Acoustic Guitar, 3 Congas, Bass, Drums)
+  6. Sitar — Raag Yaman + Tabla
+  7. North Indian Folk (Dholak Percussion)
+  8. Punjabi Folk (Bhangra beats)
+  9. Exit
+>>> Enter selection (1-9): [Native] SUCCESS: Auto-constructed 12 LUT records from companion CSV './assets/dsp/tanpura.csv'
+[Native] SUCCESS: Auto-constructed 80 LUT records from companion CSV './assets/dsp/bansuri.csv'
+[Native] SUCCESS: Auto-constructed 12 LUT records from companion CSV './assets/dsp/dayan.csv'
+[Native] SUCCESS: Auto-constructed 12 LUT records from companion CSV './assets/dsp/bayan.csv'
+
+=== Starting Sequence: Indian Classical — Raag Darbari (Bansuri, Tanpura) + Tabla ===
+[Mixer Registry] Added Track ID: 1 with Weight: 1.30
+[Mixer Registry] Added Track ID: 2 with Weight: 1.00
+[Mixer Registry] Added Track ID: 3 with Weight: 1.20
+[Native] Adding Sequence Object: Tanpura (InstID: 11) | BPM: 120 | BaseFreq: 111 Hz
+[Native] Adding Sequence Object: Tanpura (InstID: 11)
+[Diagnostic] Parsed NoteOn events for Tanpura:
+  Event 0: Note: Sa | Freq: 111 Hz | Amp: 0.555556 | SampleOffset: 0
+  Event 3: Note: Sa | Freq: 111 Hz | Amp: 0.555556 | SampleOffset: 192000
+[Mixer Registry] Added Instrument ptr: 0x56887916e980 to Track ID: 3 with Weight: 1.00
+[Native] Adding Sequence Object: Bansuri (InstID: 17) | BPM: 120 | BaseFreq: 444 Hz
+[Native] Adding Sequence Object: Bansuri (InstID: 17)
+[Diagnostic] Parsed NoteOn events for Bansuri:
+  Event 0: Note: Sa | Freq: 444 Hz | Amp: 0.444444 | SampleOffset: 0
+  Event 1: Glide -> Freq: 499.5 Hz | Vel: 0.444444 | DurSamples: 24000 | SampleOffset: 24000
+  Event 2: Note: Re | Freq: 499.5 Hz | Amp: 0.444444 | SampleOffset: 48000
+  Event 4: Note: g1 | Freq: 526.222 Hz | Amp: 0.666667 | SampleOffset: 96000
+  Event 5: Glide -> Freq: 499.5 Hz | Vel: 0.555556 | DurSamples: 24000 | SampleOffset: 120000
+  Event 6: Note: Re | Freq: 499.5 Hz | Amp: 0.555556 | SampleOffset: 144000
+  Event 8: Note: Sa | Freq: 444 Hz | Amp: 0.333333 | SampleOffset: 192000
+  Event 9: Glide -> Freq: 394.667 Hz | Vel: 0.444444 | DurSamples: 24000 | SampleOffset: 216000
+  Event 10: Note: n1/2 | Freq: 394.667 Hz | Amp: 0.444444 | SampleOffset: 240000
+  Event 12: Note: d1/2 | Freq: 350.815 Hz | Amp: 0.666667 | SampleOffset: 288000
+  Event 13: Glide -> Freq: 333 Hz | Vel: 0.666667 | DurSamples: 24000 | SampleOffset: 312000
+  Event 14: Note: Pa/2 | Freq: 333 Hz | Amp: 0.666667 | SampleOffset: 336000
+  Event 16: Note: M1 | Freq: 592 Hz | Amp: 0.444444 | SampleOffset: 384000
+  Event 17: Glide -> Freq: 526.222 Hz | Vel: 0.666667 | DurSamples: 24000 | SampleOffset: 408000
+  Event 18: Note: g1 | Freq: 526.222 Hz | Amp: 0.666667 | SampleOffset: 432000
+  Event 20: Note: Re | Freq: 499.5 Hz | Amp: 0.666667 | SampleOffset: 480000
+  Event 21: Glide -> Freq: 444 Hz | Vel: 0.333333 | DurSamples: 24000 | SampleOffset: 504000
+  Event 22: Note: Sa | Freq: 444 Hz | Amp: 0.333333 | SampleOffset: 528000
+  Event 24: Note: Pa/2 | Freq: 333 Hz | Amp: 0.444444 | SampleOffset: 576000
+  Event 25: Glide -> Freq: 350.815 Hz | Vel: 0.777778 | DurSamples: 24000 | SampleOffset: 600000
+  Event 26: Note: d1/2 | Freq: 350.815 Hz | Amp: 0.777778 | SampleOffset: 624000
+  Event 28: Note: n1/2 | Freq: 394.667 Hz | Amp: 0.888889 | SampleOffset: 672000
+  Event 29: Glide -> Freq: 444 Hz | Vel: 0.555556 | DurSamples: 24000 | SampleOffset: 696000
+  Event 30: Note: Sa | Freq: 444 Hz | Amp: 0.555556 | SampleOffset: 720000
+  Event 32: Note: Sa | Freq: 444 Hz | Amp: 0.555556 | SampleOffset: 768000
+  Event 34: Note: Re | Freq: 499.5 Hz | Amp: 0.555556 | SampleOffset: 792000
+  Event 35: Glide -> Freq: 526.222 Hz | Vel: 0.777778 | DurSamples: 12000 | SampleOffset: 804000
+  Event 36: Note: g1 | Freq: 526.222 Hz | Amp: 0.777778 | SampleOffset: 816000
+  Event 38: Note: Re | Freq: 499.5 Hz | Amp: 0.666667 | SampleOffset: 840000
+  Event 40: Note: M1 | Freq: 592 Hz | Amp: 0.555556 | SampleOffset: 864000
+  Event 42: Note: g1 | Freq: 526.222 Hz | Amp: 0.777778 | SampleOffset: 888000
+  Event 43: Glide -> Freq: 499.5 Hz | Vel: 0.666667 | DurSamples: 12000 | SampleOffset: 900000
+  Event 44: Note: Re | Freq: 499.5 Hz | Amp: 0.666667 | SampleOffset: 912000
+  Event 46: Note: Sa | Freq: 444 Hz | Amp: 0.444444 | SampleOffset: 936000
+  Event 48: Note: M1 | Freq: 592 Hz | Amp: 0.666667 | SampleOffset: 960000
+  Event 50: Note: Pa | Freq: 666 Hz | Amp: 0.555556 | SampleOffset: 984000
+  Event 51: Glide -> Freq: 701.63 Hz | Vel: 0.888889 | DurSamples: 12000 | SampleOffset: 996000
+  Event 52: Note: d1 | Freq: 701.63 Hz | Amp: 0.888889 | SampleOffset: 1008000
+  Event 54: Note: Pa | Freq: 666 Hz | Amp: 0.666667 | SampleOffset: 1032000
+  Event 56: Note: n1 | Freq: 789.333 Hz | Amp: 0.666667 | SampleOffset: 1056000
+  Event 58: Note: d1 | Freq: 701.63 Hz | Amp: 0.888889 | SampleOffset: 1080000
+  Event 59: Glide -> Freq: 666 Hz | Vel: 0.777778 | DurSamples: 12000 | SampleOffset: 1092000
+  Event 60: Note: Pa | Freq: 666 Hz | Amp: 0.777778 | SampleOffset: 1104000
+  Event 62: Note: M1 | Freq: 592 Hz | Amp: 0.555556 | SampleOffset: 1128000
+  Event 64: Note: g1 | Freq: 526.222 Hz | Amp: 0.777778 | SampleOffset: 1152000
+  Event 65: Glide -> Freq: 499.5 Hz | Vel: 0.666667 | DurSamples: 12000 | SampleOffset: 1164000
+  Event 66: Note: Re | Freq: 499.5 Hz | Amp: 0.666667 | SampleOffset: 1176000
+  Event 68: Note: Sa | Freq: 444 Hz | Amp: 0.555556 | SampleOffset: 1200000
+  Event 70: Note: n1/2 | Freq: 394.667 Hz | Amp: 0.444444 | SampleOffset: 1224000
+  Event 72: Note: d1/2 | Freq: 350.815 Hz | Amp: 0.666667 | SampleOffset: 1248000
+  Event 73: Glide -> Freq: 333 Hz | Vel: 0.555556 | DurSamples: 12000 | SampleOffset: 1260000
+  Event 74: Note: Pa/2 | Freq: 333 Hz | Amp: 0.555556 | SampleOffset: 1272000
+  Event 76: Note: d1/2 | Freq: 350.815 Hz | Amp: 0.777778 | SampleOffset: 1296000
+  Event 77: Glide -> Freq: 394.667 Hz | Vel: 0.888889 | DurSamples: 12000 | SampleOffset: 1308000
+  Event 78: Note: n1/2 | Freq: 394.667 Hz | Amp: 0.888889 | SampleOffset: 1320000
+  Event 80: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 1344000
+  Event 82: Note: Re | Freq: 499.5 Hz | Amp: 0.555556 | SampleOffset: 1368000
+  Event 83: Glide -> Freq: 526.222 Hz | Vel: 0.777778 | DurSamples: 12000 | SampleOffset: 1380000
+  Event 84: Note: g1 | Freq: 526.222 Hz | Amp: 0.777778 | SampleOffset: 1392000
+  Event 86: Note: Re | Freq: 499.5 Hz | Amp: 0.666667 | SampleOffset: 1416000
+  Event 88: Note: Sa | Freq: 444 Hz | Amp: 0.555556 | SampleOffset: 1440000
+  Event 90: Note: n1/2 | Freq: 394.667 Hz | Amp: 0.444444 | SampleOffset: 1464000
+  Event 91: Glide -> Freq: 350.815 Hz | Vel: 0.666667 | DurSamples: 12000 | SampleOffset: 1476000
+  Event 92: Note: d1/2 | Freq: 350.815 Hz | Amp: 0.666667 | SampleOffset: 1488000
+  Event 94: Note: Pa/2 | Freq: 333 Hz | Amp: 0.555556 | SampleOffset: 1512000
+  Event 96: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 1536000
+  Event 98: Note: Re | Freq: 499.5 Hz | Amp: 0.555556 | SampleOffset: 1548000
+  Event 100: Note: g1 | Freq: 526.222 Hz | Amp: 0.777778 | SampleOffset: 1560000
+  Event 101: Glide -> Freq: 499.5 Hz | Vel: 0.555556 | DurSamples: 6000 | SampleOffset: 1566000
+  Event 102: Note: Re | Freq: 499.5 Hz | Amp: 0.555556 | SampleOffset: 1572000
+  Event 104: Note: M1 | Freq: 592 Hz | Amp: 0.666667 | SampleOffset: 1584000
+  Event 106: Note: Pa | Freq: 666 Hz | Amp: 0.555556 | SampleOffset: 1596000
+  Event 108: Note: d1 | Freq: 701.63 Hz | Amp: 0.888889 | SampleOffset: 1608000
+  Event 109: Glide -> Freq: 666 Hz | Vel: 0.666667 | DurSamples: 6000 | SampleOffset: 1614000
+  Event 110: Note: Pa | Freq: 666 Hz | Amp: 0.666667 | SampleOffset: 1620000
+  Event 112: Note: n1 | Freq: 789.333 Hz | Amp: 0.666667 | SampleOffset: 1632000
+  Event 114: Note: d1 | Freq: 701.63 Hz | Amp: 0.888889 | SampleOffset: 1644000
+  Event 115: Glide -> Freq: 666 Hz | Vel: 0.777778 | DurSamples: 6000 | SampleOffset: 1650000
+  Event 116: Note: Pa | Freq: 666 Hz | Amp: 0.777778 | SampleOffset: 1656000
+  Event 118: Note: M1 | Freq: 592 Hz | Amp: 0.555556 | SampleOffset: 1668000
+  Event 120: Note: g1 | Freq: 526.222 Hz | Amp: 0.777778 | SampleOffset: 1680000
+  Event 121: Glide -> Freq: 499.5 Hz | Vel: 0.666667 | DurSamples: 6000 | SampleOffset: 1686000
+  Event 122: Note: Re | Freq: 499.5 Hz | Amp: 0.666667 | SampleOffset: 1692000
+  Event 124: Note: Sa | Freq: 444 Hz | Amp: 0.555556 | SampleOffset: 1704000
+  Event 126: Note: n1/2 | Freq: 394.667 Hz | Amp: 0.444444 | SampleOffset: 1716000
+  Event 128: Note: M1 | Freq: 592 Hz | Amp: 0.666667 | SampleOffset: 1728000
+  Event 130: Note: Pa | Freq: 666 Hz | Amp: 0.555556 | SampleOffset: 1734000
+  Event 132: Note: d1 | Freq: 701.63 Hz | Amp: 0.888889 | SampleOffset: 1740000
+  Event 133: Glide -> Freq: 666 Hz | Vel: 0.777778 | DurSamples: 6000 | SampleOffset: 1746000
+  Event 134: Note: Pa | Freq: 666 Hz | Amp: 0.777778 | SampleOffset: 1752000
+  Event 136: Note: M1 | Freq: 592 Hz | Amp: 0.666667 | SampleOffset: 1758000
+  Event 138: Note: g1 | Freq: 526.222 Hz | Amp: 0.777778 | SampleOffset: 1764000
+  Event 139: Glide -> Freq: 499.5 Hz | Vel: 0.666667 | DurSamples: 6000 | SampleOffset: 1770000
+  Event 140: Note: Re | Freq: 499.5 Hz | Amp: 0.666667 | SampleOffset: 1776000
+  Event 142: Note: Sa | Freq: 444 Hz | Amp: 0.555556 | SampleOffset: 1782000
+  Event 144: Note: n1/2 | Freq: 394.667 Hz | Amp: 0.444444 | SampleOffset: 1788000
+  Event 146: Note: d1/2 | Freq: 350.815 Hz | Amp: 0.666667 | SampleOffset: 1800000
+  Event 147: Glide -> Freq: 333 Hz | Vel: 0.555556 | DurSamples: 6000 | SampleOffset: 1806000
+  Event 148: Note: Pa/2 | Freq: 333 Hz | Amp: 0.555556 | SampleOffset: 1812000
+  Event 150: Note: Pa/2 | Freq: 333 Hz | Amp: 0.555556 | SampleOffset: 1824000
+  Event 152: Note: d1/2 | Freq: 350.815 Hz | Amp: 0.666667 | SampleOffset: 1830000
+  Event 153: Glide -> Freq: 394.667 Hz | Vel: 0.888889 | DurSamples: 6000 | SampleOffset: 1836000
+  Event 154: Note: n1/2 | Freq: 394.667 Hz | Amp: 0.888889 | SampleOffset: 1842000
+  Event 156: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 1854000
+  Event 158: Note: Re | Freq: 499.5 Hz | Amp: 0.555556 | SampleOffset: 1860000
+  Event 160: Note: g1 | Freq: 526.222 Hz | Amp: 0.777778 | SampleOffset: 1866000
+  Event 161: Glide -> Freq: 592 Hz | Vel: 0.666667 | DurSamples: 6000 | SampleOffset: 1872000
+  Event 162: Note: M1 | Freq: 592 Hz | Amp: 0.666667 | SampleOffset: 1878000
+  Event 164: Note: Pa | Freq: 666 Hz | Amp: 0.555556 | SampleOffset: 1884000
+  Event 166: Note: d1 | Freq: 701.63 Hz | Amp: 0.888889 | SampleOffset: 1890000
+  Event 167: Glide -> Freq: 666 Hz | Vel: 0.777778 | DurSamples: 6000 | SampleOffset: 1896000
+  Event 168: Note: Pa | Freq: 666 Hz | Amp: 0.777778 | SampleOffset: 1902000
+  Event 170: Note: M1 | Freq: 592 Hz | Amp: 0.555556 | SampleOffset: 1908000
+  Event 172: Note: g1 | Freq: 526.222 Hz | Amp: 0.777778 | SampleOffset: 1914000
+  Event 173: Glide -> Freq: 526.222 Hz | Vel: 0.777778 | DurSamples: 6000 | SampleOffset: 1920000
+  Event 174: Note: g1 | Freq: 526.222 Hz | Amp: 0.777778 | SampleOffset: 1926000
+  Event 175: Glide -> Freq: 499.5 Hz | Vel: 0.666667 | DurSamples: 6000 | SampleOffset: 1932000
+  Event 176: Note: Re | Freq: 499.5 Hz | Amp: 0.666667 | SampleOffset: 1938000
+  Event 178: Note: Sa | Freq: 444 Hz | Amp: 0.555556 | SampleOffset: 1944000
+  Event 180: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 1956000
+  Event 182: Note: Re | Freq: 499.5 Hz | Amp: 0.555556 | SampleOffset: 1962000
+  Event 184: Note: g1 | Freq: 526.222 Hz | Amp: 0.777778 | SampleOffset: 1968000
+  Event 185: Glide -> Freq: 592 Hz | Vel: 0.666667 | DurSamples: 6000 | SampleOffset: 1974000
+  Event 186: Note: M1 | Freq: 592 Hz | Amp: 0.666667 | SampleOffset: 1980000
+  Event 188: Note: Pa | Freq: 666 Hz | Amp: 0.555556 | SampleOffset: 1986000
+  Event 190: Note: d1 | Freq: 701.63 Hz | Amp: 0.888889 | SampleOffset: 1992000
+  Event 191: Glide -> Freq: 789.333 Hz | Vel: 0.666667 | DurSamples: 6000 | SampleOffset: 1998000
+  Event 192: Note: n1 | Freq: 789.333 Hz | Amp: 0.666667 | SampleOffset: 2004000
+  Event 194: Note: d1 | Freq: 701.63 Hz | Amp: 0.888889 | SampleOffset: 2010000
+  Event 195: Glide -> Freq: 666 Hz | Vel: 0.777778 | DurSamples: 6000 | SampleOffset: 2016000
+  Event 196: Note: Pa | Freq: 666 Hz | Amp: 0.777778 | SampleOffset: 2022000
+  Event 198: Note: n1 | Freq: 789.333 Hz | Amp: 0.666667 | SampleOffset: 2034000
+  Event 200: Note: d1 | Freq: 701.63 Hz | Amp: 0.888889 | SampleOffset: 2040000
+  Event 201: Glide -> Freq: 789.333 Hz | Vel: 0.888889 | DurSamples: 6000 | SampleOffset: 2046000
+  Event 202: Note: n1 | Freq: 789.333 Hz | Amp: 0.888889 | SampleOffset: 2052000
+  Event 204: Note: n1 | Freq: 789.333 Hz | Amp: 0.777778 | SampleOffset: 2064000
+  Event 206: Note: d1 | Freq: 701.63 Hz | Amp: 0.888889 | SampleOffset: 2070000
+  Event 207: Glide -> Freq: 666 Hz | Vel: 0.777778 | DurSamples: 6000 | SampleOffset: 2076000
+  Event 208: Note: Pa | Freq: 666 Hz | Amp: 0.777778 | SampleOffset: 2082000
+  Event 210: Note: M1 | Freq: 592 Hz | Amp: 0.666667 | SampleOffset: 2094000
+  Event 212: Note: Pa | Freq: 666 Hz | Amp: 0.555556 | SampleOffset: 2100000
+  Event 214: Note: d1 | Freq: 701.63 Hz | Amp: 0.888889 | SampleOffset: 2106000
+  Event 215: Glide -> Freq: 666 Hz | Vel: 0.777778 | DurSamples: 6000 | SampleOffset: 2112000
+  Event 216: Note: Pa | Freq: 666 Hz | Amp: 0.777778 | SampleOffset: 2118000
+  Event 218: Note: M1 | Freq: 592 Hz | Amp: 0.555556 | SampleOffset: 2124000
+  Event 220: Note: g1 | Freq: 526.222 Hz | Amp: 0.777778 | SampleOffset: 2130000
+  Event 221: Glide -> Freq: 789.333 Hz | Vel: 0.888889 | DurSamples: 6000 | SampleOffset: 2136000
+  Event 222: Note: n1 | Freq: 789.333 Hz | Amp: 0.888889 | SampleOffset: 2142000
+  Event 224: Note: d1 | Freq: 701.63 Hz | Amp: 0.777778 | SampleOffset: 2148000
+  Event 226: Note: Pa | Freq: 666 Hz | Amp: 0.666667 | SampleOffset: 2154000
+  Event 228: Note: M1 | Freq: 592 Hz | Amp: 0.777778 | SampleOffset: 2166000
+  Event 230: Note: g1 | Freq: 526.222 Hz | Amp: 0.666667 | SampleOffset: 2172000
+  Event 232: Note: Re | Freq: 499.5 Hz | Amp: 0.555556 | SampleOffset: 2178000
+  Event 234: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2190000
+  Event 236: Note: n1/2 | Freq: 394.667 Hz | Amp: 0.555556 | SampleOffset: 2196000
+  Event 238: Note: d1/2 | Freq: 350.815 Hz | Amp: 0.666667 | SampleOffset: 2202000
+  Event 240: Note: Pa/2 | Freq: 333 Hz | Amp: 0.555556 | SampleOffset: 2214000
+  Event 242: Note: M1/2 | Freq: 296 Hz | Amp: 0.444444 | SampleOffset: 2220000
+  Event 244: Note: Pa/2 | Freq: 333 Hz | Amp: 0.555556 | SampleOffset: 2226000
+  Event 246: Note: d1/2 | Freq: 350.815 Hz | Amp: 0.666667 | SampleOffset: 2238000
+  Event 248: Note: n1/2 | Freq: 394.667 Hz | Amp: 0.777778 | SampleOffset: 2244000
+  Event 250: Note: Sa | Freq: 444 Hz | Amp: 0.888889 | SampleOffset: 2250000
+  Event 252: Note: Re | Freq: 499.5 Hz | Amp: 0.777778 | SampleOffset: 2262000
+  Event 254: Note: g1 | Freq: 526.222 Hz | Amp: 0.888889 | SampleOffset: 2268000
+  Event 255: Glide -> Freq: 592 Hz | Vel: 0.777778 | DurSamples: 6000 | SampleOffset: 2274000
+  Event 256: Note: M1 | Freq: 592 Hz | Amp: 0.777778 | SampleOffset: 2280000
+  Event 258: Note: Pa | Freq: 666 Hz | Amp: 0.888889 | SampleOffset: 2286000
+  Event 260: Note: d1 | Freq: 701.63 Hz | Amp: 1 | SampleOffset: 2292000
+  Event 261: Glide -> Freq: 789.333 Hz | Vel: 0.888889 | DurSamples: 6000 | SampleOffset: 2298000
+  Event 262: Note: n1 | Freq: 789.333 Hz | Amp: 0.888889 | SampleOffset: 2304000
+  Event 264: Note: d1 | Freq: 701.63 Hz | Amp: 1 | SampleOffset: 2310000
+  Event 266: Note: Pa | Freq: 666 Hz | Amp: 0.888889 | SampleOffset: 2316000
+  Event 268: Note: Sa | Freq: 444 Hz | Amp: 0.888889 | SampleOffset: 2328000
+  Event 270: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2334000
+  Event 272: Note: Sa | Freq: 444 Hz | Amp: 0.888889 | SampleOffset: 2340000
+  Event 274: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2346000
+  Event 276: Note: Re | Freq: 499.5 Hz | Amp: 0.777778 | SampleOffset: 2352000
+  Event 278: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2358000
+  Event 280: Note: g1 | Freq: 526.222 Hz | Amp: 0.888889 | SampleOffset: 2364000
+  Event 282: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2370000
+  Event 284: Note: M1 | Freq: 592 Hz | Amp: 0.777778 | SampleOffset: 2376000
+  Event 286: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2382000
+  Event 288: Note: Pa | Freq: 666 Hz | Amp: 0.888889 | SampleOffset: 2388000
+  Event 290: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2394000
+  Event 292: Note: d1 | Freq: 701.63 Hz | Amp: 1 | SampleOffset: 2400000
+  Event 294: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2406000
+  Event 296: Note: Pa | Freq: 666 Hz | Amp: 0.888889 | SampleOffset: 2412000
+  Event 298: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2418000
+  Event 300: Note: d1 | Freq: 701.63 Hz | Amp: 1 | SampleOffset: 2424000
+  Event 302: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2430000
+  Event 304: Note: Pa | Freq: 666 Hz | Amp: 0.888889 | SampleOffset: 2436000
+  Event 306: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2442000
+  Event 308: Note: M1 | Freq: 592 Hz | Amp: 0.777778 | SampleOffset: 2448000
+  Event 310: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2454000
+  Event 312: Note: g1 | Freq: 526.222 Hz | Amp: 0.888889 | SampleOffset: 2460000
+  Event 314: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2466000
+  Event 316: Note: Re | Freq: 499.5 Hz | Amp: 0.777778 | SampleOffset: 2472000
+  Event 318: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2478000
+  Event 320: Note: Sa | Freq: 444 Hz | Amp: 0.888889 | SampleOffset: 2484000
+  Event 322: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2490000
+  Event 324: Note: n1/2 | Freq: 394.667 Hz | Amp: 0.777778 | SampleOffset: 2496000
+  Event 326: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2502000
+  Event 328: Note: d1/2 | Freq: 350.815 Hz | Amp: 0.888889 | SampleOffset: 2508000
+  Event 330: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2514000
+  Event 332: Note: Sa | Freq: 444 Hz | Amp: 0.888889 | SampleOffset: 2520000
+  Event 334: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2526000
+  Event 336: Note: Re | Freq: 499.5 Hz | Amp: 0.777778 | SampleOffset: 2532000
+  Event 338: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2538000
+  Event 340: Note: g1 | Freq: 526.222 Hz | Amp: 0.888889 | SampleOffset: 2544000
+  Event 342: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2550000
+  Event 344: Note: Re | Freq: 499.5 Hz | Amp: 0.777778 | SampleOffset: 2556000
+  Event 346: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2562000
+  Event 348: Note: Sa | Freq: 444 Hz | Amp: 0.888889 | SampleOffset: 2568000
+  Event 350: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2574000
+  Event 352: Note: n1/2 | Freq: 394.667 Hz | Amp: 0.777778 | SampleOffset: 2580000
+  Event 354: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2586000
+  Event 356: Note: d1/2 | Freq: 350.815 Hz | Amp: 0.888889 | SampleOffset: 2592000
+  Event 358: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2598000
+  Event 360: Note: Pa/2 | Freq: 333 Hz | Amp: 0.777778 | SampleOffset: 2604000
+  Event 362: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2610000
+  Event 364: Note: M1 | Freq: 592 Hz | Amp: 0.777778 | SampleOffset: 2616000
+  Event 366: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2622000
+  Event 368: Note: Pa | Freq: 666 Hz | Amp: 0.888889 | SampleOffset: 2628000
+  Event 370: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2634000
+  Event 372: Note: d1 | Freq: 701.63 Hz | Amp: 1 | SampleOffset: 2640000
+  Event 374: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2646000
+  Event 376: Note: n1 | Freq: 789.333 Hz | Amp: 0.888889 | SampleOffset: 2652000
+  Event 378: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2658000
+  Event 380: Note: d1 | Freq: 701.63 Hz | Amp: 1 | SampleOffset: 2664000
+  Event 382: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2670000
+  Event 384: Note: Pa | Freq: 666 Hz | Amp: 0.888889 | SampleOffset: 2676000
+  Event 386: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2682000
+  Event 388: Note: M1 | Freq: 592 Hz | Amp: 0.777778 | SampleOffset: 2688000
+  Event 390: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2694000
+  Event 392: Note: g1 | Freq: 526.222 Hz | Amp: 0.888889 | SampleOffset: 2700000
+  Event 394: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2706000
+  Event 396: Note: g1 | Freq: 526.222 Hz | Amp: 0.888889 | SampleOffset: 2712000
+  Event 398: Note: Re | Freq: 499.5 Hz | Amp: 0.777778 | SampleOffset: 2718000
+  Event 400: Note: Sa | Freq: 444 Hz | Amp: 0.888889 | SampleOffset: 2724000
+  Event 402: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2730000
+  Event 404: Note: g1 | Freq: 526.222 Hz | Amp: 0.888889 | SampleOffset: 2736000
+  Event 406: Note: Re | Freq: 499.5 Hz | Amp: 0.777778 | SampleOffset: 2742000
+  Event 408: Note: Sa | Freq: 444 Hz | Amp: 0.888889 | SampleOffset: 2748000
+  Event 410: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2754000
+  Event 412: Note: g1 | Freq: 526.222 Hz | Amp: 0.888889 | SampleOffset: 2760000
+  Event 414: Note: Re | Freq: 499.5 Hz | Amp: 0.777778 | SampleOffset: 2766000
+  Event 416: Note: Sa | Freq: 444 Hz | Amp: 0.888889 | SampleOffset: 2772000
+  Event 418: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2778000
+  Event 420: Note: g1 | Freq: 526.222 Hz | Amp: 0.888889 | SampleOffset: 2784000
+  Event 422: Note: Re | Freq: 499.5 Hz | Amp: 0.777778 | SampleOffset: 2790000
+  Event 424: Note: Sa | Freq: 444 Hz | Amp: 0.888889 | SampleOffset: 2796000
+  Event 426: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2802000
+  Event 428: Note: d1 | Freq: 701.63 Hz | Amp: 1 | SampleOffset: 2808000
+  Event 430: Note: Pa | Freq: 666 Hz | Amp: 0.888889 | SampleOffset: 2814000
+  Event 432: Note: M1 | Freq: 592 Hz | Amp: 0.777778 | SampleOffset: 2820000
+  Event 434: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2826000
+  Event 436: Note: d1 | Freq: 701.63 Hz | Amp: 1 | SampleOffset: 2832000
+  Event 438: Note: Pa | Freq: 666 Hz | Amp: 0.888889 | SampleOffset: 2838000
+  Event 440: Note: M1 | Freq: 592 Hz | Amp: 0.777778 | SampleOffset: 2844000
+  Event 442: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2850000
+  Event 444: Note: d1 | Freq: 701.63 Hz | Amp: 1 | SampleOffset: 2856000
+  Event 446: Note: Pa | Freq: 666 Hz | Amp: 0.888889 | SampleOffset: 2862000
+  Event 448: Note: M1 | Freq: 592 Hz | Amp: 0.777778 | SampleOffset: 2868000
+  Event 450: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2874000
+  Event 452: Note: d1 | Freq: 701.63 Hz | Amp: 1 | SampleOffset: 2880000
+  Event 454: Note: Pa | Freq: 666 Hz | Amp: 0.888889 | SampleOffset: 2886000
+  Event 456: Note: M1 | Freq: 592 Hz | Amp: 0.777778 | SampleOffset: 2892000
+  Event 458: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2898000
+  Event 460: Note: n1 | Freq: 789.333 Hz | Amp: 1 | SampleOffset: 2904000
+  Event 462: Note: d1 | Freq: 701.63 Hz | Amp: 0.888889 | SampleOffset: 2910000
+  Event 464: Note: Pa | Freq: 666 Hz | Amp: 0.777778 | SampleOffset: 2916000
+  Event 466: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2922000
+  Event 468: Note: n1 | Freq: 789.333 Hz | Amp: 1 | SampleOffset: 2928000
+  Event 470: Note: d1 | Freq: 701.63 Hz | Amp: 0.888889 | SampleOffset: 2934000
+  Event 472: Note: Pa | Freq: 666 Hz | Amp: 0.777778 | SampleOffset: 2940000
+  Event 474: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2946000
+  Event 476: Note: n1 | Freq: 789.333 Hz | Amp: 1 | SampleOffset: 2952000
+  Event 478: Note: d1 | Freq: 701.63 Hz | Amp: 0.888889 | SampleOffset: 2958000
+  Event 480: Note: Pa | Freq: 666 Hz | Amp: 0.777778 | SampleOffset: 2964000
+  Event 482: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2970000
+  Event 484: Note: n1 | Freq: 789.333 Hz | Amp: 1 | SampleOffset: 2976000
+  Event 486: Note: d1 | Freq: 701.63 Hz | Amp: 0.888889 | SampleOffset: 2982000
+  Event 488: Note: Pa | Freq: 666 Hz | Amp: 0.777778 | SampleOffset: 2988000
+  Event 490: Note: Sa | Freq: 444 Hz | Amp: 0.666667 | SampleOffset: 2994000
+  Event 492: Note: Sa | Freq: 444 Hz | Amp: 1 | SampleOffset: 3000000
+  Event 494: Note: Sa | Freq: 444 Hz | Amp: 1 | SampleOffset: 3006000
+  Event 496: Note: Sa | Freq: 444 Hz | Amp: 1 | SampleOffset: 3012000
+  Event 498: Note: Sa | Freq: 444 Hz | Amp: 1 | SampleOffset: 3018000
+  Event 500: Note: Sa | Freq: 444 Hz | Amp: 1 | SampleOffset: 3024000
+  Event 502: Note: Sa | Freq: 444 Hz | Amp: 1 | SampleOffset: 3030000
+  Event 504: Note: Sa | Freq: 444 Hz | Amp: 1 | SampleOffset: 3036000
+  Event 506: Note: Sa | Freq: 444 Hz | Amp: 1 | SampleOffset: 3042000
+  Event 508: Note: Sa | Freq: 444 Hz | Amp: 1 | SampleOffset: 3048000
+[Mixer Registry] Added Instrument ptr: 0x568879193410 to Track ID: 2 with Weight: 1.00
+[Native] Adding Sequence Object: Dayan (InstID: 0) | BPM: 120 | BaseFreq: 222 Hz
+[Native] Adding Sequence Object: Dayan (InstID: 0)
+[Diagnostic] Parsed NoteOn events for Dayan:
+  Event 0: Note: Na | Freq: 222 Hz | Amp: 0.555556 | SampleOffset: 0
+  Event 1: Note: Tin | Freq: 222 Hz | Amp: 0.555556 | SampleOffset: 24000
+  Event 2: Note: Tun | Freq: 222 Hz | Amp: 0.555556 | SampleOffset: 48000
+  Event 3: Note: tk | Freq: 222 Hz | Amp: 0.555556 | SampleOffset: 72000
+  Event 4: Note: Na | Freq: 222 Hz | Amp: 0.555556 | SampleOffset: 96000
+  Event 5: Note: Tin | Freq: 222 Hz | Amp: 0.555556 | SampleOffset: 120000
+  Event 6: Note: Na | Freq: 222 Hz | Amp: 0.555556 | SampleOffset: 144000
+  Event 7: Note: tk | Freq: 222 Hz | Amp: 0.555556 | SampleOffset: 168000
+  Event 8: Note: Tun | Freq: 222 Hz | Amp: 0.555556 | SampleOffset: 192000
+  Event 9: Note: Tin | Freq: 222 Hz | Amp: 0.555556 | SampleOffset: 216000
+  Event 10: Note: Na | Freq: 222 Hz | Amp: 0.555556 | SampleOffset: 240000
+  Event 11: Note: Tun | Freq: 222 Hz | Amp: 0.555556 | SampleOffset: 264000
+  Event 12: Note: Na | Freq: 222 Hz | Amp: 0.555556 | SampleOffset: 288000
+  Event 13: Note: tk | Freq: 222 Hz | Amp: 0.555556 | SampleOffset: 312000
+  Event 14: Note: Tin | Freq: 222 Hz | Amp: 0.555556 | SampleOffset: 336000
+  Event 15: Note: Tun | Freq: 222 Hz | Amp: 0.555556 | SampleOffset: 360000
+  Event 16: Note: Na | Freq: 222 Hz | Amp: 0.555556 | SampleOffset: 384000
+  Event 17: Note: Tin | Freq: 222 Hz | Amp: 0.555556 | SampleOffset: 408000
+  Event 18: Note: Tun | Freq: 222 Hz | Amp: 0.555556 | SampleOffset: 432000
+  Event 19: Note: tk | Freq: 222 Hz | Amp: 0.555556 | SampleOffset: 456000
+  Event 24: Note: Tun | Freq: 222 Hz | Amp: 0.555556 | SampleOffset: 576000
+  Event 25: Note: Tin | Freq: 222 Hz | Amp: 0.555556 | SampleOffset: 600000
+  Event 26: Note: Na | Freq: 222 Hz | Amp: 0.555556 | SampleOffset: 624000
+  Event 27: Note: Tun | Freq: 222 Hz | Amp: 0.555556 | SampleOffset: 648000
+  Event 32: Note: Na | Freq: 222 Hz | Amp: 0.555556 | SampleOffset: 768000
+  Event 33: Note: Tin | Freq: 222 Hz | Amp: 0.555556 | SampleOffset: 792000
+  Event 34: Note: Tun | Freq: 222 Hz | Amp: 0.555556 | SampleOffset: 816000
+  Event 35: Note: tk | Freq: 222 Hz | Amp: 0.555556 | SampleOffset: 840000
+[Mixer Registry] Added Instrument ptr: 0x568879195140 to Track ID: 1 with Weight: 1.00
+[Native] Adding Sequence Object: Bayan (InstID: 1) | BPM: 120 | BaseFreq: 111 Hz
+[Native] Adding Sequence Object: Bayan (InstID: 1)
+[Diagnostic] Parsed NoteOn events for Bayan:
+  Event 0: Note: Ghe | Freq: 111 Hz | Amp: 0.555556 | SampleOffset: 0
+  Event 3: Note: Ka | Freq: 111 Hz | Amp: 0.555556 | SampleOffset: 72000
+  Event 5: Note: Ka | Freq: 111 Hz | Amp: 0.555556 | SampleOffset: 120000
+  Event 6: Note: Ghe | Freq: 111 Hz | Amp: 0.555556 | SampleOffset: 144000
+  Event 8: Note: Ghe | Freq: 111 Hz | Amp: 0.555556 | SampleOffset: 192000
+  Event 9: Note: Ka | Freq: 111 Hz | Amp: 0.555556 | SampleOffset: 216000
+  Event 10: Note: Ghe | Freq: 111 Hz | Amp: 0.555556 | SampleOffset: 240000
+  Event 11: Note: Ke | Freq: 111 Hz | Amp: 0.555556 | SampleOffset: 264000
+  Event 12: Note: Ghi | Freq: 111 Hz | Amp: 0.555556 | SampleOffset: 288000
+  Event 13: Note: Ghe | Freq: 111 Hz | Amp: 0.555556 | SampleOffset: 312000
+  Event 14: Note: Ka | Freq: 111 Hz | Amp: 0.555556 | SampleOffset: 336000
+  Event 15: Note: Ghe | Freq: 111 Hz | Amp: 0.555556 | SampleOffset: 360000
+  Event 16: Note: Ghe | Freq: 111 Hz | Amp: 0.555556 | SampleOffset: 384000
+  Event 19: Note: Ka | Freq: 111 Hz | Amp: 0.555556 | SampleOffset: 456000
+  Event 24: Note: Ghe | Freq: 111 Hz | Amp: 0.555556 | SampleOffset: 576000
+  Event 25: Note: Ka | Freq: 111 Hz | Amp: 0.555556 | SampleOffset: 600000
+  Event 26: Note: Ghe | Freq: 111 Hz | Amp: 0.555556 | SampleOffset: 624000
+  Event 27: Note: Ke | Freq: 111 Hz | Amp: 0.555556 | SampleOffset: 648000
+  Event 32: Note: Ghi | Freq: 111 Hz | Amp: 0.555556 | SampleOffset: 768000
+  Event 33: Note: Ghe | Freq: 111 Hz | Amp: 0.555556 | SampleOffset: 792000
+  Event 34: Note: Ka | Freq: 111 Hz | Amp: 0.555556 | SampleOffset: 816000
+  Event 35: Note: Ghe | Freq: 111 Hz | Amp: 0.555556 | SampleOffset: 840000
+[Mixer Registry] Added Instrument ptr: 0x568879195680 to Track ID: 1 with Weight: 1.00
+[Native] Starting Playback: Tanpura
+[Native] Starting Playback: Bansuri
+[Native] Starting Playback: Dayan
+[Native] Starting Playback: Bayan
+[Playback] Playing Sequence (Looping Enabled). Press ENTER to stop...
+[Mixer Registry] Removed Track ID: 1
+[Mixer Registry] Removed Track ID: 2
+[Mixer Registry] Removed Track ID: 3
+
+=== MEMORY-BASED GLIDE DIAGNOSTICS FOR INSTRUMENT 17 ===
+Frames          C++ Freq        C++ Vel(Amp)    DSP Glide      
+22528           444.00          0.444           0.000          
+26624           453.47          0.444           0.000          
+30720           462.94          0.444           0.000          
+34816           472.42          0.444           0.000          
+38912           481.89          0.444           0.000          
+43008           491.36          0.444           0.000          
+47104           499.50          0.444           0.050          
+23552           526.22          0.667           0.000          
+27648           521.66          0.648           0.000          
+31744           517.10          0.629           0.000          
+35840           512.54          0.610           0.000          
+39936           507.98          0.591           0.000          
+44032           503.42          0.572           0.000          
+48128           499.50          0.556           0.050          
+24576           444.00          0.333           0.000          
+28672           435.58          0.352           0.000          
+32768           427.16          0.371           0.000          
+36864           418.74          0.390           0.000          
+40960           410.32          0.409           0.000          
+45056           401.90          0.428           0.000          
+23552           350.81          0.667           0.000          
+27648           347.77          0.667           0.000          
+31744           344.73          0.667           0.000          
+35840           341.69          0.667           0.000          
+39936           338.65          0.667           0.000          
+44032           335.61          0.667           0.000          
+23552           592.00          0.444           0.000          
+27648           580.77          0.482           0.000          
+31744           569.55          0.520           0.000          
+35840           558.32          0.558           0.000          
+39936           547.10          0.596           0.000          
+44032           535.87          0.634           0.000          
+24576           499.50          0.667           0.000          
+28672           490.03          0.610           0.000          
+32768           480.56          0.553           0.000          
+36864           471.08          0.496           0.000          
+40960           461.61          0.439           0.000          
+45056           452.14          0.382           0.000          
+24576           333.00          0.444           0.000          
+28672           336.04          0.501           0.000          
+32768           339.08          0.558           0.000          
+36864           342.12          0.615           0.000          
+40960           345.16          0.672           0.000          
+45056           348.20          0.729           0.000          
+23552           394.67          0.889           0.000          
+27648           403.09          0.832           0.000          
+31744           411.51          0.775           0.000          
+35840           419.93          0.718           0.000          
+39936           428.34          0.661           0.000          
+44032           436.76          0.604           0.000          
+48128           444.00          0.556           0.050          
+12288           499.50          0.556           0.000          
+16384           508.62          0.631           0.000          
+20480           517.74          0.707           0.000          
+24576           526.22          0.778           0.050          
+11264           526.22          0.778           0.000          
+15360           517.10          0.740           0.000          
+19456           507.98          0.702           0.000          
+23552           499.50          0.667           0.050          
+========================================================
+
+[Native] Sequence Orchestrator cleared.
+=== Finished Sequence: Indian Classical — Raag Darbari (Bansuri, Tanpura) + Tabla ===
+
+
+Select a sequence to play:
+  1. Indian Classical — Darbari (Bansuri, Tanpura, Tabla)
+  2. Jazz Ensemble (Piano, Sax, Bass, Drums)
+  3. Rock Band (Electric Guitar, Bass, Drums)
+  4. Tibetan Bowl with Rain + LagNga (Bowl, Rainmaker, LagNga)
+  5. Acoustic Hotel California (Acoustic Guitar, 3 Congas, Bass, Drums)
+  6. Sitar — Raag Yaman + Tabla
+  7. North Indian Folk (Dholak Percussion)
+  8. Punjabi Folk (Bhangra beats)
+  9. Exit
+>>> Enter selection (1-9): --- Runner Complete ---

@@ -247,14 +247,54 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
                     } else {
                         updateDSPParams(seqWrapper, ev.frequency, ev.velocity, ev.strikeVal, ev.note);
                     }
-                    if (inst) inst->noteOn(ev.frequency, ev.velocity, ev.strikeVal, ev.amplitude);
+                    if (inst) {
+                        float durationSec = static_cast<float>(ev.durationSamples) / inst->getSampleRate();
+                        float tenPercentTime = durationSec * 0.10f;
+                        
+                        // 1. Fetch user-configured or fallback parameters
+                        float baseVelocity = inst->getVelocity(); // Internal default
+                        if (seqWrapper->sequenceObj->initialParams.count("velocity")) {
+                            baseVelocity = seqWrapper->sequenceObj->initialParams["velocity"];
+                        }
+                        if (ev.velocity >= 0.0f) baseVelocity = ev.velocity;
+                        
+                        float baseGlide = inst->getDSPGlideParam(); // Internal default
+                        if (seqWrapper->sequenceObj->initialParams.count("glide")) {
+                            baseGlide = seqWrapper->sequenceObj->initialParams["glide"];
+                        }
+
+                        // 2. Enforce 10% constraint on Velocity (Attack/Release Time)
+                        // DSP Formula: attackTime = 0.005 + (1.0 - velocity) * 0.1
+                        float currentAttackTime = 0.005f + (1.0f - baseVelocity) * 0.1f;
+                        float dynamicVelocity = baseVelocity;
+                        
+                        if (currentAttackTime > tenPercentTime) {
+                            float targetAttackTime = tenPercentTime;
+                            if (targetAttackTime < 0.005f) targetAttackTime = 0.005f; // Hard floor 5ms
+                            dynamicVelocity = 1.0f - ((targetAttackTime - 0.005f) / 0.1f);
+                            if (dynamicVelocity > 1.0f) dynamicVelocity = 1.0f;
+                        }
+
+                        // 3. Enforce 10% constraint on DSP Glide
+                        float dynamicGlide = baseGlide;
+                        if (dynamicGlide > tenPercentTime) {
+                            dynamicGlide = tenPercentTime;
+                        }
+
+                        inst->setParamImmediate("glide", dynamicGlide, -1);
+                        inst->setParam("vibrato", 0.0f);
+                        inst->setParam("vibrato_depth", 0.0f);
+                        inst->setParam("vibrato_rate", 0.0f);
+                        inst->noteOn(ev.frequency, dynamicVelocity, ev.strikeVal, ev.amplitude);
+                    }
                 } else if (ev.type == UMLEventType::NoteOff) {
                     if (inst) inst->noteOff();
                 } else if (ev.type == UMLEventType::Glide) {
                     if (inst) {
                         float durSec = static_cast<float>(ev.durationSamples) / inst->getSampleRate();
-                        inst->frequencyGlide(ev.targetFrequency, durSec);
-                        inst->velocityGlide(ev.targetVelocity, durSec);
+                        if (ev.targetFrequency > 0.0f) inst->frequencyGlide(ev.targetFrequency, durSec);
+                        if (ev.targetVelocity >= 0.0f) inst->velocityGlide(ev.targetVelocity, durSec);
+                        if (ev.targetAmplitude >= 0.0f) inst->gainGlide(ev.targetAmplitude, durSec);
                     }
                 }
                 seqWrapper->nextEventIndex++;
@@ -295,4 +335,24 @@ void SequenceOrchestrator::updateDSPParamsVoice(std::shared_ptr<ActiveSequence> 
     if (!inst) return;
 
     if (vowelVal >= 0.0f) inst->setParam("vowel",  vowelVal);
+}
+
+void SequenceOrchestrator::enableDiagnostics(bool enable) {
+    std::lock_guard<std::mutex> lock(mStateMutex);
+    for (auto& pair : mActiveSequences) {
+        if (pair.second && pair.second->sequenceObj) {
+            auto inst = pair.second->sequenceObj->getFaustInstrument();
+            if (inst) inst->enableDiagnostics(enable);
+        }
+    }
+}
+
+void SequenceOrchestrator::dumpInstrumentDiagnostics() {
+    std::lock_guard<std::mutex> lock(mStateMutex);
+    for (auto& pair : mActiveSequences) {
+        if (pair.second && pair.second->sequenceObj) {
+            auto inst = pair.second->sequenceObj->getFaustInstrument();
+            if (inst) inst->dumpDiagnostics();
+        }
+    }
 }

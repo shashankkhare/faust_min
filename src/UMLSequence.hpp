@@ -32,7 +32,8 @@
 enum class UMLEventType {
     NoteOn,
     NoteOff,
-    Glide
+    Glide,
+    VibratoOn
 };
 
 struct UMLEvent {
@@ -47,6 +48,7 @@ struct UMLEvent {
     long durationSamples = 0;  // For glides
     float targetFrequency = 0.0f;  // For glides
     float targetVelocity  = 0.0f;  // For glides
+    float targetAmplitude = -1.0f; // For glides
     float targetStrikeVal = -1.0f; // For glides if needed
 };
 

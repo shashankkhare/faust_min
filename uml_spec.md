@@ -19,8 +19,9 @@ Global settings that define the temporal and harmonic grid.
 - `bpm: [Number]` - Tempo in beats per minute. Default: `120`.
 - `grid: [int]` - Grid subdivisions per beat. Default: `4` (sixteenth notes).
 - `gain: [Number]` - Global gain multiplier for this sequence.
+- `vibratoRate: [Hz]` - LFO rate for vibrato when enabled (e.g., `5.0`).
+- `vibratoDepth: [0.0-1.0]` - LFO depth for vibrato when enabled (e.g., `0.5`).
 
-- `parameters: ([Param1]=[Val], [Param2]=[Val])` - Initial DSP parameters applied at load time.
 - `exectype: [static|interpreter]` - DSP execution mode. Default: `static`.
 
 ---
@@ -45,18 +46,31 @@ The notes component handles discrete triggers and melodic movement for the seque
   - **Chords (Polyphony)**: Use `|` (Pipe) to join multiple notes to be played simultaneously.
     - Example: `C4|E4|G4` (Plays C major chord).
 - `ArticToken`:
-  - `.` (Dot): Continuity. Extends the previous state (note or silence).
+  - `.` (Dot): Continuity. Extends the previous state (note or silence) by 1 grid unit.
   - `_` (Underscore): Full Stop. Ends the current note and starts silence.
-  - `/` (Slash): Polyphonic separation. Used to define individual multiple notes that sound simultaneously.
-    - Example: `f3/a4/`
-  - `^` (Caret): Glide (Meend). Starts a simultaneous sweep of both **Pitch** and **Amplitude** toward the next specified note. The duration is determined by the sustain of the current note (all following `.` tokens).
-    - Example: `1R1^..9G1` (Simultaneous pitch glide and volume swell from 1 to 9 over 3 grid units).
 
-**Example**: `Sa..R1^G1.`
-*(Plays Sa for 3 units, then glides from R1 to G1 for 2 units)*
+### 2.1 Note Operators (`^`, `~`, `|`)
 
-**Chord Example**: `C4|E4|G4.. _.. F4|A4|C5..`
-*(Plays C major chord for 3 units, silence for 3 units, then F major chord)*
+Operators are placed within the sequence of continuity dots to trigger dynamic changes at exact grid offsets.
+
+#### `^` (Delayed Glide / Meend)
+Triggers a simultaneous pitch and amplitude sweep toward the **next specified note** in the sequence. It can be placed anywhere in the dot continuity tail to start the glide at that specific moment.
+- **Example**: `4Sa . . ^ . 5Re`
+  - *Plays Sa for 2 units, starts gliding at the 3rd unit, arrives at Re.*
+- *Note: If a `^` is attached directly to the start of a target note (e.g., `^Re`), it is treated as a visual marker and ignored by the parser.*
+
+#### `~` (Vibrato Trigger)
+Vibrato is strictly **disabled by default** at the start of any note. Placing a `~` in the dot continuity tail enables vibrato at that exact moment. It ramps up to the `vibratoRate` and `vibratoDepth` defined in the sequence header.
+- **Example**: `5Pa . . ~ . . . .`
+  - *Plays a flat Pa for 2 units, then vibrato organically swells in starting at the 3rd unit.*
+
+#### `|` (Polyphony / Chords)
+Used to bind multiple pitches together into a single simultaneous strike (Chord).
+- **Example**: `4C4|E4|G4 . . . _`
+  - *Plays a C Major chord (C, E, G) for 3 units, then stops.*
+
+**Complex Example**: `4Sa . ~ . ^ . 5Re`
+*(Plays Sa for 1 unit, swells in vibrato at the 2nd unit, starts gliding towards Re at the 4th unit)*
 
 ---
 
@@ -132,24 +146,29 @@ Ambient instruments operate slightly differently.
 
 > Generic tabla tokens (`Na`, `tk`, `Ti`, `Tun`) still work as a fallback for all IDs in the 19, 28, 30, 31, 33, 34, 35 range.
 
-### 3.7 Tibetan Singing Bowl (ID 47)
+### 3.7 Generic Impact / Strike Component (Bells, Bowls, Whistles)
 
-The Tibetan Singing Bowl is articulated purely using discrete Strike/Rub inputs. The pitch of the bowl is statically derived from the `basefreq` parameter in the header.
+For simple unpitched resonant instruments where humans just strike or rub to produce sound (e.g., Tibetan Bowls, Hand Bells, Gongs, Whistles), use the generic **X** notation.
 
-| Token(s) | strikeVal | Character |
-|---|---|---|
-| `r`, `R`, `rub` | 0.0 | **Rub**: Continuous rim friction (Bowing). Needs a long sustain (`r . . .`) to build up resonance. |
-| `s`, `S`, `strike` | 1.0 | **Strike**: Instantaneous felt mallet strike. Rings out organically. |
+**Syntax**: `[Amplitude]X[StrikeType]` or `[Amplitude]x[StrikeType]`
 
-**Tibetan Bowl Example**:
+- `Amplitude`: (Optional) Single digit `1-9`. Defines the velocity/force of the strike.
+- `X` or `x`: The core generic strike token.
+- `StrikeType`: (Optional) Single digit representing the articulation method (e.g., `0` for rub/bow, `1` for hard mallet strike, `2` for soft mallet).
+
+**Examples**:
+- `9X1` : Hard strike (amplitude 9, strikeType 1).
+- `5x0` : Medium rub/bow (amplitude 5, strikeType 0).
+
+**Generic Bowl Example**:
 ```
 instrument: tibetanbowl
 basefreq: 111.0
 bpm: 60
 grid: 4
 
-// Strike, let ring for 3 beats, then start rubbing for 4 beats
-s . . . . . . . r . . . . . . . . . . . . . . .
+// Strike hard, let ring for 3 beats, then start a medium rub for 4 beats
+9X1 . . . . . . . 5X0 . . . . . . . . . . . . . . .
 ```
 
 ### 3.8 General Percussion Fallback (IDs 2–6: Kick, Snare, HiHat, Tom, Ride)

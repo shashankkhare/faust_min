@@ -97,6 +97,13 @@ public:
     void play(const std::string& name);
 
     /**
+     * @brief Dump memory-based diagnostic logs from all active instruments.
+     */
+    void dumpInstrumentDiagnostics();
+
+    void enableDiagnostics(bool enable);
+
+    /**
      * @brief Remove all sequences from the active orchestrator pool.
      */
     void clearSequences();
@@ -204,6 +211,7 @@ private:
     std::atomic<bool> mIsPaused{false};
     std::atomic<bool> mHumanize{true};
     std::atomic<bool> mLooping{false};
+    std::atomic<bool> mDiagEnabled{false};
 
     using SnapshotVec = std::vector<std::shared_ptr<ActiveSequence>>;
     std::shared_ptr<SnapshotVec> mRenderSnapshot; 

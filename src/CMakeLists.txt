@@ -137,3 +137,13 @@ set_target_properties(test_orchestrator PROPERTIES
     LINK_FLAGS "-rdynamic"
     EXCLUDE_FROM_ALL ON
 )
+
+add_executable(test_bansuri_glide "../test/test_bansuri_glide.cpp")
+target_compile_options(test_bansuri_glide PRIVATE ${TEST_COMMON_COMPILE})
+target_include_directories(test_bansuri_glide PRIVATE "." ${FAUST_INCLUDE_DIR})
+target_link_libraries(test_bansuri_glide PRIVATE ${TEST_COMMON_LINK})
+set_target_properties(test_bansuri_glide PROPERTIES
+    INSTALL_RPATH "${CMAKE_BINARY_DIR}:/home/shashankkhare/faust_sdk/lib"
+    BUILD_WITH_INSTALL_RPATH TRUE
+    LINK_FLAGS "-rdynamic"
+)

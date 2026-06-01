@@ -116,5 +116,5 @@ process =
 		//nModes resonances with nModes feedbacks for bow table look-up 
 		par(i,nModes,(resonance(i)~_)))~par(i,nModes,_) :> _ : 
 		//Signal Scaling and stereo
-		NLFM : stereo : *(gain * 5.0), *(gain * 5.0);
+		NLFM : stereo : *(gain * 10.0), *(gain * 10.0);
 

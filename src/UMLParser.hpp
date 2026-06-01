@@ -32,13 +32,16 @@
 class UMLParser {
 public:
     enum class TokenType { NoteWithControl, ContinuityDot, StopRest };
+    enum class OpType { Glide, Vibrato };
     struct TokenItem {
         TokenType type;
         std::string rawStr;
         long gridIndex;
         int controlParam; // Octave/Velocity prefix modifier
         std::string noteName;
-        bool hasGlide;
+        bool hasGlideOp;
+        bool hasVibratoOp;
+        bool isGlideTarget = false;
     };
 
     static UMLSequence parse(const std::string& name, const std::string& input, double sampleRate, double defaultBaseFreq = 261.63);
@@ -50,12 +53,14 @@ private:
                                      double baseFreq, const std::string& instrument, std::vector<UMLEvent>& outEvents);
     static void handlePitchedToken(const TokenItem& ti, float amplitudeScalar, long sampleOffset, long durationSamples, 
                                    const std::string& notation, double baseFreq, const std::string& instrument,
-                                   double samplesPerGrid, size_t nextTokenIndex, const std::vector<TokenItem>& tokenItemsArray, std::vector<UMLEvent>& outEvents);
+                                   double samplesPerGrid, size_t nextTokenIndex, const std::vector<TokenItem>& tokenItemsArray,
+                                   const std::vector<std::pair<OpType, long>>& triggers, std::vector<UMLEvent>& outEvents);
     static void handleVoiceToken(const TokenItem& ti, float amplitudeScalar, long sampleOffset, long durationSamples,
                                  const std::string& notation, double baseFreq,
                                  double samplesPerGrid, size_t nextTokenIndex, const std::vector<TokenItem>& tokenItemsArray, std::vector<UMLEvent>& outEvents);
 
-    static const std::map<std::string, double> indianRatios;
+    static const std::map<std::string, double> shruti22Ratios;
+    static const std::map<std::string, double> hindustaniRatios;
     static const std::map<std::string, double> gongcheRatios;
     static const std::map<std::string, double> westernPitches;
     static const std::map<std::string, double> percussionBols;

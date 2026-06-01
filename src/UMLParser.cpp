@@ -36,14 +36,42 @@
 #include <fstream>
 #include "InstrumentMapper.hpp"
 
-const std::map<std::string, double> UMLParser::indianRatios = {
-    {"SaLow", 0.5}, {"Sa", 1.0}, 
-    {"r1", 256.0/243.0}, {"r2", 16.0/15.0}, {"R1", 10.0/9.0}, {"R2", 9.0/8.0}, {"Re", 9.0/8.0},
-    {"g1", 32.0/27.0}, {"g2", 6.0/5.0}, {"G1", 5.0/4.0}, {"G2", 81.0/64.0}, {"Ga", 5.0/4.0},
-    {"M1", 4.0/3.0}, {"M2", 27.0/20.0}, {"m1", 45.0/32.0}, {"m2", 64.0/45.0}, {"Ma", 4.0/3.0},
-    {"Pa", 1.5},
-    {"d1", 128.0/81.0}, {"d2", 8.0/5.0}, {"D1", 5.0/3.0}, {"D2", 27.0/16.0}, {"Dh", 5.0/3.0}, {"Dha", 5.0/3.0},
-    {"n1", 16.0/9.0}, {"n2", 9.0/5.0}, {"N1", 15.0/8.0}, {"N2", 243.0/128.0}, {"Ni", 15.0/8.0}
+const std::map<std::string, double> UMLParser::shruti22Ratios = {
+    // 22 Shrutis — full microtonal system of Hindustani classical music
+    // Each shruti has its S{n} numeric alias, standard swara name, and common aliases
+    {"S1", 1.0}, {"Sa", 1.0}, {"SaLow", 0.5},
+    {"S2", 256.0/243.0}, {"r1", 256.0/243.0},
+    {"S3", 16.0/15.0},  {"r2", 16.0/15.0},  {"re", 16.0/15.0},
+    {"S4", 10.0/9.0},   {"R1", 10.0/9.0},
+    {"S5", 9.0/8.0},    {"R2", 9.0/8.0},    {"Re", 9.0/8.0},
+    {"S6", 32.0/27.0},  {"g1", 32.0/27.0},
+    {"S7", 6.0/5.0},    {"g2", 6.0/5.0},    {"ga", 6.0/5.0},
+    {"S8", 5.0/4.0},    {"G1", 5.0/4.0},    {"Ga", 5.0/4.0},
+    {"S9", 81.0/64.0},  {"G2", 81.0/64.0},
+    {"S10", 4.0/3.0},   {"M1", 4.0/3.0},    {"Ma", 4.0/3.0},
+    {"S11", 27.0/20.0}, {"M2", 27.0/20.0},
+    {"S12", 45.0/32.0}, {"m1", 45.0/32.0},
+    {"S13", 64.0/45.0}, {"m2", 64.0/45.0},
+    {"S14", 3.0/2.0},   {"Pa", 3.0/2.0},
+    {"S15", 128.0/81.0},{"d1", 128.0/81.0},
+    {"S16", 8.0/5.0},   {"d2", 8.0/5.0},    {"dha", 8.0/5.0},
+    {"S17", 5.0/3.0},   {"D1", 5.0/3.0},    {"Dha", 5.0/3.0}, {"Dh", 5.0/3.0},
+    {"S18", 27.0/16.0}, {"D2", 27.0/16.0},
+    {"S19", 16.0/9.0},  {"n1", 16.0/9.0},
+    {"S20", 9.0/5.0},   {"n2", 9.0/5.0},    {"ni", 9.0/5.0},
+    {"S21", 15.0/8.0},  {"N1", 15.0/8.0},   {"Ni", 15.0/8.0},
+    {"S22", 243.0/128.0},{"N2", 243.0/128.0}
+};
+
+const std::map<std::string, double> UMLParser::hindustaniRatios = {
+    // 12-note Sargam (Hindustani classical) — Sa Re Ga Ma Pa Dha Ni
+    {"SaLow", 0.5}, {"Sa", 1.0},
+    {"re", 16.0/15.0}, {"Re", 9.0/8.0},
+    {"ga", 6.0/5.0},  {"Ga", 5.0/4.0},
+    {"Ma", 4.0/3.0},  {"m", 45.0/32.0}, {"ma", 45.0/32.0},
+    {"Pa", 3.0/2.0},
+    {"dha", 8.0/5.0}, {"Dha", 5.0/3.0}, {"Dh", 5.0/3.0},
+    {"ni", 9.0/5.0},  {"Ni", 15.0/8.0}
 };
 
 const std::map<std::string, double> UMLParser::percussionBols = {
@@ -104,6 +132,14 @@ const std::map<std::string, double> UMLParser::westernPitches = {
     // Add more western pitches as needed
 };
 
+/**
+ * Main UML sequence parsing pipeline.
+ * Converts raw UML string sequences into a sample-accurate vector of UMLEvents.
+ *
+ * 1. Pass 1 (Metadata Extraction): Pulls out header keys (e.g., bpm:, notation:, grid:) and extracts the raw `notesSection`.
+ * 2. Pass 2 (Tokenization): Uses a regex to tokenize notes, continuity dots, and rests into `TokenItem` structs, inherently tracking grid boundaries. Operators like ^ and ~ are parsed as flags belonging to a specific grid token.
+ * 3. Pass 3 (Event Assembly): Scans sequences linearly, rolling up ContinuityDots to calculate total note durations and resolving precise sample offsets for triggers, yielding the final event collection.
+ */
 UMLSequence UMLParser::parse(const std::string& name, const std::string& input, double sampleRate, double defaultBaseFreq) {
     UMLSequence seq;
     seq.name = name;
@@ -161,6 +197,9 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
                     seq.instrument = val;
                 }
             }
+            else {
+                seq.initialParams[key] = std::stod(val);
+            }
         } else {
             notesSection += line;
         }
@@ -187,13 +226,10 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
     long currentGridIndex = 0;
 
     // Regex parsing layout:
-    // Group 1 matches standalone dots (.) -> ContinuityDot
+    // Group 1 matches standalone dots with optional operators (\.[\^\~]*) -> ContinuityDot
     // Group 2 matches standalone underscores (_) -> StopRest
-    // Group 3 matches general notes starting with optional digits/chars ending with optional glide marker (^) -> NoteWithControl
-    // IMPORTANT: Instrument-specific parsing logic MUST NEVER be placed inside this `parse()` method. 
-    // This method handles raw syntax tokenization. Instrument-specific processing (like mapping 
-    // specific letters to strike values) MUST be done in `handlePercussionToken` or `handlePitchedToken`.
-    std::regex tokenRegex(R"((\.)|(\_)|([^\s\.\_]+))");
+    // Group 3 matches general notes starting with optional digits/chars ending with optional operators -> NoteWithControl
+    std::regex tokenRegex(R"((\.[\^\~]*)|(\_)|([^\s\.\_]+))");
     auto words_begin = std::sregex_iterator(notesSection.begin(), notesSection.end(), tokenRegex);
     auto words_end = std::sregex_iterator();
 
@@ -202,11 +238,15 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
         TokenItem ti;
         ti.gridIndex = currentGridIndex;
         ti.controlParam = 5; // Default middle-register/velocity scalar
-        ti.hasGlide = false;
+        ti.hasGlideOp = false;
+        ti.hasVibratoOp = false;
 
         if (match[1].matched) {
             ti.type = TokenType::ContinuityDot;
-            ti.rawStr = ".";
+            std::string rem = match[1].str();
+            ti.rawStr = rem;
+            if (rem.find('^') != std::string::npos) ti.hasGlideOp = true;
+            if (rem.find('~') != std::string::npos) ti.hasVibratoOp = true;
         } else if (match[2].matched) {
             ti.type = TokenType::StopRest;
             ti.rawStr = "_";
@@ -215,14 +255,25 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
             std::string rem = match[3].str();
             ti.rawStr = rem;
 
+            if (rem.find('^') != std::string::npos) {
+                ti.hasGlideOp = true;
+                rem.erase(std::remove(rem.begin(), rem.end(), '^'), rem.end());
+            }
+            if (rem.find('~') != std::string::npos) {
+                ti.hasVibratoOp = true;
+                rem.erase(std::remove(rem.begin(), rem.end(), '~'), rem.end());
+            }
+
             // Extract embedded single-digit control prefix modifier securely
             if (rem.length() > 1 && std::isdigit(rem[0]) && !std::isdigit(rem[1])) {
                 ti.controlParam = rem[0] - '0';
                 rem = rem.substr(1);
-            }
-            if (!rem.empty() && rem.back() == '^') {
-                ti.hasGlide = true;
-                rem.pop_back();
+            } else if (rem.length() > 0 && std::isdigit(rem[0]) && rem.find_first_not_of("0123456789.") == std::string::npos) {
+                // Direct Hz numeric token, keep whole
+            } else if (rem.length() > 0 && std::isdigit(rem[0])) {
+                // Fallback cleanup
+                ti.controlParam = rem[0] - '0';
+                rem = rem.substr(1);
             }
             ti.noteName = rem;
         }
@@ -230,34 +281,53 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
         currentGridIndex++;
     }
 
-    // --- Pass 3: Event Generation with Standardized Multi-Grid Sustains ---
+    // --- Pass 2.5: Mark Glide Targets ---
+    for (size_t i = 0; i < tokenItems.size(); ++i) {
+        if (tokenItems[i].hasGlideOp) {
+            size_t targetIdx = i + 1;
+            while (targetIdx < tokenItems.size() && tokenItems[targetIdx].type != TokenType::NoteWithControl) {
+                targetIdx++;
+            }
+            if (targetIdx < tokenItems.size()) {
+                tokenItems[targetIdx].isGlideTarget = true;
+            }
+        }
+    }
+
+    // --- Pass 3: Event Generation & Timing ---
     for (size_t i = 0; i < tokenItems.size(); ++i) {
         const auto& ti = tokenItems[i];
+        
         if (ti.type == TokenType::NoteWithControl) {
-            float vel = (float)ti.controlParam / 9.0f;
+            long durGrids = 1;
+            std::vector<std::pair<OpType, long>> triggers;
+            
+            if (ti.hasGlideOp) triggers.push_back({OpType::Glide, 0});
+            if (ti.hasVibratoOp) triggers.push_back({OpType::Vibrato, 0});
 
-            // Calculate exact continuous sustain duration across trailing ContinuityDot tokens
-            long durationGrids = 1;
-            size_t k = i + 1;
-            while (k < tokenItems.size() && tokenItems[k].type == TokenType::ContinuityDot) {
-                durationGrids++;
-                k++;
+            size_t j = i + 1;
+            while (j < tokenItems.size() && tokenItems[j].type == TokenType::ContinuityDot) {
+                if (tokenItems[j].hasGlideOp) {
+                    triggers.push_back({OpType::Glide, durGrids});
+                }
+                if (tokenItems[j].hasVibratoOp) {
+                    triggers.push_back({OpType::Vibrato, durGrids});
+                }
+                durGrids++;
+                j++;
             }
-            long calculatedDurationSamples = (long)(durationGrids * samplesPerGrid);
+            long durationSamples = (long)(durGrids * samplesPerGrid);
             long sampleOffset = (long)(ti.gridIndex * samplesPerGrid);
+            float amplitudeScalar = (float)ti.controlParam / 9.0f;
 
-            int mappedInstID = seq.instrumentID;
-            if (mappedInstID == -1 && !seq.instrument.empty()) {
-                mappedInstID = InstrumentMapper::getIDFromName(seq.instrument);
-            }
-
-            bool hasExplicitPrefix = (ti.rawStr != ti.noteName);
-            if (InstrumentMapper::isPercussionID(mappedInstID)) {
-                handlePercussionToken(ti.noteName, vel, sampleOffset, calculatedDurationSamples, seq.baseFreq, seq.instrument, seq.events);
-            } else if (mappedInstID == 32) { // Voice — vowel-driven token
-                handleVoiceToken(ti, vel, sampleOffset, calculatedDurationSamples, seq.notation, seq.baseFreq, samplesPerGrid, k, tokenItems, seq.events);
+            if (seq.instrumentID >= 0 && seq.instrumentID < 10 && seq.instrumentID != 7 && seq.instrumentID != 8) {
+                handlePercussionToken(ti.noteName, amplitudeScalar, sampleOffset, durationSamples, seq.baseFreq, seq.instrument, seq.events);
+            } else if (seq.instrumentID >= 28 && seq.instrumentID <= 35) {
+                handlePercussionToken(ti.noteName, amplitudeScalar, sampleOffset, durationSamples, seq.baseFreq, seq.instrument, seq.events);
+            } else if (seq.instrumentID == 47 || seq.instrumentID == 8 || seq.instrumentID == 7) {
+                handlePercussionToken(ti.noteName, amplitudeScalar, sampleOffset, durationSamples, seq.baseFreq, seq.instrument, seq.events);
             } else {
-                handlePitchedToken(ti, vel, sampleOffset, calculatedDurationSamples, seq.notation, seq.baseFreq, seq.instrument, samplesPerGrid, k, tokenItems, seq.events);
+                handlePitchedToken(ti, amplitudeScalar, sampleOffset, durationSamples, seq.notation, seq.baseFreq, seq.instrument, samplesPerGrid, j, tokenItems, triggers, seq.events);
             }
         } else if (ti.type == TokenType::StopRest) {
             UMLEvent restEv;
@@ -275,46 +345,40 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
 }
 
 void UMLParser::handlePercussionToken(const std::string& tokenNoteName, float amplitudeScalar, long sampleOffset, long durationSamples, double baseFreq, const std::string& instrument, std::vector<UMLEvent>& outEvents) {
-    // Percussion instances utilize unpitched triggering mechanics where note string defines stroke style.
-    // The frequency is inherited from the sequence base frequency.
     UMLEvent ev; 
     ev.sampleOffset = sampleOffset;
     ev.frequency = static_cast<float>(baseFreq);
-    ev.velocity = -1.0f;  // not in UML yet — use DSP default
+    ev.velocity = -1.0f;
     ev.amplitude = amplitudeScalar;
     ev.type = UMLEventType::NoteOn;
     ev.note = tokenNoteName;
     ev.durationSamples = durationSamples;
 
-    // Pre-calculate strikeVal based on instrument and note
     int instID = InstrumentMapper::getIDFromName(instrument);
-    if (instID == 0) { // Dayan — classical tabla bols
+    if (instID == 0) {
         if (tokenNoteName == "Na" || tokenNoteName == "Ta" || tokenNoteName == "na" || tokenNoteName == "ta") ev.strikeVal = 0.0f;
         else if (tokenNoteName == "tk") ev.strikeVal = 1.0f;
         else if (tokenNoteName == "Tin" || tokenNoteName == "Ti" || tokenNoteName == "tin" || tokenNoteName == "ti") ev.strikeVal = 2.0f;
         else if (tokenNoteName == "Tun" || tokenNoteName == "Tu" || tokenNoteName == "tun" || tokenNoteName == "tu") ev.strikeVal = 3.0f;
-        // Compound bols that have a dayan component (use Na/Ta strike)
-        else if (tokenNoteName == "Dha" || tokenNoteName == "dha") ev.strikeVal = 0.0f; // Dayan open ring
-        else if (tokenNoteName == "Dhin" || tokenNoteName == "dhin") ev.strikeVal = 2.0f; // Dayan Tin-style
+        else if (tokenNoteName == "Dha" || tokenNoteName == "dha") ev.strikeVal = 0.0f;
+        else if (tokenNoteName == "Dhin" || tokenNoteName == "dhin") ev.strikeVal = 2.0f;
         else if (tokenNoteName == "Tit" || tokenNoteName == "tit") ev.strikeVal = 1.0f;
-    } else if (instID == 1) { // Bayan — extended bol set
+    } else if (instID == 1) {
         if (bayanBols.count(tokenNoteName)) {
             ev.strikeVal = static_cast<float>(bayanBols.at(tokenNoteName));
         } else {
-            // Legacy fallback for older bol spellings
             if (tokenNoteName == "Ka" || tokenNoteName == "ka") ev.strikeVal = 0.0f;
             else if (tokenNoteName == "Ghe" || tokenNoteName == "ghe") ev.strikeVal = 1.0f;
             else if (tokenNoteName == "Ghi" || tokenNoteName == "ghi") ev.strikeVal = 2.0f;
             else if (tokenNoteName == "Ke" || tokenNoteName == "ke") ev.strikeVal = 3.0f;
         }
-    } else if (instID == 28 || instID == 30 || instID == 31) { // Djembe / Conga / Bongo — African stroke names
+    } else if (instID == 28 || instID == 30 || instID == 31) {
         if (africanDrumBols.count(tokenNoteName)) {
             ev.strikeVal = static_cast<float>(africanDrumBols.at(tokenNoteName));
         } else if (percussionBols.count(tokenNoteName)) {
-            // Fallback: allow generic tabla tokens to still work
             ev.strikeVal = static_cast<float>(percussionBols.at(tokenNoteName));
         }
-    } else if (instID == 37) { // Dholak
+    } else if (instID == 37) {
         float bassF = 98.0f;
         if (baseFreq > 0.0 && std::abs(baseFreq - 261.63) > 0.01) {
             bassF = static_cast<float>(baseFreq);
@@ -328,20 +392,13 @@ void UMLParser::handlePercussionToken(const std::string& tokenNoteName, float am
                                tokenNoteName == "Tun" || tokenNoteName == "tun" || tokenNoteName == "Tu" || tokenNoteName == "tu");
         bool isComposite = (tokenNoteName == "Dha" || tokenNoteName == "dha" || tokenNoteName == "Dhin" || tokenNoteName == "dhin");
 
-        if (isComposite) {
-            ev.strikeVal = 4.0f;
-        } else if (isOpenBass) {
-            ev.strikeVal = 0.0f;
-        } else if (isClosedBass) {
-            ev.strikeVal = 1.0f;
-        } else if (isOpenTreble) {
-            ev.strikeVal = 2.0f;
-        } else if (isClosedTreble) {
-            ev.strikeVal = 3.0f;
-        } else {
-            ev.strikeVal = 0.0f;
-        }
-    } else if (instID == 38) { // Dhol
+        if (isComposite) ev.strikeVal = 4.0f;
+        else if (isOpenBass) ev.strikeVal = 0.0f;
+        else if (isClosedBass) ev.strikeVal = 1.0f;
+        else if (isOpenTreble) ev.strikeVal = 2.0f;
+        else if (isClosedTreble) ev.strikeVal = 3.0f;
+        else ev.strikeVal = 0.0f;
+    } else if (instID == 38) {
         float bassF = 65.4f;
         if (baseFreq > 0.0 && std::abs(baseFreq - 261.63) > 0.01) {
             bassF = static_cast<float>(baseFreq);
@@ -354,29 +411,27 @@ void UMLParser::handlePercussionToken(const std::string& tokenNoteName, float am
         bool isClosedTreble = (tokenNoteName == "Tin" || tokenNoteName == "tin" || tokenNoteName == "Ti" || tokenNoteName == "ti");
         bool isComposite = (tokenNoteName == "Dha" || tokenNoteName == "dha" || tokenNoteName == "Dhin" || tokenNoteName == "dhin");
 
-        if (isComposite) {
-            ev.strikeVal = 4.0f;
-        } else if (isOpenBass) {
-            ev.strikeVal = 0.0f;
-        } else if (isClosedBass) {
-            ev.strikeVal = 1.0f;
-        } else if (isOpenTreble) {
-            ev.strikeVal = 2.0f;
-        } else if (isClosedTreble) {
-            ev.strikeVal = 3.0f;
-        } else {
-            ev.strikeVal = 0.0f;
-        }
-    } else if (instID == 47 || instID == 8 || instID == 7) { // Tibetan Bowl, Bowl, Bell
-        // Uses header's basefreq for pitch
+        if (isComposite) ev.strikeVal = 4.0f;
+        else if (isOpenBass) ev.strikeVal = 0.0f;
+        else if (isClosedBass) ev.strikeVal = 1.0f;
+        else if (isOpenTreble) ev.strikeVal = 2.0f;
+        else if (isClosedTreble) ev.strikeVal = 3.0f;
+        else ev.strikeVal = 0.0f;
+    } else if (instID == 47 || instID == 8 || instID == 7) {
         ev.frequency = static_cast<float>(baseFreq);
         
-        if (tokenNoteName == "s" || tokenNoteName == "S" || tokenNoteName == "strike" || tokenNoteName == "Strike") {
+        if (!tokenNoteName.empty() && (tokenNoteName[0] == 'X' || tokenNoteName[0] == 'x')) {
+            if (tokenNoteName.length() > 1) {
+                ev.strikeVal = static_cast<float>(std::stoi(tokenNoteName.substr(1)));
+            } else {
+                ev.strikeVal = 1.0f;
+            }
+        } else if (tokenNoteName == "s" || tokenNoteName == "S" || tokenNoteName == "strike" || tokenNoteName == "Strike") {
             ev.strikeVal = 1.0f;
         } else if (tokenNoteName == "r" || tokenNoteName == "R" || tokenNoteName == "rub" || tokenNoteName == "Rub") {
             ev.strikeVal = 0.0f;
         } else {
-            ev.strikeVal = 1.0f; // Default to strike
+            ev.strikeVal = 1.0f;
         }
     } else if (percussionBols.count(tokenNoteName)) {
         ev.strikeVal = static_cast<float>(percussionBols.at(tokenNoteName));
@@ -387,7 +442,8 @@ void UMLParser::handlePercussionToken(const std::string& tokenNoteName, float am
 
 void UMLParser::handlePitchedToken(const TokenItem& ti, float amplitudeScalar, long sampleOffset, long durationSamples, 
                                    const std::string& notation, double baseFreq, const std::string& instrument,
-                                   double samplesPerGrid, size_t nextTokenIndex, const std::vector<TokenItem>& tokenItemsArray, std::vector<UMLEvent>& outEvents) {
+                                   double samplesPerGrid, size_t nextTokenIndex, const std::vector<TokenItem>& tokenItemsArray, 
+                                   const std::vector<std::pair<OpType, long>>& triggers, std::vector<UMLEvent>& outEvents) {
     
     std::vector<std::string> notes;
     std::stringstream ss(ti.noteName);
@@ -401,52 +457,58 @@ void UMLParser::handlePitchedToken(const TokenItem& ti, float amplitudeScalar, l
     for (const auto& noteStr : notes) {
         float freq = static_cast<float>(getFrequency(noteStr, notation, baseFreq, instrument));
         
-        UMLEvent noteEv;
-        noteEv.sampleOffset = sampleOffset;
-        noteEv.frequency = freq;
-        noteEv.velocity = -1.0f;
-        noteEv.amplitude = amplitudeScalar;
-        noteEv.type = UMLEventType::NoteOn;
-        noteEv.note = noteStr;
-        noteEv.durationSamples = durationSamples;
-        outEvents.push_back(noteEv);
+        if (!ti.isGlideTarget) {
+            UMLEvent noteEv;
+            noteEv.sampleOffset = sampleOffset;
+            noteEv.frequency = freq;
+            noteEv.velocity = -1.0f; // Reserved for later use per user
+            noteEv.amplitude = amplitudeScalar;
+            noteEv.type = UMLEventType::NoteOn;
+            noteEv.note = noteStr;
+            noteEv.durationSamples = durationSamples;
+            outEvents.push_back(noteEv);
+        }
     }
 
-    // Execute automated glides targeting next standalone operational pitch boundary
-    if (ti.hasGlide) {
-        size_t targetIdx = nextTokenIndex;
-        while (targetIdx < tokenItemsArray.size() && (tokenItemsArray[targetIdx].type == TokenType::ContinuityDot || tokenItemsArray[targetIdx].type == TokenType::StopRest)) {
-            targetIdx++;
-        }
-        if (targetIdx < tokenItemsArray.size() && tokenItemsArray[targetIdx].type == TokenType::NoteWithControl) {
-            std::string tNote = tokenItemsArray[targetIdx].noteName;
-            // Pass full token (including any *N or /N suffix) to getFrequency — it handles octave operators internally
-            float tFreq = (float)getFrequency(tNote, notation, baseFreq, instrument);
-            float tVel = (float)tokenItemsArray[targetIdx].controlParam / 9.0f;
-            
-            float freq0 = static_cast<float>(getFrequency(notes[0], notation, baseFreq, instrument));
-            
-            // Enforce lookahead constraint: glide triggers ONLY if target frequency or velocity differs
-            if (std::abs(tFreq - freq0) > 0.01f || std::abs(tVel - amplitudeScalar) > 0.01f) {
+    bool hasGlide = false;
+    for (const auto& trigger : triggers) {
+        long triggerOffset = sampleOffset + (long)(trigger.second * samplesPerGrid);
+        
+        if (trigger.first == OpType::Vibrato) {
+            UMLEvent vibEv;
+            vibEv.sampleOffset = triggerOffset;
+            vibEv.type = UMLEventType::VibratoOn;
+            outEvents.push_back(vibEv);
+        } else if (trigger.first == OpType::Glide) {
+            hasGlide = true;
+            size_t targetIdx = nextTokenIndex;
+            while (targetIdx < tokenItemsArray.size() && tokenItemsArray[targetIdx].type != TokenType::NoteWithControl) {
+                targetIdx++;
+            }
+            if (targetIdx < tokenItemsArray.size() && tokenItemsArray[targetIdx].type == TokenType::NoteWithControl) {
+                std::string tNote = tokenItemsArray[targetIdx].noteName;
+                float tFreq = (float)getFrequency(tNote, notation, baseFreq, instrument);
+                float tVel = (float)tokenItemsArray[targetIdx].controlParam / 9.0f;
+                
                 UMLEvent glideEv;
-                glideEv.sampleOffset = sampleOffset;
+                glideEv.sampleOffset = triggerOffset;
                 glideEv.type = UMLEventType::Glide;
                 glideEv.targetFrequency = tFreq;
-                glideEv.targetVelocity = tVel;
-                glideEv.durationSamples = durationSamples;
+                glideEv.targetAmplitude = tVel; // User requested amplitude instead of velocity
+                glideEv.targetVelocity = -1.0f; 
+                glideEv.durationSamples = (sampleOffset + durationSamples) - triggerOffset;
                 outEvents.push_back(glideEv);
             }
         }
-    } else {
-        // If no glide is present, schedule a NoteOff event at the end of the note's duration
-        // using a small gap (20ms at 48kHz is 960 samples, or 10% of duration, whichever is smaller) to ensure the gate resets.
-        long gapSamples = std::min(static_cast<long>(0.020 * 48000.0), static_cast<long>(durationSamples * 0.10));
-        if (durationSamples > gapSamples) {
-            UMLEvent offEv;
-            offEv.sampleOffset = sampleOffset + durationSamples - gapSamples;
-            offEv.type = UMLEventType::NoteOff;
-            outEvents.push_back(offEv);
-        }
+    }
+
+    // If no glide is present, schedule a NoteOff event exactly at the end of the note's duration.
+    // The C++ sub-block engine guarantees the gate reset without needing an artificial gap.
+    if (!hasGlide) {
+        UMLEvent offEv;
+        offEv.sampleOffset = sampleOffset + durationSamples;
+        offEv.type = UMLEventType::NoteOff;
+        outEvents.push_back(offEv);
     }
 }
 
@@ -521,8 +583,11 @@ double UMLParser::getFrequency(const std::string& token, const std::string& nota
     }
 
     // 3. Melodic Check on base token
-    if (notation == "Indian") {
-        if (indianRatios.count(baseToken)) return baseFreq * indianRatios.at(baseToken) * octaveScale;
+    if (notation == "22Shruti" || notation == "22shruti" || notation == "Indian" || notation == "indian") {
+        if (shruti22Ratios.count(baseToken)) return baseFreq * shruti22Ratios.at(baseToken) * octaveScale;
+    } else if (notation == "Hindustani" || notation == "hindustani" || notation == "Sargam" || notation == "sargam") {
+        if (hindustaniRatios.count(baseToken)) return baseFreq * hindustaniRatios.at(baseToken) * octaveScale;
+        if (shruti22Ratios.count(baseToken)) return baseFreq * shruti22Ratios.at(baseToken) * octaveScale;
     } else {
         if (westernPitches.count(baseToken)) return westernPitches.at(baseToken) * octaveScale;
         double parsed = parseWesternPitch(baseToken);
@@ -562,7 +627,7 @@ void UMLParser::handleVoiceToken(const TokenItem& ti, float amplitudeScalar, lon
     outEvents.push_back(ev);
 
     // Glide support: if the token ends with '^', emit a Glide event towards the next token
-    if (ti.hasGlide) {
+    if (ti.hasGlideOp) {
         size_t targetIdx = nextTokenIndex;
         while (targetIdx < tokenItemsArray.size() &&
                (tokenItemsArray[targetIdx].type == TokenType::ContinuityDot ||

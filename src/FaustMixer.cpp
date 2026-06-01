@@ -29,6 +29,7 @@
 
 #include "FaustMixer.hpp"
 #include <iostream>
+#include <immintrin.h>
 
 #ifdef __ANDROID__
 #include <oboe/Oboe.h>
@@ -227,18 +228,12 @@ void FaustMixer::stopWorkers() {
  * @brief Persistent worker thread loop.
  */
 void FaustMixer::workerLoop(int workerID) {
-    int idleSpins = 0;
     while (mWorkerRunning.load(std::memory_order_acquire)) {
         uint64_t gen = mDispatchGeneration.load(std::memory_order_acquire);
         if (gen == mWorkerGeneration[workerID]) {
-            if (++idleSpins > 1000) {
-                std::this_thread::sleep_for(std::chrono::microseconds(10));
-            } else {
-                std::this_thread::yield();
-            }
+            _mm_pause();
             continue;
         }
-        idleSpins = 0;
         mWorkerGeneration[workerID] = gen;
 
         int total = mWorkCount.load(std::memory_order_acquire);
@@ -562,11 +557,9 @@ inline void FaustMixer::accumulateInstrumentChannels(float* stereoOutput, int nu
             }
         }
 
-        // Spin barrier
-        int spins = 0;
+        // Spin barrier — no yield, no context switch
         while (mPendingTasks.load(std::memory_order_acquire) > 0) {
-            if (++spins > 1000000) { spins = 0; }
-            std::this_thread::yield();
+            _mm_pause();
         }
     }
 

@@ -73,6 +73,7 @@ public:
     float getFrequency() const;
     float getVelocity() const;
     float getAmplitude() const;
+    float getDSPGlideParam() const { return mDSPGlideParam; }
     float getDuration() const;
     float getReverbSend() const;
     float getSampleRate() const;
@@ -81,6 +82,10 @@ public:
     virtual void noteOn(float freq = -1.0f, float velocity = -1.0f, float strikeVal = -1.0f, float amplitude = -1.0f);
     virtual void noteOff(float decayTailMs = 0.0f);
     void render(int numFrames, float* buffer);
+
+    // Diagnostics
+    void enableDiagnostics(bool enable) { mEnableDiagLogging = enable; }
+    void dumpDiagnostics();
 
     // Virtual completion callback hook
     virtual void onNoteFinish();
@@ -173,6 +178,17 @@ protected:
     float mGainGlideTarget;
     long mGainGlideFramesTotal;
     long mGainGlideFramesElapsed;
+
+    float mDSPGlideParam = 0.05f; // Store original portamento
+    
+    struct DiagLog {
+        long frame;
+        float freq;
+        float amp;
+        float glide;
+    };
+    std::vector<DiagLog> mDiagLogs;
+    bool mEnableDiagLogging = false;
 
     void* mStreamDevice;
 

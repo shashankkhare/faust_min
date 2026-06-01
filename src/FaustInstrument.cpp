@@ -99,6 +99,7 @@ FaustInstrument::FaustInstrument(int instrumentID, DSPExecutionType execType,
           
     mRenderBuffer = new float[InstrumentMapper::MAX_FRAMES_PER_BUFFER * 2];
     mEventQueue.reserve(128);
+    mDiagLogs.reserve(4096);
 
     if (instrumentID != -1) {
         loadTargetDSP();
@@ -527,18 +528,24 @@ void FaustInstrument::frequencyGlide(float targetFreq, float durationSeconds) {
     mFreqGlideActive = (mFreqGlideFramesTotal > 0);
     if (!mFreqGlideActive) {
         setFrequency(targetFreq);
+    } else {
+        if (mVoiceUIs[0]->getParamZone("glide") != nullptr) {
+            mDSPGlideParam = mVoiceUIs[0]->getParamValue("glide");
+        }
+        setParamImmediate("glide", 0.0f, -1);
     }
 }
 
 void FaustInstrument::gainGlide(float targetGain, float durationSeconds) {
     std::lock_guard<std::recursive_mutex> lock(mDSPLock);
-    mGainGlideStart = mGain;
+    mGainGlideStart = mAmplitude;
     mGainGlideTarget = targetGain;
     mGainGlideFramesTotal = static_cast<long>(durationSeconds * mSampleRate);
     mGainGlideFramesElapsed = 0;
     mGainGlideActive = (mGainGlideFramesTotal > 0);
     if (!mGainGlideActive) {
-        setGain(targetGain);
+        mAmplitude = targetGain;
+        if (!mLUTActive) setParamImmediate("gain", targetGain, -1);
     }
 }
 
@@ -621,14 +628,24 @@ void FaustInstrument::processInternalGlides(int numFrames) {
     }
 
     if (mFreqGlideActive) {
+        if (mFreqGlideFramesElapsed == 0 && mEnableDiagLogging) {
+            mDiagLogs.push_back({mElapsedFrames, mFreqGlideStart, mAmplitude, 0.0f});
+        }
         mFreqGlideFramesElapsed += numFrames;
         if (mFreqGlideFramesElapsed >= mFreqGlideFramesTotal) {
             mFreqGlideActive = false;
             setFrequencyImmediate(mFreqGlideTarget);
+            setParamImmediate("glide", mDSPGlideParam, -1);
+            if (mEnableDiagLogging) {
+                mDiagLogs.push_back({mElapsedFrames + numFrames, mFreqGlideTarget, mAmplitude, mDSPGlideParam});
+            }
         } else {
             float progress = static_cast<float>(mFreqGlideFramesElapsed) / mFreqGlideFramesTotal;
             float currentFreq = mFreqGlideStart + (mFreqGlideTarget - mFreqGlideStart) * progress;
             setFrequencyImmediate(currentFreq);
+            if (mEnableDiagLogging && (mFreqGlideFramesElapsed % 4096 < numFrames)) {
+                mDiagLogs.push_back({mElapsedFrames + numFrames, currentFreq, mAmplitude, 0.0f});
+            }
         }
     }
 
@@ -636,11 +653,13 @@ void FaustInstrument::processInternalGlides(int numFrames) {
         mGainGlideFramesElapsed += numFrames;
         if (mGainGlideFramesElapsed >= mGainGlideFramesTotal) {
             mGainGlideActive = false;
-            setGainImmediate(mGainGlideTarget);
+            mAmplitude = mGainGlideTarget;
+            if (!mLUTActive) setParamImmediate("gain", mGainGlideTarget, -1);
         } else {
             float progress = static_cast<float>(mGainGlideFramesElapsed) / mGainGlideFramesTotal;
             float currentGain = mGainGlideStart + (mGainGlideTarget - mGainGlideStart) * progress;
-            setGainImmediate(currentGain);
+            mAmplitude = currentGain;
+            if (!mLUTActive) setParamImmediate("gain", currentGain, -1);
         }
     }
 }
@@ -783,28 +802,57 @@ void FaustInstrument::stopInternalStream() {
 void FaustInstrument::applyDynamicLUTParams(float freq, float amp, int voiceIndex) {
     if (!mLUTActive || mLUTRecords.empty()) return;
 
-    // Utilize normalized vector proximity squared distance: d = ((f-f1)/(f+f1))^2 + ((a-a1)/(a+a1))^2
-    // Snap parameters directly to the closest record (global minimum deviation)
-    const LUTRecord* bestRecord = nullptr;
-    float minDev = std::numeric_limits<float>::max();
+    constexpr int K = 3;
+    struct Neighbor { const LUTRecord* record; float distSq; };
+    Neighbor nearest[K] = {};
 
     for (const auto& rec : mLUTRecords) {
         float fDenom = freq + rec.frequency;
         float fNorm = (fDenom > 0.0001f) ? (freq - rec.frequency) / fDenom : 0.0f;
-
         float aDenom = amp + rec.amplitude;
         float aNorm = (aDenom > 0.0001f) ? (amp - rec.amplitude) / aDenom : 0.0f;
+        float distSq = fNorm * fNorm + aNorm * aNorm;
 
-        float dev = fNorm * fNorm + aNorm * aNorm;
-        if (dev < minDev) {
-            minDev = dev;
-            bestRecord = &rec;
+        if (distSq < 1e-10f) {
+            for (const auto& pair : rec.targetParams)
+                setParamImmediate(pair.first.c_str(), pair.second, voiceIndex);
+            return;
+        }
+
+        if (!nearest[K-1].record || distSq < nearest[K-1].distSq) {
+            int idx = K-1;
+            for (int i = K-2; i >= 0; --i)
+                if (nearest[i].record && distSq >= nearest[i].distSq) { idx = i+1; break; }
+                else idx = i;
+            for (int i = K-1; i > idx; --i) nearest[i] = nearest[i-1];
+            nearest[idx] = {&rec, distSq};
         }
     }
 
-    if (bestRecord) {
-        for (const auto& pair : bestRecord->targetParams) {
-            setParamImmediate(pair.first.c_str(), pair.second, voiceIndex);
+    std::map<std::string, float> accumulatedParams, totalWeights;
+    for (int i = 0; i < K && nearest[i].record; ++i) {
+        float weight = 1.0f / (nearest[i].distSq + 1e-10f);
+        for (const auto& pair : nearest[i].record->targetParams) {
+            accumulatedParams[pair.first] += pair.second * weight;
+            totalWeights[pair.first] += weight;
         }
     }
+
+    for (const auto& pair : accumulatedParams) {
+        float wSum = totalWeights[pair.first];
+        if (wSum > 0.0f)
+            setParamImmediate(pair.first.c_str(), pair.second / wSum, voiceIndex);
+    }
+}
+
+
+void FaustInstrument::dumpDiagnostics() {
+    if (!mEnableDiagLogging || mDiagLogs.empty()) return;
+    printf("\n=== MEMORY-BASED GLIDE DIAGNOSTICS FOR INSTRUMENT %d ===\n", mInstrumentID);
+    printf("%-15s %-15s %-15s %-15s\n", "Frames", "C++ Freq", "C++ Amp", "DSP Glide");
+    for (const auto& log : mDiagLogs) {
+        printf("%-15ld %-15.2f %-15.3f %-15.3f\n", log.frame, log.freq, log.amp, log.glide);
+    }
+    printf("========================================================\n\n");
+    mDiagLogs.clear();
 }

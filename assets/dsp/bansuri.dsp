@@ -65,7 +65,7 @@ filteredNoise = no.noise : fi.lowpass(2, 1800);
 
 // The air jet turbulence is physically added to the blowing pressure.
 // Mapped with 0.06 multiplier so breathiness blends organically.
-jetTurbulence = filteredNoise * breathIntensity * 0.06;
+jetTurbulence = filteredNoise * breathIntensity * 1.0;
 noisyPressure = pressure + (jetTurbulence * pressure);
 
 // Fast 30ms release envelope to cleanly silence the physical model decay
