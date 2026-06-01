@@ -10,5 +10,6 @@ int main() {
     // let's peek at the event queue or the actual values in MapUI
     // MapUI isn't easily accessible but we can test if it compiles and runs.
     std::cout << "Test completed." << std::endl;
+    delete inst;
     return 0;
 }

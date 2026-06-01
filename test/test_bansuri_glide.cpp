@@ -73,6 +73,7 @@ int main() {
     }
 
     mixer.stop();
+    delete seqBansuri;
     std::cout << "--- Runner Complete ---" << std::endl;
     return 0;
 }
