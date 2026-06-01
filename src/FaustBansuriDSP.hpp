@@ -75,21 +75,20 @@ class FaustBansuriDSP : public dsp {
 	
  private:
 	
-	FAUSTFLOAT fHslider0;
 	int iRec15[2];
 	float fRec22[2];
 	float fRec21[2];
-	FAUSTFLOAT fHslider1;
+	FAUSTFLOAT fHslider0;
 	int fSampleRate;
 	float fConst1;
 	FAUSTFLOAT fButton0;
 	float fConst2;
-	FAUSTFLOAT fHslider2;
+	FAUSTFLOAT fHslider1;
 	float fConst3;
 	float fRec24[2];
 	float fRec23[2];
 	float fConst6;
-	FAUSTFLOAT fHslider3;
+	FAUSTFLOAT fHslider2;
 	float fRec25[2];
 	int iRec27[2];
 	float fConst7;
@@ -100,14 +99,14 @@ class FaustBansuriDSP : public dsp {
 	float fRec29[2048];
 	float fConst9;
 	float fConst10;
+	FAUSTFLOAT fHslider3;
 	FAUSTFLOAT fHslider4;
-	FAUSTFLOAT fHslider5;
 	float fRec30[2];
-	FAUSTFLOAT fHslider6;
+	FAUSTFLOAT fHslider5;
 	float fRec31[2];
 	float fConst11;
 	float fRec33[2];
-	FAUSTFLOAT fHslider7;
+	FAUSTFLOAT fHslider6;
 	float fRec34[2];
 	float fVec1[2];
 	float fVec2[2048];
@@ -122,6 +121,8 @@ class FaustBansuriDSP : public dsp {
 	float fConst12;
 	float fConst13;
 	float fRec35[2];
+	FAUSTFLOAT fHslider7;
+	float fRec36[2];
 	
  public:
 	
@@ -213,15 +214,15 @@ class FaustBansuriDSP : public dsp {
 	}
 	
 	virtual void instanceResetUserInterface() {
-		fHslider0 = FAUSTFLOAT(1.0f);
-		fHslider1 = FAUSTFLOAT(0.80000000000000004f);
+		fHslider0 = FAUSTFLOAT(0.80000000000000004f);
 		fButton0 = FAUSTFLOAT(0.0f);
-		fHslider2 = FAUSTFLOAT(0.80000000000000004f);
-		fHslider3 = FAUSTFLOAT(0.20000000000000001f);
-		fHslider4 = FAUSTFLOAT(0.080000000000000002f);
-		fHslider5 = FAUSTFLOAT(440.0f);
-		fHslider6 = FAUSTFLOAT(0.29999999999999999f);
-		fHslider7 = FAUSTFLOAT(0.5f);
+		fHslider1 = FAUSTFLOAT(0.80000000000000004f);
+		fHslider2 = FAUSTFLOAT(0.20000000000000001f);
+		fHslider3 = FAUSTFLOAT(0.080000000000000002f);
+		fHslider4 = FAUSTFLOAT(440.0f);
+		fHslider5 = FAUSTFLOAT(0.29999999999999999f);
+		fHslider6 = FAUSTFLOAT(0.5f);
+		fHslider7 = FAUSTFLOAT(1.0f);
 	}
 	
 	virtual void instanceClear() {
@@ -301,6 +302,9 @@ class FaustBansuriDSP : public dsp {
 		for (int l26 = 0; (l26 < 2); l26 = (l26 + 1)) {
 			fRec35[l26] = 0.0f;
 		}
+		for (int l27 = 0; (l27 < 2); l27 = (l27 + 1)) {
+			fRec36[l27] = 0.0f;
+		}
 	}
 	
 	virtual void init(int sample_rate) {
@@ -323,37 +327,37 @@ class FaustBansuriDSP : public dsp {
 	
 	virtual void buildUserInterface(UI* ui_interface) {
 		ui_interface->openVerticalBox("bansuri");
-		ui_interface->addHorizontalSlider("breathiness", &fHslider3, FAUSTFLOAT(0.200000003f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
-		ui_interface->addHorizontalSlider("freq", &fHslider5, FAUSTFLOAT(440.0f), FAUSTFLOAT(50.0f), FAUSTFLOAT(2000.0f), FAUSTFLOAT(0.100000001f));
-		ui_interface->addHorizontalSlider("gain", &fHslider0, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(3.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("breathiness", &fHslider2, FAUSTFLOAT(0.200000003f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("freq", &fHslider4, FAUSTFLOAT(440.0f), FAUSTFLOAT(50.0f), FAUSTFLOAT(2000.0f), FAUSTFLOAT(0.100000001f));
+		ui_interface->addHorizontalSlider("gain", &fHslider7, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(3.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addButton("gate", &fButton0);
-		ui_interface->addHorizontalSlider("glide", &fHslider4, FAUSTFLOAT(0.0799999982f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00100000005f));
-		ui_interface->addHorizontalSlider("mouthPosition", &fHslider7, FAUSTFLOAT(0.5f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00100000005f));
-		ui_interface->addHorizontalSlider("pressure", &fHslider2, FAUSTFLOAT(0.800000012f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00100000005f));
-		ui_interface->addHorizontalSlider("velocity", &fHslider1, FAUSTFLOAT(0.800000012f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
-		ui_interface->addHorizontalSlider("vibrato", &fHslider6, FAUSTFLOAT(0.300000012f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("glide", &fHslider3, FAUSTFLOAT(0.0799999982f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00100000005f));
+		ui_interface->addHorizontalSlider("mouthPosition", &fHslider6, FAUSTFLOAT(0.5f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00100000005f));
+		ui_interface->addHorizontalSlider("pressure", &fHslider1, FAUSTFLOAT(0.800000012f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00100000005f));
+		ui_interface->addHorizontalSlider("velocity", &fHslider0, FAUSTFLOAT(0.800000012f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("vibrato", &fHslider5, FAUSTFLOAT(0.300000012f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->closeBox();
 	}
 	
 	virtual void compute(int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs) {
 		FAUSTFLOAT* output0 = outputs[0];
-		float fSlow0 = float(fHslider0);
-		float fSlow1 = ((0.100000001f * (1.0f - float(fHslider1))) + 0.00499999989f);
-		int iSlow2 = (std::fabs(fSlow1) < 1.1920929e-07f);
-		float fThen1 = std::exp((0.0f - (fConst1 / (iSlow2 ? 1.0f : fSlow1))));
-		float fSlow3 = (iSlow2 ? 0.0f : fThen1);
-		float fSlow4 = float(fButton0);
-		float fSlow5 = (fConst2 * float(fHslider2));
-		float fSlow6 = (1.0f - fSlow3);
-		float fSlow7 = (fConst2 * float(fHslider3));
-		float fSlow8 = float(fHslider4);
-		int iSlow9 = (std::fabs(fSlow8) < 1.1920929e-07f);
-		float fThen3 = std::exp((0.0f - (fConst1 / (iSlow9 ? 1.0f : fSlow8))));
-		float fSlow10 = (iSlow9 ? 0.0f : fThen3);
-		float fSlow11 = (float(fHslider5) * (1.0f - fSlow10));
+		float fSlow0 = ((0.100000001f * (1.0f - float(fHslider0))) + 0.00499999989f);
+		int iSlow1 = (std::fabs(fSlow0) < 1.1920929e-07f);
+		float fThen1 = std::exp((0.0f - (fConst1 / (iSlow1 ? 1.0f : fSlow0))));
+		float fSlow2 = (iSlow1 ? 0.0f : fThen1);
+		float fSlow3 = float(fButton0);
+		float fSlow4 = (fConst2 * float(fHslider1));
+		float fSlow5 = (1.0f - fSlow2);
+		float fSlow6 = (fConst2 * float(fHslider2));
+		float fSlow7 = float(fHslider3);
+		int iSlow8 = (std::fabs(fSlow7) < 1.1920929e-07f);
+		float fThen3 = std::exp((0.0f - (fConst1 / (iSlow8 ? 1.0f : fSlow7))));
+		float fSlow9 = (iSlow8 ? 0.0f : fThen3);
+		float fSlow10 = (float(fHslider4) * (1.0f - fSlow9));
+		float fSlow11 = (fConst2 * float(fHslider5));
 		float fSlow12 = (fConst2 * float(fHslider6));
-		float fSlow13 = (fConst2 * float(fHslider7));
-		float fSlow14 = (fConst13 * fSlow4);
+		float fSlow13 = (fConst13 * fSlow3);
+		float fSlow14 = (fConst2 * float(fHslider7));
 		for (int i0 = 0; (i0 < count); i0 = (i0 + 1)) {
 			iRec15[0] = 0;
 			float fTempFTZ0 = ((0.300000012f * fRec22[1]) + (0.67900002f * fRec20[1]));
@@ -362,11 +366,11 @@ class FaustBansuriDSP : public dsp {
 			fRec21[0] = ((std::fabs(fTempFTZ1) > 1.17549435e-38f) ? fTempFTZ1 : 0.0f);
 			float fTempFTZ2 = (fRec21[0] + float(iRec15[1]));
 			float fRec19 = ((std::fabs(fTempFTZ2) > 1.17549435e-38f) ? fTempFTZ2 : 0.0f);
-			float fTempFTZ3 = (fSlow5 + (fConst3 * fRec24[1]));
+			float fTempFTZ3 = (fSlow4 + (fConst3 * fRec24[1]));
 			fRec24[0] = ((std::fabs(fTempFTZ3) > 1.17549435e-38f) ? fTempFTZ3 : 0.0f);
-			float fTempFTZ4 = ((fRec23[1] * fSlow3) + (std::min<float>(1.0f, (fSlow4 * fRec24[0])) * fSlow6));
+			float fTempFTZ4 = ((fRec23[1] * fSlow2) + (std::min<float>(1.0f, (fSlow3 * fRec24[0])) * fSlow5));
 			fRec23[0] = ((std::fabs(fTempFTZ4) > 1.17549435e-38f) ? fTempFTZ4 : 0.0f);
-			float fTempFTZ5 = (fSlow7 + (fConst3 * fRec25[1]));
+			float fTempFTZ5 = (fSlow6 + (fConst3 * fRec25[1]));
 			fRec25[0] = ((std::fabs(fTempFTZ5) > 1.17549435e-38f) ? fTempFTZ5 : 0.0f);
 			iRec27[0] = ((1103515245 * iRec27[1]) + 12345);
 			float fTempFTZ6 = ((4.65661287e-10f * float(iRec27[0])) - (fConst6 * ((fConst7 * fRec26[2]) + (fConst8 * fRec26[1]))));
@@ -375,14 +379,14 @@ class FaustBansuriDSP : public dsp {
 			fRec28[0] = ((std::fabs(fTempFTZ7) > 1.17549435e-38f) ? fTempFTZ7 : 0.0f);
 			float fTempFTZ8 = (0.980000019f * fRec28[1]);
 			fRec29[(IOTA & 2047)] = ((std::fabs(fTempFTZ8) > 1.17549435e-38f) ? fTempFTZ8 : 0.0f);
-			float fTempFTZ9 = ((fRec30[1] * fSlow10) + fSlow11);
+			float fTempFTZ9 = ((fRec30[1] * fSlow9) + fSlow10);
 			fRec30[0] = ((std::fabs(fTempFTZ9) > 1.17549435e-38f) ? fTempFTZ9 : 0.0f);
-			float fTempFTZ10 = (fSlow12 + (fConst3 * fRec31[1]));
+			float fTempFTZ10 = (fSlow11 + (fConst3 * fRec31[1]));
 			fRec31[0] = ((std::fabs(fTempFTZ10) > 1.17549435e-38f) ? fTempFTZ10 : 0.0f);
 			float fTempFTZ11 = (fConst11 + (fRec33[1] - std::floor((fConst11 + fRec33[1]))));
 			fRec33[0] = ((std::fabs(fTempFTZ11) > 1.17549435e-38f) ? fTempFTZ11 : 0.0f);
 			float fTemp0 = ((340.0f / (fRec30[0] * ((0.0199999996f * (fRec31[0] * ftbl0FaustBansuriDSPSIG0[int((65536.0f * fRec33[0]))])) + 1.0f))) + 0.270000011f);
-			float fTempFTZ12 = (fSlow13 + (fConst3 * fRec34[1]));
+			float fTempFTZ12 = (fSlow12 + (fConst3 * fRec34[1]));
 			fRec34[0] = ((std::fabs(fTempFTZ12) > 1.17549435e-38f) ? fTempFTZ12 : 0.0f);
 			float fTemp1 = (0.400000006f * (fRec34[0] + -0.5f));
 			float fTemp2 = (fConst10 * (fTemp0 * (fTemp1 + 0.270000011f)));
@@ -480,9 +484,11 @@ class FaustBansuriDSP : public dsp {
 			fRec2[0] = ((std::fabs(fTempFTZ29) > 1.17549435e-38f) ? fTempFTZ29 : 0.0f);
 			float fTempFTZ30 = ((fRec2[0] + (0.995000005f * fRec0[1])) - fRec2[1]);
 			fRec0[0] = ((std::fabs(fTempFTZ30) > 1.17549435e-38f) ? fTempFTZ30 : 0.0f);
-			float fTempFTZ31 = (fSlow14 + (fConst12 * fRec35[1]));
+			float fTempFTZ31 = (fSlow13 + (fConst12 * fRec35[1]));
 			fRec35[0] = ((std::fabs(fTempFTZ31) > 1.17549435e-38f) ? fTempFTZ31 : 0.0f);
-			output0[i0] = FAUSTFLOAT((fSlow0 * (fRec0[0] * fRec35[0])));
+			float fTempFTZ32 = (fSlow14 + (fConst3 * fRec36[1]));
+			fRec36[0] = ((std::fabs(fTempFTZ32) > 1.17549435e-38f) ? fTempFTZ32 : 0.0f);
+			output0[i0] = FAUSTFLOAT(((fRec0[0] * fRec35[0]) * fRec36[0]));
 			iRec15[1] = iRec15[0];
 			fRec22[1] = fRec22[0];
 			fRec21[1] = fRec21[0];
@@ -506,6 +512,7 @@ class FaustBansuriDSP : public dsp {
 			fRec2[1] = fRec2[0];
 			fRec0[1] = fRec0[0];
 			fRec35[1] = fRec35[0];
+			fRec36[1] = fRec36[0];
 		}
 	}
 

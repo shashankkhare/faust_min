@@ -32,7 +32,7 @@ velocity = hslider("velocity", 0.8, 0.0, 1.0, 0.01);
 t = button("gate");
 
 // Output gain (controlled by LUT CSV per amplitude/frequency)
-gain = hslider("gain", 1.0, 0.0, 3.0, 0.01);
+gain = hslider("gain", 1.0, 0.0, 3.0, 0.01) : si.smoo;
 
 // Mapped parameters via inverse distance weighting from companion CSV lookup table
 pressureTarget = hslider("pressure", 0.8, 0.0, 1.0, 0.001) : si.smoo;

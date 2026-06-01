@@ -662,6 +662,9 @@ void FaustInstrument::processInternalGlides(int numFrames) {
             if (!mLUTActive) setParamImmediate("gain", currentGain, -1);
         }
     }
+
+    if (mLUTActive)
+        applyDynamicLUTParams(mFrequency, mAmplitude, -1);
 }
 
 void FaustInstrument::render(int numFrames, float* buffer) {
@@ -813,7 +816,7 @@ void FaustInstrument::applyDynamicLUTParams(float freq, float amp, int voiceInde
         float aNorm = (aDenom > 0.0001f) ? (amp - rec.amplitude) / aDenom : 0.0f;
         float distSq = fNorm * fNorm + aNorm * aNorm;
 
-        if (distSq < 1e-10f) {
+            if (distSq < 1e-10f) {
             for (const auto& pair : rec.targetParams)
                 setParamImmediate(pair.first.c_str(), pair.second, voiceIndex);
             return;

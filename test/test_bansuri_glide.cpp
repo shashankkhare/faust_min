@@ -32,10 +32,9 @@ int main() {
         "notation: 22Shruti\n"
         "vibrato: 0.0\n"
         "glide: 0.05\n"
-        "4Sa . . . .^ . . . 4Re . . . . . . . \n"
-        "4Re . . . .^ . . . 4Sa . . . . . . . \n"
-        "4Sa . . . .^ . . . 4Re . . . . . . . \n"
-        "4Re . . . .^ . . . 4Sa . . . . . . . \n";
+        "6Sa . . . .^ . . . 3Re . . . . . . . \n"
+        "5Re . . . .^ . . . 7g1 . . . . . . . \n"
+        "2g1 . . . .^ . . . 6Re . . . . . . . \n";
 
     UMLSequence* seqBansuri = new UMLSequence("Bansuri", 17, umlBansuri);
     
