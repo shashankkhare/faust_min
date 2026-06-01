@@ -53,7 +53,8 @@ private:
                                      double baseFreq, const std::string& instrument, std::vector<UMLEvent>& outEvents);
     static void handlePitchedToken(const TokenItem& ti, float amplitudeScalar, long sampleOffset, long durationSamples, 
                                    const std::string& notation, double baseFreq, const std::string& instrument,
-                                   double samplesPerGrid, size_t nextTokenIndex, const std::vector<TokenItem>& tokenItemsArray,
+                                   double samplesPerGrid, double sampleRate, size_t nextTokenIndex, 
+                                   const std::vector<TokenItem>& tokenItemsArray,
                                    const std::vector<std::pair<OpType, long>>& triggers, std::vector<UMLEvent>& outEvents);
     static void handleVoiceToken(const TokenItem& ti, float amplitudeScalar, long sampleOffset, long durationSamples,
                                  const std::string& notation, double baseFreq,

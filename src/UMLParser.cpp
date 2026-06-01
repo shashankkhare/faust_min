@@ -327,7 +327,7 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
             } else if (seq.instrumentID == 47 || seq.instrumentID == 8 || seq.instrumentID == 7) {
                 handlePercussionToken(ti.noteName, amplitudeScalar, sampleOffset, durationSamples, seq.baseFreq, seq.instrument, seq.events);
             } else {
-                handlePitchedToken(ti, amplitudeScalar, sampleOffset, durationSamples, seq.notation, seq.baseFreq, seq.instrument, samplesPerGrid, j, tokenItems, triggers, seq.events);
+                handlePitchedToken(ti, amplitudeScalar, sampleOffset, durationSamples, seq.notation, seq.baseFreq, seq.instrument, samplesPerGrid, sampleRate, j, tokenItems, triggers, seq.events);
             }
         } else if (ti.type == TokenType::StopRest) {
             UMLEvent restEv;
@@ -442,7 +442,8 @@ void UMLParser::handlePercussionToken(const std::string& tokenNoteName, float am
 
 void UMLParser::handlePitchedToken(const TokenItem& ti, float amplitudeScalar, long sampleOffset, long durationSamples, 
                                    const std::string& notation, double baseFreq, const std::string& instrument,
-                                   double samplesPerGrid, size_t nextTokenIndex, const std::vector<TokenItem>& tokenItemsArray, 
+                                   double samplesPerGrid, double sampleRate, size_t nextTokenIndex, 
+                                   const std::vector<TokenItem>& tokenItemsArray, 
                                    const std::vector<std::pair<OpType, long>>& triggers, std::vector<UMLEvent>& outEvents) {
     
     std::vector<std::string> notes;
@@ -502,11 +503,16 @@ void UMLParser::handlePitchedToken(const TokenItem& ti, float amplitudeScalar, l
         }
     }
 
-    // If no glide is present, schedule a NoteOff event exactly at the end of the note's duration.
-    // The C++ sub-block engine guarantees the gate reset without needing an artificial gap.
+    // If no glide is present, schedule a NoteOff event.
+    // Fire early if next token is another note for smooth release decay before noteOn.
     if (!hasGlide) {
+        bool nextIsNote = (nextTokenIndex < tokenItemsArray.size() && 
+                           tokenItemsArray[nextTokenIndex].type == TokenType::NoteWithControl);
+        long lookAhead = nextIsNote ? (long)(0.03 * sampleRate) : 0;
+        long offOffset = sampleOffset + durationSamples - lookAhead;
+        if (offOffset <= sampleOffset) offOffset = sampleOffset + 1;
         UMLEvent offEv;
-        offEv.sampleOffset = sampleOffset + durationSamples;
+        offEv.sampleOffset = offOffset;
         offEv.type = UMLEventType::NoteOff;
         outEvents.push_back(offEv);
     }
