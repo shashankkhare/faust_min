@@ -1,6 +1,11 @@
-import 'dart:math' as math;
 import 'faust_sequencer.dart';
 
+/// Compiles a high-level pattern specification into a playable [FaustSequencer].
+///
+/// [FaustPatternLanguage] accepts a `Map<String, dynamic>` spec with tempo,
+/// grid, and tracks. Each track maps an instrument name to a string of
+/// space-separated steps: note names (e.g. `C4`, `Sa`), rhythmic strikes (`X`, `x`),
+/// continuations (`.`), legato ties (`-`), and parameter overrides (`(p=1)`).
 class FaustPatternLanguage {
   static const Map<String, int> _instrumentMap = {
     'dayan': 0, 'bayan': 1, 'kick': 2, 'snare': 3,

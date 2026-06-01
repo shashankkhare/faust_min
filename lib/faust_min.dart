@@ -119,15 +119,29 @@ typedef _dart_orch_set_param = void Function(Pointer<NativeOrchestratorOpaque>, 
 typedef _c_orch_set_weight = Void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>, Float);
 typedef _dart_orch_set_weight = void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>, double);
 
-typedef _c_orch_render_master = Void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Float>, Int32);
-typedef _dart_orch_render_master = void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Float>, int);
-
 typedef _c_orch_poll_finished = Pointer<Utf8> Function(Pointer<NativeOrchestratorOpaque>);
 typedef _dart_orch_poll_finished = Pointer<Utf8> Function(Pointer<NativeOrchestratorOpaque>);
 
 // --- Classes ---
 
-/// Concrete dynamic representation wrapping opaque instrument heap pointers over FFI.
+/// A physically modeled instrument instance backed by a real-time Faust DSP engine.
+///
+/// [FaustInstrument] wraps a native C++ instrument heap object accessed via FFI.
+/// Each instrument encapsulates a complete physical model (e.g., flute, sitar, tabla)
+/// with parameters for frequency, velocity, articulation, and real-time modulation.
+///
+/// Instruments are rendered by [FaustMixer] and can be sequenced via [UMLSequence]
+/// and [SequenceOrchestrator]. Multiple voices are allocated dynamically by the
+/// native engine for polyphonic playback.
+///
+/// {@tool dartpad}
+/// ```dart
+/// final flute = FaustInstrument(10, DSPExecutionType.StaticCompiled, 48000);
+/// flute.noteOn(freq: 440.0, velocity: 0.8);
+/// // ... let it ring ...
+/// flute.noteOff();
+/// ```
+/// {@end-tool}
 class FaustInstrument {
   final Pointer<NativeInstrumentOpaque> _handle;
   bool _isDisposed = false;
@@ -188,7 +202,14 @@ class FaustInstrument {
   Pointer<NativeInstrumentOpaque> get nativePointer => _handle;
 }
 
-/// Self-contained object-oriented schedule timeline model natively parsing UML patterns.
+/// A parsed UML (Universal Music Language) sequence backed by a native timeline object.
+///
+/// [UMLSequence] parses a plain-text musical notation string (supporting Western,
+/// Indian Sargam, and percussion strokes) into a sample-accurate event timeline.
+/// The parsed sequence is stored in the native C++ engine for zero-latency playback.
+///
+/// Create a sequence, hand it to [SequenceOrchestrator.addSequence], and play.
+/// Call [dispose] when done to free native memory.
 class UMLSequence {
   late final Pointer<NativeSequenceOpaque> _handle;
   bool _isDisposed = false;
@@ -231,6 +252,13 @@ class UMLSequence {
 }
 
 /// Standalone multi-instance session orchestration controller driving continuous native callbacks.
+///
+/// [SequenceOrchestrator] manages a collection of named [UMLSequence] instances,
+/// providing play, stop, pause, resume, mute, and real-time parameter control
+/// over the native hardware audio device. It drives the audio callback chain
+/// through [FaustMixer] with sample-accurate event scheduling.
+///
+/// Must be disposed with [dispose] when no longer needed.
 class SequenceOrchestrator {
   late final Pointer<NativeOrchestratorOpaque> _handle;
   bool _isDisposed = false;
@@ -326,6 +354,15 @@ class SequenceOrchestrator {
 }
 
 /// Singleton access to the global Faust audio mixer and hardware driver.
+///
+/// [FaustMixer] is the central audio hub. It manages:
+/// - Hardware device initialization and lifecycle
+/// - Sample-rate configuration
+/// - Master gain control
+/// - Instrument registration and per-instrument volume weighting
+/// - The persistent thread pool for concurrent DSP rendering
+///
+/// Access via [FaustMixer.instance]. Must be initialized with [init] before use.
 class FaustMixer {
   static final FaustMixer instance = FaustMixer._internal();
   late final Pointer<NativeMixerOpaque> _handle;

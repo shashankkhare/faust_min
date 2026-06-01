@@ -1,9 +1,14 @@
 import 'dart:math';
-import 'faust_min.dart';
 
 /// A helper class to simplify musical sequencing for Faust Physical Models.
-/// It handles beat-to-sample mapping, automatic articulation (legato/staccato),
-/// and multi-instrument event management.
+///
+/// [FaustSequencer] provides a high-level API for building note sequences
+/// in terms of beats, durations, velocities, and legato articulation.
+/// It handles beat-to-sample mapping and automatic articulation
+/// (legato/staccato) for multi-instrument event management.
+///
+/// Use [addNote] to enqueue notes, then [buildEvents] to produce
+/// sample-accurate [FaustEventData] ready for the native bridge.
 class FaustSequencer {
   final double sampleRate;
   final double tempoBpm;
@@ -115,6 +120,33 @@ class FaustSequencer {
   }
 }
 
+/// A sample-accurate event record for passing to the native sequencer bridge.
+///
+/// [sampleOffset] is the position in samples from the start of playback.
+/// [instrumentId] selects which instrument the event targets.
+/// [eventType] 0=strike/stop, 1=set frequency.
+/// [value] is the primary parameter (pitch, velocity).
+/// [paramId] is an optional extended parameter selector.
+class FaustEventData {
+  final int sampleOffset;
+  final int instrumentId;
+  final int eventType;
+  final double value;
+  final int paramId;
+
+  FaustEventData({
+    required this.sampleOffset,
+    required this.instrumentId,
+    required this.eventType,
+    required this.value,
+    this.paramId = 0,
+  });
+}
+
+/// A single note event within a [FaustSequencer] sequence.
+///
+/// Contains the instrument ID, pitch, timing, velocity, articulation flag,
+/// and an optional parameter ID for extended control.
 class FaustNote {
   final int instrumentId;
   final double pitch;

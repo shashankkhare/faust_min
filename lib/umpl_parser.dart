@@ -1,6 +1,20 @@
-import 'dart:math' as math;
 import 'faust_sequencer.dart';
 
+/// Parses the Universal Music Pattern Language (UMPL) into a [FaustSequencer].
+///
+/// UMPL extends basic Shruti notation with per-instrument base frequency and
+/// gain overrides, inline mathematical expressions for microtonal ratios, and
+/// meend glide articulation. Format:
+///
+/// ```
+/// basefreq: 444.0
+/// bpm: 120
+/// grid: 8
+/// 1: 444.0 (gain=0.8)
+/// 2: 222.0
+///
+/// 1Sa . 1Re . 2Pa . . .
+/// ```
 class UmplParser {
   static const Map<String, double> _ratios = {
     'Sa': 1.0, 'r1': 256.0/243.0, 'r2': 16.0/15.0, 'R1': 10.0/9.0, 'R2': 9.0/8.0,

@@ -1,6 +1,11 @@
-import 'dart:math' as math;
 import 'faust_sequencer.dart';
 
+/// Parses Indian 22-Shruti notation into a playable [FaustSequencer] sequence.
+///
+/// Supports header directives (`basefreq`, `bpm`, `grid`) followed by
+/// note blocks in the format `<octave><shruti>` (e.g., `4Sa`, `5Re`).
+/// Handles automatic duration via dot-continuation, meend glides via `^`,
+/// and applies 22-Shruti just-intonation ratios for microtonal accuracy.
 class FaustShrutiParser {
   // 22-Shruti Ratios (Standard 5-limit / Just Intonation based)
   static const Map<String, double> _ratios = {
@@ -55,7 +60,6 @@ class FaustShrutiParser {
 
     // State tracking for each instrument
     final Map<int, double> lastFreq = {};
-    final Map<int, double> activeNoteStartBeat = {};
 
     for (int i = 0; i < blocks.length; i++) {
       final String block = blocks[i];
