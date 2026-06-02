@@ -1,3 +1,15 @@
+## 0.3.1
+
+*   **Tibetan Bowl Instrument**: Added `tibetanbowl` physical model (ID 47), assigned to idiophone → melody track.
+*   **Dual LagNga Rhythm**: Interleaved 111 Hz and 222 Hz LagNga oscillators at BPM=60 for ~1 hit/second.
+*   **UML Cell Count Fix**: Standalone `~`/`^` operators now create ContinuityDot tokens at current gridIndex, fixing inter-instrument desync.
+*   **Instrument Classification**: Added `isMembraneophone()` / `isIdiophone()` for track routing instead of flat percussion flag.
+*   **Mixer Weight Fix**: `setInstrumentWeight()` now properly updates `TrackInstrument::instrumentWeight` in mixer track registry.
+*   **Amplitude Glide Rename**: `velocityGlide` → `amplitudeGlide` (correct naming for amplitude parameter).
+*   **Base Frequency API**: Exposed `sequence_get_basefreq` / `sequence_set_basefreq` in Dart FFI.
+*   **Dead Code Removal**: Removed unused `mAssignedWeight` from FaustInstrument.
+*   **Dartdoc Coverage**: Added documentation comments to all public constructors, methods, and getters.
+
 ## 0.3.0
 
 *   **Bansuri Breath Attack**: Added post-waveguide pink noise burst with rising-edge detection and 80ms decaying envelope for realistic breath attacks at note start.
