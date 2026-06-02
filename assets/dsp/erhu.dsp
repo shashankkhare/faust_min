@@ -1,3 +1,4 @@
+declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 import("stdfaust.lib");
 
 freq = hslider("freq", 440, 80, 1400, 0.1) : si.smoo;

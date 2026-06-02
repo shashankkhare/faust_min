@@ -1,3 +1,4 @@
+declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 import("stdfaust.lib");
 
 // --- Punjabi Dhol (Bhangra Drum) Physical Model (Multiphonic/Dual-Freq) ---

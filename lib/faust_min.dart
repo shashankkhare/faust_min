@@ -1,3 +1,25 @@
+/*
+ * Copyright (c) 2026 Shashank Khare
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:typed_data';
@@ -46,8 +68,8 @@ typedef _dart_mixer_set_gain = void Function(Pointer<NativeMixerOpaque> mixer, d
 typedef _c_mixer_set_inst_weight = Void Function(Pointer<NativeMixerOpaque> mixer, Pointer<NativeInstrumentOpaque> inst, Float weight);
 typedef _dart_mixer_set_inst_weight = void Function(Pointer<NativeMixerOpaque> mixer, Pointer<NativeInstrumentOpaque> inst, double weight);
 
-typedef _c_mixer_register_inst = Void Function(Pointer<NativeMixerOpaque> mixer, Pointer<NativeInstrumentOpaque> inst, Float weight);
-typedef _dart_mixer_register_inst = void Function(Pointer<NativeMixerOpaque> mixer, Pointer<NativeInstrumentOpaque> inst, double weight);
+typedef _c_mixer_register_inst = Int32 Function(Pointer<NativeMixerOpaque> mixer, Pointer<NativeInstrumentOpaque> inst, Float weight);
+typedef _dart_mixer_register_inst = int Function(Pointer<NativeMixerOpaque> mixer, Pointer<NativeInstrumentOpaque> inst, double weight);
 
 typedef _c_mixer_unregister_inst = Void Function(Pointer<NativeMixerOpaque> mixer, Pointer<NativeInstrumentOpaque> inst);
 typedef _dart_mixer_unregister_inst = void Function(Pointer<NativeMixerOpaque> mixer, Pointer<NativeInstrumentOpaque> inst);
@@ -66,8 +88,20 @@ typedef _dart_sequence_get_bpm = double Function(Pointer<NativeSequenceOpaque>);
 typedef _c_sequence_get_grid = Int32 Function(Pointer<NativeSequenceOpaque>);
 typedef _dart_sequence_get_grid = int Function(Pointer<NativeSequenceOpaque>);
 
+typedef _c_sequence_get_basefreq = Double Function(Pointer<NativeSequenceOpaque>);
+typedef _dart_sequence_get_basefreq = double Function(Pointer<NativeSequenceOpaque>);
+
+typedef _c_sequence_set_basefreq = Void Function(Pointer<NativeSequenceOpaque>, Double);
+typedef _dart_sequence_set_basefreq = void Function(Pointer<NativeSequenceOpaque>, double);
+
 typedef _c_sequence_get_instrument = Pointer<NativeInstrumentOpaque> Function(Pointer<NativeSequenceOpaque>);
 typedef _dart_sequence_get_instrument = Pointer<NativeInstrumentOpaque> Function(Pointer<NativeSequenceOpaque>);
+
+typedef _c_inst_create = Pointer<NativeInstrumentOpaque> Function(Int32, Int32, Float);
+typedef _dart_inst_create = Pointer<NativeInstrumentOpaque> Function(int, int, double);
+
+typedef _c_inst_destroy = Void Function(Pointer<NativeInstrumentOpaque>);
+typedef _dart_inst_destroy = void Function(Pointer<NativeInstrumentOpaque>);
 
 typedef _c_inst_set_param = Void Function(Pointer<NativeInstrumentOpaque>, Pointer<Utf8>, Float);
 typedef _dart_inst_set_param = void Function(Pointer<NativeInstrumentOpaque>, Pointer<Utf8>, double);
@@ -78,14 +112,11 @@ typedef _dart_inst_note_on = void Function(Pointer<NativeInstrumentOpaque>, doub
 typedef _c_inst_note_off = Void Function(Pointer<NativeInstrumentOpaque>);
 typedef _dart_inst_note_off = void Function(Pointer<NativeInstrumentOpaque>);
 
-typedef _c_inst_set_weight = Void Function(Pointer<NativeInstrumentOpaque>, Float);
-typedef _dart_inst_set_weight = void Function(Pointer<NativeInstrumentOpaque>, double);
-
-typedef _c_inst_get_weight = Float Function(Pointer<NativeInstrumentOpaque>);
-typedef _dart_inst_get_weight = double Function(Pointer<NativeInstrumentOpaque>);
-
 typedef _c_inst_render = Void Function(Pointer<NativeInstrumentOpaque>, Pointer<Float>, Int32);
 typedef _dart_inst_render = void Function(Pointer<NativeInstrumentOpaque>, Pointer<Float>, int);
+
+typedef _c_inst_get_sample_rate = Float Function(Pointer<NativeInstrumentOpaque>);
+typedef _dart_inst_get_sample_rate = double Function(Pointer<NativeInstrumentOpaque>);
 
 typedef _c_orch_create = Pointer<NativeOrchestratorOpaque> Function();
 typedef _dart_orch_create = Pointer<NativeOrchestratorOpaque> Function();
@@ -144,18 +175,41 @@ typedef _dart_orch_poll_finished = Pointer<Utf8> Function(Pointer<NativeOrchestr
 /// {@end-tool}
 class FaustInstrument {
   final Pointer<NativeInstrumentOpaque> _handle;
+  final bool _owned;
   bool _isDisposed = false;
 
+  static late final _funcCreate = _dylib.lookupFunction<_c_inst_create, _dart_inst_create>('instrument_create');
+  static late final _funcDestroy = _dylib.lookupFunction<_c_inst_destroy, _dart_inst_destroy>('instrument_destroy');
   static late final _funcSetParam = _dylib.lookupFunction<_c_inst_set_param, _dart_inst_set_param>('instrument_set_parameter');
   static late final _funcNoteOn = _dylib.lookupFunction<_c_inst_note_on, _dart_inst_note_on>('instrument_note_on');
   static late final _funcNoteOff = _dylib.lookupFunction<_c_inst_note_off, _dart_inst_note_off>('instrument_note_off');
-  static late final _funcSetWeight = _dylib.lookupFunction<_c_inst_set_weight, _dart_inst_set_weight>('instrument_set_weight');
-  static late final _funcGetWeight = _dylib.lookupFunction<_c_inst_get_weight, _dart_inst_get_weight>('instrument_get_weight');
   static late final _funcRender = _dylib.lookupFunction<_c_inst_render, _dart_inst_render>('instrument_render');
+  static late final _funcGetSampleRate = _dylib.lookupFunction<_c_inst_get_sample_rate, _dart_inst_get_sample_rate>('instrument_get_sample_rate');
 
-  FaustInstrument(this._handle);
+  /// Wraps an existing native instrument pointer.
+  ///
+  /// [handle] must be a valid pointer from the native layer.
+  /// When [_owned] is true the pointer is freed on [dispose].
+  FaustInstrument(this._handle, [this._owned = false]);
+
+  /// Creates a [FaustInstrument] from an existing native pointer (not owned).
+  ///
+  /// The caller retains ownership — [dispose] will NOT free the native handle.
   factory FaustInstrument.fromNative(Pointer<NativeInstrumentOpaque> handle) => FaustInstrument(handle);
 
+  /// Create a new instrument instance by ID.
+  ///
+  /// [instrumentID] is the instrument type (0-48).
+  /// [execType] is 0 for StaticCompiled, 1 for InterpretedByte.
+  factory FaustInstrument.create(int instrumentID, int execType, double sampleRate) {
+    final handle = _funcCreate(instrumentID, execType, sampleRate);
+    return FaustInstrument(handle, true);
+  }
+
+  /// Set a named parameter on the native DSP instrument.
+  ///
+  /// Common parameters: `freq`, `velocity`, `strike`, `gain`, `vibrato_rate`,
+  /// `vibrato_depth`, `mallet_softness`, etc.
   void setParameter(String name, double value) {
     if (_isDisposed || _handle == nullptr) return;
     final namePtr = name.toNativeUtf8();
@@ -166,23 +220,28 @@ class FaustInstrument {
     }
   }
 
+  /// Trigger a note-on event.
+  ///
+  /// [freq] — frequency in Hz (-1 uses the DSP default).
+  /// [velocity] — amplitude 0.0–1.0 (-1 uses the DSP default).
+  /// [strike] — percussion articulation index (-1 uses the DSP default).
   void noteOn({double freq = -1.0, double velocity = -1.0, double strike = -1.0}) {
     if (_isDisposed || _handle == nullptr) return;
     _funcNoteOn(_handle, freq, velocity, strike);
   }
 
+  /// Release the current note (note-off).
   void noteOff() {
     if (_isDisposed) return;
     _funcNoteOff(_handle);
   }
 
-  void setWeight(double weight) {
-    if (_isDisposed) return;
-    _funcSetWeight(_handle, weight);
-  }
+  /// The sample rate this instrument was created with.
+  double get sampleRate => _isDisposed ? 0.0 : _funcGetSampleRate(_handle);
 
-  double get weight => _isDisposed ? 0.0 : _funcGetWeight(_handle);
-
+  /// Render the next block of audio samples into [buffer].
+  ///
+  /// [buffer] must be a pre-allocated [Float32List] of the desired frame count.
   void render(Float32List buffer) {
     if (_isDisposed || _handle == nullptr) return;
     final ptr = malloc<Float>(buffer.length);
@@ -196,9 +255,14 @@ class FaustInstrument {
   }
 
   void dispose() {
+    if (_isDisposed) return;
     _isDisposed = true;
+    if (_owned && _handle != nullptr) {
+      _funcDestroy(_handle);
+    }
   }
 
+  /// The native FFI pointer backing this instrument.
   Pointer<NativeInstrumentOpaque> get nativePointer => _handle;
 }
 
@@ -217,6 +281,11 @@ class UMLSequence {
   static late final _funcCreate = _dylib.lookupFunction<_c_sequence_create, _dart_sequence_create>('sequence_create');
   static late final _funcDestroy = _dylib.lookupFunction<_c_sequence_destroy, _dart_sequence_destroy>('sequence_destroy');
 
+  /// Parse a UML notation string into a native sequence timeline.
+  ///
+  /// [name] — unique identifier for the sequence.
+  /// [instrumentID] — target instrument (0–48).
+  /// [umlDataString] — the UML notation text.
   UMLSequence(String name, int instrumentID, String umlDataString) {
     final namePtr = name.toNativeUtf8();
     final dataPtr = umlDataString.toNativeUtf8();
@@ -231,16 +300,26 @@ class UMLSequence {
   static late final _funcGetBpm = _dylib.lookupFunction<_c_sequence_get_bpm, _dart_sequence_get_bpm>('sequence_get_bpm');
   static late final _funcGetGrid = _dylib.lookupFunction<_c_sequence_get_grid, _dart_sequence_get_grid>('sequence_get_grid');
   static late final _funcGetInst = _dylib.lookupFunction<_c_sequence_get_instrument, _dart_sequence_get_instrument>('sequence_get_instrument');
+  static late final _funcGetBasefreq = _dylib.lookupFunction<_c_sequence_get_basefreq, _dart_sequence_get_basefreq>('sequence_get_basefreq');
+  static late final _funcSetBasefreq = _dylib.lookupFunction<_c_sequence_set_basefreq, _dart_sequence_set_basefreq>('sequence_set_basefreq');
 
+  /// The parsed BPM (beats per minute). Defaults to 120.0.
   double get bpm => _isDisposed ? 120.0 : _funcGetBpm(_handle);
+  /// The grid subdivision (cells per beat). Defaults to 4.
   int get grid => _isDisposed ? 4 : _funcGetGrid(_handle);
+  /// The base frequency (fundamental pitch anchor) in Hz.
+  double get basefreq => _isDisposed ? 261.63 : _funcGetBasefreq(_handle);
+  /// Set the base frequency. Affects all note frequencies computed relative to this anchor.
+  set basefreq(double freq) { if (!_isDisposed) _funcSetBasefreq(_handle, freq); }
 
+  /// Get the [FaustInstrument] this sequence was created for.
   FaustInstrument getFaustInstrument() {
     if (_isDisposed) throw StateError("UMLSequence is disposed");
     final instHandle = _funcGetInst(_handle);
     return FaustInstrument.fromNative(instHandle);
   }
 
+  /// Free the native sequence and its event timeline.
   void dispose() {
     if (!_isDisposed && _handle != nullptr) {
       _funcDestroy(_handle);
@@ -248,6 +327,7 @@ class UMLSequence {
     }
   }
 
+  /// The native FFI pointer backing this sequence.
   Pointer<NativeSequenceOpaque> get nativePointer => _handle;
 }
 
@@ -276,10 +356,12 @@ class SequenceOrchestrator {
   static late final _funcSetParam = _dylib.lookupFunction<_c_orch_set_param, _dart_orch_set_param>('orchestrator_set_parameter');
 
   static late final _funcPollFinished = _dylib.lookupFunction<_c_orch_poll_finished, _dart_orch_poll_finished>('orchestrator_poll_finished');
+  /// Create an orchestrator instance. Call [dispose] when done.
   SequenceOrchestrator() {
     _handle = _funcCreate();
   }
 
+  /// Register a parsed [UMLSequence] by name for playback.
   void addSequence(String name, UMLSequence sequence) {
     if (_isDisposed) return;
     final namePtr = name.toNativeUtf8();
@@ -290,6 +372,7 @@ class SequenceOrchestrator {
     }
   }
 
+  /// Start playback of a registered sequence.
   void play(String name) {
     if (_isDisposed) return;
     final namePtr = name.toNativeUtf8();
@@ -300,10 +383,14 @@ class SequenceOrchestrator {
     }
   }
 
+  /// Stop all playback.
   void stop() => _isDisposed ? null : _funcStop(_handle);
+  /// Pause all playback (suspends the audio device).
   void pause() => _isDisposed ? null : _funcPause(_handle);
+  /// Resume from pause.
   void resume() => _isDisposed ? null : _funcResume(_handle);
 
+  /// Mute or unmute a sequence by name.
   void muteTrack(String name, {bool mute = true}) {
     if (_isDisposed) return;
     final namePtr = name.toNativeUtf8();
@@ -314,6 +401,7 @@ class SequenceOrchestrator {
     }
   }
 
+  /// Set the mixer weight (volume) for a sequence.
   void setWeight(String name, double weight) {
     if (_isDisposed) return;
     final namePtr = name.toNativeUtf8();
@@ -324,6 +412,11 @@ class SequenceOrchestrator {
     }
   }
 
+  /// Send a real-time parameter change to a sequence's instrument.
+  ///
+  /// [name] — sequence identifier.
+  /// [param] — DSP parameter name (e.g. `vibrato_rate`, `bow_pressure`).
+  /// [value] — new parameter value.
   void setParameter(String name, String param, double value) {
     if (_isDisposed) return;
     final namePtr = name.toNativeUtf8();
@@ -336,6 +429,9 @@ class SequenceOrchestrator {
     }
   }
 
+  /// Poll the orchestrator for finished sequence names.
+  ///
+  /// Returns the name of the first completed sequence, or null if none finished.
   String? pollFinished() {
     if (_isDisposed) return null;
     final ptr = _funcPollFinished(_handle);
@@ -343,6 +439,7 @@ class SequenceOrchestrator {
     return ptr.toDartString();
   }
 
+  /// Free the orchestrator and stop all playback.
   void dispose() {
     if (!_isDisposed && _handle != nullptr) {
       _funcDestroy(_handle);
@@ -350,6 +447,7 @@ class SequenceOrchestrator {
     }
   }
 
+  /// The native FFI pointer backing this orchestrator.
   Pointer<NativeOrchestratorOpaque> get nativePointer => _handle;
 }
 
@@ -364,6 +462,7 @@ class SequenceOrchestrator {
 ///
 /// Access via [FaustMixer.instance]. Must be initialized with [init] before use.
 class FaustMixer {
+  /// The global singleton mixer instance.
   static final FaustMixer instance = FaustMixer._internal();
   late final Pointer<NativeMixerOpaque> _handle;
 
@@ -402,8 +501,17 @@ class FaustMixer {
   }
 
   /// Register an instrument with the mixer.
+  ///
+  /// Throws [ArgumentError] if the instrument's sample rate does not match the mixer's.
   void registerInstrument(FaustInstrument inst, double weight) {
-    _funcRegisterInst(_handle, inst.nativePointer, weight);
+    final result = _funcRegisterInst(_handle, inst.nativePointer, weight);
+    if (result == 0) {
+      throw ArgumentError(
+        'Sample rate mismatch: mixer SR=${sampleRate.toStringAsFixed(0)}, '
+        'instrument SR=${inst.sampleRate.toStringAsFixed(0)}. '
+        'Create the instrument with the mixer\'s sample rate.'
+      );
+    }
   }
 
   /// Unregister an instrument from the mixer.

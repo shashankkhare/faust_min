@@ -89,7 +89,7 @@
 FaustInstrument::FaustInstrument(int instrumentID, DSPExecutionType execType,
                                  float sampleRate, float gain, float freq, float velocity, float amplitude) 
     : mInstrumentID(instrumentID), mExecType(execType), mSampleRate(sampleRate), mGain(gain),
-      mFrequency(freq), mVelocity(velocity), mAmplitude(amplitude), mDuration(-1.0f), mAssignedWeight(1.0f), mReverbSend(0.0f), mGateOpen(false),
+      mFrequency(freq), mVelocity(velocity), mAmplitude(amplitude), mDuration(-1.0f), mReverbSend(0.0f), mGateOpen(false),
       mTargetFrames(0), mElapsedFrames(0), mDecayFramesTarget(0), mDecayElapsedFrames(0),
       mVelGlideActive(false), mVelGlideStart(velocity), mVelGlideTarget(velocity), mVelGlideFramesTotal(0), mVelGlideFramesElapsed(0),
       mFreqGlideActive(false), mFreqGlideStart(freq), mFreqGlideTarget(freq), mFreqGlideFramesTotal(0), mFreqGlideFramesElapsed(0),
@@ -509,14 +509,14 @@ float FaustInstrument::getSampleRate() const { return mSampleRate; }
 void FaustInstrument::setReverbSend(float send) { mReverbSend = send; }
 DSPExecutionType FaustInstrument::getExecutionType() const { return mExecType; }
 
-void FaustInstrument::velocityGlide(float targetVelocity, float durationSeconds) {
+void FaustInstrument::amplitudeGlide(float targetAmplitude, float durationSeconds) {
     mVelGlideStart = mVelocity;
-    mVelGlideTarget = targetVelocity;
+    mVelGlideTarget = targetAmplitude;
     mVelGlideFramesTotal = static_cast<long>(durationSeconds * mSampleRate);
     mVelGlideFramesElapsed = 0;
     mVelGlideActive = (mVelGlideFramesTotal > 0);
     if (!mVelGlideActive) {
-        setVelocity(targetVelocity);
+        setVelocity(targetAmplitude);
     }
 }
 
@@ -548,9 +548,6 @@ void FaustInstrument::gainGlide(float targetGain, float durationSeconds) {
         if (!mLUTActive) setParamImmediate("gain", targetGain, -1);
     }
 }
-
-void FaustInstrument::setAssignedWeight(float weight) { mAssignedWeight = weight; }
-float FaustInstrument::getAssignedWeight() const { return mAssignedWeight; }
 
 void FaustInstrument::noteOn(float freq, float vel, float strikeVal, float amp) {
     std::lock_guard<std::recursive_mutex> lock(mDSPLock);

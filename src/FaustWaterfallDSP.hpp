@@ -1,4 +1,5 @@
 /* ------------------------------------------------------------
+copyright: "Copyright (c) 2026 Shashank Khare, MIT License"
 name: "waterfall"
 Code generated with Faust 2.37.3 (https://faust.grame.fr)
 Compilation options: -lang cpp -es 1 -single -ftz 1
@@ -128,6 +129,7 @@ class FaustWaterfallDSP : public dsp {
 		m->declare("basics.lib/name", "Faust Basic Element Library");
 		m->declare("basics.lib/version", "0.2");
 		m->declare("compile_options", "-lang cpp -es 1 -single -ftz 1");
+		m->declare("copyright", "Copyright (c) 2026 Shashank Khare, MIT License");
 		m->declare("filename", "waterfall.dsp");
 		m->declare("filters.lib/dcblocker:author", "Julius O. Smith III");
 		m->declare("filters.lib/dcblocker:copyright", "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>");

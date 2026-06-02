@@ -1,4 +1,5 @@
 /* ------------------------------------------------------------
+copyright: "Copyright (c) 2026 Shashank Khare, MIT License"
 name: "shaker"
 Code generated with Faust 2.37.3 (https://faust.grame.fr)
 Compilation options: -lang cpp -es 1 -single -ftz 1
@@ -66,6 +67,7 @@ class FaustShakerDSP : public dsp {
 	
 	void metadata(Meta* m) { 
 		m->declare("compile_options", "-lang cpp -es 1 -single -ftz 1");
+		m->declare("copyright", "Copyright (c) 2026 Shashank Khare, MIT License");
 		m->declare("envelopes.lib/ar:author", "Yann Orlarey, Stéphane Letz");
 		m->declare("envelopes.lib/author", "GRAME");
 		m->declare("envelopes.lib/copyright", "GRAME");

@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------
-author: "Romain Michon"
-copyright: "Romain Michon (rmichon@ccrma.stanford.edu)"
+author: "Shashank Khare"
+copyright: "Copyright (c) 2026 Shashank Khare, MIT License"
 name: "tibetanBowl"
 version: "1.0"
 Code generated with Faust 2.37.3 (https://faust.grame.fr)
@@ -195,14 +195,14 @@ class FaustBowlDSP : public dsp {
  public:
 	
 	void metadata(Meta* m) { 
-		m->declare("author", "Romain Michon");
+		m->declare("author", "Shashank Khare");
 		m->declare("basics.lib/name", "Faust Basic Element Library");
 		m->declare("basics.lib/version", "0.2");
 		m->declare("compile_options", "-lang cpp -es 1 -single -ftz 1");
-		m->declare("copyright", "Romain Michon (rmichon@ccrma.stanford.edu)");
+		m->declare("copyright", "Copyright (c) 2026 Shashank Khare, MIT License");
 		m->declare("delays.lib/name", "Faust Delay Library");
 		m->declare("delays.lib/version", "0.1");
-		m->declare("description", "Banded Waveguide Modeld Tibetan Bowl");
+		m->declare("description", "Banded Waveguide Tibetan Bowl");
 		m->declare("envelopes.lib/adsr:author", "Yann Orlarey and Andrey Bundin");
 		m->declare("envelopes.lib/author", "GRAME");
 		m->declare("envelopes.lib/copyright", "GRAME");
@@ -221,7 +221,7 @@ class FaustBowlDSP : public dsp {
 		m->declare("instruments.lib/licence", "STK-4.3");
 		m->declare("instruments.lib/name", "Faust-STK Tools Library");
 		m->declare("instruments.lib/version", "1.0");
-		m->declare("licence", "STK-4.3");
+		m->declare("licence", "MIT");
 		m->declare("maths.lib/author", "GRAME");
 		m->declare("maths.lib/copyright", "GRAME");
 		m->declare("maths.lib/license", "LGPL with exception");
@@ -526,14 +526,14 @@ class FaustBowlDSP : public dsp {
 		ui_interface->openHorizontalBox("Physical_and_Nonlinearity");
 		ui_interface->openVerticalBox("Nonlinear_Filter_Parameters");
 		ui_interface->declare(&fHslider7, "3", "");
-		ui_interface->declare(&fHslider7, "tooltip", "Frequency of the sine wave for the modulation of theta (works if Modulation Type=3)");
+		ui_interface->declare(&fHslider7, "tooltip", "Sine modulation frequency (works if Modulation Type=3)");
 		ui_interface->declare(&fHslider7, "unit", "Hz");
 		ui_interface->addHorizontalSlider("Modulation_Frequency", &fHslider7, FAUSTFLOAT(220.0f), FAUSTFLOAT(20.0f), FAUSTFLOAT(1000.0f), FAUSTFLOAT(0.100000001f));
 		ui_interface->declare(&fEntry1, "3", "");
-		ui_interface->declare(&fEntry1, "tooltip", "0=theta is modulated by the incoming signal; 1=theta is modulated by the averaged incoming signal; 2=theta is modulated by the squared incoming signal; 3=theta is modulated by a sine wave of frequency freqMod; 4=theta is modulated by a sine wave of frequency freq;");
+		ui_interface->declare(&fEntry1, "tooltip", "0=theta modulated by signal; 1=averaged signal; 2=squared signal; 3=sine freqMod; 4=sine freq");
 		ui_interface->addNumEntry("Modulation_Type", &fEntry1, FAUSTFLOAT(0.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(4.0f), FAUSTFLOAT(1.0f));
 		ui_interface->declare(&fHslider6, "3", "");
-		ui_interface->declare(&fHslider6, "tooltip", "Nonlinearity factor (value between 0 and 1)");
+		ui_interface->declare(&fHslider6, "tooltip", "Nonlinearity factor (0 to 1)");
 		ui_interface->addHorizontalSlider("Nonlinearity", &fHslider6, FAUSTFLOAT(0.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->closeBox();
 		ui_interface->openVerticalBox("Physical_Parameters");

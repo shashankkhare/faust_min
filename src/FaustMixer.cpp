@@ -294,6 +294,19 @@ void FaustMixer::removeInstrumentFromTrack(int trackID, FaustInstrument* inst) {
     }
 }
 
+void FaustMixer::setInstrumentWeight(FaustInstrument* inst, float weight) {
+    if (!inst) return;
+    std::lock_guard<std::mutex> lock(mRegistryMutex);
+    for (auto& [id, track] : mTracks) {
+        for (auto& ti : track.instruments) {
+            if (ti.instrument == inst) {
+                ti.instrumentWeight = weight;
+            }
+        }
+    }
+    recalculateWeights();
+}
+
 void FaustMixer::fadeInTrack(int trackID, float durationSeconds) {
     std::lock_guard<std::mutex> lock(mRegistryMutex);
     if (mTracks.count(trackID)) {

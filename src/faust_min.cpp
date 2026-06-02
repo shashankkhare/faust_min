@@ -143,12 +143,19 @@ DART_EXPORT void mixer_set_master_gain(FaustMixer* mixer, float gain) {
 }
 
 DART_EXPORT void mixer_set_instrument_weight(FaustMixer* mixer, FaustInstrument* inst, float weight) {
-    if (inst) inst->setAssignedWeight(weight);
+    if (mixer && inst) mixer->setInstrumentWeight(inst, weight);
 }
 
-DART_EXPORT void mixer_register_instrument(FaustMixer* mixer, FaustInstrument* inst, float weight) {
+DART_EXPORT int mixer_register_instrument(FaustMixer* mixer, FaustInstrument* inst, float weight) {
+    if (!mixer || !inst) return 0;
+    if (fabsf(mixer->getSampleRate() - inst->getSampleRate()) > 0.5f) {
+        fprintf(stderr, "[FaustMixer] ERROR: Sample rate mismatch — mixer SR=%.0f, instrument SR=%.0f. Rejecting registration.\n",
+                mixer->getSampleRate(), inst->getSampleRate());
+        return 0;
+    }
     int trackID = mixer->addTrack(weight);
     mixer->addInstrumentToTrack(trackID, inst);
+    return 1;
 }
 
 DART_EXPORT void mixer_unregister_instrument(FaustMixer* mixer, FaustInstrument* inst) {
@@ -175,6 +182,14 @@ DART_EXPORT int sequence_get_grid(UMLSequence* seq) {
     return seq ? seq->grid : 4;
 }
 
+DART_EXPORT double sequence_get_basefreq(UMLSequence* seq) {
+    return seq ? seq->baseFreq : 261.63;
+}
+
+DART_EXPORT void sequence_set_basefreq(UMLSequence* seq, double freq) {
+    if (seq) seq->baseFreq = freq;
+}
+
 DART_EXPORT FaustInstrument* sequence_get_instrument(UMLSequence* seq) {
     return seq ? seq->getFaustInstrument() : nullptr;
 }
@@ -183,14 +198,6 @@ DART_EXPORT FaustInstrument* sequence_get_instrument(UMLSequence* seq) {
 
 DART_EXPORT void instrument_set_parameter(FaustInstrument* inst, const char* name, float value) {
     if (inst && name) inst->setParameter(name, value);
-}
-
-DART_EXPORT void instrument_set_weight(FaustInstrument* inst, float weight) {
-    if (inst) inst->setAssignedWeight(weight);
-}
-
-DART_EXPORT float instrument_get_weight(FaustInstrument* inst) {
-    return inst ? inst->getAssignedWeight() : 0.0f;
 }
 
 DART_EXPORT void instrument_note_on(FaustInstrument* inst, float freq, float velocity, float strike) {
@@ -203,6 +210,14 @@ DART_EXPORT void instrument_note_off(FaustInstrument* inst) {
 
 DART_EXPORT void instrument_render(FaustInstrument* inst, float* buffer, int numFrames) {
     if (inst && buffer) inst->render(numFrames, buffer);
+}
+
+DART_EXPORT FaustInstrument* instrument_create(int instrumentID, int execType, float sampleRate) {
+    return new FaustInstrument(instrumentID, static_cast<DSPExecutionType>(execType), sampleRate);
+}
+
+DART_EXPORT void instrument_destroy(FaustInstrument* inst) {
+    delete inst;
 }
 
 // --- Manual Factory Endpoints (Optional bypass for specialized UI) ---

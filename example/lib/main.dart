@@ -1,26 +1,36 @@
+/*
+ * Copyright (c) 2026 Shashank Khare
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:typed_data';
-import 'dart:ffi' hide Size;
-import 'package:ffi/ffi.dart';
 import 'package:faust_min/faust_min.dart';
-import 'package:faust_min/umpl_parser.dart';
+import 'package:flutter_soloud/flutter_soloud.dart';
 
-import 'ui/common.dart';
-import 'ui/flute_panel.dart';
-import 'ui/dayan_panel.dart';
-import 'ui/bayan_panel.dart';
-import 'ui/sitar_panel.dart';
-import 'ui/tanpura_panel.dart';
-import 'ui/piano_panel.dart';
-import 'ui/sax_panel.dart';
-import 'ui/bell_panel.dart';
-import 'ui/bowl_panel.dart';
-import 'ui/drum_panel.dart';
+import 'ui/generic_instrument_panel.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Removed SoLoud initialization to prevent ALSA soundcard lock contention
+  await SoLoud.instance.init();
   runApp(const MyApp());
 }
 
@@ -47,39 +57,40 @@ class FaustInstrumentsHome extends StatefulWidget {
 class _FaustInstrumentsHomeState extends State<FaustInstrumentsHome> {
   String _status = "Ready";
   bool _isPlayingPattern = false;
-  String _activeView = "Flute";
-  
+  String? _selectedCategory;
+  InstrumentDef? _activeInstrument;
+
   @override
   void initState() {
     super.initState();
-    // Auto-trigger solo Tanpura Drone for physics verification
+    _activeInstrument = allInstruments[0];
     Future.delayed(const Duration(seconds: 1), () {
       _playPattern("Tanpura Drone");
     });
   }
 
-  final List<String> _instruments = [
-    "Flute", "Dayan", "Bayan", "Sitar", "Tanpura", 
-    "Piano", "Sax", "Bell", "Bowl",
-    "Kick", "Snare", "Tom", "HiHat", "Ride"
-  ];
-  
   final List<String> _patterns = ["Tanpura Drone", "Varanasi Dawn", "Dayan Strokes", "Bayan Strokes", "22 Shrutis Test"];
 
   SequenceOrchestrator? _orchestratorSession;
   final List<UMLSequence> _activeSequences = [];
 
+  List<String> get _categories => allInstruments.map((i) => i.category).toSet().toList()..sort();
+
+  List<InstrumentDef> get _filteredInstruments {
+    if (_selectedCategory == null) return allInstruments;
+    return allInstruments.where((i) => i.category == _selectedCategory).toList();
+  }
+
   Future<void> _playPattern(String genre) async {
-    setState(() { 
-      _isPlayingPattern = true; 
-      _status = "Streaming $genre..."; 
+    setState(() {
+      _isPlayingPattern = true;
+      _status = "Streaming $genre...";
     });
-    
+
     try {
-      _stopAll(); 
+      _stopAll();
       _orchestratorSession = SequenceOrchestrator();
-      _orchestratorSession!.setAssetBasePath("../assets");
-      
+
       if (genre == "Tanpura Drone") {
         final String uml = """
 notation: Indian
@@ -98,12 +109,12 @@ basefreq: 130.81
         inst.setParameter("decay", 8.0);
       } else if (genre == "22 Shrutis Test") {
         final List<String> shrutis = [
-          "Sa", "r1", "r2", "R1", "R2", "g1", "g2", "G1", "G2", "M1", "M2", 
+          "Sa", "r1", "r2", "R1", "R2", "g1", "g2", "G1", "G2", "M1", "M2",
           "m1", "m2", "Pa", "d1", "d2", "D1", "D2", "n1", "n2", "N1", "N2"
         ];
         String notes = "";
         for (String s in shrutis) notes += "9$s.. ";
-        
+
         final String uml = "notation: Indian\ninstrument: FL\nbpm: 120\ngrid: 4\nbasefreq: 200.0\n\n$notes";
         final seq = UMLSequence("shruti_test", 10, uml);
         _activeSequences.add(seq);
@@ -112,10 +123,10 @@ basefreq: 130.81
       } else if (genre == "Varanasi Dawn") {
         final List<String> umplTracks = [
           'baseFreq: 261.63\nbpm: 100\ninstrument: DA\n9Sa.......9(Pa/2).......9Sa.......9(Pa/2).......\n9Sa...9Sa...9Sa.9Sa...9Sa...9Sa.9Sa...',
-          'baseFreq: 130.81\nbpm: 100\ninstrument: TA\n9Sa^ .S.. .S.. .S..', 
+          'baseFreq: 130.81\nbpm: 100\ninstrument: TA\n9Sa^ .S.. .S.. .S..',
           'baseFreq: 523.25\nbpm: 100\ninstrument: FL\n9Sa.9r1^9R2.9G1.9M1.9(2*Pa).....9(2*Ma)^9(2*Pa).9G2.9R1.9Sa....'
         ];
-        final List<int> instIDs = [0, 11, 10]; 
+        final List<int> instIDs = [0, 11, 10];
         for (int i = 0; i < umplTracks.length; i++) {
           final name = "vd_track_$i";
           final seq = UMLSequence(name, instIDs[i], umplTracks[i]);
@@ -149,8 +160,6 @@ basefreq: 130.81
     }
   }
 
-  Future<void> _playRealTimeTest() async => _playPattern("Real-Time");
-
   void _stopAll() {
     _orchestratorSession?.dispose();
     _orchestratorSession = null;
@@ -162,41 +171,83 @@ basefreq: 130.81
   }
 
   void _onPlayData(Uint8List wav) async {
+    final name = _activeInstrument?.name ?? 'inst';
     debugPrint("Rendered WAV audio buffer successfully: ${wav.length} bytes");
+    try {
+      final source = await SoLoud.instance.loadMem(
+        '${name}_${DateTime.now().microsecondsSinceEpoch}',
+        wav,
+      );
+      await SoLoud.instance.play(source);
+      // Let it play; don't block or dispose immediately
+    } catch (e) {
+      debugPrint("Playback error: $e");
+    }
     if (mounted) {
       setState(() {
-        _status = "Rendered ${wav.length} bytes for $_activeView";
+        _status = "Playing ${wav.length} bytes for $name";
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final categories = _categories;
+    final filtered = _filteredInstruments;
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text("UMPL UNIVERSAL STUDIO"),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(100),
+          preferredSize: const Size.fromHeight(120),
           child: Column(
             children: [
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                child: Row(
-                  children: _instruments.map((inst) => Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 5),
+              SizedBox(
+                height: 40,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: ChoiceChip(
+                        label: const Text("All", style: TextStyle(fontSize: 12)),
+                        selected: _selectedCategory == null,
+                        onSelected: (_) => setState(() => _selectedCategory = null),
+                      ),
+                    ),
+                    for (final cat in categories)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: ChoiceChip(
+                          label: Text(cat, style: const TextStyle(fontSize: 12)),
+                          selected: _selectedCategory == cat,
+                          onSelected: (_) => setState(() => _selectedCategory = cat),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              SizedBox(
+                height: 40,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                  children: filtered.map((inst) => Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 3),
                     child: ChoiceChip(
-                      label: Text(inst),
-                      selected: _activeView == inst,
-                      onSelected: (val) { if (val) setState(() => _activeView = inst); },
+                      label: Text(inst.name, style: const TextStyle(fontSize: 11)),
+                      selected: _activeInstrument?.id == inst.id,
+                      selectedColor: inst.color.withOpacity(0.4),
+                      onSelected: (_) => setState(() => _activeInstrument = inst),
                     ),
                   )).toList(),
                 ),
               ),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                 child: Row(
                   children: _patterns.map((pt) => Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 5),
@@ -214,10 +265,10 @@ basefreq: 130.81
                   )
                 ],
               ),
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
-      ),
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -234,32 +285,14 @@ basefreq: 130.81
             ),
             Expanded(
               child: Center(
-                child: _buildActiveView(),
+                child: _activeInstrument != null
+                  ? GenericInstrumentPanel(def: _activeInstrument!, onPlay: _onPlayData)
+                  : const Text("Select an instrument"),
               ),
             ),
           ],
         ),
       ),
     );
-  }
-
-  Widget _buildActiveView() {
-    switch (_activeView) {
-      case "Flute": return FlutePanel(onPlay: _onPlayData);
-      case "Dayan": return DayanPanel(onPlay: _onPlayData);
-      case "Bayan": return BayanPanel(onPlay: _onPlayData);
-      case "Sitar": return SitarPanel(onPlay: _onPlayData);
-      case "Tanpura": return TanpuraPanel(onPlay: _onPlayData);
-      case "Piano": return PianoPanel(onPlay: _onPlayData);
-      case "Sax": return SaxPanel(onPlay: _onPlayData);
-      case "Bell": return BellPanel(onPlay: _onPlayData);
-      case "Bowl": return BowlPanel(onPlay: _onPlayData);
-      case "Kick": return DrumPanel(name: "Kick", inst: FaustKickInstrument(), onPlay: _onPlayData);
-      case "Snare": return DrumPanel(name: "Snare", inst: FaustSnareInstrument(), onPlay: _onPlayData);
-      case "Tom": return DrumPanel(name: "Tom", inst: FaustTomInstrument(), onPlay: _onPlayData);
-      case "HiHat": return DrumPanel(name: "HiHat", inst: FaustHiHatInstrument(), onPlay: _onPlayData);
-      case "Ride": return DrumPanel(name: "Ride", inst: FaustRideInstrument(), onPlay: _onPlayData);
-      default: return const Text("Select an instrument from the header");
-    }
   }
 }

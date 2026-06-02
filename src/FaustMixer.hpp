@@ -66,6 +66,9 @@ public:
     void addInstrumentToTrack(int trackID, FaustInstrument* inst, float instWeight = 1.0f);
     void removeInstrumentFromTrack(int trackID, FaustInstrument* inst);
 
+    // Update an instrument's weight across all tracks it belongs to.
+    void setInstrumentWeight(FaustInstrument* inst, float weight);
+
     // Explicit DJ Fader Automation API (Real-time Sweeps)
     void fadeInTrack(int trackID, float durationSeconds);
     void fadeOutTrack(int trackID, float durationSeconds);

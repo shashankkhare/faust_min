@@ -1,3 +1,4 @@
+declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 import("stdfaust.lib");
 
 // --- Dayan (Tabla High Drum) - Ported from C++ Modal Model ---

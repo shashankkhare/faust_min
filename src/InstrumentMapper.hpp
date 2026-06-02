@@ -52,6 +52,12 @@ public:
     // Determines if the given numeric patch ID belongs to an unpitched/percussion domain model
     static bool isPercussionID(int id);
 
+    // Returns true for membrane-based percussion (drums with skin heads)
+    static bool isMembraneophone(int id);
+
+    // Returns true for solid-body percussion (bells, bowls, gongs, shakers)
+    static bool isIdiophone(int id);
+
     // Retrieves the number of polyphonic voices supported by a given instrument ID
     static int getPolyphonyVoices(int id);
 

@@ -1,7 +1,8 @@
 /* ------------------------------------------------------------
+copyright: "Copyright (c) 2026 Shashank Khare, MIT License"
 name: "guzheng"
 Code generated with Faust 2.37.3 (https://faust.grame.fr)
-Compilation options: -lang cpp -es 1 -single -ftz 0
+Compilation options: -lang cpp -es 1 -single -ftz 1
 ------------------------------------------------------------ */
 
 #ifndef  __FaustGuzhengDSP_H__
@@ -14,6 +15,7 @@ Compilation options: -lang cpp -es 1 -single -ftz 0
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <float.h>
 #include <math.h>
 
 class FaustGuzhengDSPSIG0 {
@@ -105,7 +107,8 @@ class FaustGuzhengDSP : public dsp {
 	void metadata(Meta* m) { 
 		m->declare("basics.lib/name", "Faust Basic Element Library");
 		m->declare("basics.lib/version", "0.2");
-		m->declare("compile_options", "-lang cpp -es 1 -single -ftz 0");
+		m->declare("compile_options", "-lang cpp -es 1 -single -ftz 1");
+		m->declare("copyright", "Copyright (c) 2026 Shashank Khare, MIT License");
 		m->declare("delays.lib/name", "Faust Delay Library");
 		m->declare("delays.lib/version", "0.1");
 		m->declare("envelopes.lib/ar:author", "Yann Orlarey, Stéphane Letz");
@@ -253,15 +256,21 @@ class FaustGuzhengDSP : public dsp {
 		int iSlow11 = std::min<int>(16384, std::max<int>(0, (iSlow2 + 1)));
 		for (int i0 = 0; (i0 < count); i0 = (i0 + 1)) {
 			iVec0[0] = 1;
-			fRec0[0] = (fSlow0 + (fConst2 * fRec0[1]));
-			fRec2[0] = (fConst3 + (fRec2[1] - std::floor((fConst3 + fRec2[1]))));
+			float fTempFTZ0 = (fSlow0 + (fConst2 * fRec0[1]));
+			fRec0[0] = ((std::fabs(fTempFTZ0) > 1.17549435e-38f) ? fTempFTZ0 : 0.0f);
+			float fTempFTZ1 = (fConst3 + (fRec2[1] - std::floor((fConst3 + fRec2[1]))));
+			fRec2[0] = ((std::fabs(fTempFTZ1) > 1.17549435e-38f) ? fTempFTZ1 : 0.0f);
 			float fTemp0 = (100.0f * ftbl0FaustGuzhengDSPSIG0[int((65536.0f * fRec2[0]))]);
 			float fTemp1 = (fTemp0 + 200.0f);
 			float fTemp2 = std::floor(fTemp1);
-			fRec4[0] = ((0.00100000005f * fRec4[1]) + (0.999000013f * fRec3[((IOTA - 1) & 511)]));
-			fRec5[0] = (fSlow5 + (fConst2 * fRec5[1]));
-			fRec6[0] = (fSlow6 + (fConst2 * fRec6[1]));
-			fRec7[0] = (fSlow7 + (fConst2 * fRec7[1]));
+			float fTempFTZ2 = ((0.00100000005f * fRec4[1]) + (0.999000013f * fRec3[((IOTA - 1) & 511)]));
+			fRec4[0] = ((std::fabs(fTempFTZ2) > 1.17549435e-38f) ? fTempFTZ2 : 0.0f);
+			float fTempFTZ3 = (fSlow5 + (fConst2 * fRec5[1]));
+			fRec5[0] = ((std::fabs(fTempFTZ3) > 1.17549435e-38f) ? fTempFTZ3 : 0.0f);
+			float fTempFTZ4 = (fSlow6 + (fConst2 * fRec6[1]));
+			fRec6[0] = ((std::fabs(fTempFTZ4) > 1.17549435e-38f) ? fTempFTZ4 : 0.0f);
+			float fTempFTZ5 = (fSlow7 + (fConst2 * fRec7[1]));
+			fRec7[0] = ((std::fabs(fTempFTZ5) > 1.17549435e-38f) ? fTempFTZ5 : 0.0f);
 			iRec8[0] = ((1103515245 * iRec8[1]) + 12345);
 			fVec2[0] = fSlow8;
 			int iTemp3 = (fSlow8 > fVec2[1]);
@@ -270,7 +279,8 @@ class FaustGuzhengDSP : public dsp {
 			float fTemp4 = float(iRec9[0]);
 			float fTemp5 = ((fRec4[0] * fRec5[0]) + (fRec6[0] * (((1.0f - fRec7[0]) * float((1 - iVec0[1]))) + (4.65661287e-10f * ((fRec7[0] * float(iRec8[0])) * std::max<float>(0.0f, std::min<float>((fConst5 * fTemp4), ((fConst6 * (fConst4 - fTemp4)) + 1.0f))))))));
 			fVec4[(IOTA & 8191)] = fTemp5;
-			fRec3[(IOTA & 511)] = ((fSlow4 * fVec4[((IOTA - iSlow9) & 8191)]) + (fSlow10 * fVec4[((IOTA - iSlow11) & 8191)]));
+			float fTempFTZ6 = ((fSlow4 * fVec4[((IOTA - iSlow9) & 8191)]) + (fSlow10 * fVec4[((IOTA - iSlow11) & 8191)]));
+			fRec3[(IOTA & 511)] = ((std::fabs(fTempFTZ6) > 1.17549435e-38f) ? fTempFTZ6 : 0.0f);
 			int iTemp6 = int(fTemp1);
 			output0[i0] = FAUSTFLOAT(std::max<float>(-1.0f, std::min<float>(1.0f, (0.5f * (fRec0[0] * (((fTemp0 + (200.0f - fTemp2)) * fRec3[((IOTA - std::min<int>(4097, std::max<int>(0, (iTemp6 + 1)))) & 511)]) + (fRec3[((IOTA - 0) & 511)] + (fRec3[((IOTA - std::min<int>(4097, std::max<int>(0, iTemp6))) & 511)] * (fTemp2 + (-199.0f - fTemp0))))))))));
 			iVec0[1] = iVec0[0];

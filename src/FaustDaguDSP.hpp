@@ -1,7 +1,8 @@
 /* ------------------------------------------------------------
+copyright: "Copyright (c) 2026 Shashank Khare, MIT License"
 name: "dagu"
 Code generated with Faust 2.37.3 (https://faust.grame.fr)
-Compilation options: -lang cpp -es 1 -single -ftz 0
+Compilation options: -lang cpp -es 1 -single -ftz 1
 ------------------------------------------------------------ */
 
 #ifndef  __FaustDaguDSP_H__
@@ -15,6 +16,7 @@ Compilation options: -lang cpp -es 1 -single -ftz 0
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <float.h>
 #include <math.h>
 
 static float FaustDaguDSP_faustpower2_f(float value) {
@@ -62,7 +64,8 @@ class FaustDaguDSP : public dsp {
  public:
 	
 	void metadata(Meta* m) { 
-		m->declare("compile_options", "-lang cpp -es 1 -single -ftz 0");
+		m->declare("compile_options", "-lang cpp -es 1 -single -ftz 1");
+		m->declare("copyright", "Copyright (c) 2026 Shashank Khare, MIT License");
 		m->declare("envelopes.lib/ar:author", "Yann Orlarey, Stéphane Letz");
 		m->declare("envelopes.lib/author", "GRAME");
 		m->declare("envelopes.lib/copyright", "GRAME");
@@ -210,26 +213,31 @@ class FaustDaguDSP : public dsp {
 			iRec2[0] = (((iRec2[1] + (iRec2[1] > 0)) * (iTemp0 <= iVec2[1])) + (iTemp0 > iVec2[1]));
 			float fTemp1 = float(iRec2[0]);
 			float fTemp2 = (fSlow1 * (float((1 - iVec0[1])) + (2.32830644e-10f * (float(iRec1[0]) * std::max<float>(0.0f, std::min<float>((fConst2 * fTemp1), ((fConst3 * (fConst1 - fTemp1)) + 1.0f)))))));
-			fRec3[0] = (fSlow3 + (fConst6 * fRec3[1]));
+			float fTempFTZ0 = (fSlow3 + (fConst6 * fRec3[1]));
+			fRec3[0] = ((std::fabs(fTempFTZ0) > 1.17549435e-38f) ? fTempFTZ0 : 0.0f);
 			float fTemp3 = std::tan((fConst4 * fRec3[0]));
 			float fTemp4 = (1.0f / fTemp3);
 			float fTemp5 = (((fTemp4 + 0.100000001f) / fTemp3) + 1.0f);
-			fRec0[0] = (fTemp2 - (((fRec0[2] * (((fTemp4 + -0.100000001f) / fTemp3) + 1.0f)) + (2.0f * (fRec0[1] * (1.0f - (1.0f / FaustDaguDSP_faustpower2_f(fTemp3)))))) / fTemp5));
+			float fTempFTZ1 = (fTemp2 - (((fRec0[2] * (((fTemp4 + -0.100000001f) / fTemp3) + 1.0f)) + (2.0f * (fRec0[1] * (1.0f - (1.0f / FaustDaguDSP_faustpower2_f(fTemp3)))))) / fTemp5));
+			fRec0[0] = ((std::fabs(fTempFTZ1) > 1.17549435e-38f) ? fTempFTZ1 : 0.0f);
 			float fTemp6 = (fTemp3 * fTemp5);
 			float fTemp7 = std::tan((fConst7 * fRec3[0]));
 			float fTemp8 = (1.0f / fTemp7);
 			float fTemp9 = (((fTemp8 + 0.0666666701f) / fTemp7) + 1.0f);
-			fRec4[0] = (fTemp2 - (((fRec4[2] * (((fTemp8 + -0.0666666701f) / fTemp7) + 1.0f)) + (2.0f * (fRec4[1] * (1.0f - (1.0f / FaustDaguDSP_faustpower2_f(fTemp7)))))) / fTemp9));
+			float fTempFTZ2 = (fTemp2 - (((fRec4[2] * (((fTemp8 + -0.0666666701f) / fTemp7) + 1.0f)) + (2.0f * (fRec4[1] * (1.0f - (1.0f / FaustDaguDSP_faustpower2_f(fTemp7)))))) / fTemp9));
+			fRec4[0] = ((std::fabs(fTempFTZ2) > 1.17549435e-38f) ? fTempFTZ2 : 0.0f);
 			float fTemp10 = (fTemp7 * fTemp9);
 			float fTemp11 = std::tan((fConst8 * fRec3[0]));
 			float fTemp12 = (1.0f / fTemp11);
 			float fTemp13 = (((fTemp12 + 0.0833333358f) / fTemp11) + 1.0f);
-			fRec5[0] = (fTemp2 - (((fRec5[2] * (((fTemp12 + -0.0833333358f) / fTemp11) + 1.0f)) + (2.0f * (fRec5[1] * (1.0f - (1.0f / FaustDaguDSP_faustpower2_f(fTemp11)))))) / fTemp13));
+			float fTempFTZ3 = (fTemp2 - (((fRec5[2] * (((fTemp12 + -0.0833333358f) / fTemp11) + 1.0f)) + (2.0f * (fRec5[1] * (1.0f - (1.0f / FaustDaguDSP_faustpower2_f(fTemp11)))))) / fTemp13));
+			fRec5[0] = ((std::fabs(fTempFTZ3) > 1.17549435e-38f) ? fTempFTZ3 : 0.0f);
 			float fTemp14 = (fTemp11 * fTemp13);
 			float fTemp15 = std::tan((fConst9 * fRec3[0]));
 			float fTemp16 = (1.0f / fTemp15);
 			float fTemp17 = (((fTemp16 + 0.125f) / fTemp15) + 1.0f);
-			fRec6[0] = (fTemp2 - (((fRec6[2] * (((fTemp16 + -0.125f) / fTemp15) + 1.0f)) + (2.0f * (fRec6[1] * (1.0f - (1.0f / FaustDaguDSP_faustpower2_f(fTemp15)))))) / fTemp17));
+			float fTempFTZ4 = (fTemp2 - (((fRec6[2] * (((fTemp16 + -0.125f) / fTemp15) + 1.0f)) + (2.0f * (fRec6[1] * (1.0f - (1.0f / FaustDaguDSP_faustpower2_f(fTemp15)))))) / fTemp17));
+			fRec6[0] = ((std::fabs(fTempFTZ4) > 1.17549435e-38f) ? fTempFTZ4 : 0.0f);
 			float fTemp18 = (fTemp15 * fTemp17);
 			output0[i0] = FAUSTFLOAT(std::max<float>(-1.0f, std::min<float>(1.0f, (fSlow0 * float(tanhf(float((1.5f * ((fRec0[2] * (0.0f - (0.100000001f / fTemp6))) + (((fRec4[2] * (0.0f - (0.300000012f / fTemp10))) + (((fRec5[2] * (0.0f - (0.600000024f / fTemp14))) + (((fRec6[0] / fTemp18) + (fRec6[2] * (0.0f - (1.0f / fTemp18)))) + (0.600000024f * (fRec5[0] / fTemp14)))) + (0.300000012f * (fRec4[0] / fTemp10)))) + (0.100000001f * (fRec0[0] / fTemp6))))))))))));
 			iVec0[1] = iVec0[0];

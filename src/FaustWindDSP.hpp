@@ -1,7 +1,8 @@
 /* ------------------------------------------------------------
+copyright: "Copyright (c) 2026 Shashank Khare, MIT License"
 name: "wind"
 Code generated with Faust 2.37.3 (https://faust.grame.fr)
-Compilation options: -lang cpp -es 1 -single -ftz 0
+Compilation options: -lang cpp -es 1 -single -ftz 1
 ------------------------------------------------------------ */
 
 #ifndef  __FaustWindDSP_H__
@@ -14,6 +15,7 @@ Compilation options: -lang cpp -es 1 -single -ftz 0
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <float.h>
 #include <math.h>
 
 static float FaustWindDSP_faustpower2_f(float value) {
@@ -54,7 +56,8 @@ class FaustWindDSP : public dsp {
 	void metadata(Meta* m) { 
 		m->declare("basics.lib/name", "Faust Basic Element Library");
 		m->declare("basics.lib/version", "0.2");
-		m->declare("compile_options", "-lang cpp -es 1 -single -ftz 0");
+		m->declare("compile_options", "-lang cpp -es 1 -single -ftz 1");
+		m->declare("copyright", "Copyright (c) 2026 Shashank Khare, MIT License");
 		m->declare("filename", "wind.dsp");
 		m->declare("filters.lib/fir:author", "Julius O. Smith III");
 		m->declare("filters.lib/fir:copyright", "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>");
@@ -171,20 +174,25 @@ class FaustWindDSP : public dsp {
 		float fSlow0 = float(fHslider0);
 		float fSlow1 = (fConst2 * float(fButton0));
 		for (int i0 = 0; (i0 < count); i0 = (i0 + 1)) {
-			fRec0[0] = (fSlow1 + (fConst1 * fRec0[1]));
+			float fTempFTZ0 = (fSlow1 + (fConst1 * fRec0[1]));
+			fRec0[0] = ((std::fabs(fTempFTZ0) > 1.17549435e-38f) ? fTempFTZ0 : 0.0f);
 			iRec3[0] = ((1103515245 * iRec3[1]) + 12345);
-			fRec4[0] = (fConst4 + (fRec4[1] - std::floor((fConst4 + fRec4[1]))));
-			fRec5[0] = (fConst5 + (fRec5[1] - std::floor((fConst5 + fRec5[1]))));
+			float fTempFTZ1 = (fConst4 + (fRec4[1] - std::floor((fConst4 + fRec4[1]))));
+			fRec4[0] = ((std::fabs(fTempFTZ1) > 1.17549435e-38f) ? fTempFTZ1 : 0.0f);
+			float fTempFTZ2 = (fConst5 + (fRec5[1] - std::floor((fConst5 + fRec5[1]))));
+			fRec5[0] = ((std::fabs(fTempFTZ2) > 1.17549435e-38f) ? fTempFTZ2 : 0.0f);
 			float fTemp0 = (((400.0f * ((2.0f * (1.0f - std::fabs(((2.0f * fRec4[0]) + -1.0f)))) + -1.0f)) + (800.0f * ((2.0f * (1.0f - std::fabs(((2.0f * fRec5[0]) + -1.0f)))) + -1.0f))) + 1600.0f);
 			float fTemp1 = std::tan((fConst3 * fTemp0));
 			float fTemp2 = (1.0f / fTemp1);
 			float fTemp3 = (((fTemp2 + 0.5f) / fTemp1) + 1.0f);
-			fRec2[0] = ((4.65661287e-10f * float(iRec3[0])) - (((fRec2[2] * (((fTemp2 + -0.5f) / fTemp1) + 1.0f)) + (2.0f * (fRec2[1] * (1.0f - (1.0f / FaustWindDSP_faustpower2_f(fTemp1)))))) / fTemp3));
+			float fTempFTZ3 = ((4.65661287e-10f * float(iRec3[0])) - (((fRec2[2] * (((fTemp2 + -0.5f) / fTemp1) + 1.0f)) + (2.0f * (fRec2[1] * (1.0f - (1.0f / FaustWindDSP_faustpower2_f(fTemp1)))))) / fTemp3));
+			fRec2[0] = ((std::fabs(fTempFTZ3) > 1.17549435e-38f) ? fTempFTZ3 : 0.0f);
 			float fTemp4 = (fTemp1 * fTemp3);
 			float fTemp5 = std::tan((fConst6 * fTemp0));
 			float fTemp6 = (1.0f / fTemp5);
 			float fTemp7 = (((fTemp6 + 1.41421354f) / fTemp5) + 1.0f);
-			fRec1[0] = (((fRec2[0] / fTemp4) + (fRec2[2] * (0.0f - (1.0f / fTemp4)))) - (((fRec1[2] * (((fTemp6 + -1.41421354f) / fTemp5) + 1.0f)) + (2.0f * (fRec1[1] * (1.0f - (1.0f / FaustWindDSP_faustpower2_f(fTemp5)))))) / fTemp7));
+			float fTempFTZ4 = (((fRec2[0] / fTemp4) + (fRec2[2] * (0.0f - (1.0f / fTemp4)))) - (((fRec1[2] * (((fTemp6 + -1.41421354f) / fTemp5) + 1.0f)) + (2.0f * (fRec1[1] * (1.0f - (1.0f / FaustWindDSP_faustpower2_f(fTemp5)))))) / fTemp7));
+			fRec1[0] = ((std::fabs(fTempFTZ4) > 1.17549435e-38f) ? fTempFTZ4 : 0.0f);
 			output0[i0] = FAUSTFLOAT((fSlow0 * std::max<float>(-1.0f, std::min<float>(1.0f, (1.5f * ((fRec0[0] * (fRec1[2] + (fRec1[0] + (2.0f * fRec1[1])))) / fTemp7))))));
 			fRec0[1] = fRec0[0];
 			iRec3[1] = iRec3[0];

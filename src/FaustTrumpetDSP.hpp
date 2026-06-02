@@ -1,4 +1,5 @@
 /* ------------------------------------------------------------
+copyright: "Copyright (c) 2026 Shashank Khare, MIT License"
 name: "trumpet"
 Code generated with Faust 2.37.3 (https://faust.grame.fr)
 Compilation options: -lang cpp -es 1 -single -ftz 1
@@ -102,6 +103,7 @@ class FaustTrumpetDSP : public dsp {
 		m->declare("basics.lib/name", "Faust Basic Element Library");
 		m->declare("basics.lib/version", "0.2");
 		m->declare("compile_options", "-lang cpp -es 1 -single -ftz 1");
+		m->declare("copyright", "Copyright (c) 2026 Shashank Khare, MIT License");
 		m->declare("envelopes.lib/adsr:author", "Yann Orlarey and Andrey Bundin");
 		m->declare("envelopes.lib/author", "GRAME");
 		m->declare("envelopes.lib/copyright", "GRAME");

@@ -1,3 +1,4 @@
+declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 import("stdfaust.lib");
 
 freq = hslider("freq [unit:Hz]", 146.83, 40, 1000, 0.01);

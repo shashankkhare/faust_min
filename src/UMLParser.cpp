@@ -229,7 +229,7 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
     // Group 1 matches standalone dots with optional operators (\.[\^\~]*) -> ContinuityDot
     // Group 2 matches standalone underscores (_) -> StopRest
     // Group 3 matches general notes starting with optional digits/chars ending with optional operators -> NoteWithControl
-    std::regex tokenRegex(R"((\.[\^\~]*)|(\_)|([^\s\.\_]+))");
+    std::regex tokenRegex(R"((\.[\^\~]*)|(\_)|([\^\~])|([^\s\.\_]+))");
     auto words_begin = std::sregex_iterator(notesSection.begin(), notesSection.end(), tokenRegex);
     auto words_end = std::sregex_iterator();
 
@@ -250,9 +250,9 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
         } else if (match[2].matched) {
             ti.type = TokenType::StopRest;
             ti.rawStr = "_";
-        } else if (match[3].matched) {
+        } else if (match[4].matched) {
             ti.type = TokenType::NoteWithControl;
-            std::string rem = match[3].str();
+            std::string rem = match[4].str();
             ti.rawStr = rem;
 
             if (rem.find('^') != std::string::npos) {
@@ -276,6 +276,12 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
                 rem = rem.substr(1);
             }
             ti.noteName = rem;
+        } else if (match[3].matched) {
+            // Standalone operator (^ or ~ with space before/after) — still occupies a grid cell
+            ti.type = TokenType::ContinuityDot;
+            ti.rawStr = match[3].str();
+            if (match[3].str() == "~") ti.hasVibratoOp = true;
+            if (match[3].str() == "^") ti.hasGlideOp = true;
         }
         tokenItems.push_back(ti);
         currentGridIndex++;

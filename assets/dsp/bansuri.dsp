@@ -1,3 +1,4 @@
+declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 import("stdfaust.lib");
 
 fTarget = hslider("freq", 440, 50, 2000, 0.1);

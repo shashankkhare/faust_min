@@ -64,7 +64,7 @@ public:
     void setParameter(const char* name, float value);
 
     // --- Native Automation Glides ---
-    void velocityGlide(float targetVelocity, float durationSeconds);
+    void amplitudeGlide(float targetAmplitude, float durationSeconds);
     void frequencyGlide(float targetFreq, float durationSeconds);
     void gainGlide(float targetGain, float durationSeconds);
 
@@ -92,10 +92,6 @@ public:
 
     // Group routing identifier
     virtual int getID() const { return mInstrumentID; }
-
-    // Weight scaling properties
-    void setAssignedWeight(float weight);
-    float getAssignedWeight() const;
 
     // Real-time audio streaming driver execution loop
     void processRealtimeStream(float* buffer, int numFrames);
@@ -148,7 +144,6 @@ protected:
     float mVelocity;
     float mAmplitude;
     float mDuration;
-    float mAssignedWeight;
     float mReverbSend;
     bool mGateOpen;
 

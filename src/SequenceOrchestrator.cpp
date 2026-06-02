@@ -293,8 +293,21 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
                     if (inst) {
                         float durSec = static_cast<float>(ev.durationSamples) / inst->getSampleRate();
                         if (ev.targetFrequency > 0.0f) inst->frequencyGlide(ev.targetFrequency, durSec);
-                        if (ev.targetVelocity >= 0.0f) inst->velocityGlide(ev.targetVelocity, durSec);
+                        if (ev.targetVelocity >= 0.0f) inst->amplitudeGlide(ev.targetVelocity, durSec);
                         if (ev.targetAmplitude >= 0.0f) inst->gainGlide(ev.targetAmplitude, durSec);
+                    }
+                } else if (ev.type == UMLEventType::VibratoOn) {
+                    if (inst) {
+                        float vDepth = 0.03f;
+                        float vRate = 5.5f;
+                        if (seqWrapper->sequenceObj->initialParams.count("vibrato_depth")) {
+                            vDepth = seqWrapper->sequenceObj->initialParams["vibrato_depth"];
+                        }
+                        if (seqWrapper->sequenceObj->initialParams.count("vibrato_rate")) {
+                            vRate = seqWrapper->sequenceObj->initialParams["vibrato_rate"];
+                        }
+                        inst->setParam("vibrato_depth", vDepth);
+                        inst->setParam("vibrato_rate", vRate);
                     }
                 }
                 seqWrapper->nextEventIndex++;

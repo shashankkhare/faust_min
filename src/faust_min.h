@@ -1,3 +1,25 @@
+/*
+ * Copyright (c) 2026 Shashank Khare
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #ifndef FAUST_MIN_H
 #define FAUST_MIN_H
 
@@ -292,13 +314,13 @@ DART_EXPORT FaustInstrument* sequence_get_instrument(UMLSequence* seq);
 DART_EXPORT FaustInstrument* instrument_create(int instrumentID, int execType, float sampleRate);
 DART_EXPORT void instrument_destroy(FaustInstrument* inst);
 DART_EXPORT void instrument_set_parameter(FaustInstrument* inst, const char* name, float value);
-DART_EXPORT void instrument_set_weight(FaustInstrument* inst, float weight);
-DART_EXPORT float instrument_get_weight(FaustInstrument* inst);
 DART_EXPORT void instrument_note_on(FaustInstrument* inst, float freq, float velocity, float strike);
 DART_EXPORT void instrument_note_off(FaustInstrument* inst);
 DART_EXPORT void instrument_render(FaustInstrument* inst, float* buffer, int numFrames);
 DART_EXPORT double sequence_get_bpm(UMLSequence* seq);
 DART_EXPORT int sequence_get_grid(UMLSequence* seq);
+DART_EXPORT double sequence_get_basefreq(UMLSequence* seq);
+DART_EXPORT void sequence_set_basefreq(UMLSequence* seq, double freq);
 
 #ifdef __cplusplus
 }

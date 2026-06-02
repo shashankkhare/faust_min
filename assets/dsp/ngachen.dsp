@@ -1,3 +1,4 @@
+declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 import("stdfaust.lib");
 
 // --- Nga Chen (Tibetan Kettledrum — Hemispherical Pot Body, Single Head) ---
