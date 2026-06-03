@@ -734,6 +734,7 @@ int main(int argc, char* argv[]) {
             group.sequences.push_back({"Dayan", new UMLSequence("Dayan", 0, umlDayan)});
             group.sequences.push_back({"Bayan", new UMLSequence("Bayan", 1, umlBayan)});
             
+            group.backgroundTrackWeight = 0.15f;
             duration = 20;
         } else if (selection == 7) {
             group.name = "Indian Folk (Dholak Percussion)";
