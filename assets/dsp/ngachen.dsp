@@ -1,4 +1,16 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Large Tibetan ritual kettledrum (Nga Chen) with a hemispherical pot body and single head, producing a deep, sustained sacred boom.
+//
+// Parameters (Controls):
+//   - freq [unit:Hz]
+//   - gain
+//   - velocity
+//   - gate
+//   - mallet_softness
+// =============================================================================
 import("stdfaust.lib");
 
 // --- Nga Chen (Tibetan Kettledrum — Hemispherical Pot Body, Single Head) ---

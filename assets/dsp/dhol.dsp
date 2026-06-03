@@ -1,4 +1,18 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Double-sided Punjabi folk drum (Dhol) using a multiphonic dual-frequency physical model to simulate the treble and bass heads.
+//
+// Parameters (Controls):
+//   - freq [unit:Hz]
+//   - freq1 [unit:Hz]
+//   - strike
+//   - gain
+//   - velocity
+//   - gate
+//   - decay_scale
+// =============================================================================
 import("stdfaust.lib");
 
 // --- Punjabi Dhol (Bhangra Drum) Physical Model (Multiphonic/Dual-Freq) ---

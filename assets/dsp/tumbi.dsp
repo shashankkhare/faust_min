@@ -1,4 +1,18 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Single-string Punjabi folk instrument (Tumbi) modeled using plucked waveguide strings, bridge nonlinearity, and a gourd membrane resonator.
+//
+// Parameters (Controls):
+//   - freq
+//   - gate
+//   - velocity
+//   - gain
+//   - vibrato_rate
+//   - vibrato_depth
+//   - strike
+// =============================================================================
 import("stdfaust.lib");
 
 freq = hslider("freq", 329.63, 80, 2000, 0.1);

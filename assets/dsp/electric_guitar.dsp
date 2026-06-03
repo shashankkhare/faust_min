@@ -1,4 +1,19 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Plucked string waveguide model of an electric guitar combined with distortion drive and sustain modeling.
+//
+// Parameters (Controls):
+//   - freq
+//   - velocity
+//   - gate
+//   - gain
+//   - pluckPosition
+//   - mute
+//   - drive
+//   - sustain
+// =============================================================================
 import("stdfaust.lib");
 
 mypm = library("physmodels.lib") with { maxLength = 20; };

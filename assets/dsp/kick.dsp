@@ -1,4 +1,16 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Electronic/acoustic kick drum generator utilizing a fast pitch envelope sweep and sub-bass reinforcement.
+//
+// Parameters (Controls):
+//   - freq [unit:Hz]
+//   - gain
+//   - velocity
+//   - gate
+//   - sub_boost
+// =============================================================================
 import("stdfaust.lib");
 
 // --- Dedicated Kick Drum ---

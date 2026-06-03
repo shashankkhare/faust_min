@@ -1,4 +1,19 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Formant-based singing voice synthesizer utilizing glottal pulse excitation and a morphable vowel filter bank (aa, ee, ii, oo, uu).
+//
+// Parameters (Controls):
+//   - freq [unit:Hz]
+//   - gain
+//   - gate
+//   - vowel
+//   - breathiness
+//   - vibrato_rate
+//   - vibrato_depth
+//   - velocity
+// =============================================================================
 import("stdfaust.lib");
 
 // ============================================================

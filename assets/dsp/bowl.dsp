@@ -1,10 +1,26 @@
+declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 declare name "tibetanBowl";
 declare description "Banded Waveguide Tibetan Bowl";
 declare author "Shashank Khare";
-declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 declare licence "MIT";
 declare version "1.0";
 
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Banded waveguide simulation of a Tibetan singing bowl, supporting strike mallet excitation or friction bowing with nonlinear filter modulation.
+//
+// Parameters (Controls):
+//   - freq
+//   - gain
+//   - velocity
+//   - gate
+//   - strike
+//   - h:Physical_and_Nonlinearity/v:Physical_Parameters/Integration_Constant [2][tooltip:A value between 0 and 1]
+//   - h:Physical_and_Nonlinearity/v:Physical_Parameters/Base_Gain [2][tooltip:A value between 0 and 1]
+//   - h:Physical_and_Nonlinearity/v:Nonlinear_Filter_Parameters/Modulation_Type [3][tooltip:0=theta modulated by signal; 1=averaged signal; 2=squared signal; 3=sine freqMod; 4=sine freq]
+//   - h:Physical_and_Nonlinearity/v:Nonlinear_Filter_Parameters/Nonlinearity [3][tooltip:Nonlinearity factor (0 to 1)]
+//   - h:Physical_and_Nonlinearity/v:Nonlinear_Filter_Parameters/Modulation_Frequency [3][unit:Hz][tooltip:Sine modulation frequency (works if Modulation Type=3)]
+// =============================================================================
 import("instruments.lib");
 
 freq = nentry("freq",440,20,20000,1);
@@ -68,4 +84,3 @@ process =
     (bowing*((strikeVal-1)*-1) <:
     par(i,nModes,(resonance(i)~_)))~par(i,nModes,_) :> _ :
     NLFM : stereo : *(gain * 10.0), *(gain * 10.0);
-

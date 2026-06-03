@@ -1,4 +1,16 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Dedicated tom-tom drum physical model with adjustable pitch and decay times.
+//
+// Parameters (Controls):
+//   - freq [unit:Hz]
+//   - gain
+//   - velocity
+//   - gate
+//   - decay_time
+// =============================================================================
 import("stdfaust.lib");
 
 // --- Dedicated Tom Drum ---

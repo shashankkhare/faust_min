@@ -1,4 +1,16 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Physically modeled acoustic guitar simulating nylon/steel string vibration using digital waveguide loops, including string damping and plucking position controls.
+//
+// Parameters (Controls):
+//   - freq
+//   - velocity
+//   - gate
+//   - gain
+//   - pluckPosition
+// =============================================================================
 import("stdfaust.lib");
 
 mypm = library("physmodels.lib") with { maxLength = 20; };

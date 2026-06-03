@@ -1,4 +1,15 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Resonant metal Hi-Hat cymbal using high-pass filtered noise bands and closed/open strike decay times.
+//
+// Parameters (Controls):
+//   - gain
+//   - velocity
+//   - strike
+//   - gate
+// =============================================================================
 import("stdfaust.lib");
 
 // --- Dedicated HiHat Cymbal ---

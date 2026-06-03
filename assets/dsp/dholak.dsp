@@ -1,4 +1,18 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Traditional Indian folk barrel drum (Dholak) modeled with coupled dual-frequency skin resonances.
+//
+// Parameters (Controls):
+//   - freq [unit:Hz]
+//   - freq1 [unit:Hz]
+//   - strike
+//   - gain
+//   - velocity
+//   - gate
+//   - decay_scale
+// =============================================================================
 import("stdfaust.lib");
 
 // --- Indian Dholak Physical Model (Multiphonic/Dual-Freq) ---

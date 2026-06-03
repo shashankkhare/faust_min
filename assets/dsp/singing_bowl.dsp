@@ -1,4 +1,16 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Physical model of a Tibetan singing bowl struck with a mallet, emphasizing complex inharmonic modes and metal resonance.
+//
+// Parameters (Controls):
+//   - freq
+//   - velocity
+//   - strike
+//   - gate
+//   - gain
+// =============================================================================
 import("stdfaust.lib");
 
 // =====================================================

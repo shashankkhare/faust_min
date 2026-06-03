@@ -1,4 +1,17 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Simulates an acoustic grand piano using simplified multi-string waveguide resonators with adjustable brightness and stiffness.
+//
+// Parameters (Controls):
+//   - freq [unit:Hz]
+//   - gain
+//   - velocity
+//   - gate
+//   - brightness
+//   - stiffness
+// =============================================================================
 import("stdfaust.lib");
 
 // =====================================================

@@ -1,4 +1,30 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Indian drone lute (Tanpura) featuring stable, parameter-driven jawari (buzzing bridge) emulation across four strings.
+//
+// Parameters (Controls):
+//   - freq
+//   - freq1
+//   - gain
+//   - velocity
+//   - gate
+//   - sustain0
+//   - sustain1
+//   - sustain2
+//   - sustain3
+//   - jivariThreshold
+//   - jivari
+//   - excDur
+//   - excGain
+//   - excLPF
+//   - dispersion
+//   - stringGainVal0
+//   - stringGainVal1
+//   - stringGainVal2
+//   - stringGainVal3
+// =============================================================================
 import("stdfaust.lib");
 
 // =====================================================

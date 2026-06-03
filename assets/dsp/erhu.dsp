@@ -1,4 +1,20 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Chinese two-stringed bowed instrument (Erhu) physically modeled with bow pressure, velocity, noise level, and vibrato.
+//
+// Parameters (Controls):
+//   - freq
+//   - gate
+//   - gain
+//   - vibrato_rate
+//   - vibrato_depth
+//   - bowPressure
+//   - bowVelocity
+//   - bowPosition
+//   - noiseLvl
+// =============================================================================
 import("stdfaust.lib");
 
 freq = hslider("freq", 440, 80, 1400, 0.1) : si.smoo;

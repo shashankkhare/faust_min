@@ -1,4 +1,15 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Traditional large resonant church bell modeled using subtractive/modal synthesis to simulate massive metal resonance.
+//
+// Parameters (Controls):
+//   - freq
+//   - velocity
+//   - gate
+//   - gain
+// =============================================================================
 import("stdfaust.lib");
 
 freq = hslider("freq", 200, 50, 1000, 0.1); // No si.smoo on freq to avoid biquad pops on note changes

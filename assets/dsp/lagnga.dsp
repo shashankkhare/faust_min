@@ -1,4 +1,16 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Coupled two-sided Tibetan barrel drum (Lag Nga) physically modeled using symmetric and antisymmetric membrane modes coupled through a wooden barrel resonator.
+//
+// Parameters (Controls):
+//   - freq [unit:Hz]
+//   - gain
+//   - velocity
+//   - gate
+//   - mallet_softness
+// =============================================================================
 import("stdfaust.lib");
 
 // =======================================================================================

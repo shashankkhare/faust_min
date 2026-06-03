@@ -1,4 +1,17 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Chinese zither (Guzheng) modeled using plucked waveguide strings, string damping, and pluck noise with optional rapid plucking (lunzhi) emulation.
+//
+// Parameters (Controls):
+//   - freq
+//   - gate
+//   - velocity
+//   - gain
+//   - damping
+//   - pluck_noise
+// =============================================================================
 import("stdfaust.lib");
 
 freq = hslider("freq", 440, 40, 2000, 0.01);

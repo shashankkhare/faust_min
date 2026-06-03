@@ -1,4 +1,19 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Standard acoustic violin physically modeled with bowed string waveguides, adjustable bow pressure, velocity, and position.
+//
+// Parameters (Controls):
+//   - freq
+//   - gate
+//   - vibrato_rate
+//   - vibrato_depth
+//   - bowPressure
+//   - bowVelocity
+//   - bowPosition
+//   - velocity
+// =============================================================================
 import("stdfaust.lib");
 
 // ============================================================
@@ -48,4 +63,3 @@ humanizedFreq = f + drift + vibratoLFO;
 process = pm.violinModel(pm.f2l(humanizedFreq), bowPressure, bowVelocity, bowPosition)
           : *(bodyCompGain)
           : *(0.6);
-

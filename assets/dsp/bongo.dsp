@@ -1,4 +1,17 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Physical modeling of a pair of Bongos (Macho and Hembra) with strike position on the membrane (center, edge) and strike type (open, slap, muted).
+//
+// Parameters (Controls):
+//   - freq
+//   - gain
+//   - velocity
+//   - gate
+//   - position
+//   - strike
+// =============================================================================
 import("stdfaust.lib");
 
 // --- Physical Modeling Bongo Drum ---

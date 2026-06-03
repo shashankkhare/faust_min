@@ -1,4 +1,16 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Physical modeling of hand shakers/cabasa using a particle collision model with variable decay and resonance.
+//
+// Parameters (Controls):
+//   - freq
+//   - gain
+//   - velocity
+//   - gate
+//   - decay
+// =============================================================================
 import("stdfaust.lib");
 
 // --- Physical Modeling Shaker / Cabasa ---

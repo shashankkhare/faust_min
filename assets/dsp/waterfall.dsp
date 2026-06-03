@@ -1,4 +1,14 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Ambient natural waterfall generator utilizing multi-band noise filtering and organic surge LFOs.
+//
+// Parameters (Controls):
+//   - gain
+//   - size
+//   - gate
+// =============================================================================
 import("stdfaust.lib");
 
 gain = hslider("gain", 0.5, 0, 1, 0.01) : si.smoo;

@@ -1,4 +1,16 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Physically modeled trumpet utilizing a waveguide tube with brass-like lip pressure and air column dynamics.
+//
+// Parameters (Controls):
+//   - freq [unit:Hz]
+//   - gain
+//   - gate
+//   - vibrato_rate
+//   - vibrato_depth
+// =============================================================================
 import("stdfaust.lib");
 
 // --- Trumpet: simplified from Saxophone (no pitch dip on attack) ---

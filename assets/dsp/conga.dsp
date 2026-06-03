@@ -1,4 +1,17 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Physically modeled Conga drum supporting center/edge strike positioning and open, slap, or muted touch articulations.
+//
+// Parameters (Controls):
+//   - freq
+//   - gain
+//   - velocity
+//   - gate
+//   - position
+//   - strike
+// =============================================================================
 import("stdfaust.lib");
 
 // --- Physical Modeling Conga Drum ---

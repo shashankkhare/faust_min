@@ -1,4 +1,16 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Pure physical model of a classical Western flute using a waveguide tube and embouchure air jet loop.
+//
+// Parameters (Controls):
+//   - freq
+//   - velocity
+//   - gate
+//   - pressure
+//   - mouthPosition
+// =============================================================================
 import("stdfaust.lib");
 
 // Pure Physical Model Flute (No UI assembly)

@@ -1,4 +1,17 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Traditional Japanese bamboo flute (Shakuhachi) modeled using a waveguide tube, mouth embouchure position, and breath turbulence.
+//
+// Parameters (Controls):
+//   - freq
+//   - velocity
+//   - gate
+//   - pressure
+//   - mouthPosition
+//   - breath_noise
+// =============================================================================
 import("stdfaust.lib");
 
 // Shakuhachi physical modeling waveguide with breath turbulence

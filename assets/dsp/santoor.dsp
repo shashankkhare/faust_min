@@ -1,4 +1,15 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Indian hammered dulcimer (Santoor) simulating multiple strings struck with light wooden mallets (mezrab).
+//
+// Parameters (Controls):
+//   - freq
+//   - gate
+//   - velocity
+//   - gain
+// =============================================================================
 import("stdfaust.lib");
 
 freq = hslider("freq", 440, 40, 2000, 0.01);

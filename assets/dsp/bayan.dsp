@@ -1,4 +1,17 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: The bass drum of the Indian Tabla pair (Bayan), simulating the rich, low-frequency pitch glides (meends) and open/closed drum strokes (Ka, Ghe, Ghi, Ke).
+//
+// Parameters (Controls):
+//   - freq
+//   - gain
+//   - velocity
+//   - gate
+//   - strike
+//   - meend
+// =============================================================================
 import("stdfaust.lib");
 
 // --- Bayan (Tabla Bass Drum) - Full Bol Model ---

@@ -1,4 +1,16 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: The treble drum of the Indian Tabla pair (Dayan), simulating standard classical strokes (Na, Ta, Tin, Tun, Dha, Dhin) using multi-mode resonant models.
+//
+// Parameters (Controls):
+//   - freq
+//   - gain
+//   - velocity
+//   - gate
+//   - strike
+// =============================================================================
 import("stdfaust.lib");
 
 // --- Dayan (Tabla High Drum) - Ported from C++ Modal Model ---

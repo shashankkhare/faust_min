@@ -1,4 +1,15 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Generates realistic cuckoo bird calls using dual-pitch LFO frequency shifting and organic envelope shaping.
+//
+// Parameters (Controls):
+//   - gain
+//   - freq
+//   - gate
+//   - type
+// =============================================================================
 import("stdfaust.lib");
 
 // --- INTERFACE CONTROLS ---

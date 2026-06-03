@@ -1,4 +1,17 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Indian classical plucked lute (Sitar) featuring a dynamic jawari (buzzing bridge) model and sympathetic string resonance.
+//
+// Parameters (Controls):
+//   - freq [unit:Hz]
+//   - gate
+//   - gain
+//   - velocity
+//   - jivari
+//   - symp_gain
+// =============================================================================
 import("stdfaust.lib");
 
 freq = hslider("freq [unit:Hz]", 146.83, 40, 1000, 0.01);

@@ -1,4 +1,16 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Fretless Indian classical string instrument (Sarod) with a metal fingerboard, producing bright metallic sustain and sympathetic string resonance.
+//
+// Parameters (Controls):
+//   - freq
+//   - gate
+//   - velocity
+//   - gain
+//   - symp_gain
+// =============================================================================
 import("stdfaust.lib");
 
 freq = hslider("freq", 146.83, 40, 1000, 0.01);

@@ -1,4 +1,16 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Resonant metal cowbell synthesis using dual-oscillator modulations and metallic clang intensity control.
+//
+// Parameters (Controls):
+//   - freq [unit:Hz]
+//   - gain
+//   - velocity
+//   - gate
+//   - clang_intensity
+// =============================================================================
 import("stdfaust.lib");
 
 // --- Dedicated Cowbell ---

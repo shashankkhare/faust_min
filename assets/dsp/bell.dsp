@@ -1,4 +1,16 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Meditative modal synthesis bell with adjustable decay (ring time) and harmonic purity.
+//
+// Parameters (Controls):
+//   - freq [unit:Hz]
+//   - gain
+//   - velocity
+//   - gate
+//   - ring_time
+// =============================================================================
 import("stdfaust.lib");
 
 // --- Dedicated Meditative Bell ---

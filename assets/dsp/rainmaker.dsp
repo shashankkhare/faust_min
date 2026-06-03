@@ -1,4 +1,14 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Organic ambient soundscape generator simulating a rain stick or Tibetan metal rainmaker with bamboo or metal selector and tilt speed.
+//
+// Parameters (Controls):
+//   - Instrument_Material
+//   - Tilt_Speed_Hz
+//   - freq
+// =============================================================================
 import("stdfaust.lib");
 
 // --- 1. USER CONTROL INTERFACE ---

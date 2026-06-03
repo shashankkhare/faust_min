@@ -1,4 +1,16 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Physically modeled saxophone utilizing a waveguide woodwind pipe coupled with reed/mouth pressure dynamics.
+//
+// Parameters (Controls):
+//   - freq [unit:Hz]
+//   - gain
+//   - gate
+//   - vibrato_rate
+//   - vibrato_depth
+// =============================================================================
 import("stdfaust.lib");
 
 // --- Saxophone: sawtooth + resonant body + pitch dip + vibrato ---

@@ -1,4 +1,17 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Wooden bar mallet instrument (Marimba) modeled using waveguide bars coupled to resonator tubes with strike hardness and position controls.
+//
+// Parameters (Controls):
+//   - freq
+//   - gain
+//   - velocity
+//   - gate
+//   - position
+//   - strike
+// =============================================================================
 import("stdfaust.lib");
 
 // --- Physical Modeling Marimba ---

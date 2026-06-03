@@ -1,4 +1,17 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: West African Djembe drum physically modeled with center/edge position-based resonance and strike mallet sharpness.
+//
+// Parameters (Controls):
+//   - freq
+//   - gain
+//   - velocity
+//   - gate
+//   - position
+//   - strike
+// =============================================================================
 import("stdfaust.lib");
 
 // --- Physical Modeling Djembe Drum ---

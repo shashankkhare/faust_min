@@ -1,4 +1,15 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Classical Chinese Opera Gong (Chou Gong) using heavily inharmonic modal synthesis and non-linear mallet excitation to simulate pitch bloom and shimmer.
+//
+// Parameters (Controls):
+//   - freq [unit:Hz]
+//   - gain
+//   - velocity
+//   - gate
+// =============================================================================
 import("stdfaust.lib");
 
 // --- Chou Gong (Physical Model) ---

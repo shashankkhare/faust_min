@@ -1,4 +1,16 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Dedicated meditative Ride cymbal modeled using high-frequency metallic inharmonic modes.
+//
+// Parameters (Controls):
+//   - freq [unit:Hz]
+//   - gain
+//   - velocity
+//   - strike
+//   - gate
+// =============================================================================
 import("stdfaust.lib");
 
 // --- Dedicated Meditative Ride Cymbal ---

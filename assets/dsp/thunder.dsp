@@ -1,4 +1,13 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Dramatic environmental thunder simulation using low-frequency saturated rumble filters.
+//
+// Parameters (Controls):
+//   - gain
+//   - gate
+// =============================================================================
 import("stdfaust.lib");
 
 gain = hslider("gain", 1.0, 0, 1, 0.01);

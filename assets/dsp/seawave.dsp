@@ -1,4 +1,14 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Ambient generator simulating rolling ocean waves using multi-oscillator pink/white noise filtering and slow LFO sweeps.
+//
+// Parameters (Controls):
+//   - gain
+//   - intensity
+//   - gate
+// =============================================================================
 import("stdfaust.lib");
 
 gain = hslider("gain", 0.5, 0, 1, 0.01) : si.smoo;

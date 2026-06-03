@@ -1,4 +1,15 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Large Chinese drum (Da Gu) physically modeled using low-frequency drum head resonance and stick/mallet strike excitations.
+//
+// Parameters (Controls):
+//   - freq
+//   - gate
+//   - velocity
+//   - gain
+// =============================================================================
 import("stdfaust.lib");
 
 freq = hslider("freq", 55.0, 20.0, 200.0, 0.1) : si.smoo;

@@ -1,4 +1,20 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Classical Indian bamboo flute (Bansuri) physically modeled using waveguide embouchure dynamics, jet turbulence (breathiness), and variable mouth position.
+//
+// Parameters (Controls):
+//   - freq
+//   - velocity
+//   - gate
+//   - gain
+//   - pressure
+//   - mouthPosition
+//   - glide
+//   - vibrato
+//   - breathiness
+// =============================================================================
 import("stdfaust.lib");
 
 fTarget = hslider("freq", 440, 50, 2000, 0.1);

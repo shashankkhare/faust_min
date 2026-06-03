@@ -1,4 +1,14 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: A lush, spatial stereo reverberation effect based on the Zita-Reverb design, optimized for sleep soundscapes and deep meditation.
+//
+// Parameters (Controls):
+//   - decay_time
+//   - damping_freq
+//   - low_rt60
+// =============================================================================
 import("stdfaust.lib");
 
 // The Master Reverb Bus

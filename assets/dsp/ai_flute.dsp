@@ -1,4 +1,18 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: AI-Ready Physical Modeling Flute based on STK (Synthesis Tool Kit) principles but optimized for real-time low-latency parameter control and sweeps by an orchestrator.
+//
+// Parameters (Controls):
+//   - freq [unit:Hz]
+//   - gain
+//   - gate
+//   - ai_pressure
+//   - ai_vibrato_rate
+//   - ai_vibrato_depth
+//   - ai_breath_noise
+// =============================================================================
 import("stdfaust.lib");
 
 // --- AI-Ready Physical Modeling Flute ---

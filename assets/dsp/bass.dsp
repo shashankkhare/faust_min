@@ -1,4 +1,17 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Physically modeled electric bass guitar with adjustable tone, muting, and clean plucked string waveguide excitation.
+//
+// Parameters (Controls):
+//   - freq
+//   - velocity
+//   - gate
+//   - gain
+//   - mute
+//   - tone
+// =============================================================================
 import("stdfaust.lib");
 
 freq     = hslider("freq",     55.0, 20,  500,  0.01);

@@ -1,4 +1,13 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Dynamic wind sound generator simulating whispering and howling air currents via slow LFO-modulated bandpass filters.
+//
+// Parameters (Controls):
+//   - gain
+//   - gate
+// =============================================================================
 import("stdfaust.lib");
 
 gain = hslider("gain", 0.5, 0, 1, 0.01);

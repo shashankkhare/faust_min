@@ -1,4 +1,20 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Physically modeled Cello using waveguide bowed string synthesis, with adjustable bow pressure, velocity, position, and deep wood body resonances.
+//
+// Parameters (Controls):
+//   - freq
+//   - velocity
+//   - gate
+//   - gain
+//   - bowPressure
+//   - bowVelocity
+//   - bowPosition
+//   - vibrato_rate
+//   - vibrato_depth
+// =============================================================================
 import("stdfaust.lib");
 
 mypm = library("physmodels.lib") with { maxLength = 20; };

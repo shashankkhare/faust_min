@@ -1,4 +1,16 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Resonant snare drum combining a drumhead physical model with adjustable snare wire rattle noise.
+//
+// Parameters (Controls):
+//   - freq [unit:Hz]
+//   - gain
+//   - velocity
+//   - gate
+//   - wire_rattle
+// =============================================================================
 import("stdfaust.lib");
 
 // --- Dedicated Snare Drum ---

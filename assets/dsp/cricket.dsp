@@ -1,4 +1,15 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// === PHYSICAL MODEL DESIGN ===
+// Description: Generates highly realistic insect/cricket chirping sounds using high-frequency pulse amplitude modulation.
+//
+// Parameters (Controls):
+//   - gain
+//   - rate
+//   - freq
+//   - gate
+// =============================================================================
 import("stdfaust.lib");
 
 gain  = hslider("gain",  0.5,  0,    1,    0.01) : si.smoo;
