@@ -690,52 +690,85 @@ int main(int argc, char* argv[]) {
                 "grid: 2\n"
                 "basefreq: 130.81\n"
                 "instrument: tanpura\n"
-                "notation: Hindustani\n"
-                "\n"
-                "5Pa...... 5Sa...... 5Pa...... 5Sa......";
+                "notation: Hindustani\n\n";
+            for (int i = 0; i < 16; ++i) {
+                umlTanpura += "5Pa...... 5Sa...... ";
+            }
                 
             std::string umlSitar = 
                 "grid: 4\n"
                 "basefreq: 130.81\n"
                 "instrument: sitar\n"
-                "notation: Hindustani\n"
-                "\n"
-                "6Ni...6Re...6Ga...6Ma...6Dha...6Ni...6Re...6Sa... "
-                "6Ni...6Dha...6Pa...6Ma...6Ga...6Re...6Sa...6Sa... "
-                "_... _... _... _... "
-                "6Ni...6Re...6Ga...6Ma... "
-                "_... _... _... _... "
-                "6Dha...6Ni...6Re...6Sa... "
-                "_... _... _... _... "
-                "6Ni..._...";
+                "notation: Hindustani\n\n";
+            // Alap (128 cells of slow, meditative phrases)
+            umlSitar += "6Ni... 6Re... 6Ga... _... 6ma... 6Pa... 6Dha... _... ";
+            umlSitar += "6Ni... 6Sa*2... _... _... 6Sa*2... 6Ni... 6Dha... 6Pa... ";
+            umlSitar += "6ma... 6Ga... 6Re... 6Sa... 6Ni/2... 6Re... 6Ga... 6Sa... ";
+            umlSitar += "6ma... 6Ga... 6Re... 6Sa... _... _... _... _... ";
+            umlSitar += "6Ni... 6Re... 6Ga... _... 6ma... 6Pa... 6Dha... _... ";
+            umlSitar += "6Ni... 6Sa*2... _... _... 6Sa*2... 6Ni... 6Dha... 6Pa... ";
+            umlSitar += "6ma... 6Ga... 6Re... 6Sa... 6Ni/2... 6Re... 6Ga... 6Sa... ";
+            umlSitar += "6ma... 6Ga... 6Re... 6Sa... _... _... _... _... ";
+            // Jod (128 cells of medium-paced rhythmic movement)
+            for (int i = 0; i < 2; ++i) {
+                umlSitar += "6Ni/2 . 6Re . 6Ga . 6ma . 6Pa . 6ma . 6Ga . 6Re . ";
+                umlSitar += "6Ga . 6ma . 6Dha . 6Ni . 6Sa*2 . 6Ni . 6Dha . 6Pa . ";
+                umlSitar += "6ma . 6Dha . 6Ni . 6Sa*2 . 6Re*2 . 6Sa*2 . 6Ni . 6Dha . ";
+                umlSitar += "6Pa . 6ma . 6Ga . 6Re . 6Sa . . . _ . . . ";
+            }
+            // Jhala (256 cells of rapid, virtuosic triplets/triads alternating with high Sa)
+            for (int i = 0; i < 2; ++i) {
+                umlSitar += "6Ga 6Sa*2 6Re 6Sa*2 6Ga 6Sa*2 6ma 6Sa*2 6Pa 6Sa*2 6ma 6Sa*2 6Ga 6Sa*2 6Re 6Sa*2 ";
+                umlSitar += "6ma 6Sa*2 6Pa 6Sa*2 6Dha 6Sa*2 6Ni 6Sa*2 6Sa*2 6Sa*2 6Ni 6Sa*2 6Dha 6Sa*2 6Pa 6Sa*2 ";
+                umlSitar += "6Ni 6Sa*2 6Sa*2 6Sa*2 6Re*2 6Sa*2 6Sa*2 6Sa*2 6Ga*2 6Sa*2 6Re*2 6Sa*2 6Sa*2 6Sa*2 6Ni 6Sa*2 ";
+                umlSitar += "6Sa*2 6Sa*2 6Ni 6Sa*2 6Dha 6Sa*2 6Pa 6Sa*2 6ma 6Sa*2 6Ga 6Sa*2 6Re 6Sa*2 6Sa 6Sa*2 ";
+            }
+            // Tihai (3 repeating structural endings)
+            umlSitar += "6Pa 6Sa*2 6Dha 6Sa*2 6Sa*2 . . . 6Pa 6Sa*2 6Dha 6Sa*2 6Sa*2 . . . ";
+            umlSitar += "6Pa 6Sa*2 6Dha 6Sa*2 6Sa*2 . . . _ . . . _ . . . _ . . . ";
+            for (int i = 0; i < 6; ++i) {
+                umlSitar += "_ . . . _ . . . _ . . . _ . . . ";
+            }
                 
             std::string umlDayan = 
                 "grid: 4\n"
-                "instrument: dayan\n"
-                "\n"
-                "Na... Tin... Tun... tk... Na... Tin... Na... tk... "
-                "Tun... Tin... Na... Tun... Na... tk... Tin... Tun... "
-                "Na... Tin... Tun... tk... _... _... _... _... "
-                "Tun... Tin... Na... Tun... _... _... _... _... "
-                "Na... Tin... Tun... tk... _... _... _... _...";
+                "instrument: dayan\n\n";
+            // Alap: Silent
+            for (int i = 0; i < 16; ++i) {
+                umlDayan += "_ . . . _ . . . ";
+            }
+            // Jod: Vilambit Teental (Medium tempo groove)
+            for (int i = 0; i < 8; ++i) {
+                umlDayan += "Na . . . Tin . . . Tun . . . tk . . . ";
+            }
+            // Jhala: Drut Teental (Fast tempo groove)
+            for (int i = 0; i < 32; ++i) {
+                umlDayan += "Na tk Tin tk Tun tk Na tk ";
+            }
                 
             std::string umlBayan = 
                 "grid: 4\n"
-                "instrument: bayan\n"
-                "\n"
-                "Ghe... _... _... Ka... _... Ka... Ghe... _... "
-                "Ghe... Ka... Ghe... Ke... Ghi... Ghe... Ka... Ghe... "
-                "Ghe... _... _... Ka... _... _... _... _... "
-                "Ghe... Ka... Ghe... Ke... _... _... _... _... "
-                "Ghi... Ghe... Ka... Ghe... _... _... _... _...";
-
+                "instrument: bayan\n\n";
+            // Alap: Silent
+            for (int i = 0; i < 16; ++i) {
+                umlBayan += "_ . . . _ . . . ";
+            }
+            // Jod: Vilambit Teental
+            for (int i = 0; i < 8; ++i) {
+                umlBayan += "Ghe . . . Ka . . . Ghe . . . Ka . . . ";
+            }
+            // Jhala: Drut Teental
+            for (int i = 0; i < 32; ++i) {
+                umlBayan += "Ghe Ghe Ka Ka Ghe Ghe Ka Ka ";
+            }
+            
             group.sequences.push_back({"Tanpura", new UMLSequence("Tanpura", 11, umlTanpura)});
             group.sequences.push_back({"Sitar", new UMLSequence("Sitar", 9, umlSitar)});
             group.sequences.push_back({"Dayan", new UMLSequence("Dayan", 0, umlDayan)});
             group.sequences.push_back({"Bayan", new UMLSequence("Bayan", 1, umlBayan)});
             
             group.backgroundTrackWeight = 0.15f;
-            duration = 20;
+            duration = 60;
         } else if (selection == 7) {
             group.name = "Indian Folk (Dholak Percussion)";
             
