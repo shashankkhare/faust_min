@@ -326,11 +326,7 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
             long sampleOffset = (long)(ti.gridIndex * samplesPerGrid);
             float amplitudeScalar = (float)ti.controlParam / 9.0f;
 
-            if (seq.instrumentID >= 0 && seq.instrumentID < 10 && seq.instrumentID != 7 && seq.instrumentID != 8) {
-                handlePercussionToken(ti.noteName, amplitudeScalar, sampleOffset, durationSamples, seq.baseFreq, seq.instrument, seq.events);
-            } else if (seq.instrumentID >= 28 && seq.instrumentID <= 35) {
-                handlePercussionToken(ti.noteName, amplitudeScalar, sampleOffset, durationSamples, seq.baseFreq, seq.instrument, seq.events);
-            } else if (seq.instrumentID == 47 || seq.instrumentID == 8 || seq.instrumentID == 7) {
+            if (InstrumentMapper::isPercussionID(seq.instrumentID)) {
                 handlePercussionToken(ti.noteName, amplitudeScalar, sampleOffset, durationSamples, seq.baseFreq, seq.instrument, seq.events);
             } else {
                 handlePitchedToken(ti, amplitudeScalar, sampleOffset, durationSamples, seq.notation, seq.baseFreq, seq.instrument, samplesPerGrid, sampleRate, j, tokenItems, triggers, seq.events);
