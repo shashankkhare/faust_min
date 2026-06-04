@@ -29,22 +29,35 @@ velocity = hslider("velocity", 0.5, 0, 1, 0.01);
 gain = hslider("gain", 1.0, 0, 1, 0.01);
 symp_gain = hslider("symp_gain", 0.3, 0, 1, 0.01);
 
-// Melody excitation trigger and envelope
+// Melody excitation trigger
 trig = gate > gate';
-exc_env = en.ar(0.003, 0.015, trig);
 
+// Hold the gate for 150 samples (~3ms) to allow en.ar to reach full attack
+gate_held = trig : pulse_timer > 0
+with {
+    pulse_timer(t) = loop ~ _
+    with { loop(s) = ba.if(t, 150, max(0.0, s - 1.0)); };
+};
+
+// Original AR envelope, now properly opening on every note
+exc_env = en.ar(0.003, 0.015, gate_held);
+
+// Simulate the hard wooden pick transient (replaces os.impulse so it fires on every note)
+pick_impulse = ba.impulsify(trig);
+
+// Wooden plectrum scratch noise
 pick_noise = no.noise : fi.bandpass(2, 800.0, 1600.0);
 
-// Melody string parameters (used when strike=0)
+// Melody string excitation: sharp wooden click + scratchy noise, but less prominent
+melody_exc = (pick_impulse * 0.1 + pick_noise * 0.4) * exc_env * velocity * 2.0;
+
+// Melody string parameters
 normFreq = (freq - 80.0) / (800.0 - 80.0) : min(1.0) : max(0.0);
 dynSustain = 4.0 - normFreq * 3.2; // 4.0s sustain for low notes, 0.8s for high notes
 feedback_gain = pow(0.001, 1.0 / (dynSustain * freq));
 
 dynDamping = 0.985 + normFreq * 0.005; // 0.015 damping at low freqs, 0.01 at high freqs
 lp = * (dynDamping) : + ~ * (1.0 - dynDamping);
-
-// Melody string excitation
-melody_exc = (os.impulse * 0.3 + pick_noise * 0.7) * exc_env * velocity * 2.0;
 
 del = ma.SR / freq;
 
