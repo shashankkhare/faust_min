@@ -54,10 +54,14 @@ void playSequenceGroup(FaustMixer& mixer, SequenceOrchestrator& orch, SequenceGr
     // 1. Register sequences and instruments
     for (size_t i = 0; i < group.sequences.size(); ++i) {
         auto& seqPair = group.sequences[i];
+        double samplesPerGrid = (60.0 / seqPair.second->bpm) * InstrumentMapper::DEFAULT_SAMPLE_RATE / seqPair.second->grid;
+        double cellCount = seqPair.second->totalDurationSamples / samplesPerGrid;
         std::cout << "[Native] Adding Sequence Object: " << seqPair.first 
                   << " (InstID: " << seqPair.second->instrumentID << ")" 
                   << " | BPM: " << seqPair.second->bpm 
-                  << " | BaseFreq: " << seqPair.second->baseFreq << " Hz" << std::endl;
+                  << " | BaseFreq: " << seqPair.second->baseFreq << " Hz" 
+                  << " | DurationSamples: " << seqPair.second->totalDurationSamples
+                  << " | Cells: " << std::round(cellCount) << std::endl;
         orch.addSequence(seqPair.first, seqPair.second);
 
         std::cout << "[Diagnostic] Parsed NoteOn events for " << seqPair.first << ":" << std::endl;
@@ -66,8 +70,11 @@ void playSequenceGroup(FaustMixer& mixer, SequenceOrchestrator& orch, SequenceGr
             if (ev.type == UMLEventType::NoteOn) {
                 std::cout << "  Event " << eIdx << ": Note: " << ev.note 
                           << " | Freq: " << ev.frequency << " Hz" 
-                          << " | Amp: " << ev.amplitude 
-                          << " | SampleOffset: " << ev.sampleOffset << std::endl;
+                          << " | Amp: " << ev.amplitude;
+                if (ev.strikeVal >= 0.0f) {
+                    std::cout << " | Strike: " << ev.strikeVal;
+                }
+                std::cout << " | SampleOffset: " << ev.sampleOffset << std::endl;
             } else if (ev.type == UMLEventType::Glide) {
                 std::cout << "  Event " << eIdx << ": Glide -> Freq: " << ev.targetFrequency 
                           << " Hz | Vel: " << ev.targetVelocity 
@@ -153,7 +160,7 @@ int main(int argc, char* argv[]) {
     while (true) {
         if (selection == -1) {
             std::cout << "\nSelect a sequence to play:" << std::endl;
-            std::cout << "  1. Indian Classical — Bilawal (Violin, Tanpura, Tabla) [12 semitone]" << std::endl;
+            std::cout << "  1. Indian Classical — Darbari Kanada (Sarod, Tanpura, Tabla) [12 semitone]" << std::endl;
             std::cout << "  2. Jazz Ensemble (Piano, Sax, Bass, Drums)" << std::endl;
             std::cout << "  3. Rock Band (Electric Guitar, Bass, Drums)" << std::endl;
             std::cout << "  4. Tibetan Bowl with Rain + LagNga (Bowl, Rainmaker, LagNga)" << std::endl;
@@ -162,7 +169,8 @@ int main(int argc, char* argv[]) {
             std::cout << "  7. North Indian Folk (Dholak Percussion)" << std::endl;
             std::cout << "  8. Punjabi Folk (Bhangra beats)" << std::endl;
             std::cout << "  9. Exit" << std::endl;
-            std::cout << ">>> Enter selection (1-9): ";
+            std::cout << " 10. Sarod — Raag Yaman (Fast, with Meend Glides) [12 semitone]" << std::endl;
+            std::cout << ">>> Enter selection (1-10): ";
             if (!(std::cin >> selection)) {
                 break;
             }
@@ -176,87 +184,100 @@ int main(int argc, char* argv[]) {
         int duration = 15; // default duration 15s
 
         if (selection == 1) {
-            group.name = "Indian Classical — Raag Bilawal (Violin, Tanpura, Tabla) [12 semitone]";
+            group.name = "Indian Classical — Raag Darbari Kanada (Sarod, Tanpura, Tabla) [12 semitone]";
             
             std::string umlTanpura = 
                 "grid: 4\n"
-                "bpm: 60\n"
+                "bpm: 70\n"
                 "basefreq: 222.0\n"
                 "instrument: tanpura\n"
                 "notation: Hindustani\n"
                 "\n"
                 "5Sa............... _............... "
                 "5Sa............... _...............";
-                
-            std::string umlViolin = 
+            
+            // Raag Darbari Kanada — late-night, majestic, deep
+            // Arohana: Sa Re ga ma Pa dha ni Sa*
+            // Vadi: Re, Samvadi: Pa
+            // Structure: Alaap (slow, meend, rests) → Jod (medium) → Jhala (fast chikari)
+            std::string umlSarod = 
                 "grid: 4\n"
-                "bpm: 60\n"
-                "basefreq: 444.0\n"
-                "instrument: violin\n"
+                "bpm: 70\n"
+                "basefreq: 222.0\n"
+                "instrument: sarod\n"
                 "notation: Hindustani\n"
-                "glide: 0.04\n"
+                "glide: 0.03\n"
                 "vibrato_depth: 0.02\n"
                 "vibrato_rate: 5.5\n"
-                // Section 1: Alaap (Slow, meditative, very sparse)
- "5Sa . . ~ . . . . 8Ga . . ~ . . . . \n"
-"3Ma . . ~ . . . . 6Pa . . ~ . . . . \n"
-"8Ga . . ~ . . . . 5Sa . . ~ . . . . \n"
-"6Pa . . ~ . . . . 8Dha . . ~ . . . . \n"
-"3Ma . . ~ . . . . 8Ga . . ~ . . . . \n"
-"2Re . . ~ . . . . 5Sa . . ~ . . . . \n"
-"4Dha/2 . . ~ . . . . 5Sa . . ~ . . . . \n"
-"8Ga . . ~ . . . . 6Pa . . ~ . . . . \n"
-		//section 2: Dhrut
-"8Ga . . ~ 3Ma . . ~ 6Pa . . ~ 8Dha . . ~ \n"
-"3Ma . . ~ 8Ga . . ~ 2Re . . ~ 5Sa . . ~ \n"
-"6Pa . . ~ 3Ma . . ~ 8Ga . . ~ 2Re . . ~ \n"
-"5Sa . . ~ 8Ga . . ~ 3Ma . . ~ 6Pa . . ~ \n"
-"8Dha . . ~ 6Pa . . ~ 3Ma . . ~ 8Ga . . ~ \n"
-"3Ma . . ~ 8Dha . . ~ 6Pa . . ~ 3Ma . . ~ \n"
-"8Ga . . ~ 5Sa . . ~ 2Re . . ~ 8Ga . . ~ \n"
-"3Ma . . ~ 8Ga . . ~ 2Re . . ~ 5Sa . . ~ \n"
-		//section 3: Jod
-"8Ga .~ 3Ma .~ 6Pa .~ 8Dha .~ 9Ni .~ 6Sa*2 .~ 9Ni .~ 8Dha .~ \n"
-"6Pa .~ 3Ma .~ 8Ga .~ 2Re .~ 5Sa .~ 8Ga .~ 3Ma .~ 6Pa .~ \n"
-"8Dha .~ 6Pa .~ 3Ma .~ 8Ga .~ 2Re .~ 5Sa .~ 2Re .~ 8Ga .~ \n"
-"3Ma .~ 8Ga .~ 2Re .~ 5Sa .~ 6Pa .~ 8Dha .~ 9Ni .~ 6Sa*2 .~ \n"
-"6Sa*2 .~ 9Ni .~ 8Dha .~ 6Pa .~ 3Ma .~ 8Ga .~ 2Re .~ 5Sa .~ \n"
-"8Ga .~ 3Ma .~ 6Pa .~ 8Dha .~ 6Pa .~ 8Dha .~ 9Ni .~ 6Sa*2 .~ \n"
-"8Dha .~ 6Pa .~ 3Ma .~ 8Ga .~ 2Re .~ 8Ga .~ 3Ma .~ 6Pa .~ \n"
-"6Pa .~ 3Ma .~ 8Ga .~ 2Re .~ 5Sa .~ 8Ga .~ 5Sa .~ . . \n"
-"6Sa 8Ga~ 6Sa 8Ga~ 3Ma 8Ga~ 6Pa 8Ga~ 8Dha 8Ga~ 6Pa 8Ga~ 3Ma 8Ga~ 6Sa 8Ga~ \n"
-"6Pa 8Ga~ 3Ma 8Ga~ 6Pa 3Ma~ 8Dha 6Pa~ 9Ni 8Dha~ 6Sa*2 9Ni~ 8Dha 6Pa~ 3Ma 8Ga~ \n"
-"6Sa*2 8Dha~ 6Sa*2 8Dha~ 9Ni 6Pa~ 9Ni 6Pa~ 8Dha 3Ma~ 8Dha 3Ma~ 6Pa 8Ga~ 6Pa 8Ga~ \n"
-"3Ma 2Re~ 3Ma 2Re~ 8Ga 5Sa~ 8Ga 5Sa~ 3Ma 2Re~ 3Ma 2Re~ 8Ga 5Sa~ 8Ga 5Sa~ \n"
-"6Pa 8Ga~ 6Pa 8Ga~ 8Dha 3Ma~ 8Dha 3Ma~ 9Ni 6Pa~ 9Ni 6Pa~ 6Sa*2 8Dha~ 6Sa*2 8Dha~ \n"
-"6Sa*2 8Dha~ 9Ni 6Pa~ 6Sa*2 8Dha~ 9Ni 6Pa~ 6Sa*2 8Dha~ 9Ni 6Pa~ 6Sa*2 8Dha~ 9Ni 6Pa~ \n"
-"8Dha 3Ma~ 8Dha 3Ma~ 8Dha 3Ma~ 8Dha 3Ma~ 6Pa 8Ga~ 6Pa 8Ga~ 6Pa 8Ga~ 6Pa 8Ga~ \n"
-"3Ma 2Re~ 3Ma 2Re~ 3Ma 2Re~ 3Ma 2Re~ 8Ga 5Sa~ 8Ga 5Sa~ 8Ga 5Sa~ 8Ga 5Sa~ \n"
-                "5Sa 5Sa~ 5Sa 5Sa~ 5Sa 5Sa~ 5Sa 5Sa~ 5Sa . . . . . . . \n";
-                
-            // All instruments at BPM=60 so grid cells match exactly (12000 samples/cell)
-            // Violin: 128+128+128+144 = 528 cells. Dayan/Bayan match cell-for-cell.
+                // --- Alaap (64 cells) — slow, spacious, meend between notes, rests separate phrases ---
+                "5Sa.. _ _ _ _ _ \n"                      // Sa rings 3 cells, 5 cells rest
+                "5Sa.^ 8re.. _ _ _ \n"                    // Sa→meend, re rings, 3 cells rest
+                "8re.^ 8ga.. _ _ _ \n"                    // re→meend, ga rings, 3 cells rest
+                "8ga.. _ _ _ _ _ \n"                      // ga rings 3 cells (andolan), 5 rest
+                "3Ma _ 8ga.^ 8re _ _ _ \n"                // Ma, rest, ga→re meend, re, rest
+                "8re.^ 5Sa.. _ _ _ \n"                    // re→Sa meend, Sa rings, 3 rest
+                "8ni _ 6dha _ _ _ _ _ \n"                 // ni, rest, dha, 5 cells rest
+                "6dha.^ 5Sa.. _ _ _ \n"                   // dha→Sa meend, Sa rings, 3 rest
+                // --- Jod (128 cells) — medium pulse, rhythmic Darbari patterns ---
+                "8re . 8ga . 8re . 5Sa . \n"
+                "8re . 8ga . 3Ma . 6Pa . \n"
+                "6dha . 8ni . 6dha . 6Pa . \n"
+                "3Ma . 8ga . 8re . 5Sa . \n"
+                "8ni . 6dha . 6Pa . 3Ma . \n"
+                "8ga . 3Ma . 6dha . 8ni . \n"
+                "8re . 8ga . 8re . 5Sa . \n"
+                "6Pa . 3Ma . 8ga . 8re . \n"
+                "8re . 8ga . 6dha . 8ni . \n"
+                "6dha . 6Pa . 3Ma . 8ga . \n"
+                "8re . 8ga . 8re . 5Sa . \n"
+                "8ni . 6dha . 6Pa . 3Ma . \n"
+                "8ga . 3Ma . 6Pa . 3Ma . \n"
+                "8ga . 8re . 5Sa . 8re . \n"
+                "8ga . 3Ma . 6dha . 6Pa . \n"
+                "8re . 8ga . 8re . 5Sa . \n"
+                // --- Jhala (144 cells) — fast chikari patterns ---
+                "61Sa 8ga~ 61Sa 8ga~ 61Sa 8re~ 61Sa 8ga~ \n"
+                "61Sa 8ni~ 61Sa 8dha~ 61Sa 6Pa~ 61Sa 3Ma~ \n"
+                "61Sa 8ga~ 61Sa 8re~ 61Sa 5Sa~ 61Sa 8ga~ \n"
+                "81re 8ga~ 81re 8ga~ 81ni 8dha~ 81ni 6Pa~ \n"
+                "81re 8ga~ 81re 5Sa~ 81re 8ga~ 81re 3Ma~ \n"
+                "81ga 8re~ 81ga 8re~ 81ga 5Sa~ 81ga 8re~ \n"
+                "61Sa 8ga~ 61Sa 8ni~ 61Sa 8dha~ 61Sa 6Pa~ \n"
+                "81re 8ga~ 81ni 8dha~ 81re 8ga~ 81ni 6Pa~ \n"
+                "61Sa 8ga~ 61Sa 8re~ 61Sa 8ga~ 61Sa 5Sa~ \n"
+                "81ni 8dha~ 81ni 6Pa~ 81ni 3Ma~ 81ni 8ga~ \n"
+                "81re 8ga~ 81re 8ni~ 81re 8dha~ 81re 6Pa~ \n"
+                "61Sa 8ga~ 61Sa 5Sa~ 61Sa 8ga~ 61Sa 5Sa~ \n"
+                "81re 8ga~ 81re 8ni~ 81ni 8dha~ 81ni 6Pa~ \n"
+                "61Sa 8ga~ 61Sa 8re~ 61Sa 8ga~ 61Sa 8re~ \n"
+                "81ga 8re~ 81ga 5Sa~ 81ga 8re~ 81ga 5Sa~ \n"
+                "61Sa 8ga~ 61Sa 8re~ 61Sa 8ga~ 61Sa 8re~ \n"
+                "61Sa 8ga~ 61Sa 8re~ 61Sa 5Sa~ 61Sa 5Sa~ \n"
+                "5Sa . . . . . . . \n";
             
-            auto buildDayan = []() -> std::string {
-                std::string s = "grid: 4\nbpm: 60\nbasefreq: 222.0\ninstrument: dayan\n\n";
+            // Total sarod cells: 64 + 128 + 144 = 336
+            // All instruments at BPM=70, same grid=4, same total cells
+            
+            auto buildDayan = [bpm = 70]() -> std::string {
+                std::string s = "grid: 4\nbpm: ";
+                s += std::to_string(bpm) + "\nbasefreq: 222.0\ninstrument: dayan\n\n";
                 std::string alaap = "Na... Tin... Tun... tk... Na... Tin... Na... tk... "; // 32 cells
                 std::string med   = "Na. Tin. Tun. tk. Na. Tin. Na. tk. "; // 16 cells
                 std::string jhala = "Na Tin Tun tk Na Tin Na tk "; // 8 cells
-                for (int i = 0; i < 4;  i++) s += alaap;  // 4×32 = 128 ✓
+                for (int i = 0; i < 2;  i++) s += alaap;  // 2×32 = 64 ✓
                 for (int i = 0; i < 8;  i++) s += med;    // 8×16 = 128 ✓
-                for (int i = 0; i < 8; i++) s += med;     // 8×16 = 128 ✓ (matches Violin Jod)
                 for (int i = 0; i < 18; i++) s += jhala;  // 18×8 = 144 ✓
                 return s;
             };
             
-            auto buildBayan = []() -> std::string {
-                std::string s = "grid: 4\nbpm: 60\nbasefreq: 111.0\ninstrument: bayan\n\n";
+            auto buildBayan = [bpm = 70]() -> std::string {
+                std::string s = "grid: 4\nbpm: ";
+                s += std::to_string(bpm) + "\nbasefreq: 111.0\ninstrument: bayan\n\n";
                 std::string alaap = "Ghe... _... _... Ka... _... Ka... Ghe... _... "; // 32 cells
                 std::string med   = "Ghe. _. _. Ka. _. Ka. Ghe. _. "; // 16 cells
                 std::string jhala = "Ghe _ _ Ka _ Ka Ghe _ "; // 8 cells
-                for (int i = 0; i < 4;  i++) s += alaap;  // 4×32 = 128 ✓
+                for (int i = 0; i < 2;  i++) s += alaap;  // 2×32 = 64 ✓
                 for (int i = 0; i < 8;  i++) s += med;    // 8×16 = 128 ✓
-                for (int i = 0; i < 8; i++) s += med;     // 8×16 = 128 ✓ (matches Violin Jod)
                 for (int i = 0; i < 18; i++) s += jhala;  // 18×8 = 144 ✓
                 return s;
             };
@@ -265,7 +286,7 @@ int main(int argc, char* argv[]) {
             std::string umlBayan = buildBayan();
 
             group.sequences.push_back({"Tanpura", new UMLSequence("Tanpura", 11, umlTanpura)});
-            group.sequences.push_back({"Violin", new UMLSequence("Violin", 18, umlViolin)});
+            group.sequences.push_back({"Sarod", new UMLSequence("Sarod", 44, umlSarod)});
             group.sequences.push_back({"Dayan", new UMLSequence("Dayan", 0, umlDayan)});
             group.sequences.push_back({"Bayan", new UMLSequence("Bayan", 1, umlBayan)});
             
@@ -688,27 +709,25 @@ int main(int argc, char* argv[]) {
             
             std::string umlTanpura = 
                 "grid: 2\n"
-                "basefreq: 130.81\n"
+                "basefreq: 111.0\n"
                 "instrument: tanpura\n"
-                "notation: Hindustani\n\n";
-            for (int i = 0; i < 16; ++i) {
-                umlTanpura += "5Pa...... 5Sa...... ";
-            }
+                "notation: Hindustani\n\n"
+                "5Pa...... 5Sa...... "; // Short sequence that loops independently
                 
             std::string umlSitar = 
                 "grid: 4\n"
-                "basefreq: 130.81\n"
+                "basefreq: 222.0\n"
                 "instrument: sitar\n"
                 "notation: Hindustani\n\n";
-            // Alap (128 cells of slow, meditative phrases)
-            umlSitar += "6Ni... 6Re... 6Ga... _... 6ma... 6Pa... 6Dha... _... ";
-            umlSitar += "6Ni... 6Sa*2... _... _... 6Sa*2... 6Ni... 6Dha... 6Pa... ";
-            umlSitar += "6ma... 6Ga... 6Re... 6Sa... 6Ni/2... 6Re... 6Ga... 6Sa... ";
-            umlSitar += "6ma... 6Ga... 6Re... 6Sa... _... _... _... _... ";
-            umlSitar += "6Ni... 6Re... 6Ga... _... 6ma... 6Pa... 6Dha... _... ";
-            umlSitar += "6Ni... 6Sa*2... _... _... 6Sa*2... 6Ni... 6Dha... 6Pa... ";
-            umlSitar += "6ma... 6Ga... 6Re... 6Sa... 6Ni/2... 6Re... 6Ga... 6Sa... ";
-            umlSitar += "6ma... 6Ga... 6Re... 6Sa... _... _... _... _... ";
+            // Alap (256 cells of slow, meditative phrases)
+            umlSitar += "6Ni...^ 6Re...^ 6Ga... _... 6ma...^ 6Pa...^ 6Dha... _... ";
+            umlSitar += "6Ni...^ 6Sa*2... _... _... 6Sa*2...^ 6Ni...^ 6Dha...^ 6Pa... ";
+            umlSitar += "6ma...^ 6Ga...^ 6Re...^ 6Sa... 6Ni/2...^ 6Re...^ 6Ga...^ 6Sa... ";
+            umlSitar += "6ma...^ 6Ga...^ 6Re...^ 6Sa... _... _... _... _... ";
+            umlSitar += "6Ni...^ 6Re...^ 6Ga... _... 6ma...^ 6Pa...^ 6Dha... _... ";
+            umlSitar += "6Ni...^ 6Sa*2... _... _... 6Sa*2...^ 6Ni...^ 6Dha...^ 6Pa... ";
+            umlSitar += "6ma...^ 6Ga...^ 6Re...^ 6Sa... 6Ni/2...^ 6Re...^ 6Ga...^ 6Sa... ";
+            umlSitar += "6ma...^ 6Ga...^ 6Re...^ 6Sa... _... _... _... _... ";
             // Jod (128 cells of medium-paced rhythmic movement)
             for (int i = 0; i < 2; ++i) {
                 umlSitar += "6Ni/2 . 6Re . 6Ga . 6ma . 6Pa . 6ma . 6Ga . 6Re . ";
@@ -716,48 +735,50 @@ int main(int argc, char* argv[]) {
                 umlSitar += "6ma . 6Dha . 6Ni . 6Sa*2 . 6Re*2 . 6Sa*2 . 6Ni . 6Dha . ";
                 umlSitar += "6Pa . 6ma . 6Ga . 6Re . 6Sa . . . _ . . . ";
             }
-            // Jhala (256 cells of rapid, virtuosic triplets/triads alternating with high Sa)
+            // Jhala (256 cells: 128 cells of rapid triads + 128 cells of Tihai and trailing rests)
             for (int i = 0; i < 2; ++i) {
                 umlSitar += "6Ga 6Sa*2 6Re 6Sa*2 6Ga 6Sa*2 6ma 6Sa*2 6Pa 6Sa*2 6ma 6Sa*2 6Ga 6Sa*2 6Re 6Sa*2 ";
                 umlSitar += "6ma 6Sa*2 6Pa 6Sa*2 6Dha 6Sa*2 6Ni 6Sa*2 6Sa*2 6Sa*2 6Ni 6Sa*2 6Dha 6Sa*2 6Pa 6Sa*2 ";
                 umlSitar += "6Ni 6Sa*2 6Sa*2 6Sa*2 6Re*2 6Sa*2 6Sa*2 6Sa*2 6Ga*2 6Sa*2 6Re*2 6Sa*2 6Sa*2 6Sa*2 6Ni 6Sa*2 ";
                 umlSitar += "6Sa*2 6Sa*2 6Ni 6Sa*2 6Dha 6Sa*2 6Pa 6Sa*2 6ma 6Sa*2 6Ga 6Sa*2 6Re 6Sa*2 6Sa 6Sa*2 ";
             }
-            // Tihai (3 repeating structural endings)
+            // Tihai
             umlSitar += "6Pa 6Sa*2 6Dha 6Sa*2 6Sa*2 . . . 6Pa 6Sa*2 6Dha 6Sa*2 6Sa*2 . . . ";
-            umlSitar += "6Pa 6Sa*2 6Dha 6Sa*2 6Sa*2 . . . _ . . . _ . . . _ . . . ";
+            umlSitar += "6Pa 6Sa*2 6Dha 6Sa*2 6Sa*2 . . . _ . . . _ . . . ";
             for (int i = 0; i < 6; ++i) {
                 umlSitar += "_ . . . _ . . . _ . . . _ . . . ";
             }
                 
             std::string umlDayan = 
                 "grid: 4\n"
+                "basefreq: 222.0\n"
                 "instrument: dayan\n\n";
-            // Alap: Silent
-            for (int i = 0; i < 16; ++i) {
+            // Alap: Silent (256 cells)
+            for (int i = 0; i < 32; ++i) {
                 umlDayan += "_ . . . _ . . . ";
             }
-            // Jod: Vilambit Teental (Medium tempo groove)
+            // Jod: Vilambit Teental (128 cells)
             for (int i = 0; i < 8; ++i) {
                 umlDayan += "Na . . . Tin . . . Tun . . . tk . . . ";
             }
-            // Jhala: Drut Teental (Fast tempo groove)
+            // Jhala: Drut Teental (256 cells)
             for (int i = 0; i < 32; ++i) {
                 umlDayan += "Na tk Tin tk Tun tk Na tk ";
             }
                 
             std::string umlBayan = 
                 "grid: 4\n"
+                "basefreq: 111.0\n"
                 "instrument: bayan\n\n";
-            // Alap: Silent
-            for (int i = 0; i < 16; ++i) {
+            // Alap: Silent (256 cells)
+            for (int i = 0; i < 32; ++i) {
                 umlBayan += "_ . . . _ . . . ";
             }
-            // Jod: Vilambit Teental
+            // Jod: Vilambit Teental (128 cells)
             for (int i = 0; i < 8; ++i) {
                 umlBayan += "Ghe . . . Ka . . . Ghe . . . Ka . . . ";
             }
-            // Jhala: Drut Teental
+            // Jhala: Drut Teental (256 cells)
             for (int i = 0; i < 32; ++i) {
                 umlBayan += "Ghe Ghe Ka Ka Ghe Ghe Ka Ka ";
             }
@@ -816,6 +837,95 @@ int main(int argc, char* argv[]) {
                 "Dha _ _ Na Dha Dha _ Tin Dha _ _ Na Dha Dha _ Tin";
 
             group.sequences.push_back({"Dhol", new UMLSequence("Dhol", 38, umlDhol)});
+            duration = 48;
+        } else if (selection == 10) {
+            group.name = "Sarod — Raag Yaman (Fast, with Meend Glides)";
+            
+            std::string umlTanpura = 
+                "grid: 4\n"
+                "bpm: 80\n"
+                "basefreq: 222.0\n"
+                "instrument: tanpura\n"
+                "notation: Hindustani\n"
+                "\n"
+                "5Sa............... _............... "
+                "5Sa............... _...............";
+            
+            // Faster Sarod in Raag Yaman (Ni Re Ga Ma Dha Ni Sa)
+            // Structure: Alaap (with glides), Jod, Jhala
+            std::string umlSarod = 
+                "grid: 4\n"
+                "bpm: 80\n"
+                "basefreq: 222.0\n"
+                "instrument: sarod\n"
+                "notation: Hindustani\n"
+                "glide: 0.06\n"
+                "vibrato_depth: 0.02\n"
+                "vibrato_rate: 5.5\n"
+                // Alaap — slow with long meend glides (^)
+                "5Sa..^ 5Sa..^ 8Ni..^ 5Sa..^ \n"
+                "8Ni..^ 8Ga..^ 8Re..^ 8Ni..~ \n"
+                "8Ga..^ 6Dha..^ 8Ni..^ 6Dha..~ \n"
+                "8Re..^ 8Ga..^ 8Re..^ 6Dha..^ \n"
+                "9Ni..^ 6Sa*2..^ 9Ni..~ 6Dha..~ \n"
+                "8Re..^ 9Ni..^ 6Sa*2..^ 8Ga..^ \n"
+                "9Ni..^ 8Re..^ 6Dha..^ 8Ni..^ \n"
+                "5Sa..^ 8Re..^ 8Ga..^ 8Re..~ \n"
+                // Jod — medium pulse
+                "8Ga. 8Re. 5Sa. 8Ni. 9Ni. 5Sa. 8Re. 8Ga. \n"
+                "8Re. 8Ga. 6Dha. 8Ni. 6Dha. 8Ni. 8Re. 8Ga. \n"
+                "8Ni. 5Sa. 8Re. 8Ga. 9Ni. 6Sa*2. 9Ni. 5Sa. \n"
+                "8Ga. 8Re. 6Dha. 8Ni. 8Re. 8Ga. 8Re. 5Sa. \n"
+                "6Dha. 8Ni. 8Re. 8Ga. 8Re. 6Dha. 8Ni. 5Sa. \n"
+                "8Ni. 5Sa. 8Re. 8Ga. 6Dha. 8Ni. 8Re. 8Ga. \n"
+                "9Ni. 6Sa*2. 9Ni. 8Re. 8Ga. 8Re. 5Sa. 8Ni. \n"
+                "5Sa. 8Re. 8Ga. 8Re. 6Dha. 8Ni. 5Sa. 8Ga. \n"
+                // Jhala — fast with chikari (strike=1 prefix)
+                "61Sa 8Ga~ 61Sa 8Ga~ 81Ni 8Ga~ 61Sa 8Ga~ \n"
+                "81Re 8Ga~ 81Re 8Ga~ 81Ga 8Re~ 81Ga 8Re~ \n"
+                "81Ga 8Ni~ 81Ga 8Ni~ 81Ni 8Re~ 81Ni 8Re~ \n"
+                "61Sa 8Ga~ 61Sa 8Ga~ 81Dha 8Ga~ 81Dha 8Re~ \n"
+                "81Re 8Ga~ 81Re 8Ga~ 81Ni 8Re~ 81Ni 8Ga~ \n"
+                "61Sa 8Ga~ 61Sa 8Ga~ 81Ga 8Re~ 81Ga 8Re~ \n"
+                "81Ni 8Dha~ 81Ni 8Dha~ 81Re 8Ga~ 81Re 8Ga~ \n"
+                "81Ga 8Ni~ 81Ga 8Ni~ 81Re 8Ga~ 81Re 8Ga~ \n"
+                "61Sa 8Ga~ 61Sa 8Ga~ 61Sa 8Ga~ 61Sa 8Ga~ \n"
+                "5Sa . . . . . . . \n";
+            
+            auto buildDayan = [bpm = 80]() -> std::string {
+                std::string s = "grid: 4\nbpm: ";
+                s += std::to_string(bpm) + "\nbasefreq: 222.0\ninstrument: dayan\n\n";
+                std::string alaap = "Na... Tin... Tun... tk... Na... Tin... Na... tk... ";
+                std::string med   = "Na. Tin. Tun. tk. Na. Tin. Na. tk. ";
+                std::string jhala = "Na Tin Tun tk Na Tin Na tk ";
+                for (int i = 0; i < 2; i++) s += alaap;
+                for (int i = 0; i < 4; i++) s += med;
+                for (int i = 0; i < 4; i++) s += med;
+                for (int i = 0; i < 18; i++) s += jhala;
+                return s;
+            };
+            
+            auto buildBayan = [bpm = 80]() -> std::string {
+                std::string s = "grid: 4\nbpm: ";
+                s += std::to_string(bpm) + "\nbasefreq: 111.0\ninstrument: bayan\n\n";
+                std::string alaap = "Ghe... _... _... Ka... _... Ka... Ghe... _... ";
+                std::string med   = "Ghe. _. _. Ka. _. Ka. Ghe. _. ";
+                std::string jhala = "Ghe _ _ Ka _ Ka Ghe _ ";
+                for (int i = 0; i < 2; i++) s += alaap;
+                for (int i = 0; i < 4; i++) s += med;
+                for (int i = 0; i < 4; i++) s += med;
+                for (int i = 0; i < 18; i++) s += jhala;
+                return s;
+            };
+            
+            group.sequences.push_back({"Tanpura", new UMLSequence("Tanpura", 11, umlTanpura)});
+            group.sequences.push_back({"Sarod", new UMLSequence("Sarod", 44, umlSarod)});
+            group.sequences.push_back({"Dayan", new UMLSequence("Dayan", 0, buildDayan())});
+            group.sequences.push_back({"Bayan", new UMLSequence("Bayan", 1, buildBayan())});
+            
+            group.percussionTrackWeight = 1.3f;
+            group.backgroundTrackWeight = 0.3f;
+            group.melodyTrackWeight = 1.0f;
             duration = 48;
         }
 

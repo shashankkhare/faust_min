@@ -42,7 +42,7 @@ struct UMLEvent {
     float frequency = 0.0f;
     float velocity = -1.0f;  // -1.0 = not set (use DSP default)
     float amplitude = -1.0f; // -1.0 = not set (use DSP default)
-    float strikeVal = -1.0f;   // -1.0 implies no explicit strike value
+    float strikeVal = 0.0f;   // Default to 0.0f (normal strike)
     float vowelVal  = -1.0f;   // -1.0 = not a voice event; 0=aa 1=ee 2=ii 3=oo 4=uu
     std::string note = "";
     long durationSamples = 0;  // For glides

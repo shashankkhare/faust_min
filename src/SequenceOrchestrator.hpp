@@ -207,7 +207,9 @@ private:
     std::string mAssetBasePath;
 
     std::map<std::string, std::shared_ptr<ActiveSequence>> mActiveSequences;
+    std::vector<std::string> mPendingPlay;
     std::mutex mStateMutex;
+    long mMasterSampleCount = 0;
     std::atomic<bool> mIsPaused{false};
     std::atomic<bool> mHumanize{true};
     std::atomic<bool> mLooping{false};

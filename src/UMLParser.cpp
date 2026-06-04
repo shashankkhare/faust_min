@@ -238,6 +238,7 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
         TokenItem ti;
         ti.gridIndex = currentGridIndex;
         ti.controlParam = 5; // Default middle-register/velocity scalar
+        ti.strikeVal = 0.0f;
         ti.hasGlideOp = false;
         ti.hasVibratoOp = false;
 
@@ -264,16 +265,26 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
                 rem.erase(std::remove(rem.begin(), rem.end(), '~'), rem.end());
             }
 
-            // Extract embedded single-digit control prefix modifier securely
-            if (rem.length() > 1 && std::isdigit(rem[0]) && !std::isdigit(rem[1])) {
+            // Extract embedded control/strike prefix modifier
+            if (rem.length() > 2 && std::isdigit(rem[0]) && std::isdigit(rem[1]) && !std::isdigit(rem[2])) {
+                ti.controlParam = rem[0] - '0';
+                ti.strikeVal = static_cast<float>(rem[1] - '0');
+                rem = rem.substr(2);
+            } else if (rem.length() > 1 && std::isdigit(rem[0]) && !std::isdigit(rem[1])) {
                 ti.controlParam = rem[0] - '0';
                 rem = rem.substr(1);
             } else if (rem.length() > 0 && std::isdigit(rem[0]) && rem.find_first_not_of("0123456789.") == std::string::npos) {
                 // Direct Hz numeric token, keep whole
             } else if (rem.length() > 0 && std::isdigit(rem[0])) {
-                // Fallback cleanup
-                ti.controlParam = rem[0] - '0';
-                rem = rem.substr(1);
+                // Fallback: check if we have one or two digits
+                if (rem.length() > 1 && std::isdigit(rem[1])) {
+                    ti.controlParam = rem[0] - '0';
+                    ti.strikeVal = static_cast<float>(rem[1] - '0');
+                    rem = rem.substr(2);
+                } else {
+                    ti.controlParam = rem[0] - '0';
+                    rem = rem.substr(1);
+                }
             }
             ti.noteName = rem;
         } else if (match[3].matched) {
@@ -466,6 +477,7 @@ void UMLParser::handlePitchedToken(const TokenItem& ti, float amplitudeScalar, l
             noteEv.frequency = freq;
             noteEv.velocity = -1.0f; // Reserved for later use per user
             noteEv.amplitude = amplitudeScalar;
+            noteEv.strikeVal = ti.strikeVal;
             noteEv.type = UMLEventType::NoteOn;
             noteEv.note = noteStr;
             noteEv.durationSamples = durationSamples;
@@ -499,6 +511,7 @@ void UMLParser::handlePitchedToken(const TokenItem& ti, float amplitudeScalar, l
                 glideEv.targetFrequency = tFreq;
                 glideEv.targetAmplitude = tVel; // User requested amplitude instead of velocity
                 glideEv.targetVelocity = -1.0f; 
+                glideEv.targetStrikeVal = tokenItemsArray[targetIdx].strikeVal;
                 glideEv.durationSamples = (sampleOffset + durationSamples) - triggerOffset;
                 outEvents.push_back(glideEv);
             }

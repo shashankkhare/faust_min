@@ -51,6 +51,9 @@ UMLSequence::UMLSequence(const std::string& seqName, int instID, const std::stri
                               ? DSPExecutionType::InterpretedByte 
                               : DSPExecutionType::StaticCompiled;
         this->mInstrument = std::make_shared<FaustInstrument>(targetID, mode, InstrumentMapper::DEFAULT_SAMPLE_RATE);
+        if (this->baseFreq > 0.0) {
+            this->mInstrument->setParameter("basefreq", this->baseFreq);
+        }
         for (const auto& pair : this->initialParams) {
             this->mInstrument->setParameter(pair.first.c_str(), pair.second);
         }

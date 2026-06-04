@@ -75,6 +75,7 @@ std::string InstrumentMapper::getNameFromID(int id) {
         case 36: return "LN"; // Lag Nga
         case 37: return "DK"; // Dholak
         case 38: return "DH"; // Dhol
+        case 44: return "SR"; // Sarod
         case 48: return "NC"; // Ngachen
         default: return "DA";
     }
@@ -132,6 +133,7 @@ int InstrumentMapper::getIDFromName(const std::string& name) {
     if (lowerName == "dh" || lowerName == "dhol") return 38;
     if (lowerName == "tb" || lowerName == "tibetanbowl" || lowerName == "tibetan_bowl") return 47;
     if (lowerName == "nc" || lowerName == "ngachen" || lowerName == "nga_chen" || lowerName == "nga chen") return 48;
+    if (lowerName == "sr" || lowerName == "sarod") return 44;
 
     return -1;
 }
@@ -203,6 +205,7 @@ std::string InstrumentMapper::getDSPPathForID(int id, const std::string& assetBa
         case 36: return base + "lagnga.dsp";
         case 37: return base + "dholak.dsp";
         case 38: return base + "dhol.dsp";
+        case 44: return base + "sarod.dsp";
         case 47: return base + "tibetanbowl.dsp";
         case 48: return base + "ngachen.dsp";
         default: return base + "dayan.dsp";

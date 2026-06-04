@@ -51,7 +51,7 @@ void testDayan(FaustMixer& mixer, DSPExecutionType execType) {
         double freq = freqs[i];
         float strike = static_cast<float>(i % 4);
         std::cout << "  -> Note: " << freq << " Hz, Strike: " << strike << std::endl;
-        inst->noteOn(freq, 0.8f, strike);
+        inst->noteOn(freq, gTestVelocity, strike);
         usleep(2500000);
         inst->noteOff();
         if (i < freqs.size() - 1) usleep(1500000);
@@ -70,7 +70,7 @@ void testBayan(FaustMixer& mixer, DSPExecutionType execType) {
         double freq = freqs[i];
         float strike = static_cast<float>(i % 4);
         std::cout << "  -> Note: " << freq << " Hz, Strike: " << strike << std::endl;
-        inst->noteOn(freq, 0.8f, strike);
+        inst->noteOn(freq, gTestVelocity, strike);
         usleep(2500000);
         inst->noteOff();
         if (i < freqs.size() - 1) usleep(1500000);
@@ -88,7 +88,7 @@ void testKick(FaustMixer& mixer, DSPExecutionType execType) {
     for (size_t i = 0; i < freqs.size(); ++i) {
         double freq = freqs[i];
         std::cout << "  -> Note: " << freq << " Hz" << std::endl;
-        inst->noteOn(freq, 0.8f, 1.0f);
+        inst->noteOn(freq, gTestVelocity, 1.0f);
         usleep(2000000);
         inst->noteOff();
         if (i < freqs.size() - 1) usleep(1000000);
@@ -107,7 +107,7 @@ void testSnare(FaustMixer& mixer, DSPExecutionType execType) {
     for (size_t i = 0; i < freqs.size(); ++i) {
         double freq = freqs[i];
         std::cout << "  -> Note: " << freq << " Hz" << std::endl;
-        inst->noteOn(freq, 0.8f);
+        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
         usleep(2000000);
         inst->noteOff();
         if (i < freqs.size() - 1) usleep(1000000);
@@ -122,12 +122,12 @@ void testHiHat(FaustMixer& mixer, DSPExecutionType execType) {
     int track = mixer.addTrack(0.8f);
     mixer.addInstrumentToTrack(track, inst.get());
     std::cout << "  -> Closed HiHat" << std::endl;
-    inst->noteOn(0.0f, 0.7f, 1.0f);
+    inst->noteOn(0.0f, gTestVelocity, 1.0f, gTestAmplitude);
     usleep(2000000);
     inst->noteOff();
     usleep(1000000);
     std::cout << "  -> Open HiHat" << std::endl;
-    inst->noteOn(0.0f, 0.8f, 2.0f);
+    inst->noteOn(0.0f, gTestVelocity, 2.0f);
     usleep(2500000);
     inst->noteOff();
     usleep(1500000);
@@ -144,7 +144,7 @@ void testTom(FaustMixer& mixer, DSPExecutionType execType) {
     for (size_t i = 0; i < freqs.size(); ++i) {
         double freq = freqs[i];
         std::cout << "  -> Note: " << freq << " Hz" << std::endl;
-        inst->noteOn(freq, 0.8f);
+        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
         usleep(2000000);
         inst->noteOff();
         if (i < freqs.size() - 1) usleep(1000000);
@@ -163,7 +163,7 @@ void testRide(FaustMixer& mixer, DSPExecutionType execType) {
     for (size_t i = 0; i < freqs.size(); ++i) {
         double freq = freqs[i];
         std::cout << "  -> Note: " << freq << " Hz" << std::endl;
-        inst->noteOn(freq, 0.8f);
+        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
         usleep(2500000);
         inst->noteOff();
         if (i < freqs.size() - 1) usleep(1000000);
@@ -181,7 +181,7 @@ void testBell(FaustMixer& mixer, DSPExecutionType execType) {
     for (size_t i = 0; i < freqs.size(); ++i) {
         double freq = freqs[i];
         std::cout << "  -> Note: " << freq << " Hz" << std::endl;
-        inst->noteOn(freq, 0.8f);
+        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
         usleep(3500000);
         inst->noteOff();
         if (i < freqs.size() - 1) usleep(1500000);
@@ -199,7 +199,7 @@ void testBowl(FaustMixer& mixer, DSPExecutionType execType) {
     for (size_t i = 0; i < freqs.size(); ++i) {
         double freq = freqs[i];
         std::cout << "  -> Note: " << freq << " Hz" << std::endl;
-        inst->noteOn(freq, 0.8f);
+        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
         usleep(2500000); // 2.5 seconds ring time
         inst->noteOff();
         if (i < freqs.size() - 1) usleep(800000); // 0.8 seconds gap
@@ -282,7 +282,7 @@ void testTanpura(FaustMixer& mixer, DSPExecutionType execType) {
         double freq = freqs[i];
         inst->setParam("freq1", freq * 1.5f);
         std::cout << "  -> Note Sa: " << freq << " Hz, Pa: " << freq * 1.5f << " Hz" << std::endl;
-        inst->noteOn(freq, 0.8f);
+        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
         usleep(4000000); // reduced from 12s to play faster
         inst->noteOff();
         if (i < freqs.size() - 1) usleep(500000); // reduced spacing
@@ -308,7 +308,7 @@ void testPiano(FaustMixer& mixer, DSPExecutionType execType) {
     }
     for (double freq : freqs) {
         std::cout << "  -> Note: " << freq << " Hz" << std::endl;
-        inst->noteOn(freq, 0.8f);
+        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
         usleep(1000000); // 1 second hold
         inst->noteOff();
         usleep(200000);  // 0.2 second spacing
@@ -338,7 +338,7 @@ void testSax(FaustMixer& mixer, DSPExecutionType execType) {
     }
     for (double freq : freqs) {
         std::cout << "  -> Note: " << freq << " Hz" << std::endl;
-        inst->noteOn(freq, 0.8f);
+        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
         usleep(1000000); // 1 second hold
         inst->noteOff();
         usleep(200000);  // 0.2 second spacing
@@ -368,7 +368,7 @@ void testTrumpet(FaustMixer& mixer, DSPExecutionType execType) {
     }
     for (double freq : freqs) {
         std::cout << "  -> Note: " << freq << " Hz" << std::endl;
-        inst->noteOn(freq, 0.8f);
+        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
         usleep(1000000); // 1 second hold
         inst->noteOff();
         usleep(200000);  // 0.2 second spacing
@@ -484,7 +484,7 @@ void testCowbell(FaustMixer& mixer, DSPExecutionType execType) {
     for (size_t i = 0; i < freqs.size(); ++i) {
         double freq = freqs[i];
         std::cout << "  -> Note: " << freq << " Hz" << std::endl;
-        inst->noteOn(freq, 0.8f);
+        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
         usleep(2000000);
         inst->noteOff();
         if (i < freqs.size() - 1) usleep(1000000);
@@ -1017,7 +1017,12 @@ void testSarod(FaustMixer& mixer, DSPExecutionType execType) {
     int track = mixer.addTrack(0.8f);
     mixer.addInstrumentToTrack(track, inst.get());
     
-    std::vector<double> freqs = getTestFreqsDouble({ 130.81, 146.83, 164.81, 196.00 });
+    std::vector<double> freqs = getTestFreqsDouble({ 
+        65.41, 73.42, 82.41, 87.31, 98.00, 110.00, 123.47,
+        130.81, 146.83, 164.81, 174.61, 196.00, 220.00, 246.94,
+        261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88,
+        523.25, 587.33, 659.25, 698.46, 783.99, 880.00, 987.77
+    });
     for (double freq : freqs) {
         std::cout << "  -> Note: " << freq << " Hz" << std::endl;
         inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
@@ -1025,6 +1030,7 @@ void testSarod(FaustMixer& mixer, DSPExecutionType execType) {
         inst->noteOff();
         usleep(300000);
     }
+
     mixer.removeTrack(track);
 }
 
@@ -1082,7 +1088,7 @@ void testTibetanbowl(FaustMixer& mixer, DSPExecutionType execType) {
     std::vector<double> freqs = getTestFreqsDouble({ 111.0, 222.0 });
     for (double freq : freqs) {
         std::cout << "  -> Note: " << freq << " Hz" << std::endl;
-        inst->noteOn(freq, gTestVelocity >= 0.0f ? gTestVelocity : 0.8f);
+        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
         usleep(4000000);
         inst->noteOff();
         usleep(1500000);

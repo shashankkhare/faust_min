@@ -30,9 +30,13 @@ Global settings that define the temporal and harmonic grid.
 
 The notes component handles discrete triggers and melodic movement for the sequence.
 
-### Syntax: `([Amplitude])[NoteToken]` or `[ArticToken]`
+### Syntax: `([Amplitude])[NoteToken]` or `([Amplitude][StrikeVal])[NoteToken]` or `[ArticToken]`
 
 - **Amplitude**: Optional single digit `1-9` (Default: 5). Marks the amplitude of the play. Maps as `amplitude = digit / 9.0`.
+- **StrikeVal**: Optional second digit immediately following `Amplitude` (e.g. `51Sa` or `90Re`). Used for string/plucked instruments (like Sarod or Sitar) to control the strike/pluck articulation or drone strings:
+  - `0`: Normal solo play of the primary melody string.
+  - `1`: Plucking the main string along with the 3 accompanying drone/chikari strings.
+  - *Note: For percussion instruments (Tabla/Conga), strikeVal continues to map to specific drum strokes (edge, slap, open, closed).*
   - **Indian Notation (22 Shrutis)**:
     - `Sa`, `Pa` (Fixed)
     - `r1`, `r2`, `R1`, `R2` (Re)

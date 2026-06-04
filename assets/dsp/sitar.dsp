@@ -20,6 +20,10 @@ gain = hslider("gain", 0.5, 0, 1, 0.01);
 velocity = hslider("velocity", 0.5, 0, 1, 0.01);
 jivari = hslider("jivari", 0.5, 0, 1, 0.01);
 symp_gain = hslider("symp_gain", 0.2, 0, 1, 0.01);
+strike = hslider("strike", 0, 0, 1, 1);
+chikari1_ratio = hslider("chikari1_ratio", 1.0, 0.1, 10.0, 0.01);
+chikari2_ratio = hslider("chikari2_ratio", 2.0, 0.1, 10.0, 0.01);
+chikari3_ratio = hslider("chikari3_ratio", 4.0, 0.1, 10.0, 0.01);
 
 // =====================================================
 // Dynamic parameter mapping (Matches original C++ updateInternal)
@@ -88,6 +92,9 @@ saturated(x) = x : min(1.0) : max(-1.0);
 // Waveguide Loop
 stringLoop = exc : (+ : linear_fdelay(16384, del - 1.0)) ~ (jivari_bridge : lp : _ * feedback : dispersion : dcblock : saturated : _ * (excite_active == 0));
 
+chikari_loop(ratio) = exc : (+ : linear_fdelay(8192, (ma.SR / (freq * ratio)) - 1.0)) ~ (jivari_bridge : lp : _ * feedback : dispersion : dcblock : saturated : _ * (excite_active == 0));
+chikari_sum = (chikari_loop(chikari1_ratio) + chikari_loop(chikari2_ratio) + chikari_loop(chikari3_ratio)) * (strike >= 0.5) * 0.35;
+
 // =====================================================
 // Sympathetic Strings
 // =====================================================
@@ -117,4 +124,4 @@ symp_out(x) = x + symp_sum(x) * symp_gain;
 // =====================================================
 // Final Process
 // =====================================================
-process = symp_out(stringLoop) * gain * dynOutputGain : ma.tanh;
+process = symp_out(stringLoop + chikari_sum) * gain * dynOutputGain : ma.tanh;

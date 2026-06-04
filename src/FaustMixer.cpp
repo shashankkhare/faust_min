@@ -673,17 +673,17 @@ void FaustMixer::onAudioReady(float* stereoOutput, int numFrames) {
         
         std::lock_guard<std::mutex> lock(mRegistryMutex);
 
+        // Tick the timeline first so that events are applied immediately before rendering
+        if (mPreRenderCallback) {
+            mPreRenderCallback(framesThisSubBlock, mPreRenderUserData);
+        }
+
         long currentS = mMasterSampleTime;
         processMasterSweep(currentS);
         processChannelSweeps(currentS);
 
         float balanceMultiplier = computeAutoRecalibrationMultiplier();
         accumulateInstrumentChannels(subOutput, framesThisSubBlock, balanceMultiplier);
-
-        // 3. Tick the timeline
-        if (mPreRenderCallback) {
-            mPreRenderCallback(framesThisSubBlock, mPreRenderUserData);
-        }
 
         mMasterSampleTime += framesThisSubBlock;
         framesProcessed += framesThisSubBlock;

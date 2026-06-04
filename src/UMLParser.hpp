@@ -38,6 +38,7 @@ public:
         std::string rawStr;
         long gridIndex;
         int controlParam; // Octave/Velocity prefix modifier
+        float strikeVal = 0.0f; // Strike type prefix modifier (default 0.0f)
         std::string noteName;
         bool hasGlideOp;
         bool hasVibratoOp;
