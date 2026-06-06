@@ -134,6 +134,8 @@ int InstrumentMapper::getIDFromName(const std::string& name) {
     if (lowerName == "tb" || lowerName == "tibetanbowl" || lowerName == "tibetan_bowl") return 47;
     if (lowerName == "nc" || lowerName == "ngachen" || lowerName == "nga_chen" || lowerName == "nga chen") return 48;
     if (lowerName == "sr" || lowerName == "sarod") return 44;
+    if (lowerName == "mg" || lowerName == "mridangam") return 49;
+    if (lowerName == "gh" || lowerName == "ghatam") return 50;
 
     return -1;
 }
@@ -145,12 +147,12 @@ bool InstrumentMapper::isPercussionID(int id) {
 bool InstrumentMapper::isMembraneophone(int id) {
     return id == 0 || id == 1 || id == 2 || id == 3 || id == 5
         || id == 28 || id == 30 || id == 31 || id == 36 || id == 37
-        || id == 38 || id == 48;
+        || id == 38 || id == 48 || id == 49;
 }
 
 bool InstrumentMapper::isIdiophone(int id) {
     return id == 4 || id == 6 || id == 7 || id == 8 || id == 14
-        || id == 20 || id == 29 || id == 33 || id == 35 || id == 47;
+        || id == 20 || id == 29 || id == 33 || id == 35 || id == 47 || id == 50;
 }
 
 int InstrumentMapper::getPolyphonyVoices(int id) {
@@ -208,6 +210,8 @@ std::string InstrumentMapper::getDSPPathForID(int id, const std::string& assetBa
         case 44: return base + "sarod.dsp";
         case 47: return base + "tibetanbowl.dsp";
         case 48: return base + "ngachen.dsp";
+        case 49: return base + "mridangam.dsp";
+        case 50: return base + "ghatam.dsp";
         default: return base + "dayan.dsp";
     }
 }

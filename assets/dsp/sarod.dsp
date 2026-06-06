@@ -28,6 +28,8 @@ gate = button("gate");
 velocity = hslider("velocity", 0.5, 0, 1, 0.01);
 gain = hslider("gain", 1.0, 0, 1, 0.01);
 symp_gain = hslider("symp_gain", 0.3, 0, 1, 0.01);
+strike = hslider("strike", 0, 0, 1, 1);
+chikari_freq = hslider("chikari_freq", 880.0, 40, 2000, 0.01);
 
 // Melody excitation trigger
 trig = gate > gate';
@@ -48,8 +50,15 @@ pick_impulse = ba.impulsify(trig);
 // Wooden plectrum scratch noise
 pick_noise = no.noise : fi.bandpass(2, 800.0, 1600.0);
 
-// Melody string excitation: sharp wooden click + scratchy noise, but less prominent
-melody_exc = (pick_impulse * 0.1 + pick_noise * 0.4) * exc_env * velocity * 2.0;
+// Base wooden pluck excitation
+// Base wooden pluck excitation - reduced gain to prevent fingerboard from instantly damping the string
+base_exc = pick_noise * 0.2 * exc_env * velocity;
+
+// Explicit mathematical routing
+is_chikari = strike > 0.5;
+
+melody_exc = base_exc; // ALWAYS play melody
+chikari_exc = base_exc * 0.7 * is_chikari; // Tone down chikari excitation
 
 // Melody string parameters
 normFreq = (freq - 80.0) / (800.0 - 80.0) : min(1.0) : max(0.0);
@@ -117,8 +126,16 @@ symp_sum(x) = symp_mode(1.000, x)
             + symp_mode(2.000, x)
             + symp_mode(3.000, x);
 
-// Series coupling: string + sympathetic strings both drive the membrane, then body
-summed = stringLoop + symp_sum(stringLoop) * symp_gain * 2.0;
+// Chikari string (used when strike=1): drone at chikari_freq, short sustain, bright
+chikari_del = ma.SR / chikari_freq;
+chikari_feedback = pow(0.001, 1.0 / (2.5 * chikari_freq)); // 2.5s sustain for bright ringing drone
+chikari_lp = * (0.95) : + ~ * (0.05); // warmer, slightly more damping to prevent shriek
+
+chikariLoop = chikari_exc : (+ : linear_fdelay(16384, chikari_del - 1.0)) ~ (chikari_lp : _ * chikari_feedback);
+
+// Series coupling: BOTH strings + sympathetic strings drive the membrane, then body
+// Fix: Do NOT feed chikariLoop into symp_sum! Otherwise the 0.25s Chikari excites the 1.2s sympathetic strings and rings forever!
+summed = stringLoop + chikariLoop + symp_sum(stringLoop) * symp_gain * 2.0;
 core = summed : membrane_saturate : membrane_filter : body_filter;
 
 process = core * gain * 3.5 : ma.tanh;

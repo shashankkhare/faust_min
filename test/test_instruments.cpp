@@ -79,6 +79,44 @@ void testBayan(FaustMixer& mixer, DSPExecutionType execType) {
     mixer.removeTrack(track);
 }
 
+void testMridangam(FaustMixer& mixer, DSPExecutionType execType) {
+    std::cout << "\n=== [Test] Mridangam ===" << std::endl;
+    auto inst = std::make_shared<FaustInstrument>(49, execType, InstrumentMapper::DEFAULT_SAMPLE_RATE);
+    int track = mixer.addTrack(0.8f);
+    mixer.addInstrumentToTrack(track, inst.get());
+    std::vector<double> freqs = getTestFreqsDouble({ 146.83, 146.83, 146.83, 146.83, 146.83, 146.83 });
+    for (size_t i = 0; i < freqs.size(); ++i) {
+        double freq = freqs[i];
+        float strike = static_cast<float>(i % 6);
+        std::cout << "  -> Note: " << freq << " Hz, Strike: " << strike << std::endl;
+        inst->noteOn(freq, gTestVelocity, strike);
+        usleep(2500000);
+        inst->noteOff();
+        if (i < freqs.size() - 1) usleep(1500000);
+    }
+    usleep(1500000);
+    mixer.removeTrack(track);
+}
+
+void testGhatam(FaustMixer& mixer, DSPExecutionType execType) {
+    std::cout << "\n=== [Test] Ghatam ===" << std::endl;
+    auto inst = std::make_shared<FaustInstrument>(50, execType, InstrumentMapper::DEFAULT_SAMPLE_RATE);
+    int track = mixer.addTrack(0.8f);
+    mixer.addInstrumentToTrack(track, inst.get());
+    std::vector<double> freqs = getTestFreqsDouble({ 130.81, 130.81, 130.81, 130.81, 130.81 });
+    for (size_t i = 0; i < freqs.size(); ++i) {
+        double freq = freqs[i];
+        float strike = static_cast<float>(i % 5);
+        std::cout << "  -> Note: " << freq << " Hz, Strike: " << strike << std::endl;
+        inst->noteOn(freq, gTestVelocity, strike);
+        usleep(2500000);
+        inst->noteOff();
+        if (i < freqs.size() - 1) usleep(1500000);
+    }
+    usleep(1500000);
+    mixer.removeTrack(track);
+}
+
 void testKick(FaustMixer& mixer, DSPExecutionType execType) {
     std::cout << "\n=== [Test] Kick ===" << std::endl;
     auto inst = std::make_shared<FaustInstrument>(2, execType, InstrumentMapper::DEFAULT_SAMPLE_RATE);
@@ -446,31 +484,51 @@ void testBansuri(FaustMixer& mixer, DSPExecutionType execType) {
 
 
 void testViolin(FaustMixer& mixer, DSPExecutionType execType) {
-    std::cout << "\n=== [Test] Violin (G3 to E5, D Major Scale) ===" << std::endl;
+    // Only print to std::cout what is strictly requested
     auto inst = std::make_shared<FaustInstrument>(18, execType, InstrumentMapper::DEFAULT_SAMPLE_RATE);
-    int track = mixer.addTrack(gTestAmplitude);
+    int track = mixer.addTrack(1.0f); // fixed 1.0 amplitude for test
     mixer.addInstrumentToTrack(track, inst.get());
-    if (gTestPressure >= 0.0f) {
-        inst->setParam("bowPressure", gTestPressure);
+    
+    std::vector<double> freqs = {110.0, 146.8, 196.0, 220.0, 246.9, 293.7, 329.6, 392.0, 440.0, 493.9, 523.3, 587.3, 659.3, 783.9, 880.0, 1046.5, 1174.6, 1400.0};
+    std::vector<float> strikes = {0.0f, 1.0f, 2.0f};
+
+    inst->enableDiagnosticLogging(true);
+    
+    for (float strike : strikes) {
+        std::cout << "S" << (int)strike << ": " << std::flush;
+        for (size_t i = 0; i < freqs.size(); ++i) {
+            double freq = freqs[i];
+            
+            inst->clearDiagnosticLogs();
+            
+            // Note On
+            inst->noteOn(freq, 0.8f, strike, 1.0f);
+            
+            // Original timing: keep bowing up to 1.5s total before release
+            usleep(1500000);
+            inst->noteOff();
+            
+            // Wait for tail to decay
+            usleep(200000);
+            
+            // Read captured logs
+            auto logs = inst->getDiagnosticLogs();
+            float e1 = logs.size() > 0 ? logs[0].value3 : 0.0f;
+            float e2 = logs.size() > 1 ? logs[1].value3 : 0.0f;
+            float e3 = logs.size() > 2 ? logs[2].value3 : 0.0f;
+            
+            float avgEnergy = (e1 + e2 + e3) / 3.0f;
+            
+            std::cout << freq << "," << avgEnergy;
+            if (i < freqs.size() - 1) std::cout << " , ";
+            std::cout << std::flush; // Force output to show in real time
+            
+            // Original gap timing
+            usleep(200000); 
+        }
+        std::cout << std::endl;
     }
 
-    std::vector<double> freqs;
-    if (gTestFrequency > 0.0) {
-        freqs = { gTestFrequency };
-    } else {
-        std::vector<int> dMajorScale = {55, 57, 59, 62, 64, 66, 69, 71, 74, 76};
-        for (int midi : dMajorScale) {
-            freqs.push_back(440.0 * std::pow(2.0, (midi - 69.0) / 12.0));
-        }
-    }
-    for (double freq : freqs) {
-        std::cout << "  -> Note: " << freq << " Hz" << std::endl;
-        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
-        usleep(1500000); // 1.5 second bowing per note
-        inst->noteOff();
-        usleep(200000);  // 0.2 second gap between notes
-    }
-    usleep(1500000); // Final release tail
     mixer.removeTrack(track);
 }
 
@@ -1031,6 +1089,12 @@ void testSarod(FaustMixer& mixer, DSPExecutionType execType) {
         usleep(300000);
     }
 
+    std::cout << "  -> Chikari (strike=1)" << std::endl;
+    inst->noteOn(freqs.back(), gTestVelocity, 1.0f, gTestAmplitude);
+    usleep(2000000);
+    inst->noteOff();
+    usleep(500000);
+
     mixer.removeTrack(track);
 }
 
@@ -1193,7 +1257,9 @@ int main(int argc, char* argv[]) {
         {45, "Santoor"},
         {46, "Tumbi"},
         {47, "Tibetanbowl"},
-        {48, "Ngachen"}
+        {48, "Ngachen"},
+        {49, "Mridangam"},
+        {50, "Ghatam"}
     };
 
     std::cout << "\n--- Available Instruments ---" << std::endl;
@@ -1257,6 +1323,8 @@ int main(int argc, char* argv[]) {
                 case 46: testTumbi(mixer, execType); break;
                 case 47: testTibetanbowl(mixer, execType); break;
                 case 48: testNgachen(mixer, execType); break;
+                case 49: testMridangam(mixer, execType); break;
+                case 50: testGhatam(mixer, execType); break;
                 default: break;
             }
         } else {
@@ -1354,6 +1422,8 @@ int main(int argc, char* argv[]) {
                     case 46: testTumbi(mixer, execType); break;
                     case 47: testTibetanbowl(mixer, execType); break;
                     case 48: testNgachen(mixer, execType); break;
+                    case 49: testMridangam(mixer, execType); break;
+                    case 50: testGhatam(mixer, execType); break;
                     default: break;
                 }
             } else {

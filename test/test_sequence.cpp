@@ -170,7 +170,8 @@ int main(int argc, char* argv[]) {
             std::cout << "  8. Punjabi Folk (Bhangra beats)" << std::endl;
             std::cout << "  9. Exit" << std::endl;
             std::cout << " 10. Sarod — Raag Yaman (Fast, with Meend Glides) [12 semitone]" << std::endl;
-            std::cout << ">>> Enter selection (1-10): ";
+            std::cout << " 11. Carnatic Classical — Raag Hamsadhwani (Violin, Mridangam, Ghatam)" << std::endl;
+            std::cout << ">>> Enter selection (1-11): ";
             if (!(std::cin >> selection)) {
                 break;
             }
@@ -927,6 +928,69 @@ int main(int argc, char* argv[]) {
             group.backgroundTrackWeight = 0.3f;
             group.melodyTrackWeight = 1.0f;
             duration = 48;
+        } else if (selection == 11) {
+            group.name = "Carnatic Classical — Raag Hamsadhwani";
+
+            std::string umlViolin =
+                "grid: 4\n"
+                "bpm: 100\n"
+                "basefreq: 444.0\n"
+                "instrument: violin\n"
+                "notation: Indian\n"
+                "glide: 0.08\n"
+                "vibrato_depth: 0.015\n"
+                "vibrato_rate: 5.0\n"
+                "\n"
+                "// Alaap (Slow, expressive Flautando glides - Strike 0)\n"
+                "3Sa0..^~ 5R20..^~ 7G20..^~ 5Pa0..^~ \n"
+                "6N20..^~ 8Sa*20..^~ 6N20..^~ 4Pa0..^~ \n"
+                "5G20..^~ 4R20..^~ 3Sa0..~ _... \n"
+                "4Pa0..^~ 6D20..^~ 7N20..^~ 8Sa*20..^~ \n"
+                "6R*20..^~ 5Sa*20..^~ 4N20..^~ 3D20..^~ \n"
+                "4Pa0..^~ 3M20..^~ 3G20..~ _... \n"
+                "// Jod (Medium pulse Standard bowing - Strike 1)\n"
+                "4Sa1.~ 5R21.~ 6G21.~ 7Pa1.~ 8N21.~ 7Sa*21.~ 6N21.~ 5Pa1.~ \n"
+                "4G21.~ 3R21.~ 2Sa1.~ _......... \n"
+                "4Pa1.~ 5D21.~ 6N21.~ 7Sa*21.~ 8R*21.~ 7Sa*21.~ 6N21.~ 5D21.~ \n"
+                "4Pa1.~ 3M21.~ 2G21.~ _......... \n"
+                "// Jhala / Drut (Fast Crunch bowing - Strike 2)\n"
+                "5Sa2 7G22 5Sa2 7G22 5R22 7Pa2 5R22 7Pa2 \n"
+                "7G22 7N22 7G22 7N22 5Pa2 5Sa*22 5Pa2 5Sa*22 \n"
+                "5Sa*22 7N22 5Sa*22 7N22 5Pa2 7G22 5Pa2 7G22 \n"
+                "5R22 5Sa2 5R22 5Sa2 _... _... \n"
+                "5Pa2 7N22 5Pa2 7N22 5D22 7Sa*22 5D22 7Sa*22 \n"
+                "7N22 7R*22 7N22 7R*22 5Sa*22 5G*22 5Sa*22 5G*22 \n"
+                "5G*22 7R*22 5G*22 7R*22 5Sa*22 7N22 5Sa*22 7N22 \n"
+                "5D22 5Pa2 5D22 5Pa2 _... _... \n";
+
+
+
+            std::string umlGhatam =
+                "grid: 4\n"
+                "bpm: 100\n"
+                "basefreq: 222.0\n"
+                "instrument: ghatam\n"
+                "notation: konnakol\n"
+                "\n"
+                "// Alaap - 48 units\n"
+                "5Nam... 3Dhi... 8Gumki... 6Tha... \n"
+                "4Nam... 3Dhi... 7Nam... 6Tha... \n"
+                "5Nam... 3Dhi... 8Gumki... 6Tha... \n"
+                "// Jod - 32 units\n"
+                "5Nam. 3Dhi. 8Gumki. 6Tha. 4Nam. 3Dhi. 7Nam. 6Tha. \n"
+                "5Nam. 3Dhi. 8Gumki. 6Tha. 4Nam. 3Dhi. 7Nam. 6Tha. \n"
+                "// Jhala / Drut - 64 units\n"
+                "9Tha 4Dhi 8Thom 6Nam 9Gumki 5Nam 4Dhi 8Tha 9Tha 4Dhi 8Thom 6Nam 9Gumki 5Nam 4Dhi 8Tha \n"
+                "9Tha 7Tha 5Dhi 4Dhi 8Thom 6Thom 9Nam 7Nam 9Gumki 7Gumki 6Nam 5Nam 4Dhi 3Dhi 8Tha 6Tha \n"
+                "9Tha 4Dhi 8Thom 6Nam 9Gumki 5Nam 4Dhi 8Tha 9Tha 4Dhi 8Thom 6Nam 9Gumki 5Nam 4Dhi 8Tha \n"
+                "9Tha 7Tha 5Dhi 4Dhi 8Thom 6Thom 9Nam 7Nam 9Gumki 7Gumki 6Nam 5Nam _... _... \n";
+
+            group.sequences.push_back({"Violin", new UMLSequence("Violin", 18, umlViolin)});
+            group.sequences.push_back({"Ghatam", new UMLSequence("Ghatam", 50, umlGhatam)});
+
+            group.percussionTrackWeight = 1.2f;
+            group.melodyTrackWeight = 1.0f;
+            duration = 32;
         }
 
         if (!group.sequences.empty()) {

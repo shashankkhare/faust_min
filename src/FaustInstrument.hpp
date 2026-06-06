@@ -30,6 +30,7 @@
 #include <faust/dsp/dsp.h>
 #include <faust/gui/meta.h>
 #include <vector>
+#include <atomic>
 #include <map>
 
 #include <mutex>
@@ -62,6 +63,7 @@ public:
     void setDuration(float seconds);
     void setReverbSend(float send);
     void setParameter(const char* name, float value);
+    void clearVoices();
 
     // --- Native Automation Glides ---
     void amplitudeGlide(float targetAmplitude, float durationSeconds);
@@ -85,7 +87,21 @@ public:
 
     // Diagnostics
     void enableDiagnostics(bool enable) { mEnableDiagLogging = enable; }
+    void enableDiagnosticLogging(bool enable) { mEnableDiagLogging = enable; }
+    void clearDiagnosticLogs() { std::lock_guard<std::recursive_mutex> lock(mDSPLock); mDiagLogs.clear(); }
     void dumpDiagnostics();
+    
+    struct DiagLog {
+        long frame;
+        float freq;
+        float amp;
+        float value3; // used for energy capture
+    };
+    
+    std::vector<DiagLog> getDiagnosticLogs() { 
+        std::lock_guard<std::recursive_mutex> lock(mDSPLock); 
+        return mDiagLogs; 
+    }
 
     // Virtual completion callback hook
     virtual void onNoteFinish();
@@ -112,6 +128,7 @@ protected:
     struct LUTRecord {
         float frequency;
         float amplitude;
+        float strike;
         std::map<std::string, float> targetParams;
     };
     std::vector<LUTRecord> mLUTRecords;
@@ -143,6 +160,8 @@ protected:
     float mFrequency;
     float mVelocity;
     float mAmplitude;
+    float mStrikeVal = -1.0f;
+    bool mHasStrikeLUT = false;
     float mDuration;
     float mReverbSend;
     bool mGateOpen;
@@ -176,12 +195,6 @@ protected:
 
     float mDSPGlideParam = 0.05f; // Store original portamento
     
-    struct DiagLog {
-        long frame;
-        float freq;
-        float amp;
-        float glide;
-    };
     std::vector<DiagLog> mDiagLogs;
     bool mEnableDiagLogging = false;
 

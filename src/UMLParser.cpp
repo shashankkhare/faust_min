@@ -201,7 +201,7 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
                 seq.initialParams[key] = std::stod(val);
             }
         } else {
-            notesSection += line;
+            notesSection += line + "\n";
         }
     }
 
@@ -338,7 +338,7 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
             float amplitudeScalar = (float)ti.controlParam / 9.0f;
 
             if (InstrumentMapper::isPercussionID(seq.instrumentID)) {
-                handlePercussionToken(ti.noteName, amplitudeScalar, sampleOffset, durationSamples, seq.baseFreq, seq.instrument, seq.events);
+                handlePercussionToken(ti.noteName, amplitudeScalar, sampleOffset, durationSamples, seq.notation, seq.baseFreq, seq.instrument, seq.events);
             } else {
                 handlePitchedToken(ti, amplitudeScalar, sampleOffset, durationSamples, seq.notation, seq.baseFreq, seq.instrument, samplesPerGrid, sampleRate, j, tokenItems, triggers, seq.events);
             }
@@ -357,7 +357,7 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
     return seq;
 }
 
-void UMLParser::handlePercussionToken(const std::string& tokenNoteName, float amplitudeScalar, long sampleOffset, long durationSamples, double baseFreq, const std::string& instrument, std::vector<UMLEvent>& outEvents) {
+void UMLParser::handlePercussionToken(const std::string& tokenNoteName, float amplitudeScalar, long sampleOffset, long durationSamples, const std::string& notation, double baseFreq, const std::string& instrument, std::vector<UMLEvent>& outEvents) {
     UMLEvent ev; 
     ev.sampleOffset = sampleOffset;
     ev.frequency = static_cast<float>(baseFreq);
@@ -430,6 +430,44 @@ void UMLParser::handlePercussionToken(const std::string& tokenNoteName, float am
         else if (isOpenTreble) ev.strikeVal = 2.0f;
         else if (isClosedTreble) ev.strikeVal = 3.0f;
         else ev.strikeVal = 0.0f;
+    } else if (instID == 49 || instID == 50) {
+        ev.frequency = static_cast<float>(baseFreq);
+        std::string lowerNote = tokenNoteName;
+        std::transform(lowerNote.begin(), lowerNote.end(), lowerNote.begin(), ::tolower);
+        
+        if (notation == "konnakol" || notation == "Konnakol") {
+            if (instID == 49) { // Mridangam
+                if (lowerNote == "tha") ev.strikeVal = 0.0f;
+                else if (lowerNote == "thom") ev.strikeVal = 1.0f;
+                else if (lowerNote == "chapu") ev.strikeVal = 2.0f;
+                else if (lowerNote == "nam") ev.strikeVal = 3.0f;
+                else if (lowerNote == "dhi") ev.strikeVal = 4.0f;
+                else if (lowerNote == "ta") ev.strikeVal = 5.0f;
+                else ev.strikeVal = 2.0f; // default to chapu
+            } else if (instID == 50) { // Ghatam
+                if (lowerNote == "tha") ev.strikeVal = 0.0f;
+                else if (lowerNote == "dhi") ev.strikeVal = 1.0f;
+                else if (lowerNote == "thom") ev.strikeVal = 2.0f;
+                else if (lowerNote == "nam") ev.strikeVal = 3.0f;
+                else if (lowerNote == "gumki") ev.strikeVal = 4.0f;
+                else ev.strikeVal = 0.0f; // default to tha
+            }
+        } else {
+            // fallback x/X<strike>
+            if (!lowerNote.empty() && lowerNote[0] == 'x') {
+                if (lowerNote.length() > 1) {
+                    try {
+                        ev.strikeVal = static_cast<float>(std::stoi(lowerNote.substr(1)));
+                    } catch (...) {
+                        ev.strikeVal = 0.0f;
+                    }
+                } else {
+                    ev.strikeVal = 0.0f;
+                }
+            } else {
+                ev.strikeVal = 0.0f;
+            }
+        }
     } else if (instID == 47 || instID == 8 || instID == 7) {
         ev.frequency = static_cast<float>(baseFreq);
         

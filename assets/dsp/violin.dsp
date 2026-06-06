@@ -45,7 +45,10 @@ bowEnv = t : si.smooth(ba.tau2pole(ba.if(t, attackTime, releaseTime)));
 
 // Apply envelope modulation directly to physics engine drives
 bowVelocity = bowVelocityTarget * bowEnv;
-bowPressure = bowPressureTarget * bowEnv;
+
+// Humanize bow pressure with micro-fluctuations (simulating rosin grip/slip and hand tremor)
+microPressure = no.lfnoise(12.0) * 0.08 * bowPressureTarget;
+bowPressure = (bowPressureTarget + microPressure) * bowEnv;
 
 // --- Faust pm.violinBody Compensation Filter ---
 bodyCompGain = max(1.0, min(3.0,

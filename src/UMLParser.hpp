@@ -51,7 +51,7 @@ private:
     static void parseHeader(std::stringstream& ss, UMLSequence& seq, int& grid, std::string& notesSection);
     static double getFrequency(const std::string& token, const std::string& notation, double baseFreq, const std::string& instrument);
     static void handlePercussionToken(const std::string& tokenNoteName, float amplitudeScalar, long sampleOffset, long durationSamples, 
-                                     double baseFreq, const std::string& instrument, std::vector<UMLEvent>& outEvents);
+                                     const std::string& notation, double baseFreq, const std::string& instrument, std::vector<UMLEvent>& outEvents);
     static void handlePitchedToken(const TokenItem& ti, float amplitudeScalar, long sampleOffset, long durationSamples, 
                                    const std::string& notation, double baseFreq, const std::string& instrument,
                                    double samplesPerGrid, double sampleRate, size_t nextTokenIndex, 

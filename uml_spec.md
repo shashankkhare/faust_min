@@ -211,6 +211,37 @@ grid: 4
 To . To Sl . Mu . To . To Sl . Mu To .
 ```
 
+### 3.9 Konnakol (Carnatic Percussion)
+
+Used when `instrument` is a Carnatic instrument (Mridangam, Ghatam) and `notation: konnakol` is specified in the sequence header. If `notation: konnakol` is missing, these instruments will fall back to the generic `x/X<strike>` notation described in §3.7.
+
+| Token(s) (Mridangam) | strikeVal | Stroke |
+|---|---|---|
+| `Tha`, `tha` | 0.0 | Open bass (Thoppi) |
+| `Thom`, `thom` | 1.0 | Closed bass (Thoppi) |
+| `Chapu`, `chapu` | 2.0 | Open harmonic (Valanthalai) |
+| `Nam`, `nam` | 3.0 | Treble edge ring (Valanthalai) |
+| `Dhi`, `dhi` | 4.0 | Treble center mute (Valanthalai) |
+| `Ta`, `ta` | 5.0 | Edge click (Valanthalai) |
+
+| Token(s) (Ghatam) | strikeVal | Stroke |
+|---|---|---|
+| `Tha`, `tha` | 0.0 | Neck stroke |
+| `Dhi`, `dhi` | 1.0 | Body/Center |
+| `Thom`, `thom` | 2.0 | Belly stroke |
+| `Nam`, `nam` | 3.0 | Edge click |
+| `Gumki`, `gumki` | 4.0 | Mouth pressed to stomach |
+
+**Mridangam Example**:
+```
+instrument: mridangam
+notation: konnakol
+bpm: 100
+grid: 4
+
+Tha . Dhi . Thom . Nam . Chapu . . . Ta . . .
+```
+
 ---
 
 ## 4. Voice Component — Vowel Notation (ID 32)
@@ -313,3 +344,5 @@ parameters: (pressure=0.8, vibrato_depth=0.02)
 | `SW` / `seawave` | Sea Wave | 34 | General bols §3.8 |
 | `CG` / `chougong` | Chou Gong | 35 | General bols §3.8 |
 | `TB` / `tibetanbowl` | Tibetan Singing Bowl | 47 | Articulation tokens (s/r) §3.7 |
+| `MG` / `mridangam` | Mridangam | 49 | Konnakol bols §3.9 |
+| `GH` / `ghatam` | Ghatam | 50 | Konnakol bols §3.9 |
