@@ -44,11 +44,16 @@ releaseTime = 0.030; // Snappy 30ms release to clear fast note transitions
 bowEnv = t : si.smooth(ba.tau2pole(ba.if(t, attackTime, releaseTime)));
 
 // Apply envelope modulation directly to physics engine drives
-bowVelocity = bowVelocityTarget * bowEnv;
+bowVelocity = (bowVelocityTarget / 5.0) * bowEnv;
 
-// Humanize bow pressure with micro-fluctuations (simulating rosin grip/slip and hand tremor)
-microPressure = no.lfnoise(12.0) * 0.08 * bowPressureTarget;
-bowPressure = (bowPressureTarget + microPressure) * bowEnv;
+// Humanize bow pressure with micro-fluctuations (simulating rosin grip/slip and hand tremor).
+// IMPORTANT: microPressure is multiplied by bowEnv here (not just in bowPressure below) so that
+// the random lf-noise source is SILENT during the attack phase and only fades in as the bow
+// settles. Without this, no.lfnoise(12.0) is always running and enters at a random phase on
+// each new note, causing audible pressure wobble at note onset — especially on Strike 0 (150ms
+// slow attack) when played in a fast sequencer context.
+microPressure = no.lfnoise(12.0) * 0.08 * (bowPressureTarget / 5.0) * bowEnv;
+bowPressure = ((bowPressureTarget / 5.0) + microPressure) * bowEnv;
 
 // --- Faust pm.violinBody Compensation Filter ---
 bodyCompGain = max(1.0, min(3.0,
@@ -56,13 +61,23 @@ bodyCompGain = max(1.0, min(3.0,
 ));
 
 // --- Pitch Humanization ---
-drift = no.lfnoise(2.0) * 0.0015 * f;
+// IMPORTANT: drift is gated through bowEnv so random pitch deviation is ZERO during attack
+// and only grows in once the bow is fully engaged. Without this gate, no.lfnoise(2.0) runs
+// continuously at a random phase between notes and causes audible pitch instability at the
+// very start of each new note — clearly audible as a "wobble" on slow-attack Strike 0 notes
+// in the sequencer. vibratoLFO is already safely gated by vibEnv which ramps from gate.
+drift = no.lfnoise(2.0) * 0.0015 * f * bowEnv;
 vibEnv = t : si.smooth(ba.tau2pole(0.3)); 
 vibratoLFO = os.osc(vibratoRate) * vibratoDepth * vibEnv * f;
 
 humanizedFreq = f + drift + vibratoLFO;
 
 // --- Physical Processing Engine Execution ---
+// DC blocker (fi.dcblocker) removes any DC offset accumulated in the waveguide feedback
+// loop which can build up during model instability. Hard clip at ±1.0 prevents any
+// momentary instability from corrupting the audio output stream.
 process = pm.violinModel(pm.f2l(humanizedFreq), bowPressure, bowVelocity, bowPosition)
+          : fi.dcblocker
+          : max(-1.0, min(1.0))
           : *(bodyCompGain)
-          : *(0.6);
+          : *(0.9);
