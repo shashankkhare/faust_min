@@ -86,7 +86,9 @@
 #include "FaustSantoorDSP.hpp"
 #include "FaustTumbiDSP.hpp"
 #include "FaustNgachenDSP.hpp"
+#ifndef FAUST_DISABLE_INTERPRETER
 #include <faust/dsp/interpreter-dsp.h>
+#endif
 #include <cstring>
 #include <iostream>
 #include <fstream>
@@ -206,10 +208,12 @@ void FaustInstrument::unloadDSP() {
     std::lock_guard<std::recursive_mutex> lock(mDSPLock);
     mVoiceUIs.clear();
     mVoices.clear();
+#ifndef FAUST_DISABLE_INTERPRETER
     if (mExecType == DSPExecutionType::InterpretedByte && mDSPFactory) {
         deleteInterpreterDSPFactory(static_cast<interpreter_dsp_factory*>(mDSPFactory));
         mDSPFactory = nullptr;
     }
+#endif
 }
 
 void FaustInstrument::loadTargetDSP() {
@@ -360,7 +364,9 @@ void FaustInstrument::loadTargetDSP() {
             }
         }
         initializeVoices();
-    } else if (mExecType == DSPExecutionType::InterpretedByte) {
+    }
+#ifndef FAUST_DISABLE_INTERPRETER
+    else if (mExecType == DSPExecutionType::InterpretedByte) {
         std::string path = InstrumentMapper::getDSPPathForID(mInstrumentID, "");
         std::ifstream ifs(path);
         if (ifs.is_open()) {
@@ -412,6 +418,7 @@ void FaustInstrument::loadTargetDSP() {
             std::cerr << "[Native] ERROR: Could not open DSP file path: " << path << std::endl;
         }
     }
+#endif
 }
 
 void FaustInstrument::setSampleRate(float sampleRate) {

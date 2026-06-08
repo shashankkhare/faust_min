@@ -620,7 +620,7 @@ class FaustViolinDSP : public dsp {
 			fRec2[0] = ((std::fabs(fTempFTZ45) > 1.17549435e-38f) ? fTempFTZ45 : 0.0f);
 			float fTempFTZ46 = ((fRec2[0] + (0.995000005f * fRec0[1])) - fRec2[1]);
 			fRec0[0] = ((std::fabs(fTempFTZ46) > 1.17549435e-38f) ? fTempFTZ46 : 0.0f);
-			output0[i0] = FAUSTFLOAT((0.899999976f * (std::max<float>(-1.0f, std::min<float>(1.0f, fRec0[0])) * std::max<float>(1.0f, std::min<float>(3.0f, std::sqrt(((4.0f * FaustViolinDSP_faustpower2_f(((0.00200000009f * fRec25[0]) - (500.0f / fRec25[0])))) + 1.0f)))))));
+			output0[i0] = FAUSTFLOAT((1.10000002f * (std::max<float>(-1.0f, std::min<float>(1.0f, fRec0[0])) * std::max<float>(1.0f, std::min<float>(3.0f, std::sqrt(((4.0f * FaustViolinDSP_faustpower2_f(((0.00200000009f * fRec25[0]) - (500.0f / fRec25[0])))) + 1.0f)))))));
 			iRec11[1] = iRec11[0];
 			iVec0[1] = iVec0[0];
 			fRec24[1] = fRec24[0];

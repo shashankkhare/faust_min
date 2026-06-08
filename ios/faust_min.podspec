@@ -26,13 +26,13 @@
 Pod::Spec.new do |s|
   s.name             = 'faust_min'
   s.version          = '0.0.1'
-  s.summary          = 'A new Flutter FFI plugin project.'
+  s.summary          = 'High-fidelity physical modeling music synthesis engine powered by Faust'
   s.description      = <<-DESC
-A new Flutter FFI plugin project.
+A high-fidelity physical modeling music synthesis engine powered by Faust, featuring 50+ dynamic instruments, polyphonic support, and an advanced UML multi-notation sequencer.
                        DESC
-  s.homepage         = 'http://example.com'
+  s.homepage         = 'https://github.com/shashankkhare/faust_min'
   s.license          = { :file => '../LICENSE' }
-  s.author           = { 'Your Company' => 'email@example.com' }
+  s.author           = { 'Shashank Khare' => 'shashank.skhare@gmail.com' }
 
   # This will ensure the source files in Classes/ are included in the native
   # builds of apps using this FFI plugin. Podspec does not support relative
@@ -44,6 +44,8 @@ A new Flutter FFI plugin project.
   s.platform = :ios, '13.0'
 
   # Flutter.framework does not contain a i386 slice.
-  s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386' }
+  s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386',
+    'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) FAUST_DISABLE_INTERPRETER=1',
+    'HEADER_SEARCH_PATHS' => '$(inherited) "${PODS_TARGET_SRCROOT}/../src/faust_arch" "${PODS_ROOT}/../src/faust_arch"' }
   s.swift_version = '5.0'
 end

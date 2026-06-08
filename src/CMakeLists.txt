@@ -15,11 +15,18 @@ foreach(DSP_FILE ${DSP_FILES})
     string(TOUPPER ${FIRST_LETTER} FIRST_LETTER_UPPER)
     string(SUBSTRING ${DSP_NAME} 1 -1 REMAINING_LETTERS)
     set(CAP_NAME "${FIRST_LETTER_UPPER}${REMAINING_LETTERS}")
+    # Handle capitalization edge cases
+    if (DSP_NAME STREQUAL "churchbell")
+        set(CAP_NAME "ChurchBell")
+    endif()
+    if (DSP_NAME STREQUAL "master_reverb")
+        set(CAP_NAME "MasterReverb")
+    endif()
     set(HPP_FILE "${CMAKE_CURRENT_SOURCE_DIR}/Faust${CAP_NAME}DSP.hpp")
     
     add_custom_command(
         OUTPUT ${HPP_FILE}
-        COMMAND faust -lang cpp -es 1 -single -ftz 1 -I /home/shashankkhare/faust_sdk/faust_src/examples/physicalModeling/faust-stk -cn Faust${CAP_NAME}DSP ${DSP_FILE} -o ${HPP_FILE}
+        COMMAND faust -lang cpp -es 1 -single -ftz 1 -I ${CMAKE_CURRENT_SOURCE_DIR}/faust_arch -cn Faust${CAP_NAME}DSP ${DSP_FILE} -o ${HPP_FILE}
         DEPENDS ${DSP_FILE}
         COMMENT "Auto-compiling Faust DSP: ${DSP_NAME} -> Faust${CAP_NAME}DSP.hpp"
     )
@@ -70,22 +77,31 @@ target_compile_options(faust_min PRIVATE -O3 -ffast-math)
  
 target_include_directories(faust_min PRIVATE 
     "."
-    "/home/shashankkhare/faust_sdk/faust_src/architecture"
+    "faust_arch"
 )
  
-# Link to the local libfaust.so we just downloaded
-target_link_libraries(faust_min PRIVATE 
-    "/home/shashankkhare/faust_sdk/lib/libfaust.so"
-)
+# Link to libfaust for interpreter support (not available on Android NDK cross-compilation)
+if (NOT ANDROID)
+    find_library(FAUST_LIB NAMES faust libfaust
+        PATHS /usr/lib /usr/lib/x86_64-linux-gnu /usr/local/lib /home/shashankkhare/faust_sdk/lib)
+    if (FAUST_LIB)
+        target_link_libraries(faust_min PRIVATE ${FAUST_LIB})
+        message(STATUS "Found libfaust: ${FAUST_LIB}")
+    else()
+        message(WARNING "libfaust not found — interpreter mode disabled on this platform")
+        target_compile_definitions(faust_min PRIVATE FAUST_DISABLE_INTERPRETER)
+    endif()
+endif()
  
 set_target_properties(faust_min PROPERTIES
     PUBLIC_HEADER faust_min.h
-    INSTALL_RPATH "/home/shashankkhare/faust_sdk/lib"
-    BUILD_WITH_INSTALL_RPATH TRUE
     OUTPUT_NAME "faust_min"
 )
  
 target_compile_definitions(faust_min PUBLIC DART_SHARED_LIB)
+if (ANDROID)
+    target_compile_definitions(faust_min PRIVATE FAUST_DISABLE_INTERPRETER)
+endif()
 
 if (ANDROID)
   target_link_options(faust_min PRIVATE "-Wl,-z,max-page-size=16384")
@@ -93,10 +109,9 @@ if (ANDROID)
 endif()
 
 # =====================================================
-# TEST BINARIES
+# TEST BINARIES (Linux desktop only)
 # =====================================================
-set(FAUST_INCLUDE_DIR "/home/shashankkhare/faust_sdk/faust_src/architecture")
-set(FAUST_LIB "/home/shashankkhare/faust_sdk/lib/libfaust.so")
+set(FAUST_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/faust_arch")
 
 set(TEST_COMMON_LINK
     faust_min
@@ -107,43 +122,28 @@ set(TEST_COMMON_LINK
 
 set(TEST_COMMON_COMPILE -O3 -ffast-math)
 
-add_executable(test_instruments "../test/test_instruments.cpp")
-target_compile_options(test_instruments PRIVATE ${TEST_COMMON_COMPILE})
-target_include_directories(test_instruments PRIVATE "." ${FAUST_INCLUDE_DIR})
-target_link_libraries(test_instruments PRIVATE ${TEST_COMMON_LINK})
-set_target_properties(test_instruments PROPERTIES
-    INSTALL_RPATH "${CMAKE_BINARY_DIR}:/home/shashankkhare/faust_sdk/lib"
-    BUILD_WITH_INSTALL_RPATH TRUE
-    LINK_FLAGS "-rdynamic"
-)
+macro(add_faust_test NAME SOURCE)
+    add_executable(${NAME} ${SOURCE})
+    target_compile_options(${NAME} PRIVATE ${TEST_COMMON_COMPILE})
+    target_include_directories(${NAME} PRIVATE "." ${FAUST_INCLUDE_DIR})
+    target_link_libraries(${NAME} PRIVATE ${TEST_COMMON_LINK})
+    if (FAUST_LIB)
+        set_target_properties(${NAME} PROPERTIES
+            INSTALL_RPATH "${CMAKE_BINARY_DIR}"
+            BUILD_WITH_INSTALL_RPATH TRUE
+            LINK_FLAGS "-rdynamic"
+        )
+    endif()
+endmacro()
 
-add_executable(test_sequence "../test/test_sequence.cpp")
-target_compile_options(test_sequence PRIVATE ${TEST_COMMON_COMPILE})
-target_include_directories(test_sequence PRIVATE "." ${FAUST_INCLUDE_DIR})
-target_link_libraries(test_sequence PRIVATE ${TEST_COMMON_LINK})
-set_target_properties(test_sequence PROPERTIES
-    INSTALL_RPATH "${CMAKE_BINARY_DIR}:/home/shashankkhare/faust_sdk/lib"
-    BUILD_WITH_INSTALL_RPATH TRUE
-    LINK_FLAGS "-rdynamic"
-)
+add_faust_test(test_instruments "../test/test_instruments.cpp")
+add_faust_test(test_sequence "../test/test_sequence.cpp")
+add_faust_test(test_bansuri_glide "../test/test_bansuri_glide.cpp")
 
 add_executable(test_orchestrator "../test/test_orchestrator.cpp")
 target_compile_options(test_orchestrator PRIVATE ${TEST_COMMON_COMPILE})
 target_include_directories(test_orchestrator PRIVATE "." ${FAUST_INCLUDE_DIR})
 target_link_libraries(test_orchestrator PRIVATE ${TEST_COMMON_LINK} faust_min)
 set_target_properties(test_orchestrator PROPERTIES
-    INSTALL_RPATH "${CMAKE_BINARY_DIR}:/home/shashankkhare/faust_sdk/lib"
-    BUILD_WITH_INSTALL_RPATH TRUE
-    LINK_FLAGS "-rdynamic"
     EXCLUDE_FROM_ALL ON
-)
-
-add_executable(test_bansuri_glide "../test/test_bansuri_glide.cpp")
-target_compile_options(test_bansuri_glide PRIVATE ${TEST_COMMON_COMPILE})
-target_include_directories(test_bansuri_glide PRIVATE "." ${FAUST_INCLUDE_DIR})
-target_link_libraries(test_bansuri_glide PRIVATE ${TEST_COMMON_LINK})
-set_target_properties(test_bansuri_glide PROPERTIES
-    INSTALL_RPATH "${CMAKE_BINARY_DIR}:/home/shashankkhare/faust_sdk/lib"
-    BUILD_WITH_INSTALL_RPATH TRUE
-    LINK_FLAGS "-rdynamic"
 )

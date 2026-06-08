@@ -24,6 +24,7 @@ static float gTestVelocity = 0.8f;
 static float gTestPressure = -1.0f; // -1 means use default or LUT
 static float gTestAmplitude = 0.8f;
 static double gTestFrequency = -1.0; // -1 means use default test sequence
+static float gTestStrike = -1.0f; // -1 means use default strikes
 
 static std::vector<double> getTestFreqsDouble(const std::vector<double>& defaultFreqs) {
     if (gTestFrequency > 0.0) {
@@ -489,8 +490,19 @@ void testViolin(FaustMixer& mixer, DSPExecutionType execType) {
     int track = mixer.addTrack(1.0f); // fixed 1.0 amplitude for test
     mixer.addInstrumentToTrack(track, inst.get());
     
-    std::vector<double> freqs = {110.0, 146.8, 196.0, 220.0, 246.9, 293.7, 329.6, 392.0, 440.0, 493.9, 523.3, 587.3, 659.3, 783.9, 880.0, 1046.5, 1174.6, 1400.0};
-    std::vector<float> strikes = {0.0f, 1.0f, 2.0f};
+    std::vector<double> freqs;
+    if (gTestFrequency > 0.0) {
+        freqs = { gTestFrequency };
+    } else {
+        freqs = {110.0, 146.8, 196.0, 220.0, 246.9, 293.7, 329.6, 392.0, 440.0, 493.9, 523.3, 587.3, 659.3, 783.9, 880.0, 1046.5, 1174.6, 1400.0};
+    }
+    
+    std::vector<float> strikes;
+    if (gTestStrike >= 0.0f) {
+        strikes = { gTestStrike };
+    } else {
+        strikes = {0.0f, 1.0f, 2.0f};
+    }
 
     inst->enableDiagnosticLogging(true);
     
@@ -502,7 +514,9 @@ void testViolin(FaustMixer& mixer, DSPExecutionType execType) {
             inst->clearDiagnosticLogs();
             
             // Note On
-            inst->noteOn(freq, 0.8f, strike, 1.0f);
+            inst->noteOn(freq, gTestVelocity, strike, gTestAmplitude);
+            // Force gain to the user-specified amplitude — LUT may override it otherwise
+            inst->setParam("gain", gTestAmplitude);
             
             // Original timing: keep bowing up to 1.5s total before release
             usleep(1500000);
@@ -511,13 +525,16 @@ void testViolin(FaustMixer& mixer, DSPExecutionType execType) {
             // Wait for tail to decay
             usleep(200000);
             
-            // Read captured logs
+            // Read captured logs and compute RMS energy over all snapshots for stability
             auto logs = inst->getDiagnosticLogs();
-            float e1 = logs.size() > 0 ? logs[0].value3 : 0.0f;
-            float e2 = logs.size() > 1 ? logs[1].value3 : 0.0f;
-            float e3 = logs.size() > 2 ? logs[2].value3 : 0.0f;
-            
-            float avgEnergy = (e1 + e2 + e3) / 3.0f;
+            float avgEnergy = 0.0f;
+            if (!logs.empty()) {
+                float sumSq = 0.0f;
+                for (const auto& log : logs) {
+                    sumSq += log.value3 * log.value3;
+                }
+                avgEnergy = std::sqrt(sumSq / logs.size());
+            }
             
             std::cout << freq << "," << avgEnergy;
             if (i < freqs.size() - 1) std::cout << " , ";
@@ -1182,6 +1199,8 @@ int main(int argc, char* argv[]) {
                 try { gTestAmplitude = std::stof(arg.substr(2)); } catch (...) {}
             } else if (arg.substr(0, 2) == "f=") {
                 try { gTestFrequency = std::stod(arg.substr(2)); } catch (...) {}
+            } else if (arg.substr(0, 2) == "s=") {
+                try { gTestStrike = std::stof(arg.substr(2)); } catch (...) {}
             } else if (!hasDirectID) {
                 try {
                     directID = std::stoi(arg);
@@ -1272,7 +1291,12 @@ int main(int argc, char* argv[]) {
             return p.first == directID;
         });
         if (it != instruments.end()) {
-            std::cout << "[Direct Run] Testing Instrument ID: " << directID << " at velocity: " << gTestVelocity << std::endl;
+            std::cout << "[Direct Run] ID: " << directID
+                      << "  vel=" << gTestVelocity
+                      << "  amp=" << gTestAmplitude
+                      << "  freq=" << (gTestFrequency > 0 ? gTestFrequency : -1)
+                      << "  strike=" << gTestStrike
+                      << std::endl;
             switch(directID) {
                 case 0: testDayan(mixer, execType); break;
                 case 1: testBayan(mixer, execType); break;
