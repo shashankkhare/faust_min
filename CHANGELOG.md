@@ -1,3 +1,17 @@
+## 0.4.0
+
+*   **Ghatam Instrument** (ID 50): Clay pot percussion with rich midrange resonance.
+*   **Mridangam Instrument** (ID 49): South Indian double-headed drum physical model.
+*   **Dayan DSP Redesign**: Dual-bank composite membrane model — Syahi (perfect harmonic 1×–5×) + Maidan (Bessel inharmonic 1.000, 1.593, 2.135, 2.295, 2.653), with per-stroke mix ratios.
+*   **Violin Physical Model**: Safety clamps removed for clean gate-off, gain multiplier 1.1, strike=2 bowVelocity 0.15 for ≥392 Hz.
+*   **FAUST_DISABLE_INTERPRETER**: New build macro; iOS (only) cannot use interpreter mode. Android guarded similarly. All other platforms support both StaticCompiled and InterpretedByte.
+*   **Vendored FAUST Headers**: Architecture headers copied to `src/faust_arch/` for portable builds without FAUST SDK.
+*   **iOS/macOS Forwarders**: Renamed from `.c` to `.mm` for Objective-C++ compilation; includes path fixed.
+*   **CMake Portability**: `libfaust` linked via `find_library` instead of hardcoded path; system libfaust found automatically; test binaries use vendored headers.
+*   **Podspec Metadata**: Proper homepage, author, description; iOS definines `FAUST_DISABLE_INTERPRETER`.
+*   **Case-Sensitive HPP Fix**: Removed duplicate `FaustChurchbellDSP.hpp` / `FaustMaster_reverbDSP.hpp` conflicting with `FaustChurchBellDSP.hpp` / `FaustMasterReverbDSP.hpp`.
+*   **analysis_options.yaml**: Added to root for pub.dev compliance.
+
 ## 0.3.1
 
 *   **Tibetan Bowl Instrument**: Added `tibetanbowl` physical model (ID 47), assigned to idiophone → melody track.
