@@ -154,15 +154,17 @@ Ambient instruments operate slightly differently.
 
 For simple unpitched resonant instruments where humans just strike or rub to produce sound (e.g., Tibetan Bowls, Hand Bells, Gongs, Whistles), use the generic **X** notation.
 
-**Syntax**: `[Amplitude]X[StrikeType]` or `[Amplitude]x[StrikeType]`
+**Syntax**: `[Amplitude][StrikeVal]X` or `[Amplitude][StrikeVal]x`
 
-- `Amplitude`: (Optional) Single digit `1-9`. Defines the velocity/force of the strike.
+- `Amplitude`: (Optional) Single digit `1-9` (Default: `5`). Maps as `amplitude = digit / 9.0`.
+- `StrikeVal`: (Optional) Single digit immediately following Amplitude (e.g. `80X`). `0` = mallet strike (default), `1` = rub/bow. No digit after X.
 - `X` or `x`: The core generic strike token.
-- `StrikeType`: (Optional) Single digit representing the articulation method (e.g., `0` for rub/bow, `1` for hard mallet strike, `2` for soft mallet).
 
 **Examples**:
-- `9X1` : Hard strike (amplitude 9, strikeType 1).
-- `5x0` : Medium rub/bow (amplitude 5, strikeType 0).
+- `9X`     : Hard mallet strike (amplitude 9, strikeVal defaults to 0).
+- `5x`     : Medium mallet strike (amplitude 5).
+- `81X`    : Hard rub/bow (amplitude 8, strikeVal 1 = rub).
+- `X`      : Medium mallet strike (amplitude 5, strikeVal 0).
 
 **Generic Bowl Example**:
 ```
@@ -172,7 +174,7 @@ bpm: 60
 grid: 4
 
 // Strike hard, let ring for 3 beats, then start a medium rub for 4 beats
-9X1 . . . . . . . 5X0 . . . . . . . . . . . . . . .
+9X . . . . . . . 50X . . . . . . . . . . . . . . .
 ```
 
 ### 3.8 General Percussion Fallback (IDs 2–6: Kick, Snare, HiHat, Tom, Ride)

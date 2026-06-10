@@ -35,6 +35,7 @@
 #include <memory>
 #include "FaustInstrument.hpp"
 #include "FaustMasterReverbDSP.hpp"
+#include "PlatformCompat.hpp"
 
 /**
  * @class FaustMixer
@@ -47,7 +48,7 @@
  *    triggers rendering of active nodes via a generic PreRenderCallback.
  * 4. Applying master-bus gain, sweeps, and a safety peak limiter.
  */
-class __attribute__((visibility("default"))) FaustMixer {
+class FAUST_API FaustMixer {
 public:
     static FaustMixer& getInstance();
 

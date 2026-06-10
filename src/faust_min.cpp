@@ -54,12 +54,14 @@
 #include "FaustViolin.hpp"
 #include "SequenceOrchestrator.hpp"
 
-extern "C" {
+static struct FaustMinInit {
+    FaustMinInit() {
+        printf("FaustMin: Native Library Loaded Successfully\n");
+        fflush(stdout);
+    }
+} g_faustMinInit;
 
-__attribute__((constructor)) void faust_min_init() {
-    printf("FaustMin: Native Library Loaded Successfully\n");
-    fflush(stdout);
-}
+extern "C" {
 
 // --- High-Level Orchestrator Endpoints (The Controller) ---
 

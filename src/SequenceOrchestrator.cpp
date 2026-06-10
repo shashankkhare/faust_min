@@ -32,7 +32,9 @@
 #include "InstrumentMapper.hpp"
 
 #include <faust/dsp/dsp.h>
+#ifndef FAUST_DISABLE_INTERPRETER
 #include <faust/dsp/interpreter-dsp.h>
+#endif
 #include <faust/gui/MapUI.h>
 #include <algorithm>
 #include <iostream>
@@ -41,10 +43,12 @@
 #include <cstdio>
 #include <cstring>
 #include <chrono>
+#ifndef _WIN32
 #include <unistd.h>
 #include <sys/stat.h>
+#endif
 
-#define DEBUG_ORCHESTRATOR 1
+#define DEBUG_ORCHESTRATOR 0
 
 // Extremely fast, stateless deterministic hash to generate jitter for a given event index and instrument
 inline long getDeterministicJitter(size_t eventIndex, int instID) {

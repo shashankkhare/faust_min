@@ -37,7 +37,9 @@
 #include "InstrumentMapper.hpp"
 
 // Faust SDK includes
+#ifndef FAUST_DISABLE_INTERPRETER
 #include <faust/dsp/interpreter-dsp.h>
+#endif
 #include <faust/gui/MapUI.h>
 
 struct ActiveSequence {

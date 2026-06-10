@@ -477,7 +477,7 @@ int main(int argc, char* argv[]) {
                 "basefreq: 111.0\n"
                 "instrument: tibetanbowl\n"
                 "\n"
-                "8X1................ 8X1................ 8X1................ 8X1................";
+                "80X................ 80X................ 80X................ 80X................";
                 
             std::string umlLagngaHigh =  
                 "grid: 2\n"

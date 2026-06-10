@@ -301,7 +301,7 @@ void FaustInstrument::loadTargetDSP() {
                 return a.frequency < b.frequency;
             });
             mLUTActive = true;
-            printf("[Native] SUCCESS: Auto-constructed %zu LUT records from companion CSV '%s'\n", mLUTRecords.size(), csvPath.c_str());
+            printf("[Native] SUCCESS: Auto-constructed %llu LUT records from companion CSV '%s'\n", (unsigned long long)mLUTRecords.size(), csvPath.c_str());
             fflush(stdout);
         }
     }
@@ -616,12 +616,11 @@ void FaustInstrument::noteOn(float freq, float vel, float strikeVal, float amp) 
         mAmplitude = amp;
         if (!mLUTActive) setParamImmediate("gain", amp, v);
     }
-    // Always ensure the default state of the voice is melody string
-    setParam("strike", 0.0f, v);
-    
+    // Only override strike if caller explicitly provides a non-negative value.
+    // When strikeVal < 0, leave the DSP's own default (1.0 for bowl, etc.).
     mStrikeVal = strikeVal;
 
-    if (strikeVal > 0.0f) {
+    if (strikeVal >= 0.0f) {
         setParam("strike", strikeVal, v);
     }
 

@@ -29,14 +29,26 @@
 
 #include "FaustMixer.hpp"
 #include <iostream>
+#if defined(__x86_64__) || defined(_M_AMD64) || defined(_M_X64)
 #include <immintrin.h>
+#define CPU_PAUSE() _mm_pause()
+#elif defined(__aarch64__) || defined(_M_ARM64)
+#if defined(_MSC_VER)
+#define CPU_PAUSE() __yield()
+#else
+#define CPU_PAUSE() __builtin_arm_yield()
+#endif
+#else
+#define CPU_PAUSE() ((void)0)
+#endif
 
 #ifdef __ANDROID__
 #include <oboe/Oboe.h>
 class MixerOboeCallback : public oboe::AudioStreamDataCallback {
 public:
+    void* mUserData = nullptr;
     oboe::DataCallbackResult onAudioReady(oboe::AudioStream* audioStream, void* audioData, int32_t numFrames) override {
-        FaustMixer::hardwareCallback(audioData, (int)numFrames, audioStream->getUserData());
+        FaustMixer::hardwareCallback(audioData, (int)numFrames, mUserData);
         return oboe::DataCallbackResult::Continue;
     }
 };
@@ -125,16 +137,17 @@ bool FaustMixer::start() {
 #ifdef __ANDROID__
     oboe::AudioStreamBuilder builder;
     static MixerOboeCallback cb;
-    builder.setDirection(oboe::Direction::Output)
-           .setPerformanceMode(oboe::PerformanceMode::LowLatency)
-           .setSharingMode(oboe::SharingMode::Shared)
-           .setFormat(oboe::AudioFormat::Float)
-           .setChannelCount(oboe::ChannelCount::Stereo)
-           .setSampleRate((int32_t)mSampleRate)
-           .setUserData(this)
-           .setDataCallback(&cb);
+    cb.mUserData = this;
+    oboe::AudioStreamBuilder* b = &builder;
+    b->setDirection(oboe::Direction::Output)
+     ->setPerformanceMode(oboe::PerformanceMode::LowLatency)
+     ->setSharingMode(oboe::SharingMode::Shared)
+     ->setFormat(oboe::AudioFormat::Float)
+     ->setChannelCount(oboe::ChannelCount::Stereo)
+     ->setSampleRate((int32_t)mSampleRate)
+     ->setDataCallback(&cb);
     oboe::AudioStream* stream = nullptr;
-    if (builder.openStream((std::shared_ptr<oboe::AudioStream>&)stream) == oboe::Result::OK) {
+    if (builder.openStream(&stream) == oboe::Result::OK) {
         stream->requestStart();
         mStreamDevice = stream;
         mIsStreamActive = true;
@@ -231,7 +244,7 @@ void FaustMixer::workerLoop(int workerID) {
     while (mWorkerRunning.load(std::memory_order_acquire)) {
         uint64_t gen = mDispatchGeneration.load(std::memory_order_acquire);
         if (gen == mWorkerGeneration[workerID]) {
-            _mm_pause();
+            CPU_PAUSE();
             continue;
         }
         mWorkerGeneration[workerID] = gen;
@@ -572,7 +585,7 @@ inline void FaustMixer::accumulateInstrumentChannels(float* stereoOutput, int nu
 
         // Spin barrier — no yield, no context switch
         while (mPendingTasks.load(std::memory_order_acquire) > 0) {
-            _mm_pause();
+            CPU_PAUSE();
         }
     }
 

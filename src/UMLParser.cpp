@@ -338,7 +338,7 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
             float amplitudeScalar = (float)ti.controlParam / 9.0f;
 
             if (InstrumentMapper::isPercussionID(seq.instrumentID)) {
-                handlePercussionToken(ti.noteName, amplitudeScalar, sampleOffset, durationSamples, seq.notation, seq.baseFreq, seq.instrument, seq.events);
+                handlePercussionToken(ti.noteName, amplitudeScalar, sampleOffset, durationSamples, seq.notation, seq.baseFreq, seq.instrument, seq.events, ti.strikeVal);
             } else {
                 handlePitchedToken(ti, amplitudeScalar, sampleOffset, durationSamples, seq.notation, seq.baseFreq, seq.instrument, samplesPerGrid, sampleRate, j, tokenItems, triggers, seq.events);
             }
@@ -357,7 +357,7 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
     return seq;
 }
 
-void UMLParser::handlePercussionToken(const std::string& tokenNoteName, float amplitudeScalar, long sampleOffset, long durationSamples, const std::string& notation, double baseFreq, const std::string& instrument, std::vector<UMLEvent>& outEvents) {
+void UMLParser::handlePercussionToken(const std::string& tokenNoteName, float amplitudeScalar, long sampleOffset, long durationSamples, const std::string& notation, double baseFreq, const std::string& instrument, std::vector<UMLEvent>& outEvents, float strikeValFromPrefix) {
     UMLEvent ev; 
     ev.sampleOffset = sampleOffset;
     ev.frequency = static_cast<float>(baseFreq);
@@ -472,17 +472,15 @@ void UMLParser::handlePercussionToken(const std::string& tokenNoteName, float am
         ev.frequency = static_cast<float>(baseFreq);
         
         if (!tokenNoteName.empty() && (tokenNoteName[0] == 'X' || tokenNoteName[0] == 'x')) {
-            if (tokenNoteName.length() > 1) {
-                ev.strikeVal = static_cast<float>(std::stoi(tokenNoteName.substr(1)));
-            } else {
-                ev.strikeVal = 1.0f;
-            }
+            // Format: [Amplitude][StrikeVal]X — strikeVal from prefix, no suffix on X
+            // 0=mallet (default), 1=rub/bow. Direct passthrough to DSP.
+            ev.strikeVal = (strikeValFromPrefix >= 0.0f) ? strikeValFromPrefix : 0.0f;
         } else if (tokenNoteName == "s" || tokenNoteName == "S" || tokenNoteName == "strike" || tokenNoteName == "Strike") {
-            ev.strikeVal = 1.0f;
+            ev.strikeVal = 0.0f; // mallet
         } else if (tokenNoteName == "r" || tokenNoteName == "R" || tokenNoteName == "rub" || tokenNoteName == "Rub") {
-            ev.strikeVal = 0.0f;
+            ev.strikeVal = 1.0f; // rub
         } else {
-            ev.strikeVal = 1.0f;
+            ev.strikeVal = 0.0f; // default mallet
         }
     } else if (percussionBols.count(tokenNoteName)) {
         ev.strikeVal = static_cast<float>(percussionBols.at(tokenNoteName));

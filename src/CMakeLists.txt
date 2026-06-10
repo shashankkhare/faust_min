@@ -4,7 +4,8 @@ project(faust_min_library VERSION 0.1.0 LANGUAGES C CXX)
 
 # Add Oboe for Android
 if (ANDROID)
-    find_package(oboe REQUIRED CONFIG)
+    add_subdirectory("../deps/oboe" "${CMAKE_BINARY_DIR}/oboe" EXCLUDE_FROM_ALL)
+    include_directories("../deps/oboe/include")
 endif()
 
 # Automatically compile Faust .dsp files into C++ headers when their timestamps change
@@ -40,6 +41,9 @@ foreach(DSP_FILE ${DSP_FILES})
 endforeach()
 add_custom_target(compile_faust_dsps DEPENDS ${FAUST_GENERATED_HEADERS})
  
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 add_library(faust_min SHARED
   "faust_min.cpp"
   "FaustInstrument.cpp"
@@ -80,8 +84,8 @@ target_include_directories(faust_min PRIVATE
     "faust_arch"
 )
  
-# Link to libfaust for interpreter support (not available on Android NDK cross-compilation)
-if (NOT ANDROID)
+# Link to libfaust for interpreter support
+if (NOT ANDROID AND NOT CMAKE_CROSSCOMPILING)
     find_library(FAUST_LIB NAMES faust libfaust
         PATHS /usr/lib /usr/lib/x86_64-linux-gnu /usr/local/lib /home/shashankkhare/faust_sdk/lib)
     if (FAUST_LIB)
@@ -91,6 +95,9 @@ if (NOT ANDROID)
         message(WARNING "libfaust not found — interpreter mode disabled on this platform")
         target_compile_definitions(faust_min PRIVATE FAUST_DISABLE_INTERPRETER)
     endif()
+else()
+    message(STATUS "libfaust skipped (cross-compile or Android) — interpreter mode disabled")
+    target_compile_definitions(faust_min PRIVATE FAUST_DISABLE_INTERPRETER)
 endif()
  
 set_target_properties(faust_min PROPERTIES
@@ -99,13 +106,10 @@ set_target_properties(faust_min PROPERTIES
 )
  
 target_compile_definitions(faust_min PUBLIC DART_SHARED_LIB)
-if (ANDROID)
-    target_compile_definitions(faust_min PRIVATE FAUST_DISABLE_INTERPRETER)
-endif()
 
 if (ANDROID)
   target_link_options(faust_min PRIVATE "-Wl,-z,max-page-size=16384")
-  target_link_libraries(faust_min PRIVATE oboe::oboe)
+  target_link_libraries(faust_min PRIVATE oboe)
 endif()
 
 # =====================================================
@@ -113,6 +117,7 @@ endif()
 # =====================================================
 set(FAUST_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/faust_arch")
 
+if(NOT CMAKE_CROSSCOMPILING)
 set(TEST_COMMON_LINK
     faust_min
     ${FAUST_LIB}
@@ -147,3 +152,5 @@ target_link_libraries(test_orchestrator PRIVATE ${TEST_COMMON_LINK} faust_min)
 set_target_properties(test_orchestrator PROPERTIES
     EXCLUDE_FROM_ALL ON
 )
+
+endif()

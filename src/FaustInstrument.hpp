@@ -34,13 +34,14 @@
 #include <map>
 
 #include <mutex>
+#include "PlatformCompat.hpp"
 
 enum class DSPExecutionType {
     StaticCompiled,  // Static compiled sub-classes e.g., FaustFluteDSP
     InterpretedByte  // Runtime dynamic interpreter_dsp instances
 };
 
-class __attribute__((visibility("default"))) FaustInstrument {
+class FAUST_API FaustInstrument {
 public:
     FaustInstrument(int instrumentID = -1, DSPExecutionType execType = DSPExecutionType::StaticCompiled,
                     float sampleRate = InstrumentMapper::DEFAULT_SAMPLE_RATE, float gain = -1.0f, float freq = -1.0f, float velocity = -1.0f, float amplitude = 1.0f);

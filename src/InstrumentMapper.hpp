@@ -24,10 +24,11 @@
 #define INSTRUMENT_MAPPER_HPP
 
 #include <string>
+#include "PlatformCompat.hpp"
 
 class dsp;
 
-class __attribute__((visibility("default"))) InstrumentMapper {
+class FAUST_API InstrumentMapper {
 public:
 #if defined(__ANDROID__) || defined(__linux__)
     static constexpr float DEFAULT_SAMPLE_RATE = 48000.0f;

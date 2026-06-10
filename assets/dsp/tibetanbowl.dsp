@@ -28,7 +28,7 @@ gain = nentry("gain",0.8,0,1,0.01);
 velocity = hslider("velocity", 0.8, 0, 1, 0.01);
 gate = hslider("gate", 0, 0, 1, 1);
 
-strikeVal = hslider("strike", 1, 0, 1, 1);
+strikeVal = hslider("strike", 0, 0, 1, 1);
 integrationConstant = hslider("h:Physical_and_Nonlinearity/v:Physical_Parameters/Integration_Constant
 [2][tooltip:A value between 0 and 1]",0,0,1,0.01);
 baseGain = hslider("h:Physical_and_Nonlinearity/v:Physical_Parameters/Base_Gain
@@ -46,7 +46,7 @@ NLFM = nonLinearModulator((nonLinearity : si.smoo),1,freq,
     typeModulation,(frequencyMod : si.smoo),nlfOrder);
 
 nModes = 12;
-my_modes(x) = ba.take(x+1, (1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0));
+my_modes(x) = ba.take(x+1, (1.0, 2.7, 4.8, 7.5, 10.6, 14.2, 18.2, 22.7, 27.7, 33.2, 39.2, 45.7));
 my_excitation(x) = ba.take(x+1, (1.0, 0.8, 0.6, 0.6, 0.8, 0.8, 1.0, 1.0, 0.4, 0.4, 0.8, 0.8));
 
 tableOffset = 0;
@@ -77,10 +77,10 @@ mallet_env = loop_mallet ~ _ with {
     loop_mallet(s) = ba.if(trig, velocity, s * g);
 };
 
-globalDamping = 0.9995;
-resonance(x) = + : + (mallet_env * strikeVal * my_excitation(x)) : delayLine(x) : *(globalDamping) : bandPassFilter(x);
+globalDamping = 0.998;
+resonance(x) = + : + (mallet_env * (1-strikeVal) * my_excitation(x)) : delayLine(x) : *(globalDamping) : bandPassFilter(x);
 
 process =
-    (bowing*((strikeVal-1)*-1) <:
+    (bowing*strikeVal <:
     par(i,nModes,(resonance(i)~_)))~par(i,nModes,_) :> _ :
     NLFM : stereo : instrReverb : *(gain * 2.5), *(gain * 2.5);
