@@ -473,11 +473,12 @@ int main(int argc, char* argv[]) {
                 "9x..............................9x.";
                 
             std::string umlBowl = 
-                "grid: 2\n"
+                "grid: 1\n"
+                "bpm: 60\n"
                 "basefreq: 111.0\n"
-                "instrument: tibetanbowl\n"
+                "instrument: bowl\n"
                 "\n"
-                "80X................ 80X................ 80X................ 80X................";
+                "80X...................";
                 
             std::string umlLagngaHigh =  
                 "grid: 2\n"
@@ -497,14 +498,32 @@ int main(int argc, char* argv[]) {
                 "\n"
                 "_. 7X1. _. 7X1. _. 7X1. _. 7X1. _. 7X1. _. 7X1. _. 7X1. _. 7X1. _. 7X1. _. 7X1. ";
 
+            std::string umlBowl222 =
+                "grid: 1\n"
+                "bpm: 60\n"
+                "basefreq: 222.0\n"
+                "instrument: bowl\n"
+                "\n"
+                ".80X..................";
+
+            std::string umlBowl444 =
+                "grid: 1\n"
+                "bpm: 60\n"
+                "basefreq: 444.0\n"
+                "instrument: bowl\n"
+                "\n"
+                "..80X.................";
+
             group.percussionTrackWeight = 1.3f;
             group.backgroundTrackWeight = 1.5f;
-            group.melodyTrackWeight = 1.0f;
+            group.melodyTrackWeight = 3.0f;
 
             group.sequences.push_back({"AmbientRain", new UMLSequence("AmbientRain", 19, umlRainmaker)});
             group.sequences.push_back({"AmbientBowl", new UMLSequence("AmbientBowl", 8, umlBowl)});
             group.sequences.push_back({"LagNgaHigh", new UMLSequence("LagNgaHigh", 36, umlLagngaHigh)});
             group.sequences.push_back({"LagNgaLow", new UMLSequence("LagNgaLow", 36, umlLagngaLow)});
+            group.sequences.push_back({"Bowl222", new UMLSequence("Bowl222", 8, umlBowl222)});
+            group.sequences.push_back({"Bowl444", new UMLSequence("Bowl444", 8, umlBowl444)});
 
             duration = 20;
         } else if (selection == 5) {
@@ -863,6 +882,7 @@ int main(int argc, char* argv[]) {
                 "glide: 0.06\n"
                 "vibrato_depth: 0.02\n"
                 "vibrato_rate: 5.5\n"
+                "chikari_freq: 222.0\n"
                 // Alaap — slow with long meend glides (^)
                 "5Sa..^ 5Sa..^ 8Ni..^ 5Sa..^ \n"
                 "8Ni..^ 8Ga..^ 8Re..^ 8Ni..~ \n"
