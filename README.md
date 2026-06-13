@@ -1,6 +1,6 @@
 # faust_min
 
-A high-fidelity physical modeling synthesis plugin and sequencing engine for Flutter, powered by **Faust**.
+A high-fidelity physical modeling music synthesis plugin and sequencing engine for Flutter, powered by **Faust**.
 
 `faust_min` is a full-fledged, real-time computational acoustics engine based on Faust. Instead of relying on static, lifeless samples, `faust_min` mathematically simulates the physical properties of instruments (string tension, resonance, air pressure, tube length) to generate deeply expressive and highly realistic audio directly on the device. Result is very low memory and CPU footprint.  
 
