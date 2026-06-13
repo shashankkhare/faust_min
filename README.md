@@ -2,7 +2,7 @@
 
 A high-fidelity physical modeling synthesis plugin and sequencing engine for Flutter, powered by **Faust**.
 
-`faust_min` is not just an audio player; it is a full-fledged, real-time computational acoustics engine. Instead of relying on static, lifeless samples, `faust_min` mathematically simulates the physical properties of instruments (string tension, resonance, air pressure, tube length) to generate deeply expressive and highly realistic audio directly on the device.
+`faust_min` is a full-fledged, real-time computational acoustics engine based on Faust. Instead of relying on static, lifeless samples, `faust_min` mathematically simulates the physical properties of instruments (string tension, resonance, air pressure, tube length) to generate deeply expressive and highly realistic audio directly on the device. Result is very low memory and CPU footprint.  
 
 ## 🌟 Key Features
 
@@ -14,7 +14,7 @@ The engine ships with an extensive, highly optimized library of over 50 real-tim
 *   **Electronic & Ambient:** Tibetan Singing Bowls, Rainmakers, Synths, Vocal Formant Synthesizers.
 
 ### 🎹 Advanced Polyphony & Multithreading
-*   **Dynamic Voice Allocation:** Built-in polyphonic support allows multiple notes to ring out simultaneously without cutting each other off.
+*   **Dynamic Voice Allocation:** Built-in polyphonic support allows multiple notes to ring out simultaneously without cutting each other off. Availabe only for Piano and Guitars at the moment. Plan to add more western and eastern instruments in future. 
 *   **Persistent Thread Pool:** Driven by a highly performant `FaustMixer` thread pool that renders heavy DSP algorithms concurrently across multiple CPU cores, avoiding UI thread blocks completely.
 *   **Sample-Accurate Timing:** Perfect for high-density, multi-instrument sequencing.
 
