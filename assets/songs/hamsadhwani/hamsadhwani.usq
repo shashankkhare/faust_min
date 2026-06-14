@@ -1,0 +1,46 @@
+grid: 4
+bpm: 100
+basefreq: 444.0
+instrument: violin
+notation: Indian
+
+// Alaap (Slow, expressive Flautando glides - Strike 0)
+30Sa.. 50R2.. 70G2.. 50Pa..
+60N2.. 80Sa*2.. 60N2.. 40Pa..
+50G2.. 40R2.. 30Sa.. _...
+40Pa.. 60D2.. 70N2.. 80Sa*2..
+60R2*2.. 50Sa*2.. 40N2.. 30D2..
+40Pa.. 30M2.. 30G2.. _...
+// Jod (Medium pulse Standard bowing - Strike 1)
+41Sa. 51R2. 61G2. 71Pa. 81N2. 71Sa*2. 61N2. 51Pa.
+41G2. 31R2. 21Sa. _.........
+41Pa. 51D2. 61N2. 71Sa*2. 81R2*2. 71Sa*2. 61N2. 51D2.
+41Pa. 31M2. 21G2. _.........
+// Jhala / Drut (Fast Crunch bowing - Strike 2)
+52Sa 72G2 52Sa 72G2 52R2 72Pa 52R2 72Pa
+72G2 72N2 72G2 72N2 52Pa 52Sa*2 52Pa 52Sa*2
+52Sa*2 72N2 52Sa*2 72N2 52Pa 72G2 52Pa 72G2
+52R2 52Sa 52R2 52Sa _... _...
+52Pa 72N2 52Pa 72N2 52D2 72Sa*2 52D2 72Sa*2
+72N2 72R2*2 72N2 72R2*2 52Sa*2 52G2*2 52Sa*2 52G2*2
+52G2*2 72R2*2 52G2*2 72R2*2 52Sa*2 72N2 52Sa*2 72N2
+52D2 52Pa 52D2 52Pa _... _...
+
+grid: 4
+bpm: 100
+basefreq: 222.0
+instrument: ghatam
+notation: konnakol
+
+// Alaap - 48 units
+5Nam... 3Dhi... 8Gumki... 6Tha...
+4Nam... 3Dhi... 7Nam... 6Tha...
+5Nam... 3Dhi... 8Gumki... 6Tha...
+// Jod - 32 units
+5Nam. 3Dhi. 8Gumki. 6Tha. 4Nam. 3Dhi. 7Nam. 6Tha.
+5Nam. 3Dhi. 8Gumki. 6Tha. 4Nam. 3Dhi. 7Nam. 6Tha.
+// Jhala / Drut - 64 units
+9Tha 4Dhi 8Thom 6Nam 9Gumki 5Nam 4Dhi 8Tha 9Tha 4Dhi 8Thom 6Nam 9Gumki 5Nam 4Dhi 8Tha
+9Tha 7Tha 5Dhi 4Dhi 8Thom 6Thom 9Nam 7Nam 9Gumki 7Gumki 6Nam 5Nam 4Dhi 3Dhi 8Tha 6Tha
+9Tha 4Dhi 8Thom 6Nam 9Gumki 5Nam 4Dhi 8Tha 9Tha 4Dhi 8Thom 6Nam 9Gumki 5Nam 4Dhi 8Tha
+9Tha 7Tha 5Dhi 4Dhi 8Thom 6Thom 9Nam 7Nam 9Gumki 7Gumki 6Nam 5Nam _... _...

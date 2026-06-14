@@ -1,0 +1,20 @@
+import("stdfaust.lib");
+chikari_freq = hslider("chikari_freq", 880.0, 40, 2000, 0.01);
+strike = hslider("strike", 1, 0, 1, 1);
+gate = button("gate");
+trig = gate > gate';
+pulse_timer(t) = loop ~ _ with { loop(s) = ba.if(t, 150, max(0.0, s - 1.0)); };
+gate_held = trig : pulse_timer > 0;
+exc_env = en.ar(0.003, 0.015, gate_held);
+pick_noise = no.noise : fi.bandpass(2, 800.0, 1600.0);
+base_exc = pick_noise * 0.4 * exc_env;
+chikari_exc = base_exc * 1.5 * (strike > 0.5);
+chikari_del = ma.SR / chikari_freq;
+chikari_feedback = pow(0.001, 1.0 / (0.25 * chikari_freq));
+chikari_lp = * (0.96) : + ~ * (0.04);
+linear_fdelay(maxDel, d, x) = (1.0 - frac) * x1 + frac * x2 with {
+    int_del = int(d); frac = d - int_del;
+    x1 = de.delay(maxDel, int_del, x); x2 = de.delay(maxDel, int_del + 1, x);
+};
+chikariLoop = chikari_exc : (+ : linear_fdelay(16384, chikari_del - 1.0)) ~ (chikari_lp : _ * chikari_feedback);
+process = chikariLoop;

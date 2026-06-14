@@ -432,29 +432,28 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
                         }
                         if (inst) {
                             float durationSec = static_cast<float>(ev.durationSamples) / inst->getSampleRate();
-                            float tenPercentTime = durationSec * 0.10f;
                             
-                            float baseVelocity = inst->getVelocity();
+                            float baseVelocity = inst->getDefaultVelocity();
                             if (seqWrapper->sequenceObj->initialParams.count("velocity")) {
                                 baseVelocity = seqWrapper->sequenceObj->initialParams["velocity"];
                             }
-                            if (ev.velocity >= 0.0f) baseVelocity = ev.velocity;
+                            
+                            float dynamicVelocity;
+                            if (ev.velocity >= 0.0f) {
+                                dynamicVelocity = ev.velocity;
+                            } else if (seqWrapper->sequenceObj->initialParams.count("velocity")) {
+                                dynamicVelocity = baseVelocity;
+                            } else {
+                                float r = std::min(durationSec / 0.3f, 1.0f);
+                                dynamicVelocity = baseVelocity + (1.0f - baseVelocity) * (1.0f - r);
+                            }
                             
                             float baseGlide = inst->getDSPGlideParam();
                             if (seqWrapper->sequenceObj->initialParams.count("glide")) {
                                 baseGlide = seqWrapper->sequenceObj->initialParams["glide"];
                             }
 
-                            float currentAttackTime = 0.005f + (1.0f - baseVelocity) * 0.1f;
-                            float dynamicVelocity = baseVelocity;
-                            
-                            if (currentAttackTime > tenPercentTime) {
-                                float targetAttackTime = tenPercentTime;
-                                if (targetAttackTime < 0.005f) targetAttackTime = 0.005f;
-                                dynamicVelocity = 1.0f - ((targetAttackTime - 0.005f) / 0.1f);
-                                if (dynamicVelocity > 1.0f) dynamicVelocity = 1.0f;
-                            }
-
+                            float tenPercentTime = durationSec * 0.10f;
                             float dynamicGlide = baseGlide;
                             if (dynamicGlide > tenPercentTime) {
                                 dynamicGlide = tenPercentTime;

@@ -169,6 +169,7 @@ void FaustInstrument::initializeVoices() {
             mVelocity = 1.0f;
         }
     }
+    mDefaultVelocity = mVelocity;
     if (mAmplitude >= 0.0f) {
         setAmplitude(mAmplitude);
     } else {
@@ -538,6 +539,7 @@ void FaustInstrument::setParameter(const char* name, float value) {
 float FaustInstrument::getGain() const { return mGain; }
 float FaustInstrument::getFrequency() const { return mFrequency; }
 float FaustInstrument::getVelocity() const { return mVelocity; }
+float FaustInstrument::getDefaultVelocity() const { return mDefaultVelocity; }
 float FaustInstrument::getAmplitude() const { return mAmplitude; }
 float FaustInstrument::getDuration() const { return mDuration; }
 float FaustInstrument::getReverbSend() const { return mReverbSend; }

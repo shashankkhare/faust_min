@@ -3,7 +3,7 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 import("stdfaust.lib");
 
 fTarget = hslider("freq", 440, 50, 2000, 0.1);
-velocity = hslider("velocity", 0.85, 0.0, 1.0, 0.01);
+velocity = hslider("velocity", 0.5, 0.0, 1.0, 0.01);
 t = button("gate");
 gain = hslider("gain", 1.0, 0.0, 3.0, 0.01) : si.smoo;
 
@@ -20,7 +20,7 @@ vibratoDepth = vibrato * 0.04;
 vibratoLFO = os.osc(vibratoRate) * vibratoDepth * fSmoothed;
 actualFreq = fSmoothed + vibratoLFO;
 
-attackTime = 0.002 + (1.0 - velocity) * 0.05;
+attackTime = 0.002 + (1.0 - velocity) * 0.056;
 pressure = t * pressureTarget : min(1.0) : si.smooth(ba.tau2pole(attackTime));
 
 // Breath attack: decaying noise burst
@@ -35,7 +35,8 @@ jetTurbulence = no.pink_noise * (breathiness + gateBurst) * 1.0;
 directBreath = no.pink_noise * breathiness * 0.06;
 noisyPressure = pressure + (jetTurbulence * pressure) + directBreath;
 
-releaseEnv = t : si.smooth(ba.tau2pole(0.030));
+releaseTime = 0.002 + (1.0 - velocity) * 0.056;
+releaseEnv = t : si.smooth(ba.tau2pole(releaseTime));
 
 nafModel(tubeLength, mouthPos, pres) = pm.endChain(nafChain) : fi.dcblocker
 with {

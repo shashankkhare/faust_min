@@ -565,7 +565,13 @@ void UMLParser::handlePitchedToken(const TokenItem& ti, float amplitudeScalar, l
     if (!hasGlide) {
         bool nextIsNote = (nextTokenIndex < tokenItemsArray.size() && 
                            tokenItemsArray[nextTokenIndex].type == TokenType::NoteWithControl);
-        long lookAhead = nextIsNote ? (long)(0.03 * sampleRate) : 0;
+        long lookAhead = 0;
+        if (nextIsNote) {
+            long maxLA = (long)(0.03 * sampleRate);
+            long minLA = (long)(0.002 * sampleRate);
+            long propLA = durationSamples / 10;
+            lookAhead = std::max(std::min(propLA, maxLA), minLA);
+        }
         long offOffset = sampleOffset + durationSamples - lookAhead;
         if (offOffset <= sampleOffset) offOffset = sampleOffset + 1;
         UMLEvent offEv;

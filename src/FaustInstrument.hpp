@@ -75,6 +75,7 @@ public:
     float getGain() const;
     float getFrequency() const;
     float getVelocity() const;
+    float getDefaultVelocity() const;
     float getAmplitude() const;
     float getDSPGlideParam() const { return mDSPGlideParam; }
     float getDuration() const;
@@ -160,6 +161,7 @@ protected:
     float mGain;
     float mFrequency;
     float mVelocity;
+    float mDefaultVelocity = 0.5f;
     float mAmplitude;
     float mStrikeVal = -1.0f;
     bool mHasStrikeLUT = false;
