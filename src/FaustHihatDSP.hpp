@@ -341,8 +341,8 @@ class FaustHihatDSP : public dsp {
 		float fSlow92 = (0.0f - fSlow88);
 		float fThen7 = (iSlow12 ? 0.300000012f : 0.0799999982f);
 		float fSlow93 = (iSlow10 ? 0.0f : fThen7);
-		float fThen9 = (iSlow12 ? 0.850000024f : 0.150000006f);
-		float fSlow94 = std::max<float>(1.0f, (fConst0 * ((2.0f * (iSlow10 ? 0.0500000007f : fThen9)) + 0.5f)));
+		float fThen9 = (iSlow12 ? 2.20000005f : 0.25f);
+		float fSlow94 = std::max<float>(1.0f, (fConst0 * (iSlow10 ? 0.0599999987f : fThen9)));
 		for (int i0 = 0; (i0 < count); i0 = (i0 + 1)) {
 			fVec0[0] = fSlow8;
 			iRec3[0] = ((1103515245 * iRec3[1]) + 12345);

@@ -1336,6 +1336,7 @@ void testSarod(FaustMixer& mixer, DSPExecutionType execType) {
     std::cout << " , ";
 
     inst->clearDiagnosticLogs();
+    inst->setParam("chikari_freq", 880.0f);
     inst->noteOn(freqs.back(), gTestVelocity, 1.0f, gTestAmplitude);
     usleep(2000000);
     inst->noteOff();
@@ -1423,6 +1424,66 @@ void testTibetanbowl(FaustMixer& mixer, DSPExecutionType execType) {
         std::cout << std::flush;
     }
     std::cout << std::endl;
+    mixer.removeTrack(track);
+}
+
+void testPanflute(FaustMixer& mixer, DSPExecutionType execType) {
+    std::cout << "\n=== [Test] Panflute ===" << std::endl;
+    auto inst = std::make_shared<FaustInstrument>(51, execType, InstrumentMapper::DEFAULT_SAMPLE_RATE);
+    int track = mixer.addTrack(gTestAmplitude);
+    mixer.addInstrumentToTrack(track, inst.get());
+    inst->enableDiagnosticLogging(true);
+    std::vector<double> freqs;
+    if (gTestFrequency > 0.0) {
+        freqs = { gTestFrequency };
+    } else {
+        for (int midi = 45; midi <= 72; ++midi) {
+            freqs.push_back(440.0 * pow(2.0, (midi - 69.0) / 12.0));
+        }
+    }
+    for (size_t i = 0; i < freqs.size(); ++i) {
+        double freq = freqs[i];
+        inst->clearDiagnosticLogs();
+        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
+        usleep(2000000);
+        inst->noteOff();
+        if (i < freqs.size() - 1) usleep(200000);
+        printEnergy(inst.get(), freq);
+        if (i < freqs.size() - 1) std::cout << " , ";
+        std::cout << std::flush;
+    }
+    std::cout << std::endl;
+    usleep(1500000);
+    mixer.removeTrack(track);
+}
+
+void testNativeAmericanFlute(FaustMixer& mixer, DSPExecutionType execType) {
+    std::cout << "\n=== [Test] Native American Flute ===" << std::endl;
+    auto inst = std::make_shared<FaustInstrument>(52, execType, InstrumentMapper::DEFAULT_SAMPLE_RATE);
+    int track = mixer.addTrack(gTestAmplitude);
+    mixer.addInstrumentToTrack(track, inst.get());
+    inst->enableDiagnosticLogging(true);
+    std::vector<double> freqs;
+    if (gTestFrequency > 0.0) {
+        freqs = { gTestFrequency };
+    } else {
+        for (int midi = 45; midi <= 72; ++midi) {
+            freqs.push_back(440.0 * pow(2.0, (midi - 69.0) / 12.0));
+        }
+    }
+    for (size_t i = 0; i < freqs.size(); ++i) {
+        double freq = freqs[i];
+        inst->clearDiagnosticLogs();
+        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
+        usleep(2000000);
+        inst->noteOff();
+        if (i < freqs.size() - 1) usleep(200000);
+        printEnergy(inst.get(), freq);
+        if (i < freqs.size() - 1) std::cout << " , ";
+        std::cout << std::flush;
+    }
+    std::cout << std::endl;
+    usleep(1500000);
     mixer.removeTrack(track);
 }
 
@@ -1527,7 +1588,9 @@ int main(int argc, char* argv[]) {
         {47, "Tibetanbowl"},
         {48, "Ngachen"},
         {49, "Mridangam"},
-        {50, "Ghatam"}
+        {50, "Ghatam"},
+        {51, "Panflute"},
+        {52, "NativeAmericanFlute"}
     };
 
     std::cout << "\n--- Available Instruments ---" << std::endl;
@@ -1598,6 +1661,8 @@ int main(int argc, char* argv[]) {
                 case 48: testNgachen(mixer, execType); break;
                 case 49: testMridangam(mixer, execType); break;
                 case 50: testGhatam(mixer, execType); break;
+                case 51: testPanflute(mixer, execType); break;
+                case 52: testNativeAmericanFlute(mixer, execType); break;
                 default: break;
             }
         } else {
@@ -1697,6 +1762,8 @@ int main(int argc, char* argv[]) {
                     case 48: testNgachen(mixer, execType); break;
                     case 49: testMridangam(mixer, execType); break;
                     case 50: testGhatam(mixer, execType); break;
+                    case 51: testPanflute(mixer, execType); break;
+                    case 52: testNativeAmericanFlute(mixer, execType); break;
                     default: break;
                 }
             } else {

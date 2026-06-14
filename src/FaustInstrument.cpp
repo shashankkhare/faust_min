@@ -86,6 +86,10 @@
 #include "FaustSantoorDSP.hpp"
 #include "FaustTumbiDSP.hpp"
 #include "FaustNgachenDSP.hpp"
+#include "FaustMridangamDSP.hpp"
+#include "FaustGhatamDSP.hpp"
+#include "FaustPanfluteDSP.hpp"
+#include "FaustNativeamericanfluteDSP.hpp"
 #ifndef FAUST_DISABLE_INTERPRETER
 #include <faust/dsp/interpreter-dsp.h>
 #endif
@@ -360,6 +364,8 @@ void FaustInstrument::loadTargetDSP() {
                 case 48: addVoice(new FaustNgachenDSP()); break;
                 case 49: addVoice(new FaustMridangamDSP()); break;
                 case 50: addVoice(new FaustGhatamDSP()); break;
+                case 51: addVoice(new FaustPanfluteDSP()); break;
+                case 52: addVoice(new FaustNativeamericanfluteDSP()); break;
                 default: addVoice(new FaustDayanDSP()); break;
             }
         }

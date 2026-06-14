@@ -47,6 +47,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #endif
+#include <dirent.h>
 
 #define DEBUG_ORCHESTRATOR 0
 
@@ -87,6 +88,115 @@ void SequenceOrchestrator::setAssetBasePath(const std::string& path) {
     mAssetBasePath = path;
     printf("[Native] Asset Base Path set to: %s\n", path.c_str());
     fflush(stdout);
+}
+
+int SequenceOrchestrator::loadSong(const std::string& songDirectory) {
+    std::string fullDir = mAssetBasePath + "/" + songDirectory;
+    DIR* dir = opendir(fullDir.c_str());
+    if (!dir) {
+        // Attempt as absolute path if relative fails
+        dir = opendir(songDirectory.c_str());
+        if (!dir) {
+            printf("[Orchestrator] Failed to open song directory: %s\n", fullDir.c_str());
+            return -1;
+        }
+        fullDir = songDirectory;
+    }
+
+    std::vector<std::string> loadedSeqNames;
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != nullptr) {
+        std::string filename = entry->d_name;
+        if (filename.length() > 4 && filename.substr(filename.length() - 4) == ".usq") {
+            std::string filepath = fullDir + "/" + filename;
+            std::ifstream infile(filepath);
+            if (!infile.is_open()) continue;
+
+            std::string line;
+            std::string currentSeqBlock = "";
+            bool inNotes = false;
+            int subSeqIdx = 0;
+
+            while (std::getline(infile, line)) {
+                bool isParam = false;
+                std::string trimmed = line;
+                trimmed.erase(0, trimmed.find_first_not_of(" \t\r\n"));
+                if (!trimmed.empty() && trimmed.find("//") != 0) {
+                    if (trimmed.find(':') != std::string::npos) {
+                        isParam = true;
+                    } else {
+                        inNotes = true;
+                    }
+                }
+
+                if (isParam && inNotes) {
+                    std::string seqName = songDirectory + "_" + filename + "_" + std::to_string(subSeqIdx++);
+                    UMLSequence* seq = new UMLSequence(seqName, -1, currentSeqBlock);
+                    if (addSequence(seqName, seq) == 0) {
+                        loadedSeqNames.push_back(seqName);
+                    } else {
+                        delete seq;
+                    }
+                    currentSeqBlock = "";
+                    inNotes = false;
+                }
+                currentSeqBlock += line + "\n";
+            }
+            if (!currentSeqBlock.empty()) {
+                std::string seqName = songDirectory + "_" + filename + "_" + std::to_string(subSeqIdx++);
+                UMLSequence* seq = new UMLSequence(seqName, -1, currentSeqBlock);
+                if (addSequence(seqName, seq) == 0) {
+                    loadedSeqNames.push_back(seqName);
+                } else {
+                    delete seq;
+                }
+            }
+        }
+    }
+    closedir(dir);
+
+    std::lock_guard<std::mutex> lock(mStateMutex);
+    mSongRegistry[songDirectory] = loadedSeqNames;
+    return loadedSeqNames.size();
+}
+
+void SequenceOrchestrator::unloadSong(const std::string& songDirectory) {
+    std::lock_guard<std::mutex> lock(mStateMutex);
+    if (mSongRegistry.count(songDirectory)) {
+        for (const auto& seqName : mSongRegistry[songDirectory]) {
+            mActiveSequences.erase(seqName);
+            // also remove from pending play if it's there
+            mPendingPlay.erase(std::remove(mPendingPlay.begin(), mPendingPlay.end(), seqName), mPendingPlay.end());
+        }
+        mSongRegistry.erase(songDirectory);
+    }
+    rebuildSnapshot();
+}
+
+void SequenceOrchestrator::playSong(const std::string& songDirectory) {
+    std::lock_guard<std::mutex> lock(mStateMutex);
+    if (mSongRegistry.count(songDirectory)) {
+        for (const auto& seqName : mSongRegistry[songDirectory]) {
+            if (mActiveSequences.count(seqName)) {
+                if (std::find(mPendingPlay.begin(), mPendingPlay.end(), seqName) == mPendingPlay.end()) {
+                    mPendingPlay.push_back(seqName);
+                }
+            }
+        }
+    }
+}
+
+void SequenceOrchestrator::stopSong(const std::string& songDirectory) {
+    std::lock_guard<std::mutex> lock(mStateMutex);
+    if (mSongRegistry.count(songDirectory)) {
+        for (const auto& seqName : mSongRegistry[songDirectory]) {
+            mPendingPlay.erase(std::remove(mPendingPlay.begin(), mPendingPlay.end(), seqName), mPendingPlay.end());
+            if (mActiveSequences.count(seqName)) {
+                mActiveSequences[seqName]->state = SequenceState::STOPPED;
+                mActiveSequences[seqName]->playbackSampleIndex = 0;
+            }
+        }
+    }
 }
 
 int SequenceOrchestrator::addSequence(const std::string& name, UMLSequence* sequence) {
@@ -276,7 +386,7 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
                 framesRemaining -= framesToProcess;
 
                 if (seqWrapper->currentSample >= seq->totalDurationSamples) {
-                    if (mLooping.load(std::memory_order_relaxed)) {
+                    if (seq->loop || mLooping.load(std::memory_order_relaxed)) {
                         seqWrapper->currentSample = 0;
                         seqWrapper->nextEventIndex = 0;
                     } else {
@@ -354,6 +464,9 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
                             inst->setParam("vibrato", 0.0f);
                             inst->setParam("vibrato_depth", 0.0f);
                             inst->setParam("vibrato_rate", 0.0f);
+                            if (seqWrapper->sequenceObj->initialParams.count("chikari_freq")) {
+                                inst->setParamImmediate("chikari_freq", seqWrapper->sequenceObj->initialParams["chikari_freq"], -1);
+                            }
                             inst->noteOn(ev.frequency, dynamicVelocity, ev.strikeVal, ev.amplitude);
                         }
                     } else if (ev.type == UMLEventType::NoteOff) {
@@ -367,14 +480,19 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
                         }
                     } else if (ev.type == UMLEventType::VibratoOn) {
                         if (inst) {
+                            float vMaster = 0.6f;
                             float vDepth = 0.03f;
                             float vRate = 5.5f;
+                            if (seqWrapper->sequenceObj->initialParams.count("vibrato")) {
+                                vMaster = seqWrapper->sequenceObj->initialParams["vibrato"];
+                            }
                             if (seqWrapper->sequenceObj->initialParams.count("vibrato_depth")) {
                                 vDepth = seqWrapper->sequenceObj->initialParams["vibrato_depth"];
                             }
                             if (seqWrapper->sequenceObj->initialParams.count("vibrato_rate")) {
                                 vRate = seqWrapper->sequenceObj->initialParams["vibrato_rate"];
                             }
+                            inst->setParam("vibrato", vMaster);
                             inst->setParam("vibrato_depth", vDepth);
                             inst->setParam("vibrato_rate", vRate);
                         }
@@ -389,7 +507,7 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
             framesRemaining -= framesToProcess;
 
             if (seqWrapper->currentSample >= seq->totalDurationSamples) {
-                if (mLooping.load(std::memory_order_relaxed)) {
+                if (seq->loop || mLooping.load(std::memory_order_relaxed)) {
                     seqWrapper->currentSample = 0;
                     seqWrapper->nextEventIndex = 0;
                 } else {

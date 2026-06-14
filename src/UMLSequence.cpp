@@ -41,6 +41,7 @@ UMLSequence::UMLSequence(const std::string& seqName, int instID, const std::stri
     this->notation = parsed.notation;
     this->execType = parsed.execType;
     this->umlData = umlDataString;
+    this->loop = parsed.loop;
 
     int targetID = this->instrumentID;
     if (targetID == -1 && !this->instrument.empty()) {

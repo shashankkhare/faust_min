@@ -59,7 +59,7 @@ pluck_env = en.ar(0.003, 0.015, gate_held_pluck);
 pick_impulse = ba.impulsify(trig);
 
 // Wooden plectrum scratch noise
-pick_noise = no.noise : fi.bandpass(2, 300.0, 800.0);
+pick_noise = no.noise : fi.bandpass(2, 100.0, 1200.0);
 
 // Base wooden pluck excitation — short transient only!
 base_exc = pick_noise * 0.2 * pluck_env * velocity;
@@ -85,47 +85,38 @@ normFreq = (freq - 80.0) / (800.0 - 80.0) : min(1.0) : max(0.0);
 dynSustain = 4.0 - normFreq * 3.2; // 4.0s sustain for low notes, 0.8s for high notes
 feedback_gain = pow(0.001, 1.0 / (dynSustain * freq));
 
-lp = * (0.1) : + ~ * (0.9);
-
 del = ma.SR / freq;
 
-linear_fdelay(maxDel, d, x) = (1.0 - frac) * x1 + frac * x2
-with {
-    int_del = int(d);
-    frac = d - int_del;
-    x1 = de.delay(maxDel, int_del, x);
-    x2 = de.delay(maxDel, int_del + 1, x);
-};
-
 // Fretless steel fingerboard collision model (asymmetric soft clipping)
-fingerboard(x) = ba.if(abs(x) > 0.04, sign(x) * (0.04 + (abs(x) - 0.04) * 0.15), x)
+fingerboard(x) = ba.if(abs(x) > 0.8, sign(x) * (0.8 + (abs(x) - 0.8) * 0.15), x)
 with {
     sign(y) = ba.if(y > 0.0, 1.0, -1.0);
 };
 
 dispersion = _ <: * (0.2), _' : + : + ~ * (-0.2); // slight stiffness
 
-// Jawari (bridge) nonlinearity: asymmetric cubic — positive excursions catch the bridge edge
-// producing the characteristic nasal buzzing/singing tone
-jawari(x) = x * (1.0 + j_h * max(0.0, x) * max(0.0, x));
+bridge_contact(x) = max(0, x * 5.0);
+jivari_mod = j_h * 600.0;
+dynamic_delay(x) = de.fdelay(16384, max(2.0, del - jivari_mod * bridge_contact(x)), x);
 
-stringLoop = melody_exc : (+ : linear_fdelay(16384, del - 1.0)) ~ (jawari : lp : dispersion : fingerboard : _ * feedback_gain);
+stringLoop = melody_exc : (+ : dynamic_delay) ~ (dispersion : fingerboard : _ * feedback_gain);
 
 // Goatskin membrane modes in parallel (20 non-degenerate eigenmodes from Manaswi et al. 2013)
 membrane_filter(x) = 
-    (  (x : fi.resonbp(150.0,   12.0, 0.5))
+    (  (x * 0.5)
+     + (x : fi.resonbp(150.0,   12.0, 0.5))
      + (x : fi.resonbp(236.7,   12.0, 0.5))
      + (x : fi.resonbp(240.2,   12.0, 0.5))
      + (x : fi.resonbp(315.4,   12.0, 0.5))
      + (x : fi.resonbp(320.7,   12.0, 0.5))
      + (x : fi.resonbp(342.3,   12.0, 0.5))
      + (x : fi.resonbp(386.4,   12.0, 0.5))
-     + (x : fi.resonbp(402.7,   12.0, 0.03))
-     + (x : fi.resonbp(423.0,   12.0, 0.03))
-     + (x : fi.resonbp(438.7,   12.0, 0.03))
-     + (x : fi.resonbp(465.3,   12.0, 0.03))
-     + (x : fi.resonbp(477.4,   12.0, 0.03))
-     + (x : fi.resonbp(498.4,   12.0, 0.03))
+     + (x : fi.resonbp(402.7,   12.0, 0.5))
+     + (x : fi.resonbp(423.0,   12.0, 0.5))
+     + (x : fi.resonbp(438.7,   12.0, 0.5))
+     + (x : fi.resonbp(465.3,   12.0, 0.5))
+     + (x : fi.resonbp(477.4,   12.0, 0.5))
+     + (x : fi.resonbp(498.4,   12.0, 0.5))
      + (x : fi.resonbp(522.9,   12.0, 0.5))
      + (x : fi.resonbp(535.9,   12.0, 0.5))
      + (x : fi.resonbp(544.2,   12.0, 0.5))
@@ -137,7 +128,8 @@ membrane_filter(x) =
 
 // Wooden body bowl modes in parallel
 body_filter(x) = 
-    (  (x : fi.resonbp(180.0,  8.0, 1.0))
+    (  (x * 0.5)
+     + (x : fi.resonbp(180.0,  8.0, 1.0))
      + (x : fi.resonbp(320.0,  8.0, 0.3))
      + (x : fi.resonbp(550.0,  8.0, 0.3))
      + (x : fi.resonbp(900.0,  8.0, 0.3))
@@ -185,7 +177,7 @@ symp_strings = symp_string(1.000, 1.000, 0.12, 1.5, 0.05)
              + symp_string(3.000, 0.998, 0.20, 1.0, 0.02);
 
 // 4 Chikari strings: 2×Sa, 2×Pa — all Karplus-Strong delay lines with independent sustain
-chikari_string(del, fb, exc) = exc : (+ : linear_fdelay(16384, del - 1.0)) ~ (*(0.95) : + ~ *(0.05) : _ * fb);
+chikari_string(del, fb, exc) = exc : (+ : de.fdelay(16384, del - 1.0)) ~ (*(0.95) : + ~ *(0.05) : _ * fb);
 
 chikari_sa_del = ma.SR / chikari_freq;
 chikari_sa_fb = pow(0.001, 1.0 / (2.5 * chikari_freq));
@@ -203,4 +195,4 @@ chikariLoop = chikari_string(chikari_sa_del, chikari_sa_fb, chikari_amp)
 summed = stringLoop + chikariLoop + symp_strings * symp_gain;
 core = summed : membrane_saturate : membrane_filter : body_filter;
 
-process = core * gain * 3.5 : ma.tanh;
+process = core * gain;

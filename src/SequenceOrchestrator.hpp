@@ -42,12 +42,16 @@
 #endif
 #include <faust/gui/MapUI.h>
 
+enum class SequenceState { PLAYING, STOPPED, PAUSED };
+
 struct ActiveSequence {
     UMLSequence* sequenceObj;
     long currentSample;           // written only by driving worker thread — no race
     size_t nextEventIndex;        // written only by driving worker thread — no race
     std::atomic<bool> isPlaying{false};
     std::atomic<bool> isMuted{false};
+    SequenceState state = SequenceState::PLAYING;
+    size_t playbackSampleIndex = 0;
 
     ActiveSequence() : sequenceObj(nullptr), currentSample(0), nextEventIndex(0) {}
     ~ActiveSequence() {}
@@ -85,6 +89,26 @@ private:
 public:
 
     void setAssetBasePath(const std::string& path);
+
+    /**
+     * @brief Load all .usq files from a directory and parse their sequences.
+     */
+    int loadSong(const std::string& songDirectory);
+
+    /**
+     * @brief Unload all sequences associated with a specific song directory.
+     */
+    void unloadSong(const std::string& songDirectory);
+
+    /**
+     * @brief Start playback of all sequences associated with a specific song directory.
+     */
+    void playSong(const std::string& songDirectory);
+
+    /**
+     * @brief Stop playback of all sequences associated with a specific song directory.
+     */
+    void stopSong(const std::string& songDirectory);
 
     /**
      * @brief Register a new sequence definition into the orchestrator.
@@ -209,6 +233,7 @@ private:
     std::string mAssetBasePath;
 
     std::map<std::string, std::shared_ptr<ActiveSequence>> mActiveSequences;
+    std::map<std::string, std::vector<std::string>> mSongRegistry;
     std::vector<std::string> mPendingPlay;
     std::mutex mStateMutex;
     long mMasterSampleCount = 0;

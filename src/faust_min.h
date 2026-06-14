@@ -298,11 +298,16 @@ DART_EXPORT void orchestrator_resume(SequenceOrchestrator* orch);
 DART_EXPORT void orchestrator_set_weight(SequenceOrchestrator* orch, const char* name, float weight);
 DART_EXPORT void orchestrator_set_parameter(SequenceOrchestrator* orch, const char* name, const char* param, float value);
 DART_EXPORT const char* orchestrator_poll_finished(SequenceOrchestrator* orch);
+DART_EXPORT int orchestrator_load_song(SequenceOrchestrator* orch, const char* directory);
+DART_EXPORT void orchestrator_unload_song(SequenceOrchestrator* orch, const char* directory);
+DART_EXPORT void orchestrator_play_song(SequenceOrchestrator* orch, const char* directory);
+DART_EXPORT void orchestrator_stop_song(SequenceOrchestrator* orch, const char* directory);
 
 // --- FaustMixer Singleton Endpoints ---
 DART_EXPORT FaustMixer* mixer_get_instance();
 DART_EXPORT int mixer_start(FaustMixer* mixer);
 DART_EXPORT void mixer_stop(FaustMixer* mixer);
+DART_EXPORT void mixer_clear_all(FaustMixer* mixer);
 DART_EXPORT float mixer_get_sample_rate(FaustMixer* mixer);
 DART_EXPORT void mixer_set_master_gain(FaustMixer* mixer, float gain);
 

@@ -67,6 +67,7 @@ public:
     std::string notation;
     std::string execType;
     std::string umlData;
+    bool loop = false;
 
     std::shared_ptr<FaustInstrument> mInstrument;
 

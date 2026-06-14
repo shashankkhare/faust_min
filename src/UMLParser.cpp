@@ -144,6 +144,7 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
     UMLSequence seq;
     seq.name = name;
     seq.baseFreq = -1.0;
+    seq.notation.clear();
     
     std::stringstream ss(input);
     std::string line;
@@ -188,6 +189,11 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
                 }
             }
             else if (key == "gain") seq.gain = std::stod(val);
+            else if (key == "loop") {
+                std::string lowerVal = val;
+                std::transform(lowerVal.begin(), lowerVal.end(), lowerVal.begin(), ::tolower);
+                seq.loop = (lowerVal == "true" || lowerVal == "1" || lowerVal == "yes");
+            }
             else if (key == "instrumentID" || key == "instrumentid" || key == "ID" || key == "id") {
                 seq.instrumentID = std::stoi(val);
             }

@@ -62,6 +62,7 @@ void playSequenceGroup(FaustMixer& mixer, SequenceOrchestrator& orch, SequenceGr
                   << " | BaseFreq: " << seqPair.second->baseFreq << " Hz" 
                   << " | DurationSamples: " << seqPair.second->totalDurationSamples
                   << " | Cells: " << std::round(cellCount) << std::endl;
+
         orch.addSequence(seqPair.first, seqPair.second);
 
         std::cout << "[Diagnostic] Parsed NoteOn events for " << seqPair.first << ":" << std::endl;
@@ -108,13 +109,9 @@ void playSequenceGroup(FaustMixer& mixer, SequenceOrchestrator& orch, SequenceGr
     }
 
     // Play indefinitely until user presses a key
-    std::cout << "[Playback] Playing Sequence (Looping Enabled). Press ENTER to stop..." << std::endl;
+    std::cout << "[Playback] Playing for " << durationSeconds << " seconds..." << std::endl;
     orch.enableDiagnostics(true);
-    
-    // Clear the input buffer from the previous selection
-    std::cin.ignore(10000, '\n');
-    // Wait for the user to press ENTER
-    std::cin.get();
+    usleep(durationSeconds * 1000000);
 
     // 3. Stop and Unload
     orch.stop();
@@ -171,7 +168,8 @@ int main(int argc, char* argv[]) {
             std::cout << "  9. Exit" << std::endl;
             std::cout << " 10. Sarod — Raag Yaman (Fast, with Meend Glides) [12 semitone]" << std::endl;
             std::cout << " 11. Carnatic Classical — Raag Hamsadhwani (Violin, Mridangam, Ghatam)" << std::endl;
-            std::cout << ">>> Enter selection (1-11): ";
+            std::cout << " 12. Last of the Mohicans — Promontory & Elk Hunt (Panflute, NAF, Rainmaker, Dhol)" << std::endl;
+            std::cout << ">>> Enter selection (1-12): ";
             if (!(std::cin >> selection)) {
                 break;
             }
@@ -193,6 +191,7 @@ int main(int argc, char* argv[]) {
                 "basefreq: 222.0\n"
                 "instrument: tanpura\n"
                 "notation: Hindustani\n"
+                "loop: true\n"
                 "\n"
                 "5Sa............... _............... "
                 "5Sa............... _...............";
@@ -731,7 +730,8 @@ int main(int argc, char* argv[]) {
                 "grid: 2\n"
                 "basefreq: 111.0\n"
                 "instrument: tanpura\n"
-                "notation: Hindustani\n\n"
+                "notation: Hindustani\n"
+                "loop: true\n\n"
                 "5Pa...... 5Sa...... "; // Short sequence that loops independently
                 
             std::string umlSitar = 
@@ -867,6 +867,7 @@ int main(int argc, char* argv[]) {
                 "basefreq: 222.0\n"
                 "instrument: tanpura\n"
                 "notation: Hindustani\n"
+                "loop: true\n"
                 "\n"
                 "5Sa............... _............... "
                 "5Sa............... _...............";
@@ -1008,6 +1009,73 @@ int main(int argc, char* argv[]) {
             group.percussionTrackWeight = 1.2f;
             group.melodyTrackWeight = 1.0f;
             duration = 32;
+        } else if (selection == 12) {
+            group.name = "Last of the Mohicans";
+            
+            auto buildPanflute = []() -> std::string {
+                std::string s = "grid: 4\nbpm: 72\nbasefreq: 293.66\ninstrument: panflute\nparameters: vibrato=0.6, vibrato_rate=5.5, vibrato_depth=0.04\n\n";
+                // "The Last of the Mohicans — Promontory" theme, panflute arrangement
+                // Section A — Main theme (8 bars)
+                s += "5D5... 5D5... 5E5... 5F5... \n";
+                s += "5G5... 5G5... 5F5... 5E5... \n";
+                s += "5D5... 5C5... 5D5... 5F5... \n";
+                s += "5E5..~. 5D5........... \n";
+                s += "5D5... 5D5... 5E5... 5F5... \n";
+                s += "5G5... 5G5... 5F5... 5E5... \n";
+                s += "5D5... 5C5... 5D5... 5A4... \n";
+                s += "5D5............... \n";
+                // Section B — Secondary theme (8 bars)
+                s += "5A4... 5D5... 5F5... 5E5... \n";
+                s += "5D5... 5C5...== 12 5D5... 5A4... \n";
+                s += "5D5... 5F5... 5G5... 5A5... \n";
+                s += "5G5..~. 5F5... 5E5... 5D5... \n";
+                s += "5C5... 5D5... 5F5... 5E5... \n";
+                s += "5D5... 5C5... 5D5... 5A4... \n";
+                s += "5D5... 5F5... 5G5... 5A5... \n";
+                s += "5G5... 5F5..~. 5E5... 5D5... \n";
+                // Section C — Return to theme + coda (4 bars)
+                s += "5D5... 5D5... 5E5... 5F5... \n";
+                s += "5G5... 5G5..~. 5F5... 5E5... \n";
+                s += "5D5... 5C5... 5D5... 5A4... \n";
+                s += "5D5............... \n";
+                return s;
+            };
+            auto buildNAF = []() -> std::string {
+                std::string s = "grid: 12\nbpm: 60\nbasefreq: 222.0\ninstrument: nativeamericanflute\nparameters: vibrato=0.5, vibrato_rate=5.0, vibrato_depth=0.035\n\n";
+                // Promentory main theme (guitar tab transcription)
+                // Phrase 1: opening statement
+                s += "5F4.~............ 5E4..5D4..5G3~..........5D4..5F4..5E4 6F4 7G4....~....... \n";
+                s += "5F4.~....... 5E4.5D4.5G3~......... 5D4..5F4..5E4.4F4.7G4..~....... \n";
+                // Phrase 2: descending variation
+                s += "5F4. 5E4. 5D4.. 5C4. 5A3. 5F4. 5E4. 5D4.. \n";
+                s += "5C4. 5A3. 5D4. 5F4. 5A4.. 5G4. 5F4. 5E4. 5G4. 5E4. 5D4.. \n";
+                // "The Kiss" melody
+                s += "5A3. 5A3. 5A3. 5F4. 5E4. 5D4. 5E4. 5D4. 5C4.. \n";
+                s += "5D4. 5B3. 5C4.. 5A3. 5A3. 5A3. 5F4. 5E4. 5D4. \n";
+                s += "5E4. 5D4. 5C4.. 5D4. 5B3. 5C4.. \n";
+                return s;
+            };
+            auto buildRainmaker = []() -> std::string {
+                std::string s = "grid: 4\nbpm: 72\nbasefreq: 444.0\ninstrument: rainmaker\nloop: true\n\n";
+                for (int i = 0; i < 32; i++)
+                    s += "8x.. 8x.. 8x.. 8x.. 8x.. 8x.. 8x.. 8x.. \n";
+                return s;
+            };
+            auto buildDhol = []() -> std::string {
+                std::string s = "grid: 4\nbpm: 72\nbasefreq: 111.0\ninstrument: dhol\nloop: true\n\n";
+                for (int i = 0; i < 32; i++)
+                    s += "8x.. 8x.. 8x.. 8x.. \n";
+                return s;
+            };
+            
+            //group.sequences.push_back({"Panflute", new UMLSequence("Panflute", 51, buildPanflute())});
+            group.sequences.push_back({"NAF", new UMLSequence("NAF", 52, buildNAF())});
+            //group.sequences.push_back({"Rainmaker", new UMLSequence("Rainmaker", 19, buildRainmaker())});
+            //group.sequences.push_back({"Dhol", new UMLSequence("Dhol", 38, buildDhol())});
+            group.percussionTrackWeight = 1.5f;
+            group.melodyTrackWeight = 1.8f;
+            group.backgroundTrackWeight = 0.5f;
+            duration = 68;
         }
 
         if (!group.sequences.empty()) {

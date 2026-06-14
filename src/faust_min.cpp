@@ -118,6 +118,22 @@ DART_EXPORT const char* orchestrator_poll_finished(SequenceOrchestrator* orch) {
     return orch ? orch->pollFinished() : nullptr;
 }
 
+DART_EXPORT int orchestrator_load_song(SequenceOrchestrator* orch, const char* directory) {
+    return (orch && directory) ? orch->loadSong(std::string(directory)) : -1;
+}
+
+DART_EXPORT void orchestrator_unload_song(SequenceOrchestrator* orch, const char* directory) {
+    if (orch && directory) orch->unloadSong(std::string(directory));
+}
+
+DART_EXPORT void orchestrator_play_song(SequenceOrchestrator* orch, const char* directory) {
+    if (orch && directory) orch->playSong(std::string(directory));
+}
+
+DART_EXPORT void orchestrator_stop_song(SequenceOrchestrator* orch, const char* directory) {
+    if (orch && directory) orch->stopSong(std::string(directory));
+}
+
 // --- FaustMixer Singleton Endpoints ---
 
 DART_EXPORT FaustMixer* mixer_get_instance() {
@@ -129,11 +145,15 @@ DART_EXPORT void mixer_init(FaustMixer* mixer, float sampleRate) {
 }
 
 DART_EXPORT int mixer_start(FaustMixer* mixer) {
-    return (mixer && mixer->start()) ? 1 : 0;
+    return mixer ? (mixer->start() ? 0 : -1) : -1;
 }
 
 DART_EXPORT void mixer_stop(FaustMixer* mixer) {
     if (mixer) mixer->stop();
+}
+
+DART_EXPORT void mixer_clear_all(FaustMixer* mixer) {
+    if (mixer) mixer->clearAll();
 }
 
 DART_EXPORT float mixer_get_sample_rate(FaustMixer* mixer) {

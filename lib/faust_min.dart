@@ -59,6 +59,9 @@ typedef _dart_mixer_start = int Function(Pointer<NativeMixerOpaque> mixer);
 typedef _c_mixer_stop = Void Function(Pointer<NativeMixerOpaque> mixer);
 typedef _dart_mixer_stop = void Function(Pointer<NativeMixerOpaque> mixer);
 
+typedef _c_mixer_clear_all = Void Function(Pointer<NativeMixerOpaque> mixer);
+typedef _dart_mixer_clear_all = void Function(Pointer<NativeMixerOpaque> mixer);
+
 typedef _c_mixer_get_sr = Float Function(Pointer<NativeMixerOpaque> mixer);
 typedef _dart_mixer_get_sr = double Function(Pointer<NativeMixerOpaque> mixer);
 
@@ -152,6 +155,18 @@ typedef _dart_orch_set_weight = void Function(Pointer<NativeOrchestratorOpaque>,
 
 typedef _c_orch_poll_finished = Pointer<Utf8> Function(Pointer<NativeOrchestratorOpaque>);
 typedef _dart_orch_poll_finished = Pointer<Utf8> Function(Pointer<NativeOrchestratorOpaque>);
+
+typedef _c_orch_load_song = Int32 Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>);
+typedef _dart_orch_load_song = int Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>);
+
+typedef _c_orch_unload_song = Void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>);
+typedef _dart_orch_unload_song = void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>);
+
+typedef _c_orch_play_song = Void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>);
+typedef _dart_orch_play_song = void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>);
+
+typedef _c_orch_stop_song = Void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>);
+typedef _dart_orch_stop_song = void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>);
 
 // --- Classes ---
 
@@ -356,6 +371,11 @@ class SequenceOrchestrator {
   static late final _funcSetParam = _dylib.lookupFunction<_c_orch_set_param, _dart_orch_set_param>('orchestrator_set_parameter');
 
   static late final _funcPollFinished = _dylib.lookupFunction<_c_orch_poll_finished, _dart_orch_poll_finished>('orchestrator_poll_finished');
+  static late final _funcLoadSong = _dylib.lookupFunction<_c_orch_load_song, _dart_orch_load_song>('orchestrator_load_song');
+  static late final _funcUnloadSong = _dylib.lookupFunction<_c_orch_unload_song, _dart_orch_unload_song>('orchestrator_unload_song');
+  static late final _funcPlaySong = _dylib.lookupFunction<_c_orch_play_song, _dart_orch_play_song>('orchestrator_play_song');
+  static late final _funcStopSong = _dylib.lookupFunction<_c_orch_stop_song, _dart_orch_stop_song>('orchestrator_stop_song');
+
   /// Create an orchestrator instance. Call [dispose] when done.
   SequenceOrchestrator() {
     _handle = _funcCreate();
@@ -369,6 +389,50 @@ class SequenceOrchestrator {
       _funcAddSeq(_handle, namePtr.cast(), sequence.nativePointer);
     } finally {
       malloc.free(namePtr);
+    }
+  }
+
+  /// Load a song from a directory
+  int loadSong(String directory) {
+    if (_isDisposed) return -1;
+    final dirPtr = directory.toNativeUtf8();
+    try {
+      return _funcLoadSong(_handle, dirPtr.cast());
+    } finally {
+      malloc.free(dirPtr);
+    }
+  }
+
+  /// Unload a song by directory
+  void unloadSong(String directory) {
+    if (_isDisposed) return;
+    final dirPtr = directory.toNativeUtf8();
+    try {
+      _funcUnloadSong(_handle, dirPtr.cast());
+    } finally {
+      malloc.free(dirPtr);
+    }
+  }
+
+  /// Play a loaded song by directory name
+  void playSong(String directory) {
+    if (_isDisposed) return;
+    final dirPtr = directory.toNativeUtf8();
+    try {
+      _funcPlaySong(_handle, dirPtr.cast());
+    } finally {
+      malloc.free(dirPtr);
+    }
+  }
+
+  /// Stop a loaded song by directory name
+  void stopSong(String directory) {
+    if (_isDisposed) return;
+    final dirPtr = directory.toNativeUtf8();
+    try {
+      _funcStopSong(_handle, dirPtr.cast());
+    } finally {
+      malloc.free(dirPtr);
     }
   }
 
@@ -470,6 +534,7 @@ class FaustMixer {
   static late final _funcInit = _dylib.lookupFunction<_c_mixer_init, _dart_mixer_init>('mixer_init');
   static late final _funcStart = _dylib.lookupFunction<_c_mixer_start, _dart_mixer_start>('mixer_start');
   static late final _funcStop = _dylib.lookupFunction<_c_mixer_stop, _dart_mixer_stop>('mixer_stop');
+  static late final _funcClearAll = _dylib.lookupFunction<_c_mixer_clear_all, _dart_mixer_clear_all>('mixer_clear_all');
   static late final _funcGetSR = _dylib.lookupFunction<_c_mixer_get_sr, _dart_mixer_get_sr>('mixer_get_sample_rate');
   static late final _funcSetGain = _dylib.lookupFunction<_c_mixer_set_gain, _dart_mixer_set_gain>('mixer_set_master_gain');
   static late final _funcSetInstWeight = _dylib.lookupFunction<_c_mixer_set_inst_weight, _dart_mixer_set_inst_weight>('mixer_set_instrument_weight');
@@ -488,6 +553,9 @@ class FaustMixer {
 
   /// Stop the hardware audio device.
   void stop() => _funcStop(_handle);
+
+  /// Instantly wipe out all instruments and tracks from the mixer.
+  void clearAll() => _funcClearAll(_handle);
 
   /// Get the hardware sample rate.
   double get sampleRate => _funcGetSR(_handle);

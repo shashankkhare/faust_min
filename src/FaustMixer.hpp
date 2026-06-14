@@ -66,6 +66,7 @@ public:
     
     void addInstrumentToTrack(int trackID, FaustInstrument* inst, float instWeight = 1.0f);
     void removeInstrumentFromTrack(int trackID, FaustInstrument* inst);
+    void clearAll();
 
     // Update an instrument's weight across all tracks it belongs to.
     void setInstrumentWeight(FaustInstrument* inst, float weight);

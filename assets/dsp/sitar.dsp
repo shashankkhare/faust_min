@@ -1,127 +1,81 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
-
-// =============================================================================
-// === PHYSICAL MODEL DESIGN ===
-// Description: Indian classical plucked lute (Sitar) featuring a dynamic jawari (buzzing bridge) model and sympathetic string resonance.
-//
-// Parameters (Controls):
-//   - freq [unit:Hz]
-//   - gate
-//   - gain
-//   - velocity
-//   - jivari
-//   - symp_gain
-// =============================================================================
+// Reference: http://issta.ie/wp-content/uploads/The-Physical-Modelling-of-a-Sitar.pdf
 import("stdfaust.lib");
 
-freq = hslider("freq [unit:Hz]", 146.83, 40, 1000, 0.01);
+freq = hslider("freq [unit:Hz]", 222.0, 40, 1000, 0.01);
 gate = button("gate");
-gain = hslider("gain", 0.5, 0, 1, 0.01);
+gain = hslider("gain", 0.3, 0, 1, 0.01);
 velocity = hslider("velocity", 0.5, 0, 1, 0.01);
-jivari = hslider("jivari", 0.5, 0, 1, 0.01);
-symp_gain = hslider("symp_gain", 0.2, 0, 1, 0.01);
-strike = hslider("strike", 0, 0, 1, 1);
-chikari1_ratio = hslider("chikari1_ratio", 1.0, 0.1, 10.0, 0.01);
-chikari2_ratio = hslider("chikari2_ratio", 2.0, 0.1, 10.0, 0.01);
-chikari3_ratio = hslider("chikari3_ratio", 4.0, 0.1, 10.0, 0.01);
+strike = hslider("strike", 0, 0, 2, 1);
+jivari = hslider("jivari", 0.1, 0, 0.5, 0.001);
+symp_gain = hslider("symp_gain", 0.15, 0, 1, 0.01);
+chikari_freq = hslider("chikari_freq [unit:Hz]", 440.0, 40, 2000, 0.01);
 
-// =====================================================
-// Dynamic parameter mapping (Matches original C++ updateInternal)
-// =====================================================
-normFreq = (freq - 80.0) / (600.0 - 80.0) : min(1.0) : max(0.0);
-dynSustain = 9.0 - normFreq * 3.0;
-feedback = pow(0.001, 1.0 / (dynSustain * freq));
-dynThreshold = 0.08 + normFreq * 0.04;
-dynDispersion = 0.35 - normFreq * 0.20;
-dynStrikeScale = 0.25 - normFreq * 0.05;
-dynDamping = 0.97 + normFreq * 0.01;
-dynDC = 0.985 + normFreq * 0.01;
-dynFold = 0.85 - normFreq * 0.25;
-dynOutputGain = 1.0 + normFreq * 1.5;
-dynTarafT60 = 1.2 - normFreq * 0.6;
-
-// =====================================================
-// Trigger & 24-sample Micro-Strike Excitation
-// =====================================================
 trig = (gate - gate') > 0;
-excite_counter = trig : pulse_timer
-with {
-    pulse_timer(t) = loop ~ _
-    with {
-        loop(s) = ba.if(t, 24, max(0.0, s - 1.0));
-    };
-};
-excite_active = excite_counter > 0;
-excite_phase = (24.0 - excite_counter) / 24.0;
-pulse = sin(2.0 * ma.PI * excite_phase);
-exc = (pulse * 0.5 + no.noise * 0.5) * velocity * dynStrikeScale * excite_active;
+is_chikari = strike > 0.5;
+sustain = 8.0;
+feedback_gain = pow(0.001, 1.0 / (sustain * ma.SR));
+pluck_amp = 0.2;
 
-// =====================================================
-// Delay Line
-// =====================================================
+timer(maxf, t) = loop~_ with { loop(s) = ba.if(t, maxf, max(0.0, s - 1.0)); };
+
+gate_held_pluck = trig : timer(150) > 0;
+pluck_env = en.ar(0.003, 0.015, gate_held_pluck);
+
+pick_noise = no.noise : fi.bandpass(2, 200.0, 1200.0);
+melody_exc = pick_noise * 1.0 * pluck_env * velocity * pluck_amp * (1 - is_chikari);
+
+chikari_trig = is_chikari > is_chikari';
+chikari_gate = chikari_trig : timer(150) > 0;
+chikari_pluck_env = en.ar(0.003, 0.015, chikari_gate);
+chikari_exc = (no.noise : fi.bandpass(2, 300.0, 800.0)) * 0.2 * chikari_pluck_env * velocity * 0.25;
+
 del = ma.SR / freq;
-linear_fdelay(maxDel, d, x) = (1.0 - frac) * x1 + frac * x2
-with {
-    int_del = int(d);
-    frac = d - int_del;
-    x1 = de.delay(maxDel, int_del, x);
-    x2 = de.delay(maxDel, int_del + 1, x);
-};
 
-// =====================================================
-// Loop Filters & Bridge
-// =====================================================
-jivari_bridge(sig) = ba.if(sig > dynThreshold, dynThreshold - delta * (dynFold + jivari * dynFold), sig) : min(1.2) : max(-1.2)
-with {
-    delta = sig - dynThreshold;
-};
+dcblock(x) = x - x' + 0.999 * x'';
+bridge_contact(x) = max(0, x * 5.0);
+jivari_mod = jivari * 600.0;
+dynamic_delay(x) = de.fdelay(16384, max(2.0, del - jivari_mod * bridge_contact(x)), x);
 
-// Loop low-pass damping
-lp = * (dynDamping) : + ~ * (1.0 - dynDamping);
+melodyLoop = melody_exc : (+ : dynamic_delay) ~ (_ * feedback_gain);
 
-// Dispersion cascade (4 stages)
-ap_stage = (_ <: * (a), _' : +) : + ~ * (-a) with { a = dynDispersion; };
-dispersion = ap_stage : ap_stage : ap_stage : ap_stage;
+chikari_del = ma.SR / chikari_freq;
+chikari_pa_del = ma.SR / (chikari_freq * 1.5);
+chikari_fb = pow(0.001, 1.0 / (2.5 * chikari_freq));
+chikari_pa_fb = pow(0.001, 1.0 / (2.5 * chikari_freq * 1.5));
+chikari_string(d, fb) = chikari_exc : (+ : de.fdelay(16384, d - 1.0)) ~ (*(0.95) : +~*(0.05) : _ * fb);
+chikariLoop = chikari_string(chikari_del, chikari_fb) + chikari_string(chikari_del, chikari_fb)
+            + chikari_string(chikari_pa_del, chikari_pa_fb) + chikari_string(chikari_pa_del, chikari_pa_fb);
 
-// DC blocker
-dcblock = (_ <: _, _' : -) : + ~ * (dynDC);
+body_filter(x) =
+    (  (x * 0.6)
+     + (x : fi.resonbp(150.0,  3.0, 1.0))
+     + (x : fi.resonbp(250.0,  3.0, 0.5))
+     + (x : fi.resonbp(350.0,  3.0, 0.8))
+     + (x : fi.resonbp(550.0,  3.0, 0.5))
+     + (x : fi.resonbp(750.0,  3.0, 0.6))
+     + (x : fi.resonbp(1100.0, 3.0, 0.8))
+     + (x : fi.resonbp(1600.0, 3.0, 0.6))
+     + (x : fi.resonbp(2200.0, 3.0, 0.8))
+     + (x : fi.resonbp(3500.0, 3.0, 0.5))
+     + (x : fi.resonbp(5000.0, 2.0, 0.3))
+    );
 
-// Safety clipper
-saturated(x) = x : min(1.0) : max(-1.0);
+symp_trig = trig + chikari_trig;
+symp_max_frames = int(3.0 * ma.SR);
+symp_timer_raw = symp_trig : timer(symp_max_frames);
+symp_elapsed = (symp_max_frames - symp_timer_raw) / ma.SR;
+symp_env(mu, sigma, lam) = lam * (1.0 - exp(-4.0 * symp_elapsed / max(mu, 0.001))) * exp(-sigma * max(0.0, symp_elapsed - mu));
+symp_base = ba.if(is_chikari, chikari_freq, freq);
+symp_string(ratio, detune, mu, sigma, lam) = os.osc(symp_base * ratio * detune) * symp_env(mu, sigma, lam);
+symp_strings = symp_string(1.500, 1.000, 0.15, 1.2, 0.08)
+             + symp_string(1.500, 0.998, 0.15, 1.2, 0.08)
+             + symp_string(2.000, 1.000, 0.10, 1.8, 0.10)
+             + symp_string(2.000, 0.998, 0.10, 1.8, 0.10)
+             + symp_string(3.000, 1.000, 0.20, 1.0, 0.06)
+             + symp_string(3.000, 0.998, 0.20, 1.0, 0.06)
+             + symp_string(4.000, 1.000, 0.12, 0.8, 0.05)
+             + symp_string(4.000, 0.998, 0.12, 0.8, 0.05);
 
-// Waveguide Loop
-stringLoop = exc : (+ : linear_fdelay(16384, del - 1.0)) ~ (jivari_bridge : lp : _ * feedback : dispersion : dcblock : saturated : _ * (excite_active == 0));
-
-chikari_loop(ratio) = exc : (+ : linear_fdelay(8192, (ma.SR / (freq * ratio)) - 1.0)) ~ (jivari_bridge : lp : _ * feedback : dispersion : dcblock : saturated : _ * (excite_active == 0));
-chikari_sum = (chikari_loop(chikari1_ratio) + chikari_loop(chikari2_ratio) + chikari_loop(chikari3_ratio)) * (strike >= 0.5) * 0.35;
-
-// =====================================================
-// Sympathetic Strings
-// =====================================================
-symp_mode(ratio, x) = x : + ~ feedback
-with {
-    omega = 2.0 * ma.PI * (freq * ratio) / ma.SR;
-    r = pow(0.001, 1.0 / (dynTarafT60 * ma.SR));
-    b1 = 2.0 * r * cos(omega);
-    b2 = r * r;
-    feedback(y) = (b1 * y - b2 * y') * (excite_active == 0);
-};
-
-symp_sum(x) = symp_mode(1.000, x)
-            + symp_mode(1.125, x)
-            + symp_mode(1.250, x)
-            + symp_mode(1.333, x)
-            + symp_mode(1.500, x)
-            + symp_mode(1.666, x)
-            + symp_mode(1.875, x)
-            + symp_mode(2.000, x)
-            + symp_mode(2.250, x)
-            + symp_mode(2.500, x)
-            + symp_mode(3.000, x);
-
-symp_out(x) = x + symp_sum(x) * symp_gain;
-
-// =====================================================
-// Final Process
-// =====================================================
-process = symp_out(stringLoop + chikari_sum) * gain * dynOutputGain : ma.tanh;
+summed = (melodyLoop + chikariLoop + symp_strings * symp_gain) : dcblock : body_filter;
+process = (summed) * gain * 23.0;

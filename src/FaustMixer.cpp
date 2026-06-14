@@ -307,6 +307,13 @@ void FaustMixer::removeInstrumentFromTrack(int trackID, FaustInstrument* inst) {
     }
 }
 
+void FaustMixer::clearAll() {
+    std::lock_guard<std::mutex> lock(mRegistryMutex);
+    mTracks.clear();
+    mNextTrackID = 1;
+    mWeightSweeps.clear();
+}
+
 void FaustMixer::setInstrumentWeight(FaustInstrument* inst, float weight) {
     if (!inst) return;
     std::lock_guard<std::mutex> lock(mRegistryMutex);

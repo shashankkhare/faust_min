@@ -2,11 +2,11 @@
 copyright: "Copyright (c) 2026 Shashank Khare, MIT License"
 name: "churchbell"
 Code generated with Faust 2.37.3 (https://faust.grame.fr)
-Compilation options: -lang cpp -es 1 -single -ftz 1
+Compilation options: -lang cpp -es 1 -single -ftz 0
 ------------------------------------------------------------ */
 
-#ifndef  __FaustChurchBellDSP_H__
-#define  __FaustChurchBellDSP_H__
+#ifndef  __FaustChurchbellDSP_H__
+#define  __FaustChurchbellDSP_H__
 
 #ifndef FAUSTFLOAT
 #define FAUSTFLOAT float
@@ -16,15 +16,14 @@ Compilation options: -lang cpp -es 1 -single -ftz 1
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
-#include <float.h>
 #include <math.h>
 
-static float FaustChurchBellDSP_faustpower2_f(float value) {
+static float FaustChurchbellDSP_faustpower2_f(float value) {
 	return (value * value);
 }
 
 #ifndef FAUSTCLASS 
-#define FAUSTCLASS FaustChurchBellDSP
+#define FAUSTCLASS FaustChurchbellDSP
 #endif
 
 #ifdef __APPLE__ 
@@ -32,7 +31,7 @@ static float FaustChurchBellDSP_faustpower2_f(float value) {
 #define exp10 __exp10
 #endif
 
-class FaustChurchBellDSP : public dsp {
+class FaustChurchbellDSP : public dsp {
 	
  private:
 	
@@ -84,7 +83,7 @@ class FaustChurchBellDSP : public dsp {
  public:
 	
 	void metadata(Meta* m) { 
-		m->declare("compile_options", "-lang cpp -es 1 -single -ftz 1");
+		m->declare("compile_options", "-lang cpp -es 1 -single -ftz 0");
 		m->declare("copyright", "Copyright (c) 2026 Shashank Khare, MIT License");
 		m->declare("filename", "churchbell.dsp");
 		m->declare("filters.lib/dcblocker:author", "Julius O. Smith III");
@@ -148,35 +147,35 @@ class FaustChurchBellDSP : public dsp {
 		fConst4 = (1.20000005f / fConst3);
 		fConst5 = (1.0f / fConst3);
 		fConst6 = (((fConst2 + -1.41421354f) / fConst1) + 1.0f);
-		fConst7 = (2.0f * (1.0f - (1.0f / FaustChurchBellDSP_faustpower2_f(fConst1))));
+		fConst7 = (2.0f * (1.0f - (1.0f / FaustChurchbellDSP_faustpower2_f(fConst1))));
 		float fConst8 = std::pow(0.00100000005f, (0.100000001f / fConst0));
 		fConst9 = (0.0f - (2.0f * fConst8));
 		fConst10 = (18.849556f / fConst0);
-		fConst11 = FaustChurchBellDSP_faustpower2_f(fConst8);
+		fConst11 = FaustChurchbellDSP_faustpower2_f(fConst8);
 		float fConst12 = std::pow(0.00100000005f, (0.0666666701f / fConst0));
 		fConst13 = (0.0f - (2.0f * fConst12));
 		fConst14 = (15.0796452f / fConst0);
-		fConst15 = FaustChurchBellDSP_faustpower2_f(fConst12);
+		fConst15 = FaustChurchbellDSP_faustpower2_f(fConst12);
 		float fConst16 = std::pow(0.00100000005f, (0.0399999991f / fConst0));
 		fConst17 = (0.0f - (2.0f * fConst16));
 		fConst18 = (6.28318548f / fConst0);
-		fConst19 = FaustChurchBellDSP_faustpower2_f(fConst16);
+		fConst19 = FaustChurchbellDSP_faustpower2_f(fConst16);
 		float fConst20 = std::pow(0.00100000005f, (0.0500000007f / fConst0));
 		fConst21 = (0.0f - (2.0f * fConst20));
 		fConst22 = (12.566371f / fConst0);
-		fConst23 = FaustChurchBellDSP_faustpower2_f(fConst20);
+		fConst23 = FaustChurchbellDSP_faustpower2_f(fConst20);
 		float fConst24 = std::pow(0.00100000005f, (0.200000003f / fConst0));
 		fConst25 = (0.0f - (2.0f * fConst24));
 		fConst26 = (25.1327419f / fConst0);
-		fConst27 = FaustChurchBellDSP_faustpower2_f(fConst24);
+		fConst27 = FaustChurchbellDSP_faustpower2_f(fConst24);
 		float fConst28 = std::pow(0.00100000005f, (0.400000006f / fConst0));
 		fConst29 = (0.0f - (2.0f * fConst28));
 		fConst30 = (37.6991119f / fConst0);
-		fConst31 = FaustChurchBellDSP_faustpower2_f(fConst28);
+		fConst31 = FaustChurchbellDSP_faustpower2_f(fConst28);
 		float fConst32 = std::pow(0.00100000005f, (1.0f / fConst0));
 		fConst33 = (0.0f - (2.0f * fConst32));
 		fConst34 = (50.2654839f / fConst0);
-		fConst35 = FaustChurchBellDSP_faustpower2_f(fConst32);
+		fConst35 = FaustChurchbellDSP_faustpower2_f(fConst32);
 		fConst36 = (44.0999985f / fConst0);
 		fConst37 = (1.0f - fConst36);
 	}
@@ -237,8 +236,8 @@ class FaustChurchBellDSP : public dsp {
 		instanceClear();
 	}
 	
-	virtual FaustChurchBellDSP* clone() {
-		return new FaustChurchBellDSP();
+	virtual FaustChurchbellDSP* clone() {
+		return new FaustChurchbellDSP();
 	}
 	
 	virtual int getSampleRate() {
@@ -270,29 +269,19 @@ class FaustChurchBellDSP : public dsp {
 		float fSlow11 = (fConst36 * float(fHslider2));
 		for (int i0 = 0; (i0 < count); i0 = (i0 + 1)) {
 			fVec0[0] = fSlow1;
-			float fTempFTZ0 = (float((iSlow2 & (fVec0[1] <= 0.0f))) - (fConst5 * ((fConst6 * fRec2[2]) + (fConst7 * fRec2[1]))));
-			fRec2[0] = ((std::fabs(fTempFTZ0) > 1.17549435e-38f) ? fTempFTZ0 : 0.0f);
+			fRec2[0] = (float((iSlow2 & (fVec0[1] <= 0.0f))) - (fConst5 * ((fConst6 * fRec2[2]) + (fConst7 * fRec2[1]))));
 			float fTemp0 = (fSlow0 * (fRec2[2] + (fRec2[0] + (2.0f * fRec2[1]))));
-			float fTempFTZ1 = (fTemp0 - ((fSlow4 * fRec1[1]) + (fConst11 * fRec1[2])));
-			fRec1[0] = ((std::fabs(fTempFTZ1) > 1.17549435e-38f) ? fTempFTZ1 : 0.0f);
-			float fTempFTZ2 = (fTemp0 - ((fSlow5 * fRec3[1]) + (fConst15 * fRec3[2])));
-			fRec3[0] = ((std::fabs(fTempFTZ2) > 1.17549435e-38f) ? fTempFTZ2 : 0.0f);
-			float fTempFTZ3 = (fTemp0 - ((fSlow6 * fRec4[1]) + (fConst19 * fRec4[2])));
-			fRec4[0] = ((std::fabs(fTempFTZ3) > 1.17549435e-38f) ? fTempFTZ3 : 0.0f);
-			float fTempFTZ4 = (fTemp0 - ((fSlow7 * fRec5[1]) + (fConst23 * fRec5[2])));
-			fRec5[0] = ((std::fabs(fTempFTZ4) > 1.17549435e-38f) ? fTempFTZ4 : 0.0f);
-			float fTempFTZ5 = (fTemp0 - ((fSlow8 * fRec6[1]) + (fConst27 * fRec6[2])));
-			fRec6[0] = ((std::fabs(fTempFTZ5) > 1.17549435e-38f) ? fTempFTZ5 : 0.0f);
-			float fTempFTZ6 = (fTemp0 - ((fSlow9 * fRec7[1]) + (fConst31 * fRec7[2])));
-			fRec7[0] = ((std::fabs(fTempFTZ6) > 1.17549435e-38f) ? fTempFTZ6 : 0.0f);
-			float fTempFTZ7 = (fTemp0 - ((fSlow10 * fRec8[1]) + (fConst35 * fRec8[2])));
-			fRec8[0] = ((std::fabs(fTempFTZ7) > 1.17549435e-38f) ? fTempFTZ7 : 0.0f);
+			fRec1[0] = (fTemp0 - ((fSlow4 * fRec1[1]) + (fConst11 * fRec1[2])));
+			fRec3[0] = (fTemp0 - ((fSlow5 * fRec3[1]) + (fConst15 * fRec3[2])));
+			fRec4[0] = (fTemp0 - ((fSlow6 * fRec4[1]) + (fConst19 * fRec4[2])));
+			fRec5[0] = (fTemp0 - ((fSlow7 * fRec5[1]) + (fConst23 * fRec5[2])));
+			fRec6[0] = (fTemp0 - ((fSlow8 * fRec6[1]) + (fConst27 * fRec6[2])));
+			fRec7[0] = (fTemp0 - ((fSlow9 * fRec7[1]) + (fConst31 * fRec7[2])));
+			fRec8[0] = (fTemp0 - ((fSlow10 * fRec8[1]) + (fConst35 * fRec8[2])));
 			float fTemp1 = (((((0.600000024f * (fRec1[0] - fRec1[2])) + ((0.800000012f * (fRec3[0] - fRec3[2])) + ((0.899999976f * (fRec4[0] - fRec4[2])) + (fRec5[0] + fRec6[0])))) + (0.400000006f * (fRec7[0] - fRec7[2]))) + (0.200000003f * (fRec8[0] - fRec8[2]))) - (fRec5[2] + fRec6[2]));
 			fVec1[0] = fTemp1;
-			float fTempFTZ8 = ((0.995000005f * fRec0[1]) + (0.142857149f * (fTemp1 - fVec1[1])));
-			fRec0[0] = ((std::fabs(fTempFTZ8) > 1.17549435e-38f) ? fTempFTZ8 : 0.0f);
-			float fTempFTZ9 = (fSlow11 + (fConst37 * fRec9[1]));
-			fRec9[0] = ((std::fabs(fTempFTZ9) > 1.17549435e-38f) ? fTempFTZ9 : 0.0f);
+			fRec0[0] = ((0.995000005f * fRec0[1]) + (0.142857149f * (fTemp1 - fVec1[1])));
+			fRec9[0] = (fSlow11 + (fConst37 * fRec9[1]));
 			output0[i0] = FAUSTFLOAT((float(tanhf(float(fRec0[0]))) * fRec9[0]));
 			fVec0[1] = fVec0[0];
 			fRec2[2] = fRec2[1];

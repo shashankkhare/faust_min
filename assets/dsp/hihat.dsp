@@ -30,7 +30,8 @@ f8 = 2400.0 * freq_scale; bw8 = f8 / 20.0;  a8 = 0.05;
 // Per-strike parameters
 // openness determines body decay (ch=short, oh=long, fc=short)
 openness = ba.selectn(3, strike, 0.15, 0.85, 0.05);
-decay = 0.5 + openness * 2.0;
+// per-strike decay times: ch=short, oh=long, fc=very short thump
+decay = ba.selectn(3, strike, 0.25, 2.2, 0.06);
 
 // Noise coloring per strike
 // ch=moderate HPF for bright wash, oh=full spectrum, fc=low thump

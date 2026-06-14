@@ -69,7 +69,7 @@ class _FaustInstrumentsHomeState extends State<FaustInstrumentsHome> {
     });
   }
 
-  final List<String> _patterns = ["Tanpura Drone", "Varanasi Dawn", "Dayan Strokes", "Bayan Strokes", "22 Shrutis Test"];
+  final List<String> _patterns = ["Song: Yaman", "Song: Hamsadhwani", "Tanpura Drone", "Varanasi Dawn", "Dayan Strokes", "Bayan Strokes", "22 Shrutis Test"];
 
   SequenceOrchestrator? _orchestratorSession;
   final List<UMLSequence> _activeSequences = [];
@@ -91,7 +91,15 @@ class _FaustInstrumentsHomeState extends State<FaustInstrumentsHome> {
       _stopAll();
       _orchestratorSession = SequenceOrchestrator();
 
-      if (genre == "Tanpura Drone") {
+      if (genre == "Song: Yaman") {
+        FaustMixer.instance.clearAll();
+        _orchestratorSession!.loadSong("/home/shashankkhare/AndroidStudioProjects/faust_min/assets/songs/yaman");
+        _orchestratorSession!.playSong("/home/shashankkhare/AndroidStudioProjects/faust_min/assets/songs/yaman");
+      } else if (genre == "Song: Hamsadhwani") {
+        FaustMixer.instance.clearAll();
+        _orchestratorSession!.loadSong("/home/shashankkhare/AndroidStudioProjects/faust_min/assets/songs/hamsadhwani");
+        _orchestratorSession!.playSong("/home/shashankkhare/AndroidStudioProjects/faust_min/assets/songs/hamsadhwani");
+      } else if (genre == "Tanpura Drone") {
         final String uml = """
 notation: Indian
 instrument: TA

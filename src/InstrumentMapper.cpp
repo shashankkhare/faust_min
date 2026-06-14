@@ -75,8 +75,20 @@ std::string InstrumentMapper::getNameFromID(int id) {
         case 36: return "LN"; // Lag Nga
         case 37: return "DK"; // Dholak
         case 38: return "DH"; // Dhol
+        case 39: return "GZ"; // Guzheng
+        case 40: return "EH"; // Erhu
+        case 41: return "WD"; // Wind
+        case 42: return "TH"; // Thunder
+        case 43: return "DG"; // Dagu
         case 44: return "SR"; // Sarod
+        case 45: return "ST"; // Santoor
+        case 46: return "TB"; // Tumbi
+        case 47: return "TB"; // Tibetan Bowl
         case 48: return "NC"; // Ngachen
+        case 49: return "MG"; // Mridangam
+        case 50: return "GH"; // Ghatam
+        case 51: return "PF"; // Panflute
+        case 52: return "NF"; // Native American Flute
         default: return "DA";
     }
 }
@@ -136,6 +148,8 @@ int InstrumentMapper::getIDFromName(const std::string& name) {
     if (lowerName == "sr" || lowerName == "sarod") return 44;
     if (lowerName == "mg" || lowerName == "mridangam") return 49;
     if (lowerName == "gh" || lowerName == "ghatam") return 50;
+    if (lowerName == "pf" || lowerName == "panflute" || lowerName == "pan_flute") return 51;
+    if (lowerName == "nf" || lowerName == "naf" || lowerName == "nativeamericanflute" || lowerName == "native_american_flute") return 52;
 
     return -1;
 }
@@ -212,6 +226,8 @@ std::string InstrumentMapper::getDSPPathForID(int id, const std::string& assetBa
         case 48: return base + "ngachen.dsp";
         case 49: return base + "mridangam.dsp";
         case 50: return base + "ghatam.dsp";
+        case 51: return base + "panflute.dsp";
+        case 52: return base + "nativeamericanflute.dsp";
         default: return base + "dayan.dsp";
     }
 }
