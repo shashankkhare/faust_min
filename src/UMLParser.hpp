@@ -32,7 +32,7 @@
 class UMLParser {
 public:
     enum class TokenType { NoteWithControl, ContinuityDot, StopRest };
-    enum class OpType { Glide, Vibrato };
+    enum class OpType { Glide, AmpGlide, Vibrato };
     struct TokenItem {
         TokenType type;
         std::string rawStr;
@@ -41,6 +41,7 @@ public:
         float strikeVal = 0.0f; // Strike type prefix modifier (default 0.0f)
         std::string noteName;
         bool hasGlideOp;
+        bool hasAmpGlideOp = false;
         bool hasVibratoOp;
         bool isGlideTarget = false;
     };

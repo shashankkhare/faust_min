@@ -194,6 +194,9 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
                 std::transform(lowerVal.begin(), lowerVal.end(), lowerVal.begin(), ::tolower);
                 seq.loop = (lowerVal == "true" || lowerVal == "1" || lowerVal == "yes");
             }
+            else if (key == "delay") {
+                seq.delaySec = std::stod(val);
+            }
             else if (key == "instrumentID" || key == "instrumentid" || key == "ID" || key == "id") {
                 seq.instrumentID = std::stoi(val);
             }
@@ -232,10 +235,10 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
     long currentGridIndex = 0;
 
     // Regex parsing layout:
-    // Group 1 matches standalone dots with optional operators (\.[\^\~]*) -> ContinuityDot
+    // Group 1 matches standalone dots with optional operators (\.[\^\~>]*) -> ContinuityDot
     // Group 2 matches standalone underscores (_) -> StopRest
     // Group 3 matches general notes starting with optional digits/chars ending with optional operators -> NoteWithControl
-    std::regex tokenRegex(R"((\.[\^\~]*)|(\_)|([\^\~])|([^\s\.\_]+))");
+    std::regex tokenRegex(R"((\.[\^\~>]*)|(\_)|([\^\~>])|([^\s\.\_]+))");
     auto words_begin = std::sregex_iterator(notesSection.begin(), notesSection.end(), tokenRegex);
     auto words_end = std::sregex_iterator();
 
@@ -246,6 +249,7 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
         ti.controlParam = 5; // Default middle-register/velocity scalar
         ti.strikeVal = 0.0f;
         ti.hasGlideOp = false;
+        ti.hasAmpGlideOp = false;
         ti.hasVibratoOp = false;
 
         if (match[1].matched) {
@@ -253,6 +257,7 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
             std::string rem = match[1].str();
             ti.rawStr = rem;
             if (rem.find('^') != std::string::npos) ti.hasGlideOp = true;
+            if (rem.find('>') != std::string::npos) ti.hasAmpGlideOp = true;
             if (rem.find('~') != std::string::npos) ti.hasVibratoOp = true;
         } else if (match[2].matched) {
             ti.type = TokenType::StopRest;
@@ -265,6 +270,10 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
             if (rem.find('^') != std::string::npos) {
                 ti.hasGlideOp = true;
                 rem.erase(std::remove(rem.begin(), rem.end(), '^'), rem.end());
+            }
+            if (rem.find('>') != std::string::npos) {
+                ti.hasAmpGlideOp = true;
+                rem.erase(std::remove(rem.begin(), rem.end(), '>'), rem.end());
             }
             if (rem.find('~') != std::string::npos) {
                 ti.hasVibratoOp = true;
@@ -299,6 +308,7 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
             ti.rawStr = match[3].str();
             if (match[3].str() == "~") ti.hasVibratoOp = true;
             if (match[3].str() == "^") ti.hasGlideOp = true;
+            if (match[3].str() == ">") ti.hasAmpGlideOp = true;
         }
         tokenItems.push_back(ti);
         currentGridIndex++;
@@ -326,12 +336,16 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
             std::vector<std::pair<OpType, long>> triggers;
             
             if (ti.hasGlideOp) triggers.push_back({OpType::Glide, 0});
+            if (ti.hasAmpGlideOp) triggers.push_back({OpType::AmpGlide, 0});
             if (ti.hasVibratoOp) triggers.push_back({OpType::Vibrato, 0});
 
             size_t j = i + 1;
             while (j < tokenItems.size() && tokenItems[j].type == TokenType::ContinuityDot) {
                 if (tokenItems[j].hasGlideOp) {
                     triggers.push_back({OpType::Glide, durGrids});
+                }
+                if (tokenItems[j].hasAmpGlideOp) {
+                    triggers.push_back({OpType::AmpGlide, durGrids});
                 }
                 if (tokenItems[j].hasVibratoOp) {
                     triggers.push_back({OpType::Vibrato, durGrids});
@@ -358,6 +372,15 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
 
     seq.grid = grid;
     seq.totalDurationSamples = (long)(currentGridIndex * samplesPerGrid);
+
+    // Apply delay offset: shift all events and total duration
+    if (seq.delaySec > 0.0) {
+        long delaySamples = (long)(seq.delaySec * sampleRate);
+        for (auto& ev : seq.events) {
+            ev.sampleOffset += delaySamples;
+        }
+        seq.totalDurationSamples += delaySamples;
+    }
 
     // Parsed events dump complete
     return seq;
@@ -547,15 +570,40 @@ void UMLParser::handlePitchedToken(const TokenItem& ti, float amplitudeScalar, l
                 float tFreq = (float)getFrequency(tNote, notation, baseFreq, instrument);
                 float tVel = (float)tokenItemsArray[targetIdx].controlParam / 9.0f;
                 
-                UMLEvent glideEv;
-                glideEv.sampleOffset = triggerOffset;
-                glideEv.type = UMLEventType::Glide;
-                glideEv.targetFrequency = tFreq;
-                glideEv.targetAmplitude = tVel; // User requested amplitude instead of velocity
-                glideEv.targetVelocity = -1.0f; 
-                glideEv.targetStrikeVal = tokenItemsArray[targetIdx].strikeVal;
-                glideEv.durationSamples = (sampleOffset + durationSamples) - triggerOffset;
-                outEvents.push_back(glideEv);
+                // FreqGlide: ramp pitch to next note
+                {
+                    UMLEvent fg;
+                    fg.sampleOffset = triggerOffset;
+                    fg.type = UMLEventType::FreqGlide;
+                    fg.targetFrequency = tFreq;
+                    fg.durationSamples = (sampleOffset + durationSamples) - triggerOffset;
+                    outEvents.push_back(fg);
+                }
+                // AmpGlide: ramp amplitude to next note
+                {
+                    UMLEvent ag;
+                    ag.sampleOffset = triggerOffset;
+                    ag.type = UMLEventType::AmpGlide;
+                    ag.targetAmplitude = tVel;
+                    ag.durationSamples = (sampleOffset + durationSamples) - triggerOffset;
+                    outEvents.push_back(ag);
+                }
+            }
+        } else if (trigger.first == OpType::AmpGlide) {
+            hasGlide = true;
+            size_t targetIdx = nextTokenIndex;
+            while (targetIdx < tokenItemsArray.size() && tokenItemsArray[targetIdx].type != TokenType::NoteWithControl) {
+                targetIdx++;
+            }
+            if (targetIdx < tokenItemsArray.size() && tokenItemsArray[targetIdx].type == TokenType::NoteWithControl) {
+                float tVel = (float)tokenItemsArray[targetIdx].controlParam / 9.0f;
+                
+                UMLEvent ag;
+                ag.sampleOffset = triggerOffset;
+                ag.type = UMLEventType::AmpGlide;
+                ag.targetAmplitude = tVel;
+                ag.durationSamples = (sampleOffset + durationSamples) - triggerOffset;
+                outEvents.push_back(ag);
             }
         }
     }
@@ -611,7 +659,11 @@ static double parseWesternPitch(const std::string& token) {
     int octave = 4; // default octave
     if (i < token.length() && std::isdigit(token[i])) {
         octave = token[i] - '0';
+        i++;
     }
+    
+    // If any characters remain unparsed, the token is invalid
+    if (i < token.length()) return 0.0;
     
     int midi = (octave + 1) * 12 + offset;
     return 440.0 * std::pow(2.0, (midi - 69) / 12.0);
@@ -695,7 +747,7 @@ void UMLParser::handleVoiceToken(const TokenItem& ti, float amplitudeScalar, lon
 
     outEvents.push_back(ev);
 
-    // Glide support: if the token ends with '^', emit a Glide event towards the next token
+    // Glide support: if the token ends with '^', emit FreqGlide + AmpGlide events
     if (ti.hasGlideOp) {
         size_t targetIdx = nextTokenIndex;
         while (targetIdx < tokenItemsArray.size() &&
@@ -711,13 +763,39 @@ void UMLParser::handleVoiceToken(const TokenItem& ti, float amplitudeScalar, lon
             }
             float tVel = static_cast<float>(tokenItemsArray[targetIdx].controlParam) / 9.0f;
             if (std::abs(tFreq - ev.frequency) > 0.01f || std::abs(tVel - amplitudeScalar) > 0.01f) {
-                UMLEvent glideEv;
-                glideEv.sampleOffset     = sampleOffset;
-                glideEv.type             = UMLEventType::Glide;
-                glideEv.targetFrequency  = tFreq;
-                glideEv.targetVelocity   = tVel;
-                glideEv.durationSamples  = durationSamples;
-                outEvents.push_back(glideEv);
+                UMLEvent fg;
+                fg.sampleOffset     = sampleOffset;
+                fg.type             = UMLEventType::FreqGlide;
+                fg.targetFrequency  = tFreq;
+                fg.durationSamples  = durationSamples;
+                outEvents.push_back(fg);
+
+                UMLEvent ag;
+                ag.sampleOffset     = sampleOffset;
+                ag.type             = UMLEventType::AmpGlide;
+                ag.targetAmplitude  = tVel;
+                ag.durationSamples  = durationSamples;
+                outEvents.push_back(ag);
+            }
+        }
+    }
+    // Amp-only glide: if the token has '>', emit AmpGlide event
+    if (ti.hasAmpGlideOp) {
+        size_t targetIdx = nextTokenIndex;
+        while (targetIdx < tokenItemsArray.size() &&
+               (tokenItemsArray[targetIdx].type == TokenType::ContinuityDot ||
+                tokenItemsArray[targetIdx].type == TokenType::StopRest)) {
+            targetIdx++;
+        }
+        if (targetIdx < tokenItemsArray.size() && tokenItemsArray[targetIdx].type == TokenType::NoteWithControl) {
+            float tVel = static_cast<float>(tokenItemsArray[targetIdx].controlParam) / 9.0f;
+            if (std::abs(tVel - amplitudeScalar) > 0.01f) {
+                UMLEvent ag;
+                ag.sampleOffset     = sampleOffset;
+                ag.type             = UMLEventType::AmpGlide;
+                ag.targetAmplitude  = tVel;
+                ag.durationSamples  = durationSamples;
+                outEvents.push_back(ag);
             }
         }
     }

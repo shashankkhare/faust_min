@@ -141,7 +141,14 @@ class FAUST_API dsp {
     
         /* Init instance state (like delay lines...) but keep the control parameter values */
         virtual void instanceClear() = 0;
- 
+
+        /**
+         * Clear only waveguide delay lines, preserving smoother states.
+         * Override in wind/string instrument DSPs that have recirculating delay lines.
+         * Base implementation is a no-op.
+         */
+        virtual void clearWaveguideDelayLines() {}
+
         /**
          * Return a clone of the instance.
          *
@@ -229,6 +236,7 @@ class FAUST_API decorator_dsp : public ::dsp {
         virtual void instanceConstants(int sample_rate) override { fDSP->instanceConstants(sample_rate); }
         virtual void instanceResetUserInterface() override { fDSP->instanceResetUserInterface(); }
         virtual void instanceClear() override { fDSP->instanceClear(); }
+        virtual void clearWaveguideDelayLines() override { fDSP->clearWaveguideDelayLines(); }
         virtual decorator_dsp* clone() override { return new decorator_dsp(fDSP->clone()); }
         virtual void metadata(Meta* m) override { fDSP->metadata(m); }
         // Beware: subclasses usually have to overload the two 'compute' methods

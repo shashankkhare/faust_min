@@ -444,7 +444,7 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
                             } else if (seqWrapper->sequenceObj->initialParams.count("velocity")) {
                                 dynamicVelocity = baseVelocity;
                             } else {
-                                float r = std::min(durationSec / 0.3f, 1.0f);
+                                float r = std::min(durationSec / 0.5f, 1.0f);
                                 dynamicVelocity = baseVelocity + (1.0f - baseVelocity) * (1.0f - r);
                             }
                             
@@ -460,21 +460,29 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
                             }
 
                             inst->setParamImmediate("glide", dynamicGlide, -1);
-                            inst->setParam("vibrato", 0.0f);
-                            inst->setParam("vibrato_depth", 0.0f);
-                            inst->setParam("vibrato_rate", 0.0f);
+                            inst->setParamImmediate("vibrato", 0.0f);
+                            inst->setParamImmediate("vibrato_depth", 0.0f);
+                            inst->setParamImmediate("vibrato_rate", 0.0f);
                             if (seqWrapper->sequenceObj->initialParams.count("chikari_freq")) {
                                 inst->setParamImmediate("chikari_freq", seqWrapper->sequenceObj->initialParams["chikari_freq"], -1);
+                            }
+                            if (seqWrapper->sequenceObj->initialParams.count("freq_right")) {
+                                inst->setParamImmediate("freq_right", seqWrapper->sequenceObj->initialParams["freq_right"], -1);
+                            } else if (seqWrapper->sequenceObj->baseFreq > 0) {
+                                inst->setParamImmediate("freq_right", seqWrapper->sequenceObj->baseFreq * 1.5f, -1);
                             }
                             inst->noteOn(ev.frequency, dynamicVelocity, ev.strikeVal, ev.amplitude);
                         }
                     } else if (ev.type == UMLEventType::NoteOff) {
                         if (inst) inst->noteOff();
-                    } else if (ev.type == UMLEventType::Glide) {
+                    } else if (ev.type == UMLEventType::FreqGlide) {
                         if (inst) {
                             float durSec = static_cast<float>(ev.durationSamples) / inst->getSampleRate();
                             if (ev.targetFrequency > 0.0f) inst->frequencyGlide(ev.targetFrequency, durSec);
-                            if (ev.targetVelocity >= 0.0f) inst->amplitudeGlide(ev.targetVelocity, durSec);
+                        }
+                    } else if (ev.type == UMLEventType::AmpGlide) {
+                        if (inst) {
+                            float durSec = static_cast<float>(ev.durationSamples) / inst->getSampleRate();
                             if (ev.targetAmplitude >= 0.0f) inst->gainGlide(ev.targetAmplitude, durSec);
                         }
                     } else if (ev.type == UMLEventType::VibratoOn) {

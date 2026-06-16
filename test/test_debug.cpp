@@ -36,7 +36,7 @@ int main() {
     for (auto& ev : u.events) {
         if (ev.type == UMLEventType::NoteOn) {
             std::cout << "NoteOn freq: " << ev.frequency << "\n";
-        } else if (ev.type == UMLEventType::Glide) {
+        } else if (ev.type == UMLEventType::FreqGlide) {
             std::cout << "Glide target: " << ev.targetFrequency << "\n";
         }
     }

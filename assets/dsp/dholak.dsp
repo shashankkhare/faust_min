@@ -6,7 +6,7 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 //
 // Parameters (Controls):
 //   - freq [unit:Hz]
-//   - freq1 [unit:Hz]
+//   - freq_right [unit:Hz]
 //   - strike
 //   - gain
 //   - velocity
@@ -18,7 +18,7 @@ import("stdfaust.lib");
 // --- Indian Dholak Physical Model (Multiphonic/Dual-Freq) ---
 
 freq = hslider("freq [unit:Hz]", 98.0, 50.0, 400.0, 0.1);      // Left Head (Bayan/Bass)
-freq1 = hslider("freq1 [unit:Hz]", 277.2, 100.0, 800.0, 0.1);   // Right Head (Dayan/Treble)
+freq_right = hslider("freq_right [unit:Hz]", 277.2, 100.0, 800.0, 0.1);   // Right Head (Dayan/Treble)
 strike = hslider("strike", 0, 0, 4, 1);                       // 0=Bayan open, 1=Bayan closed, 2=Dayan open, 3=Dayan closed, 4=Composite Dha
 gain = hslider("gain", 1.0, 0.0, 2.0, 0.01);
 velocity = hslider("velocity", 1.0, 0.0, 1.0, 0.01);
@@ -58,10 +58,10 @@ bayan_mode3 = resonator(bayan_freq * 2.3, 0.25 * bayanDecay, 0.20, excitationBay
 bayan_body = bayan_mode1 + bayan_mode2 + bayan_mode3;
 
 // 2. Dayan (Treble) - Bright, high-pitched, inharmonic membrane ring
-dayan_mode1 = resonator(freq1 * 1.00, 0.35 * dayanDecay, 1.00, excitationDayan);
-dayan_mode2 = resonator(freq1 * 1.59, 0.18 * dayanDecay, 0.55, excitationDayan);
-dayan_mode3 = resonator(freq1 * 2.14, 0.08 * dayanDecay, 0.25, excitationDayan);
-dayan_mode4 = resonator(freq1 * 2.30, 0.04 * dayanDecay, 0.10, excitationDayan);
+dayan_mode1 = resonator(freq_right * 1.00, 0.35 * dayanDecay, 1.00, excitationDayan);
+dayan_mode2 = resonator(freq_right * 1.59, 0.18 * dayanDecay, 0.55, excitationDayan);
+dayan_mode3 = resonator(freq_right * 2.14, 0.08 * dayanDecay, 0.25, excitationDayan);
+dayan_mode4 = resonator(freq_right * 2.30, 0.04 * dayanDecay, 0.10, excitationDayan);
 dayan_body = dayan_mode1 + dayan_mode2 + dayan_mode3 + dayan_mode4;
 
 // Output: Summed response of active heads

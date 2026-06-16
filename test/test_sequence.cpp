@@ -69,20 +69,24 @@ void playSequenceGroup(FaustMixer& mixer, SequenceOrchestrator& orch, SequenceGr
         for (size_t eIdx = 0; eIdx < seqPair.second->events.size(); ++eIdx) {
             const auto& ev = seqPair.second->events[eIdx];
             if (ev.type == UMLEventType::NoteOn) {
+                double durMs = ev.durationSamples * 1000.0 / InstrumentMapper::DEFAULT_SAMPLE_RATE;
                 std::cout << "  Event " << eIdx << ": Note: " << ev.note 
                           << " | Freq: " << ev.frequency << " Hz" 
+                          << " | Dur: " << durMs << "ms" 
                           << " | Amp: " << ev.amplitude;
                 if (ev.strikeVal >= 0.0f) {
                     std::cout << " | Strike: " << ev.strikeVal;
                 }
                 std::cout << " | SampleOffset: " << ev.sampleOffset << std::endl;
-            } else if (ev.type == UMLEventType::Glide) {
+            } else if (ev.type == UMLEventType::FreqGlide) {
                 std::cout << "  Event " << eIdx << ": Glide -> Freq: " << ev.targetFrequency 
                           << " Hz | Vel: " << ev.targetVelocity 
                           << " | DurSamples: " << ev.durationSamples 
                           << " | SampleOffset: " << ev.sampleOffset << std::endl;
             } else if (ev.type == UMLEventType::VibratoOn) {
                 std::cout << "  Event " << eIdx << ": VibratoOn at SampleOffset: " << ev.sampleOffset << std::endl;
+            } else if (ev.type == UMLEventType::NoteOff) {
+                std::cout << "  Event " << eIdx << ": NoteOff at SampleOffset: " << ev.sampleOffset << std::endl;
             }
         }
         
@@ -373,7 +377,8 @@ int main(int argc, char* argv[]) {
                 "bpm: 60\n"
                 "instrument: electricguitar\n"
                 "notation: Western\n"
-                "parameters: drive=0.75,sustain=0.8\n"
+                "drive: 0.75\n"
+                "sustain: 0.8\n"
                 "\n"
                 // Measure 1-4 (Bm, F#, A, E)
                 "B3 D4 F#4 D4 B3 D4 F#4 D4 "
@@ -476,6 +481,7 @@ int main(int argc, char* argv[]) {
                 "bpm: 60\n"
                 "basefreq: 111.0\n"
                 "instrument: bowl\n"
+                "loop: true\n"
                 "\n"
                 "80X...................";
                 
@@ -484,7 +490,7 @@ int main(int argc, char* argv[]) {
                 "bpm: 60\n"
                 "basefreq: 222.0\n"
                 "instrument: lagnga\n"
-                "parameters: mallet_softness=0.6\n"
+                "mallet_softness: 0.6\n"
                 "\n"
                 "7X1. _. 7X1. _. 7X1. _. 7X1. _. 7X1. _. 7X1. _. 7X1. _. 7X1. _. 7X1. _. 7X1. _. ";
 
@@ -493,7 +499,7 @@ int main(int argc, char* argv[]) {
                 "bpm: 60\n"
                 "basefreq: 111.0\n"
                 "instrument: lagnga\n"
-                "parameters: mallet_softness=0.6\n"
+                "mallet_softness: 0.6\n"
                 "\n"
                 "_. 7X1. _. 7X1. _. 7X1. _. 7X1. _. 7X1. _. 7X1. _. 7X1. _. 7X1. _. 7X1. _. 7X1. ";
 
@@ -502,16 +508,18 @@ int main(int argc, char* argv[]) {
                 "bpm: 60\n"
                 "basefreq: 222.0\n"
                 "instrument: bowl\n"
+                "loop: true\n"
                 "\n"
-                ".80X..................";
+                "....80X................";
 
             std::string umlBowl444 =
                 "grid: 1\n"
                 "bpm: 60\n"
                 "basefreq: 444.0\n"
                 "instrument: bowl\n"
+                "loop: true\n"
                 "\n"
-                "..80X.................";
+                "........80X............";
 
             group.percussionTrackWeight = 1.3f;
             group.backgroundTrackWeight = 1.5f;
@@ -818,6 +826,7 @@ int main(int argc, char* argv[]) {
                 "bpm: 120\n"
                 "basefreq: 110.0\n"
                 "instrument: dholak\n"
+                "freq_right: 165.0\n"
                 "\n"
                 "Dha _ Ge _ Na _ Ti _ Na _ Ke _ Dhin _ Na _ "
                 "Dha _ Ge _ Na _ Ti _ Na _ Ke _ Dhin _ Na _ "
@@ -842,6 +851,7 @@ int main(int argc, char* argv[]) {
                 "bpm: 120\n"
                 "basefreq: 110.0\n"
                 "instrument: dhol\n"
+                "freq_right: 165.0\n"
                 "\n"
                 "Dha _ _ _ _ _ Na _ Na _ _ _ _ _ Na _ "
                 "Na _ _ _ _ _ Dha _ Dha _ _ _ _ _ Na _ "
@@ -1013,7 +1023,7 @@ int main(int argc, char* argv[]) {
             group.name = "Last of the Mohicans";
             
             auto buildPanflute = []() -> std::string {
-                std::string s = "grid: 4\nbpm: 72\nbasefreq: 293.66\ninstrument: panflute\nparameters: vibrato=0.6, vibrato_rate=5.5, vibrato_depth=0.04\n\n";
+                std::string s = "grid: 4\nbpm: 72\nbasefreq: 293.66\ninstrument: panflute\nvibrato: 0.6\nvibrato_rate: 5.5\nvibrato_depth: 0.04\n\n";
                 // "The Last of the Mohicans — Promontory" theme, panflute arrangement
                 // Section A — Main theme (8 bars)
                 s += "5D5... 5D5... 5E5... 5F5... \n";
@@ -1026,7 +1036,7 @@ int main(int argc, char* argv[]) {
                 s += "5D5............... \n";
                 // Section B — Secondary theme (8 bars)
                 s += "5A4... 5D5... 5F5... 5E5... \n";
-                s += "5D5... 5C5...== 12 5D5... 5A4... \n";
+                s += "5D5... 5C5... 5D5... 5A4... \n";
                 s += "5D5... 5F5... 5G5... 5A5... \n";
                 s += "5G5..~. 5F5... 5E5... 5D5... \n";
                 s += "5C5... 5D5... 5F5... 5E5... \n";
@@ -1041,21 +1051,33 @@ int main(int argc, char* argv[]) {
                 return s;
             };
             auto buildNAF = []() -> std::string {
-                std::string s = "grid: 12\nbpm: 60\nbasefreq: 222.0\ninstrument: nativeamericanflute\nparameters: vibrato=0.5, vibrato_rate=5.0, vibrato_depth=0.035\n\n";
+                std::string s = "grid: 12\nbpm: 60\nbasefreq: 222.0\ninstrument: nativeamericanflute\nvibrato: 0.5\nvibrato_rate: 5.0\nvibrato_depth: 0.005\n\n";
                 // Promentory main theme (guitar tab transcription)
                 // Phrase 1: opening statement
-                s += "5F4.~............ 5E4..5D4..5G3~..........5D4..5F4..5E4 6F4 7G4....~....... \n";
-                s += "5F4.~....... 5E4.5D4.5G3~......... 5D4..5F4..5E4.4F4.7G4..~....... \n";
+                s += "5F4.~.............5E4...5D4...5Ab3....~............5D4...5F4...5E4...5F4.. 7G4....~............... \n";                
+                s += "5F4.~.............5E4...5D4...5Ab3....~............5D4...5F4...5E4...5F4.. 7G4....~............... \n";  
+
                 // Phrase 2: descending variation
-                s += "5F4. 5E4. 5D4.. 5C4. 5A3. 5F4. 5E4. 5D4.. \n";
-                s += "5C4. 5A3. 5D4. 5F4. 5A4.. 5G4. 5F4. 5E4. 5G4. 5E4. 5D4.. \n";
-                // "The Kiss" melody
-                s += "5A3. 5A3. 5A3. 5F4. 5E4. 5D4. 5E4. 5D4. 5C4.. \n";
-                s += "5D4. 5B3. 5C4.. 5A3. 5A3. 5A3. 5F4. 5E4. 5D4. \n";
-                s += "5E4. 5D4. 5C4.. 5D4. 5B3. 5C4.. \n";
-                return s;
-            };
-            auto buildRainmaker = []() -> std::string {
+                s += "5F4....5A4..~..........5G4.....5F4.~........5E4.....5G4.~........... 3F4......4E4...4E4...4E4 ....5F4......... 3D4..~................... \n";
+                s += "5F4....5A4..~.........5G4.....5F4.~........5E4.....5G4.~........... 3F4......4E4...4E4...4E4.....5F4.......... 3D4..~.................. \n";
+                // "The Kiss" melody — saved for later
+                // s += "5A3 5F4 5G4 5A4  5C4 5D4 5A4 5G4 5F4 5A3 \n"; 
+                // s += "5A3.5F4.5G4.5A4.  5C4. 5A4. 5G4. 5F4.5A3. \n";
+                // s += "5A3..5F4..5G4..5A4..  5C4.. 5A4.. 5G4.. 5F4..5A3.. \n";
+                // s += "5A3...5F4...5G4...5A4...  5C4... 5A4... 5G4... 5F4...5A3... \n";
+                 return s;
+             };
+             auto buildVoice = []() -> std::string {
+                  std::string s = "grid: 12\nbpm: 60\nbasefreq: 110\ninstrument: voice\nvibrato_rate: 5.5\nvibrato_depth: 0.04\nbreathiness: 0.2\nvowel: 0\n";
+                  s += "delay: 30\n\n";
+                 // Same opening melody as NAF, delayed to start after NAF finishes
+                  s += "5F3.~..........^..5E3..^.5D3..^.5Ab2....~..........^..5D3..^.5F3..^.5E3..^.5F3.. 7G3....~.......>......._ \n";
+                  s += "5F3.~.............5E3...5D3...5Ab2....~............5D3...5F3...5E3...5F3.. 7G3....~............... \n";
+                  s += "5F3....5A3..~..........5G3.....5F3.~........5E3.....5G3.~........... 3F3......4E3...4E3...4E3 ....5F3......... 3D3..~................... \n";
+                  s += "5F3....5A3..~.........5G3.....5F3.~........5E3.....5G3.~........... 3F3......4E3...4E3...4E3.....5F3.......... 3D3..~.................. \n";
+                 return s;
+             };
+             auto buildRainmaker = []() -> std::string {
                 std::string s = "grid: 4\nbpm: 72\nbasefreq: 444.0\ninstrument: rainmaker\nloop: true\n\n";
                 for (int i = 0; i < 32; i++)
                     s += "8x.. 8x.. 8x.. 8x.. 8x.. 8x.. 8x.. 8x.. \n";
@@ -1070,6 +1092,7 @@ int main(int argc, char* argv[]) {
             
             //group.sequences.push_back({"Panflute", new UMLSequence("Panflute", 51, buildPanflute())});
             group.sequences.push_back({"NAF", new UMLSequence("NAF", 52, buildNAF())});
+            group.sequences.push_back({"Voice", new UMLSequence("Voice", 32, buildVoice())});
             //group.sequences.push_back({"Rainmaker", new UMLSequence("Rainmaker", 19, buildRainmaker())});
             //group.sequences.push_back({"Dhol", new UMLSequence("Dhol", 38, buildDhol())});
             group.percussionTrackWeight = 1.5f;

@@ -46,7 +46,8 @@ jitter = no.noise * 0.003 * env;
 fMod = freq * (1.0 + vib + jitter);
 
 // --- LF Glottal Source (sawtooth as approximation of Liljencrants-Fant pulse) ---
-glottal = os.sawtooth(fMod);
+tiltCutoff = max(fMod * 1.5, 4500.0 - fMod);
+glottal = os.sawtooth(fMod) : fi.lowpass(1, tiltCutoff);
 
 // --- Breathiness layer (band-limited noise centred at fundamental) ---
 breath  = no.noise : fi.resonbp(fMod, 1.2, 1.0) * breathiness * env;
@@ -74,11 +75,17 @@ lerp5(v0,v1,v2,v3,v4,t) = ba.if(t < 1.0,
                 v2 + (v3-v2)*(t-2.0),
                 v3 + (v4-v3)*(t-3.0))));
 
-f1 = lerp5(800.0,  400.0,  300.0,  400.0,  300.0,  vowel);
-f2 = lerp5(1200.0, 1800.0, 2300.0, 800.0,  800.0,  vowel);
-f3 = lerp5(2500.0, 2600.0, 3000.0, 2500.0, 2300.0, vowel);
-f4 = lerp5(3500.0, 3600.0, 3700.0, 3300.0, 3100.0, vowel);
-f5 = lerp5(4500.0, 4500.0, 4600.0, 4200.0, 4000.0, vowel);
+f1_base = lerp5(800.0,  400.0,  300.0,  400.0,  300.0,  vowel);
+f2_base = lerp5(1200.0, 1800.0, 2300.0, 800.0,  800.0,  vowel);
+f3_base = lerp5(2500.0, 2600.0, 3000.0, 2500.0, 2300.0, vowel);
+f4_base = lerp5(3500.0, 3600.0, 3700.0, 3300.0, 3100.0, vowel);
+f5_base = lerp5(4500.0, 4500.0, 4600.0, 4200.0, 4000.0, vowel);
+
+f1 = max(f1_base, fMod) : si.smoo;
+f2 = max(f2_base, f1 + 200.0) : si.smoo;
+f3 = max(f3_base, f2 + 200.0) : si.smoo;
+f4 = max(f4_base, f3 + 200.0) : si.smoo;
+f5 = max(f5_base, f4 + 200.0) : si.smoo;
 
 // Formant amplitudes (vowel-specific brightness)
 a1 = lerp5(1.00,  0.80, 0.70, 0.90, 0.85, vowel);

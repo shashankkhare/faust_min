@@ -72,7 +72,7 @@ int main() {
                           << " | Freq: " << ev.frequency << " Hz" 
                           << " | Amp: " << ev.amplitude 
                           << " | SampleOffset: " << ev.sampleOffset << std::endl;
-            } else if (ev.type == UMLEventType::Glide) {
+            } else if (ev.type == UMLEventType::FreqGlide) {
                 std::cout << "  Event " << eIdx << ": Glide -> Freq: " << ev.targetFrequency 
                           << " | DurSamples: " << ev.durationSamples 
                           << " | SampleOffset: " << ev.sampleOffset << std::endl;

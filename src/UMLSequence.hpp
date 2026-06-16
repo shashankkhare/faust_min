@@ -32,7 +32,8 @@
 enum class UMLEventType {
     NoteOn,
     NoteOff,
-    Glide,
+    FreqGlide,
+    AmpGlide,
     VibratoOn
 };
 
@@ -68,6 +69,7 @@ public:
     std::string execType;
     std::string umlData;
     bool loop = false;
+    double delaySec = 0.0; // delay before first note, in seconds
 
     std::shared_ptr<FaustInstrument> mInstrument;
 

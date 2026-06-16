@@ -148,7 +148,7 @@ void FaustInstrument::initializeVoices() {
     if (mVoices.empty()) return;
     
     if (mFrequency >= 0.0f) {
-        setFrequency(mFrequency);
+        setFrequencyImmediate(mFrequency);
     } else {
         if (mVoiceUIs[0]->getParamZone("freq") != nullptr) {
             mFrequency = mVoiceUIs[0]->getParamValue("freq");
@@ -159,7 +159,7 @@ void FaustInstrument::initializeVoices() {
         }
     }
     if (mVelocity >= 0.0f) {
-        setVelocity(mVelocity);
+        setVelocityImmediate(mVelocity);
     } else {
         if (mVoiceUIs[0]->getParamZone("velocity") != nullptr) {
             mVelocity = mVoiceUIs[0]->getParamValue("velocity");
@@ -171,12 +171,12 @@ void FaustInstrument::initializeVoices() {
     }
     mDefaultVelocity = mVelocity;
     if (mAmplitude >= 0.0f) {
-        setAmplitude(mAmplitude);
+        setAmplitudeImmediate(mAmplitude);
     } else {
         mAmplitude = 1.0f;
     }
     if (mGain >= 0.0f) {
-        setGain(mGain);
+        setGainImmediate(mGain);
     } else {
         if (mVoiceUIs[0]->getParamZone("gain") != nullptr) {
             mGain = mVoiceUIs[0]->getParamValue("gain");
@@ -609,12 +609,7 @@ void FaustInstrument::noteOn(float freq, float vel, float strikeVal, float amp) 
 
     if (freq > 0.0f) {
         mFrequency = freq;
-        setParam("freq", freq, v);
-        if (mInstrumentID == 37) {
-            setParam("freq1", freq * 2.828f, v);
-        } else if (mInstrumentID == 38) {
-            setParam("freq1", freq * 6.0f, v);
-        }
+        setParamImmediate("freq", freq, v);
     }
     if (vel >= 0.0f) {
         mVelocity = vel;

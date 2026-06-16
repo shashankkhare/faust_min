@@ -10,19 +10,86 @@ UML is a text-based format designed for high-fidelity woodwind, string, percussi
 
 ## 1. Header Metadata
 
-Global settings that define the temporal and harmonic grid.
+Global settings that define the temporal and harmonic grid. Parameters fall into two categories:
 
-- `notation: [Type]` - Defines the notation system: `Indian` (Default) or `Western`.
-- `instrument: [Name/Code]` - Instrument identifier. Resolved via `InstrumentMapper`. See §5.
-- `instrumentID: [int]` - Numeric instrument ID (alternative to name).
-- `basefreq: [Hz]` - Base frequency anchor (Sa / C). Default: `261.63`.
-- `bpm: [Number]` - Tempo in beats per minute. Default: `120`.
-- `grid: [int]` - Grid subdivisions per beat. Default: `4` (sixteenth notes).
-- `gain: [Number]` - Global gain multiplier for this sequence.
-- `vibratoRate: [Hz]` - LFO rate for vibrato when enabled (e.g., `5.0`).
-- `vibratoDepth: [0.0-1.0]` - LFO depth for vibrato when enabled (e.g., `0.5`).
+### 1.1 Sequencing Parameters
 
-- `exectype: [static|interpreter]` - DSP execution mode. Default: `static`.
+Control the temporal layout, timing, and orchestration of the sequence.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `notation` | `Indian` / `Western` | Notation system. Default: `Indian`. |
+| `instrument` | `[Name/Code]` | Instrument identifier. Resolved via `InstrumentMapper`. See §6. |
+| `instrumentID` | `int` | Numeric instrument ID (alternative to name). |
+| `basefreq` | `Hz` | Base frequency anchor (Sa / C). Default: `261.63`. |
+| `bpm` | `Number` | Tempo in beats per minute. Default: `120`. |
+| `grid` | `int` | Grid subdivisions per beat. Default: `4` (sixteenth notes). |
+| `gain` | `Number` | Global gain multiplier for this sequence. |
+| `loop` | `bool` | If `true`, the sequence repeats indefinitely. Default: `false`. |
+| `delay` | `float` (seconds) | Seconds of silence before the first note. The sequence starts with `delay` seconds of rest, then plays normally. Useful for aligning sequences to start at different times (e.g., a voice entry after an instrumental section). Default: `0`. |
+| `exectype` | `static` / `interpreter` | DSP execution mode. Default: `static`. |
+
+### 1.2 Instrument-Play Parameters
+
+Passed to the instrument's DSP at note-on and used for continuous modulation during playback. These are instrument-specific — refer to the individual DSP documentation for the full set. Common examples:
+
+| Parameter | Range | Description |
+|---|---|---|
+| `vibrato` | 0.0–1.0 | Vibrato master enable/amount. |
+| `vibrato_rate` | 0–20 Hz | Vibrato LFO rate. |
+| `vibrato_depth` | 0.0–1.0 | Vibrato LFO depth. |
+| `breathiness` | 0.0–1.0 | Noise/breath component. |
+| `pressure` | 0.0–1.0 | Wind pressure (winds). |
+| `mouthPosition` | 0.0–1.0 | Embouchure offset (winds). |
+
+Instrument-play parameters are specified on their own header lines, one per parameter:
+
+```
+vibrato: 0.6
+vibrato_rate: 5.5
+vibrato_depth: 0.03
+```
+
+### 1.3 Sequencing Parameter Examples
+
+**`loop: false` — one-shot playback (default):**
+
+```
+instrument: bansuri
+bpm: 60
+grid: 4
+loop: false
+basefreq: 220
+
+5Sa.. 5Re.. 5Ga.. 5Pa..
+```
+
+**`loop: true` — drone/ambient sequence repeats indefinitely:**
+
+```
+instrument: dhol
+bpm: 72
+grid: 4
+loop: true
+basefreq: 111.0
+
+8x.. 8x.. 8x.. 8x..
+```
+
+**`delay: 30` — voice enters 30 seconds into the piece:**
+
+```
+instrument: voice
+bpm: 60
+grid: 12
+delay: 30
+basefreq: 110
+vibrato_rate: 5.5
+vibrato_depth: 0.04
+breathiness: 0.2
+
+5F3... 5E3... 5D3...
+```
 
 ---
 
@@ -53,7 +120,7 @@ The notes component handles discrete triggers and melodic movement for the seque
   - `.` (Dot): Continuity. Extends the previous state (note or silence) by 1 grid unit.
   - `_` (Underscore): Full Stop. Ends the current note and starts silence.
 
-### 2.1 Note Operators (`^`, `~`, `|`)
+### 2.1 Note Operators (`^`, `~`, `>`, `|`)
 
 Operators are placed within the sequence of continuity dots to trigger dynamic changes at exact grid offsets.
 
@@ -67,6 +134,11 @@ Triggers a simultaneous pitch and amplitude sweep toward the **next specified no
 Vibrato is strictly **disabled by default** at the start of any note. Placing a `~` in the dot continuity tail enables vibrato at that exact moment. It ramps up to the `vibratoRate` and `vibratoDepth` defined in the sequence header.
 - **Example**: `5Pa . . ~ . . . .`
   - *Plays a flat Pa for 2 units, then vibrato organically swells in starting at the 3rd unit.*
+
+#### `>` (Amplitude Glide)
+Triggers an amplitude-only sweep toward the **next note's amplitude**, keeping the current pitch unchanged. Left-associative — the ramp starts at the end of the note the `>` is attached to.
+- **Example**: `3Pa . . > . . 9Re`
+  - *Plays Pa at amplitude 3, then ramps amplitude up toward 9 during the last 2 grid units.*
 
 #### `|` (Polyphony / Chords)
 Used to bind multiple pitches together into a single simultaneous strike (Chord).
@@ -260,7 +332,7 @@ Used when `instrument: voice`. Tokens can be **vowel syllables** (formant morph)
 | `oo`, `Oo`, `OO`, `o` | 3.0 | "oh" | Back-rounded — F1≈400 Hz, F2≈800 Hz |
 | `uu`, `Uu`, `UU`, `u` | 4.0 | "oo" | Closed-back — F1≈300 Hz, F2≈800 Hz |
 
-### 4.2 Voice DSP Parameters (via `parameters` header)
+### 4.2 Voice DSP Parameters
 
 | Parameter | Range | Description |
 |---|---|---|
@@ -279,7 +351,8 @@ notation: Indian
 basefreq: 220
 bpm: 50
 grid: 4
-parameters: (breathiness=0.2, vibrato_depth=0.015)
+breathiness: 0.2
+vibrato_depth: 0.015
 
 // Sing "aah" on Sa, glide to Pa while morphing to "oo"
 aa Sa^ . . oo Pa . . ii Ni . . aa Sa . . .
@@ -295,10 +368,37 @@ basefreq: 220
 bpm: 90
 grid: 4
 instrument: বাঁশি // Resolved to bansuri.dsp via InstrumentMapper
-parameters: (pressure=0.8, vibrato_depth=0.02)
+pressure: 0.8
+vibrato_depth: 0.02
 
 // Notes Section
 9Sa..^5R1..7G1.._...
+```
+
+**Multi-sequence example with delay**:
+
+```uml
+// Sequence 1: bansuri plays first
+instrument: bansuri
+grid: 4
+bpm: 60
+basefreq: 220
+pressure: 0.8
+
+5Sa.. 5Re.. 5Ga.. 5Pa..
+
+// Sequence 2: voice enters after 30 seconds
+instrument: voice
+grid: 4
+bpm: 60
+basefreq: 440
+delay: 30
+vibrato_rate: 5.5
+vibrato_depth: 0.02
+breathiness: 0.2
+vowel: 0
+
+5Sa.. 5Re.. 5Ga.. 5Pa..
 ```
 
 *(Plays Sa at amplitude 9, glides to R1 at amplitude 5, sustains, then stops)*
