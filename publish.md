@@ -2,12 +2,19 @@
 
 ## 1. Pre-Release
 
+**CRITICAL: All builds must use `-DCMAKE_BUILD_TYPE=Release` (or `RelWithDebInfo`).**
+Debug builds (`-g`, no `-O`) produce unoptimized DSP code that can consume 5–10× more CPU and will fail performance requirements on mobile devices. Never ship a Debug build.
+
 ```bash
-# Bump version in pubspec.yaml (e.g. 0.4.0 -> 0.5.0)
+# Bump version in pubspec.yaml — major features → +0.1 (e.g. 0.4.0 → 0.5.0), minor changes → +0.01 (e.g. 0.4.0 → 0.4.1)
 # Update CHANGELOG.md with new entries
 # Ensure debug logging is OFF in all source files:
 grep -rn "DEBUG_" src/ | grep -v "#define DEBUG_"
 # (DEBUG_ORCHESTRATOR etc. should be #define'd to 0 for release)
+
+# Run memory & CPU sanity check:
+bash scripts/verify.sh
+# Exits non-zero if peak RSS exceeds 512MB, crashes, or build fails.
 ```
 
 ## 2. Regenerate DSP Headers
@@ -150,6 +157,7 @@ dart pub global list | grep faust_min
 
 ## Troubleshooting
 
+- **High CPU usage in development**: Debug builds (`-DCMAKE_BUILD_TYPE=Debug`) compile with `-g` and zero optimization. DSP-heavy sequences can consume 5–10× more CPU than Release builds (`-O3`). Always benchmark and deploy with `Release`.
 - **`faust/dsp/interpreter-dsp.h` not found**: Means `FAUST_DISABLE_INTERPRETER`
   is not defined. Set it in CMake or podspec.
 - **`_mm_pause()` undefined**: You're on non-x86 without `CPU_PAUSE()` coverage.

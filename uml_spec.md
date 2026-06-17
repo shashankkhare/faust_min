@@ -26,6 +26,7 @@ Control the temporal layout, timing, and orchestration of the sequence.
 | `grid` | `int` | Grid subdivisions per beat. Default: `4` (sixteenth notes). |
 | `gain` | `Number` | Global gain multiplier for this sequence. |
 | `loop` | `bool` | If `true`, the sequence repeats indefinitely. Default: `false`. |
+| `measure` | `int` | Display-only: number of beats per measure (e.g., `4` for 4/4). Not used by the parser. |
 | `delay` | `float` (seconds) | Seconds of silence before the first note. The sequence starts with `delay` seconds of rest, then plays normally. Useful for aligning sequences to start at different times (e.g., a voice entry after an instrumental section). Default: `0`. |
 | `exectype` | `static` / `interpreter` | DSP execution mode. Default: `static`. |
 

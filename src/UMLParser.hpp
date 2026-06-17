@@ -44,6 +44,7 @@ public:
         bool hasAmpGlideOp = false;
         bool hasVibratoOp;
         bool isGlideTarget = false;
+        bool hasCompositeNotes = false;
     };
 
     static UMLSequence parse(const std::string& name, const std::string& input, double sampleRate, double defaultBaseFreq = 261.63);
@@ -62,6 +63,10 @@ private:
     static void handleVoiceToken(const TokenItem& ti, float amplitudeScalar, long sampleOffset, long durationSamples,
                                  const std::string& notation, double baseFreq,
                                  double samplesPerGrid, size_t nextTokenIndex, const std::vector<TokenItem>& tokenItemsArray, std::vector<UMLEvent>& outEvents);
+    static void handleCompositeNote(const TokenItem& ti, long sampleOffset, long durationSamples,
+                                    const std::string& notation, double baseFreq, const std::string& instrument,
+                                    size_t nextTokenIndex, const std::vector<TokenItem>& tokenItemsArray,
+                                    double samplesPerGrid, double sampleRate, std::vector<UMLEvent>& outEvents);
 
     static const std::map<std::string, double> shruti22Ratios;
     static const std::map<std::string, double> hindustaniRatios;

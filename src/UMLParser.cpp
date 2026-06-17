@@ -197,6 +197,9 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
             else if (key == "delay") {
                 seq.delaySec = std::stod(val);
             }
+            else if (key == "measure") {
+                seq.measure = std::stoi(val);
+            }
             else if (key == "instrumentID" || key == "instrumentid" || key == "ID" || key == "id") {
                 seq.instrumentID = std::stoi(val);
             }
@@ -280,6 +283,13 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
                 rem.erase(std::remove(rem.begin(), rem.end(), '~'), rem.end());
             }
 
+            // Composite note — comma-separated sub-notes, each with its own prefix
+            if (rem.find(',') != std::string::npos) {
+                ti.hasCompositeNotes = true;
+                ti.noteName = rem;
+                goto done_parsing;
+            }
+
             // Extract embedded control/strike prefix modifier
             if (rem.length() > 2 && std::isdigit(rem[0]) && std::isdigit(rem[1]) && !std::isdigit(rem[2])) {
                 ti.controlParam = rem[0] - '0';
@@ -302,6 +312,7 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
                 }
             }
             ti.noteName = rem;
+        done_parsing:;
         } else if (match[3].matched) {
             // Standalone operator (^ or ~ with space before/after) — still occupies a grid cell
             ti.type = TokenType::ContinuityDot;
@@ -357,7 +368,9 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
             long sampleOffset = (long)(ti.gridIndex * samplesPerGrid);
             float amplitudeScalar = (float)ti.controlParam / 9.0f;
 
-            if (InstrumentMapper::isPercussionID(seq.instrumentID)) {
+            if (ti.hasCompositeNotes) {
+                handleCompositeNote(ti, sampleOffset, durationSamples, seq.notation, seq.baseFreq, seq.instrument, j, tokenItems, samplesPerGrid, sampleRate, seq.events);
+            } else if (InstrumentMapper::isPercussionID(seq.instrumentID)) {
                 handlePercussionToken(ti.noteName, amplitudeScalar, sampleOffset, durationSamples, seq.notation, seq.baseFreq, seq.instrument, seq.events, ti.strikeVal);
             } else {
                 handlePitchedToken(ti, amplitudeScalar, sampleOffset, durationSamples, seq.notation, seq.baseFreq, seq.instrument, samplesPerGrid, sampleRate, j, tokenItems, triggers, seq.events);
@@ -799,4 +812,62 @@ void UMLParser::handleVoiceToken(const TokenItem& ti, float amplitudeScalar, lon
             }
         }
     }
+}
+
+void UMLParser::handleCompositeNote(const TokenItem& ti, long sampleOffset, long durationSamples,
+                                    const std::string& notation, double baseFreq, const std::string& instrument,
+                                    size_t nextTokenIndex, const std::vector<TokenItem>& tokenItemsArray,
+                                    double samplesPerGrid, double sampleRate, std::vector<UMLEvent>& outEvents) {
+    std::vector<std::string> subNotes;
+    std::stringstream ss(ti.noteName);
+    std::string item;
+    while (std::getline(ss, item, ',')) {
+        subNotes.push_back(item);
+    }
+    if (subNotes.empty()) return;
+
+    for (const auto& subNote : subNotes) {
+        std::string rem = subNote;
+        int subControl = 5;
+        float subStrike = 0.0f;
+
+        if (rem.length() > 2 && std::isdigit(rem[0]) && std::isdigit(rem[1]) && !std::isdigit(rem[2])) {
+            subControl = rem[0] - '0';
+            subStrike = static_cast<float>(rem[1] - '0');
+            rem = rem.substr(2);
+        } else if (rem.length() > 1 && std::isdigit(rem[0]) && !std::isdigit(rem[1])) {
+            subControl = rem[0] - '0';
+            rem = rem.substr(1);
+        }
+
+        float freq = static_cast<float>(getFrequency(rem, notation, baseFreq, instrument));
+        float amp = static_cast<float>(subControl) / 9.0f;
+
+        UMLEvent noteEv;
+        noteEv.sampleOffset = sampleOffset;
+        noteEv.frequency = freq;
+        noteEv.velocity = -1.0f;
+        noteEv.amplitude = amp;
+        noteEv.strikeVal = subStrike;
+        noteEv.type = UMLEventType::NoteOn;
+        noteEv.note = subNote;
+        noteEv.durationSamples = durationSamples;
+        outEvents.push_back(noteEv);
+    }
+
+    bool nextIsNote = (nextTokenIndex < tokenItemsArray.size() &&
+                       tokenItemsArray[nextTokenIndex].type == TokenType::NoteWithControl);
+    long lookAhead = 0;
+    if (nextIsNote) {
+        long maxLA = (long)(0.03 * sampleRate);
+        long minLA = (long)(0.002 * sampleRate);
+        long propLA = durationSamples / 10;
+        lookAhead = std::max(std::min(propLA, maxLA), minLA);
+    }
+    long offOffset = sampleOffset + durationSamples - lookAhead;
+    if (offOffset <= sampleOffset) offOffset = sampleOffset + 1;
+    UMLEvent offEv;
+    offEv.sampleOffset = offOffset;
+    offEv.type = UMLEventType::NoteOff;
+    outEvents.push_back(offEv);
 }

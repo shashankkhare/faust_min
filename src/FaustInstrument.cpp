@@ -635,18 +635,19 @@ void FaustInstrument::noteOn(float freq, float vel, float strikeVal, float amp) 
     setParam("gate", 1.0f, v);
 }
 
-void FaustInstrument::noteOff(float decayTailMs) {
-    // Manual authority overrides timeline countdown instantly
+void FaustInstrument::noteOff(int voiceIndex, float decayTailMs) {
     mTargetFrames = 0;
-    mGateOpen = false;
-    setParam("gate", 0.0f);
+    if (voiceIndex == -1) {
+        mGateOpen = false;
+    }
+    setParam("gate", 0.0f, voiceIndex);
 
-    if (decayTailMs > 0.0f) {
+    if (voiceIndex == -1 && decayTailMs > 0.0f) {
         mDecayFramesTarget = static_cast<long>((decayTailMs / 1000.0f) * mSampleRate);
         mDecayElapsedFrames = 0;
-    } else {
+    } else if (voiceIndex == -1) {
         mDecayFramesTarget = 0;
-        onNoteFinish(); // Immediate event completion if no physical tail expected
+        onNoteFinish();
     }
 }
 

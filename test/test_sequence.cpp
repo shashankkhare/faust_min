@@ -26,6 +26,9 @@
 #include <cmath>
 #include <unistd.h>
 #include <algorithm>
+#include <sys/resource.h>
+#include <sys/time.h>
+#include <fstream>
 #include "../src/SequenceOrchestrator.hpp"
 #include "../src/FaustMixer.hpp"
 #include "../src/UMLParser.hpp"
@@ -43,8 +46,26 @@ struct SequenceGroup {
 // Global stop flag for playback thread wait
 static bool gStopPlayback = false;
 
+static long readVmRSS() {
+    std::ifstream f("/proc/self/status");
+    std::string line;
+    while (std::getline(f, line)) {
+        if (line.find("VmRSS:") == 0) {
+            return std::stol(line.substr(6));
+        }
+    }
+    return 0;
+}
+
 void playSequenceGroup(FaustMixer& mixer, SequenceOrchestrator& orch, SequenceGroup& group, int durationSeconds) {
     std::cout << "\n=== Starting Sequence: " << group.name << " ===" << std::endl;
+    
+    // Perf measurement start
+    struct rusage cpuStart, cpuEnd;
+    struct timeval wallStart, wallEnd;
+    long rssStart = readVmRSS();
+    gettimeofday(&wallStart, nullptr);
+    getrusage(RUSAGE_SELF, &cpuStart);
     
     // Create Demo Tracks
     int percussionTrack = mixer.addTrack(group.percussionTrackWeight);
@@ -113,9 +134,16 @@ void playSequenceGroup(FaustMixer& mixer, SequenceOrchestrator& orch, SequenceGr
     }
 
     // Play indefinitely until user presses a key
-    std::cout << "[Playback] Playing for " << durationSeconds << " seconds..." << std::endl;
     orch.enableDiagnostics(true);
-    usleep(durationSeconds * 1000000);
+    if (durationSeconds < 0) {
+        std::cout << "[Playback] Playing indefinitely until Ctrl+C..." << std::endl;
+        while (!gStopPlayback) {
+            usleep(100000);
+        }
+    } else {
+        std::cout << "[Playback] Playing for " << durationSeconds << " seconds..." << std::endl;
+        usleep(durationSeconds * 1000000);
+    }
 
     // 3. Stop and Unload
     orch.stop();
@@ -123,6 +151,26 @@ void playSequenceGroup(FaustMixer& mixer, SequenceOrchestrator& orch, SequenceGr
     mixer.removeTrack(melodyTrack);
     mixer.removeTrack(backgroundTrack);
     
+    // Perf measurement end
+    getrusage(RUSAGE_SELF, &cpuEnd);
+    gettimeofday(&wallEnd, nullptr);
+    long rssEnd = readVmRSS();
+
+    double wallSec = (wallEnd.tv_sec - wallStart.tv_sec)
+                   + (wallEnd.tv_usec - wallStart.tv_usec) / 1000000.0;
+    double cpuSec = (cpuEnd.ru_utime.tv_sec - cpuStart.ru_utime.tv_sec)
+                  + (cpuEnd.ru_utime.tv_usec - cpuStart.ru_utime.tv_usec) / 1000000.0
+                  + (cpuEnd.ru_stime.tv_sec - cpuStart.ru_stime.tv_sec)
+                  + (cpuEnd.ru_stime.tv_usec - cpuStart.ru_stime.tv_usec) / 1000000.0;
+    int cpuPct = (int)(cpuSec / wallSec * 100.0);
+
+    std::cout << "[PERF] wall=" << (int)wallSec << "s"
+              << " cpu=" << cpuPct << "%"
+              << " rss=" << (rssEnd / 1024) << "MB"
+              << " rss_delta=" << ((rssEnd - rssStart) / 1024) << "MB"
+              << " seqs=" << group.sequences.size()
+              << std::endl;
+
     orch.dumpInstrumentDiagnostics();
     orch.enableDiagnostics(false);
     
@@ -150,11 +198,16 @@ int main(int argc, char* argv[]) {
 
     // Command-line or interactive selection
     int selection = -1;
-    if (argc > 1) {
-        try {
-            selection = std::stoi(argv[1]);
-        } catch (...) {
-            selection = -1;
+    int timeoutSec = -1;
+
+    for (int i = 1; i < argc; ++i) {
+        std::string arg(argv[i]);
+        if (arg == "-t" && i + 1 < argc) {
+            timeoutSec = std::stoi(argv[++i]);
+        } else if (arg == "-s" && i + 1 < argc) {
+            selection = std::stoi(argv[++i]);
+        } else if (selection == -1) {
+            try { selection = std::stoi(arg); } catch (...) {}
         }
     }
 
@@ -468,11 +521,13 @@ int main(int argc, char* argv[]) {
             duration = 24;
 
         } else if (selection == 4) {
+            duration = -1;
             group.name = "Tibetan Bowl with Rain + LagNga";
 
             std::string umlRainmaker = 
                 "grid: 1\n"
                 "instrument: rainmaker\n"
+                "loop: true\n"
                 "\n"
                 "9x..............................9x.";
                 
@@ -491,6 +546,7 @@ int main(int argc, char* argv[]) {
                 "basefreq: 222.0\n"
                 "instrument: lagnga\n"
                 "mallet_softness: 0.6\n"
+                "loop: true\n"
                 "\n"
                 "7X1. _. 7X1. _. 7X1. _. 7X1. _. 7X1. _. 7X1. _. 7X1. _. 7X1. _. 7X1. _. 7X1. _. ";
 
@@ -500,6 +556,7 @@ int main(int argc, char* argv[]) {
                 "basefreq: 111.0\n"
                 "instrument: lagnga\n"
                 "mallet_softness: 0.6\n"
+                "loop: true\n"
                 "\n"
                 "_. 7X1. _. 7X1. _. 7X1. _. 7X1. _. 7X1. _. 7X1. _. 7X1. _. 7X1. _. 7X1. _. 7X1. ";
 
@@ -532,7 +589,6 @@ int main(int argc, char* argv[]) {
             group.sequences.push_back({"Bowl222", new UMLSequence("Bowl222", 8, umlBowl222)});
             group.sequences.push_back({"Bowl444", new UMLSequence("Bowl444", 8, umlBowl444)});
 
-            duration = 20;
         } else if (selection == 5) {
             group.name = "Acoustic Hotel California (Acoustic Guitar, 3 Congas, Bass, Drums)";
 
@@ -1102,12 +1158,13 @@ int main(int argc, char* argv[]) {
         }
 
         if (!group.sequences.empty()) {
+            if (timeoutSec > 0) duration = timeoutSec;
             playSequenceGroup(mixer, orch, group, duration);
         } else {
             std::cout << "Invalid selection. Please try again." << std::endl;
         }
 
-        // If run with command line arg, exit after playing once
+        // If run with command line args, exit after playing once
         if (argc > 1) {
             break;
         }

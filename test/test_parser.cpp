@@ -32,7 +32,7 @@ public:
     FaustInstrument(int, int, float, float, float, float, float) {}
     void setParameter(const char*, float) {}
     void noteOn(double, float, float, float) {}
-    void noteOff() {}
+    void noteOff(int = -1, float = 0.0f) {}
     void render(float*, int) {}
 };
 

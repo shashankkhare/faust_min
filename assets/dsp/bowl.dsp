@@ -77,11 +77,11 @@ mallet_env = loop_mallet ~ _ with {
     loop_mallet(s) = ba.if(trig, velocity, s * g);
 };
 
-globalDamping = 0.999;
+globalDamping = 0.998;
 resonance(x) = + : + (mallet_env * (1-strikeVal) * my_excitation(x)) : delayLine(x) : *(globalDamping) : bandPassFilter(x);
 
 
 process =
     (bowing*strikeVal <:
     par(i,nModes,(resonance(i)~_)))~par(i,nModes,_) :> _ :
-    NLFM : stereo : *(gain * 11.0), *(gain * 11.0);
+    NLFM : stereo : *(gain * 18.0252), *(gain * 18.0252);

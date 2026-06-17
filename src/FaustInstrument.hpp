@@ -84,7 +84,7 @@ public:
     DSPExecutionType getExecutionType() const;
 
     virtual void noteOn(float freq = -1.0f, float velocity = -1.0f, float strikeVal = -1.0f, float amplitude = -1.0f);
-    virtual void noteOff(float decayTailMs = 0.0f);
+    virtual void noteOff(int voiceIndex = -1, float decayTailMs = 0.0f);
     void render(int numFrames, float* buffer);
 
     // Diagnostics
