@@ -184,9 +184,18 @@ private:
     float* mReverbOutR;
 
     // --- Persistent Thread Pool ---
+    // Workers sleep via mWorkCV and are woken per dispatch.
+    // Main audio thread sleeps via mMainCV until all workers finish.
+    // This replaces the old CPU_PAUSE() spin-barrier which pegged all cores at 100%.
     int mWorkerCount = 4;
     std::vector<std::thread> mWorkerThreads;
     std::atomic<bool> mWorkerRunning{false};
+
+    std::mutex mWorkMutex;                 // Guards mWorkReady and mDoneCount
+    std::condition_variable mWorkCV;       // Workers wait on this until dispatched
+    std::condition_variable mMainCV;       // Main audio thread waits on this until done
+    uint64_t mDispatchEpoch{0};            // Monotonically increasing dispatch counter
+    int mDoneCount{0};                     // How many workers have finished this epoch
 
     struct WorkItem {
         FaustInstrument* inst;
@@ -202,7 +211,6 @@ private:
     std::atomic<int> mWorkHead{0};
     std::atomic<int> mWorkCount{0};
     std::atomic<int> mPendingTasks{0};
-    std::atomic<uint64_t> mDispatchGeneration{0};
     uint64_t mWorkerGeneration[InstrumentMapper::MAX_INSTRUMENTS] = {};
 
     void startWorkers();

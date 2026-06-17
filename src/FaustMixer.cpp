@@ -229,8 +229,12 @@ void FaustMixer::startWorkers() {
 }
 
 void FaustMixer::stopWorkers() {
-    mWorkerRunning.store(false, std::memory_order_release);
-    mDispatchGeneration.fetch_add(1, std::memory_order_release);
+    {
+        std::lock_guard<std::mutex> lk(mWorkMutex);
+        mWorkerRunning.store(false, std::memory_order_release);
+        mDispatchEpoch++; // bump so workers wake and see mWorkerRunning==false
+    }
+    mWorkCV.notify_all();
     for (auto& t : mWorkerThreads) {
         if (t.joinable()) t.join();
     }
@@ -239,29 +243,43 @@ void FaustMixer::stopWorkers() {
 
 /**
  * @brief Persistent worker thread loop.
+ * 
+ * Workers sleep on mWorkCV (0% CPU idle). The main audio thread wakes them
+ * by bumping mDispatchEpoch and calling mWorkCV.notify_all(). When all work
+ * is done the last worker signals mMainCV to unblock the audio callback.
  */
 void FaustMixer::workerLoop(int workerID) {
-    while (mWorkerRunning.load(std::memory_order_acquire)) {
-        uint64_t gen = mDispatchGeneration.load(std::memory_order_acquire);
-        if (gen == mWorkerGeneration[workerID]) {
-            CPU_PAUSE();
-            continue;
+    uint64_t myEpoch = 0;
+    while (true) {
+        // --- Sleep until a new dispatch epoch arrives or shutdown ---
+        {
+            std::unique_lock<std::mutex> lk(mWorkMutex);
+            mWorkCV.wait(lk, [&] {
+                return mDispatchEpoch != myEpoch || !mWorkerRunning.load(std::memory_order_relaxed);
+            });
+            if (!mWorkerRunning.load(std::memory_order_relaxed)) break;
+            myEpoch = mDispatchEpoch;
         }
-        mWorkerGeneration[workerID] = gen;
 
+        // --- Steal and process work items ---
         int total = mWorkCount.load(std::memory_order_acquire);
         int idx;
         while ((idx = mWorkHead.fetch_add(1, std::memory_order_acq_rel)) < total) {
             WorkItem& item = mWorkQueue[idx];
             if (!item.valid) { mPendingTasks.fetch_sub(1, std::memory_order_release); continue; }
-            
+
             float* buf = mInstrumentBuffers[item.bufferSlot];
-            std::fill(buf, buf + item.numFrames, 0.0f);
-            
+            std::fill(buf, buf + item.numFrames * 2, 0.0f);
+
             if (item.inst) {
                 item.inst->processRealtimeStream(buf, item.numFrames);
             }
             mPendingTasks.fetch_sub(1, std::memory_order_release);
+        }
+
+        // --- If we finished the last task, wake the main audio thread ---
+        if (mPendingTasks.load(std::memory_order_acquire) <= 0) {
+            mMainCV.notify_one();
         }
     }
 }
@@ -572,12 +590,17 @@ inline void FaustMixer::accumulateInstrumentChannels(float* stereoOutput, int nu
     }
 
     if (workCount > 0) {
-        mWorkHead.store(0, std::memory_order_release);
-        mWorkCount.store(workCount, std::memory_order_release);
-        mPendingTasks.store(workCount, std::memory_order_release);
-        mDispatchGeneration.fetch_add(1, std::memory_order_release);
+        // --- Dispatch work to the sleeping worker threads ---
+        {
+            std::lock_guard<std::mutex> lk(mWorkMutex);
+            mWorkHead.store(0, std::memory_order_release);
+            mWorkCount.store(workCount, std::memory_order_release);
+            mPendingTasks.store(workCount, std::memory_order_release);
+            mDispatchEpoch++;
+        }
+        mWorkCV.notify_all(); // Wake all sleeping workers
 
-        // Current thread helps too
+        // --- Current (audio) thread also steals work items ---
         int total = workCount;
         int idx;
         while ((idx = mWorkHead.fetch_add(1, std::memory_order_acq_rel)) < total) {
@@ -590,9 +613,10 @@ inline void FaustMixer::accumulateInstrumentChannels(float* stereoOutput, int nu
             }
         }
 
-        // Spin barrier — no yield, no context switch
-        while (mPendingTasks.load(std::memory_order_acquire) > 0) {
-            CPU_PAUSE();
+        // --- Sleep until all workers are done (0% CPU idle vs old spin-barrier) ---
+        if (mPendingTasks.load(std::memory_order_acquire) > 0) {
+            std::unique_lock<std::mutex> lk(mWorkMutex);
+            mMainCV.wait(lk, [&] { return mPendingTasks.load(std::memory_order_acquire) <= 0; });
         }
     }
 
