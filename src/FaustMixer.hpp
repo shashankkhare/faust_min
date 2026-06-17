@@ -195,7 +195,7 @@ private:
     std::condition_variable mWorkCV;       // Workers wait on this until dispatched
     std::condition_variable mMainCV;       // Main audio thread waits on this until done
     uint64_t mDispatchEpoch{0};            // Monotonically increasing dispatch counter
-    int mDoneCount{0};                     // How many workers have finished this epoch
+
 
     struct WorkItem {
         FaustInstrument* inst;
@@ -211,7 +211,7 @@ private:
     std::atomic<int> mWorkHead{0};
     std::atomic<int> mWorkCount{0};
     std::atomic<int> mPendingTasks{0};
-    uint64_t mWorkerGeneration[InstrumentMapper::MAX_INSTRUMENTS] = {};
+
 
     void startWorkers();
     void stopWorkers();

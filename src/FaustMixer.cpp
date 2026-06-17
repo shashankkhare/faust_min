@@ -29,18 +29,6 @@
 
 #include "FaustMixer.hpp"
 #include <iostream>
-#if defined(__x86_64__) || defined(_M_AMD64) || defined(_M_X64)
-#include <immintrin.h>
-#define CPU_PAUSE() _mm_pause()
-#elif defined(__aarch64__) || defined(_M_ARM64)
-#if defined(_MSC_VER)
-#define CPU_PAUSE() __yield()
-#else
-#define CPU_PAUSE() __builtin_arm_yield()
-#endif
-#else
-#define CPU_PAUSE() ((void)0)
-#endif
 
 // --- Cross-platform audio worker thread priority elevation ---
 // Called once at the start of each worker thread before entering the loop.
@@ -271,7 +259,7 @@ void FaustMixer::startWorkers() {
     mWorkerRunning.store(true, std::memory_order_release);
     mWorkerThreads.resize(mWorkerCount);
     for (int i = 0; i < mWorkerCount; i++) {
-        mWorkerGeneration[i] = 0;
+
         mWorkerThreads[i] = std::thread(&FaustMixer::workerLoop, this, i);
     }
 }
