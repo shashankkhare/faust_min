@@ -42,6 +42,54 @@
 #define CPU_PAUSE() ((void)0)
 #endif
 
+// --- Cross-platform audio worker thread priority elevation ---
+// Called once at the start of each worker thread before entering the loop.
+//
+// Android : SCHED_FIFO real-time scheduler (same as Oboe callback thread),
+//           set one notch below the hardware callback so it can still
+//           preempt our workers if needed.
+// iOS/macOS: QOS_CLASS_USER_INTERACTIVE — safe on App Store, no entitlements
+//           required. AudioWorkgroup (iOS 16+/macOS 12+) is the future
+//           upgrade path for deadline-aware co-scheduling.
+// Linux   : SCHED_FIFO — same as Android path, desktop only.
+// Windows : SetThreadPriority(THREAD_PRIORITY_TIME_CRITICAL).
+static void elevateWorkerThreadPriority() {
+#if defined(__ANDROID__)
+    // Android NDK: real-time FIFO, one step below Oboe's own callback thread
+    struct sched_param sp;
+    sp.sched_priority = sched_get_priority_max(SCHED_FIFO) - 1;
+    if (pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp) != 0) {
+        // Non-fatal: falls back to standard priority
+        printf("[Native] Worker thread: SCHED_FIFO elevation failed (non-fatal)\n");
+        fflush(stdout);
+    }
+#elif defined(__APPLE__)
+    // iOS & macOS: Quality-of-Service class — no entitlement needed
+    // Future: join AudioWorkgroup via os_workgroup_join() for deadline scheduling
+    pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0);
+#elif defined(__linux__)
+    // Linux desktop: SCHED_FIFO real-time
+    struct sched_param sp;
+    sp.sched_priority = sched_get_priority_max(SCHED_FIFO) - 1;
+    pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp);
+#elif defined(_WIN32) || defined(_WIN64)
+    // Windows: TIME_CRITICAL priority class
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
+#endif
+}
+
+// Platform-specific includes for thread priority APIs
+#if defined(__APPLE__)
+#include <pthread.h>  // pthread_set_qos_class_self_np
+#endif
+#if defined(__linux__) && !defined(__ANDROID__)
+#include <pthread.h>
+#include <sched.h>    // SCHED_FIFO, sched_get_priority_max
+#endif
+#if defined(_WIN32) || defined(_WIN64)
+#include <windows.h>  // SetThreadPriority
+#endif
+
 #ifdef __ANDROID__
 #include <oboe/Oboe.h>
 class MixerOboeCallback : public oboe::AudioStreamDataCallback {
@@ -249,6 +297,10 @@ void FaustMixer::stopWorkers() {
  * is done the last worker signals mMainCV to unblock the audio callback.
  */
 void FaustMixer::workerLoop(int workerID) {
+    // Elevate this thread to audio-class priority on all supported platforms.
+    // This minimises OS scheduler preemption from other apps during audio blocks.
+    elevateWorkerThreadPriority();
+
     uint64_t myEpoch = 0;
     while (true) {
         // --- Sleep until a new dispatch epoch arrives or shutdown ---
