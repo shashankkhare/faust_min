@@ -63,6 +63,8 @@ private:
     static void handleVoiceToken(const TokenItem& ti, float amplitudeScalar, long sampleOffset, long durationSamples,
                                  const std::string& notation, double baseFreq,
                                  double samplesPerGrid, size_t nextTokenIndex, const std::vector<TokenItem>& tokenItemsArray, std::vector<UMLEvent>& outEvents);
+
+    static void handleXSampaToken(const TokenItem& ti, long sampleOffset, long durationSamples, size_t nextTokenIndex, const std::vector<TokenItem>& tokenItemsArray, std::vector<UMLEvent>& outEvents, double sampleRate);
     static void handleCompositeNote(const TokenItem& ti, long sampleOffset, long durationSamples,
                                     const std::string& notation, double baseFreq, const std::string& instrument,
                                     size_t nextTokenIndex, const std::vector<TokenItem>& tokenItemsArray,
@@ -73,6 +75,7 @@ private:
     static const std::map<std::string, double> gongcheRatios;
     static const std::map<std::string, double> westernPitches;
     static const std::map<std::string, double> percussionBols;
+public:
     // Vowel syllable table: aa/ee/ii/oo/uu → continuous 0–4 index for formant morphing
     static const std::map<std::string, double> vowelValues;
     // Extended bayan-specific bols (Dha, Ge, Dhin, Tit, etc.)

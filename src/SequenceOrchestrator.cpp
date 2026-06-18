@@ -60,7 +60,14 @@ inline long getDeterministicJitter(size_t eventIndex, int instID) {
     return static_cast<long>(hash % 961) - 480; // +/- 10ms at 48kHz
 }
 
-SequenceOrchestrator::SequenceOrchestrator() {}
+SequenceOrchestrator::SequenceOrchestrator() {
+    std::string csvPath = "assets/dsp/voice.csv";
+    if (CSVModelLoader::loadVoiceMatrix(csvPath, mVoiceMatrix)) {
+        printf("[Native] Loaded voice transition matrix from %s\n", csvPath.c_str());
+    } else {
+        printf("[Native Error] Failed to load voice transition matrix from %s\n", csvPath.c_str());
+    }
+}
 
 SequenceOrchestrator::~SequenceOrchestrator() {
     stop();
@@ -224,6 +231,11 @@ int SequenceOrchestrator::addSequence(const std::string& name, UMLSequence* sequ
     seqWrapper->isPlaying = false;
     
     mActiveSequences[name] = seqWrapper;
+
+    if (name.length() > 4 && name.substr(name.length() - 4) == "_ext") {
+        mPendingExtensions.push_back(name);
+        printf("[Native] Sequence '%s' marked as extension. Awaiting linkage.\n", name.c_str());
+    }
     
     // Ensure audio engine is armed and running (lazy init)
     // REMOVED: Hardware control should be explicit via FaustMixer class.
@@ -233,6 +245,25 @@ int SequenceOrchestrator::addSequence(const std::string& name, UMLSequence* sequ
     
     rebuildSnapshot();
     return 0;
+}
+
+void SequenceOrchestrator::linkExtensions() {
+    std::lock_guard<std::mutex> lock(mStateMutex);
+    for (const auto& extName : mPendingExtensions) {
+        if (!mActiveSequences.count(extName)) continue;
+        
+        std::string baseName = extName.substr(0, extName.length() - 4);
+        if (mActiveSequences.count(baseName)) {
+            auto baseSeq = mActiveSequences[baseName]->sequenceObj;
+            auto extSeq = mActiveSequences[extName]->sequenceObj;
+            
+            extSeq->setFaustInstrument(baseSeq->getFaustInstrumentShared());
+            printf("[Native] Linked extension '%s' to base sequence '%s' DSP instance.\n", extName.c_str(), baseName.c_str());
+        } else {
+            printf("[Native Error] Base sequence '%s' not found for extension '%s'.\n", baseName.c_str(), extName.c_str());
+        }
+    }
+    mPendingExtensions.clear();
 }
 
 void SequenceOrchestrator::play(const std::string& name) {
@@ -386,7 +417,7 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
                 framesRemaining -= framesToProcess;
 
                 if (seqWrapper->currentSample >= seq->totalDurationSamples) {
-                    if (seq->loop || mLooping.load(std::memory_order_relaxed)) {
+                    if (seq->loop) {
                         seqWrapper->currentSample = 0;
                         seqWrapper->nextEventIndex = 0;
                     } else {
@@ -426,7 +457,24 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
                     if (ev.type == UMLEventType::NoteOn) {
                         int instID = seqWrapper->sequenceObj->instrumentID;
                         if (instID == 32) {
-                            updateDSPParamsVoice(seqWrapper, ev.frequency, ev.velocity, ev.vowelVal);
+                            // First phoneme note? Initialize currentPhoneme if needed.
+                            std::string notePhoneme = ev.note;
+                            if (ev.vowelVal >= 0.0f) {
+                                // Vowel values mapping from UMLParser
+                                if (ev.vowelVal == 0.0f) notePhoneme = "aa";
+                                else if (ev.vowelVal == 1.0f) notePhoneme = "ee";
+                                else if (ev.vowelVal == 2.0f) notePhoneme = "ii";
+                                else if (ev.vowelVal == 3.0f) notePhoneme = "oo";
+                                else if (ev.vowelVal == 4.0f) notePhoneme = "uu";
+                            }
+                            // Set base params
+                            if (mVoiceMatrix.count({notePhoneme, "NONE"})) {
+                                auto& steady = mVoiceMatrix[{notePhoneme, "NONE"}];
+                                for (auto& kv : steady.targetParams) {
+                                    if (inst) inst->setParamImmediate(kv.first.c_str(), kv.second, -1);
+                                }
+                            }
+                            seqWrapper->currentPhoneme = notePhoneme;
                         } else {
                             updateDSPParams(seqWrapper, ev.frequency, ev.velocity, ev.strikeVal, ev.note);
                         }
@@ -471,7 +519,9 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
                             } else if (seqWrapper->sequenceObj->baseFreq > 0) {
                                 inst->setParamImmediate("freq_right", seqWrapper->sequenceObj->baseFreq * 1.5f, -1);
                             }
-                            inst->noteOn(ev.frequency, dynamicVelocity, ev.strikeVal, ev.amplitude);
+                            if (ev.frequency > 0.0f) {
+                                inst->noteOn(ev.frequency, dynamicVelocity, ev.strikeVal, ev.amplitude);
+                            }
                         }
                     } else if (ev.type == UMLEventType::NoteOff) {
                         if (inst) inst->noteOff();
@@ -503,18 +553,60 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
                             inst->setParam("vibrato_depth", vDepth);
                             inst->setParam("vibrato_rate", vRate);
                         }
+                    } else if (ev.type == UMLEventType::PhonemeGlide) {
+                        if (inst && seqWrapper->sequenceObj->instrumentID == 32) {
+                            seqWrapper->inPhonemeGlide = true;
+                            
+                            std::string tNote = ev.targetNote;
+                            // Map targetNote back to phoneme string if needed.
+                            if (UMLParser::vowelValues.count(tNote)) {
+                                float val = UMLParser::vowelValues.at(tNote);
+                                if (val == 0.0f) tNote = "aa";
+                                else if (val == 1.0f) tNote = "ee";
+                                else if (val == 2.0f) tNote = "ii";
+                                else if (val == 3.0f) tNote = "oo";
+                                else if (val == 4.0f) tNote = "uu";
+                            }
+                            
+                            seqWrapper->targetPhoneme = tNote;
+                            seqWrapper->phonemeGlideSamples = ev.durationSamples;
+                            seqWrapper->phonemeGlideSamplesElapsed = 0;
+                            
+                            if (mVoiceMatrix.count({seqWrapper->currentPhoneme, seqWrapper->targetPhoneme})) {
+                                seqWrapper->currentTransition = mVoiceMatrix[{seqWrapper->currentPhoneme, seqWrapper->targetPhoneme}];
+                            } else if (mVoiceMatrix.count({tNote, "NONE"})) {
+                                // Missing transition, snap to steady state target
+                                seqWrapper->currentTransition = mVoiceMatrix[{tNote, "NONE"}];
+                                // Set bezier points to linear
+                                seqWrapper->currentTransition.bez_p1x = 0.33f;
+                                seqWrapper->currentTransition.bez_p1y = 0.33f;
+                                seqWrapper->currentTransition.bez_p2x = 0.66f;
+                                seqWrapper->currentTransition.bez_p2y = 0.66f;
+                            }
+                            
+                            // Capture current params from instrument
+                            seqWrapper->startParams.clear();
+                            for (const auto& kv : seqWrapper->currentTransition.targetParams) {
+                                float val = inst->getParam(kv.first.c_str());
+                                seqWrapper->startParams[kv.first] = val;
+                            }
+                        }
                     }
                     seqWrapper->nextEventIndex++;
                 } else {
                     break;
                 }
             }
+            
+            if (seqWrapper->isPlaying && seqWrapper->inPhonemeGlide) {
+                processPhonemeGlide(seqWrapper, framesToProcess);
+            }
 
             seqWrapper->currentSample += framesToProcess;
             framesRemaining -= framesToProcess;
 
             if (seqWrapper->currentSample >= seq->totalDurationSamples) {
-                if (seq->loop || mLooping.load(std::memory_order_relaxed)) {
+                if (seq->loop) {
                     seqWrapper->currentSample = 0;
                     seqWrapper->nextEventIndex = 0;
                 } else {
@@ -563,6 +655,49 @@ void SequenceOrchestrator::dumpInstrumentDiagnostics() {
         if (pair.second && pair.second->sequenceObj) {
             auto inst = pair.second->sequenceObj->getFaustInstrument();
             if (inst) inst->dumpDiagnostics();
+        }
+    }
+}
+
+// 1D Bezier curve evaluator (we assume x and y are the same mapping since time is linear)
+// For animation curves, usually x is time, y is progress.
+// Here we map progress t (0 to 1) to y value directly.
+float SequenceOrchestrator::cubicBezier(float t, float p0, float p1, float p2, float p3) {
+    float u = 1.0f - t;
+    float tt = t * t;
+    float uu = u * u;
+    float uuu = uu * u;
+    float ttt = tt * t;
+
+    float p = uuu * p0; 
+    p += 3.0f * uu * t * p1; 
+    p += 3.0f * u * tt * p2; 
+    p += ttt * p3; 
+    return p;
+}
+
+void SequenceOrchestrator::processPhonemeGlide(std::shared_ptr<ActiveSequence> seqWrapper, int framesToProcess) {
+    if (!seqWrapper || seqWrapper->phonemeGlideSamples <= 0) return;
+    
+    seqWrapper->phonemeGlideSamplesElapsed += framesToProcess;
+    
+    float t = static_cast<float>(seqWrapper->phonemeGlideSamplesElapsed) / static_cast<float>(seqWrapper->phonemeGlideSamples);
+    if (t > 1.0f) {
+        t = 1.0f;
+        seqWrapper->inPhonemeGlide = false;
+        seqWrapper->currentPhoneme = seqWrapper->targetPhoneme;
+    }
+    
+    // Evaluate Bezier progression
+    float progress = cubicBezier(t, 0.0f, seqWrapper->currentTransition.bez_p1y, seqWrapper->currentTransition.bez_p2y, 1.0f);
+    
+    auto inst = seqWrapper->sequenceObj->getFaustInstrument();
+    if (inst) {
+        for (const auto& kv : seqWrapper->currentTransition.targetParams) {
+            float startVal = seqWrapper->startParams[kv.first];
+            float endVal = kv.second;
+            float currentVal = startVal + progress * (endVal - startVal);
+            inst->setParamImmediate(kv.first.c_str(), currentVal, -1);
         }
     }
 }

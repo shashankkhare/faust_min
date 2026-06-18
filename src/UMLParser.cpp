@@ -368,7 +368,9 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
             long sampleOffset = (long)(ti.gridIndex * samplesPerGrid);
             float amplitudeScalar = (float)ti.controlParam / 9.0f;
 
-            if (ti.hasCompositeNotes) {
+            if (seq.notation == "XSAMPA" || seq.notation == "xsampa" || seq.notation == "Xsampa") {
+                handleXSampaToken(ti, sampleOffset, durationSamples, j, tokenItems, seq.events, sampleRate);
+            } else if (ti.hasCompositeNotes) {
                 handleCompositeNote(ti, sampleOffset, durationSamples, seq.notation, seq.baseFreq, seq.instrument, j, tokenItems, samplesPerGrid, sampleRate, seq.events);
             } else if (InstrumentMapper::isPercussionID(seq.instrumentID)) {
                 handlePercussionToken(ti.noteName, amplitudeScalar, sampleOffset, durationSamples, seq.notation, seq.baseFreq, seq.instrument, seq.events, ti.strikeVal);
@@ -731,6 +733,45 @@ double UMLParser::getFrequency(const std::string& token, const std::string& nota
 }
 
 
+
+void UMLParser::handleXSampaToken(const TokenItem& ti, long sampleOffset, long durationSamples, size_t nextTokenIndex, const std::vector<TokenItem>& tokenItemsArray, std::vector<UMLEvent>& outEvents, double sampleRate) {
+    UMLEvent ev;
+    ev.sampleOffset   = sampleOffset;
+    ev.type           = UMLEventType::NoteOn;
+    ev.note           = ti.noteName;
+    ev.durationSamples = durationSamples;
+    outEvents.push_back(ev);
+
+    size_t targetIdx = nextTokenIndex;
+    while (targetIdx < tokenItemsArray.size() &&
+           (tokenItemsArray[targetIdx].type == TokenType::ContinuityDot ||
+            tokenItemsArray[targetIdx].type == TokenType::StopRest)) {
+        targetIdx++;
+    }
+
+    if (targetIdx < tokenItemsArray.size() && tokenItemsArray[targetIdx].type == TokenType::NoteWithControl) {
+        const std::string& nextTok = tokenItemsArray[targetIdx].noteName;
+        
+        UMLEvent pg;
+        pg.type = UMLEventType::PhonemeGlide;
+        pg.targetNote = nextTok;
+
+        if (ti.hasGlideOp) {
+            // Explicit glide: span the entire bridge
+            pg.sampleOffset = sampleOffset; 
+            pg.durationSamples = durationSamples;
+        } else {
+            // Implicit boundary: 100ms glide at the end of the note
+            long glideLen = static_cast<long>(0.100 * sampleRate); // 100ms
+            if (glideLen > durationSamples) glideLen = durationSamples;
+            
+            pg.sampleOffset = sampleOffset + durationSamples - glideLen;
+            pg.durationSamples = glideLen;
+        }
+        outEvents.push_back(pg);
+    }
+}
+
 void UMLParser::handleVoiceToken(const TokenItem& ti, float amplitudeScalar, long sampleOffset, long durationSamples,
                                  const std::string& notation, double baseFreq,
                                  double samplesPerGrid, size_t nextTokenIndex, const std::vector<TokenItem>& tokenItemsArray, std::vector<UMLEvent>& outEvents) {
@@ -760,7 +801,7 @@ void UMLParser::handleVoiceToken(const TokenItem& ti, float amplitudeScalar, lon
 
     outEvents.push_back(ev);
 
-    // Glide support: if the token ends with '^', emit FreqGlide + AmpGlide events
+    // Glide support: if the token ends with '^', emit explicit glide events
     if (ti.hasGlideOp) {
         size_t targetIdx = nextTokenIndex;
         while (targetIdx < tokenItemsArray.size() &&
@@ -770,11 +811,14 @@ void UMLParser::handleVoiceToken(const TokenItem& ti, float amplitudeScalar, lon
         }
         if (targetIdx < tokenItemsArray.size() && tokenItemsArray[targetIdx].type == TokenType::NoteWithControl) {
             const std::string& nextTok = tokenItemsArray[targetIdx].noteName;
+            
             float tFreq = ev.frequency;
             if (!vowelValues.count(nextTok)) {
                 tFreq = static_cast<float>(getFrequency(nextTok, notation, baseFreq, "voice"));
             }
             float tVel = static_cast<float>(tokenItemsArray[targetIdx].controlParam) / 9.0f;
+            
+            // Emit Freq and Amp glides
             if (std::abs(tFreq - ev.frequency) > 0.01f || std::abs(tVel - amplitudeScalar) > 0.01f) {
                 UMLEvent fg;
                 fg.sampleOffset     = sampleOffset;
@@ -790,6 +834,31 @@ void UMLParser::handleVoiceToken(const TokenItem& ti, float amplitudeScalar, lon
                 ag.durationSamples  = durationSamples;
                 outEvents.push_back(ag);
             }
+
+            // It's an explicit ^ transition.
+            UMLEvent pg;
+            pg.sampleOffset = sampleOffset; // starts at the boundary or end of dots
+            pg.type = UMLEventType::PhonemeGlide;
+            pg.targetNote = nextTok;
+            pg.durationSamples = durationSamples; // duration of the dot(s) holding the ^
+            outEvents.push_back(pg);
+        }
+    } else {
+        // Automatic boundary smoothing (100ms Biological limit)
+        // Check if the NEXT token immediately follows (no dots between) and is a NoteWithControl
+        if (nextTokenIndex < tokenItemsArray.size() && tokenItemsArray[nextTokenIndex].type == TokenType::NoteWithControl) {
+            const std::string& nextTok = tokenItemsArray[nextTokenIndex].noteName;
+            // Biological Anticipation Limit: 100ms
+            long autoGlideSamples100ms = 4410; // Assume 44.1kHz for now
+            long pgOffset = sampleOffset + durationSamples - autoGlideSamples100ms;
+            if (pgOffset < sampleOffset) pgOffset = sampleOffset; // limit to current note start
+
+            UMLEvent pg;
+            pg.sampleOffset = pgOffset;
+            pg.type = UMLEventType::PhonemeGlide;
+            pg.targetNote = nextTok;
+            pg.durationSamples = autoGlideSamples100ms;
+            outEvents.push_back(pg);
         }
     }
     // Amp-only glide: if the token has '>', emit AmpGlide event

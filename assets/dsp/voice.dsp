@@ -24,7 +24,7 @@ import("stdfaust.lib");
 freq     = hslider("freq [unit:Hz]",  220,  50,  2000, 0.1);
 gain     = hslider("gain",            0.7,  0.0, 1.0,  0.01);
 gate     = button("gate");
-vowel       = hslider("vowel",       0.0,  0.0, 4.0,  0.01) : si.smoo;
+
 breathiness = hslider("breathiness", 0.15, 0.0, 1.0,  0.01) : si.smoo;
 chest       = hslider("chest",       0.5,  0.0, 1.0,  0.01) : si.smoo;
 glottal     = hslider("glottal",     0.5,  0.0, 1.0,  0.01) : si.smoo;
@@ -53,37 +53,30 @@ fMod = freq * (1.0 + vib + jitter);
 // Vowel table: [aa, ee, ii, oo, uu] (male voice, Hz)
 // ============================================================
 
-// Linear interpolation helper between 5 vowel anchor points
-lerp5(v0,v1,v2,v3,v4,t) = ba.if(t < 1.0,
-        v0 + (v1-v0)*t,
-        ba.if(t < 2.0,
-            v1 + (v2-v1)*(t-1.0),
-            ba.if(t < 3.0,
-                v2 + (v3-v2)*(t-2.0),
-                v3 + (v4-v3)*(t-3.0))));
+f1_base = hslider("f1_freq", 800.0,  200.0, 5000.0, 1.0) : si.smoo;
+f2_base = hslider("f2_freq", 1200.0, 200.0, 5000.0, 1.0) : si.smoo;
+f3_base = hslider("f3_freq", 2500.0, 200.0, 5000.0, 1.0) : si.smoo;
+f4_base = hslider("f4_freq", 3500.0, 200.0, 5000.0, 1.0) : si.smoo;
+f5_base = hslider("f5_freq", 4500.0, 200.0, 5000.0, 1.0) : si.smoo;
 
-f1_base = lerp5(800.0,  400.0,  300.0,  400.0,  300.0,  vowel);
-f2_base = lerp5(1200.0, 1800.0, 2300.0, 800.0,  800.0,  vowel);
-f3_base = lerp5(2500.0, 2600.0, 3000.0, 2500.0, 2300.0, vowel);
-f4_base = lerp5(3500.0, 3600.0, 3700.0, 3300.0, 3100.0, vowel);
-f5_base = lerp5(4500.0, 4500.0, 4600.0, 4200.0, 4000.0, vowel);
-
-// Formant Tracking (forces formants above the fundamental)
-f1 = max(f1_base, fMod) : si.smoo;
-f2 = max(f2_base, f1 + 200.0) : si.smoo;
-f3 = max(f3_base, f2 + 200.0) : si.smoo;
-f4 = max(f4_base, f3 + 200.0) : si.smoo;
-f5 = max(f5_base, f4 + 200.0) : si.smoo;
+// Formants stay fixed at their phonemic (vocal tract) positions independent of pitch.
+// The PAF algorithm handles fc < f0 correctly — do NOT force formants above fMod
+// or you get a chain-reaction octave-jump (violin/falsetto artifact at high pitches).
+f1 = f1_base : si.smoo;
+f2 = f2_base : si.smoo;
+f3 = f3_base : si.smoo;
+f4 = f4_base : si.smoo;
+f5 = f5_base : si.smoo;
 
 // Formant amplitudes (vowel-specific brightness)
-a1_base = lerp5(1.00,  0.80, 0.70, 0.90, 0.85, vowel);
-a2_base = lerp5(0.85,  1.00, 0.95, 0.60, 0.55, vowel);
-a3_base = lerp5(0.55,  0.70, 0.80, 0.40, 0.35, vowel);
-a4_base = lerp5(0.30,  0.40, 0.50, 0.25, 0.20, vowel);
-a5_base = lerp5(0.15,  0.20, 0.25, 0.10, 0.10, vowel);
+a1_base = hslider("f1_amp", 1.0, 0.0, 1.0, 0.01) : si.smoo;
+a2_base = hslider("f2_amp", 0.8, 0.0, 1.0, 0.01) : si.smoo;
+a3_base = hslider("f3_amp", 0.6, 0.0, 1.0, 0.01) : si.smoo;
+a4_base = hslider("f4_amp", 0.4, 0.0, 1.0, 0.01) : si.smoo;
+a5_base = hslider("f5_amp", 0.2, 0.0, 1.0, 0.01) : si.smoo;
 
 // Applied Vocal Traits (Chest, Glottal, Nasal)
-f1_mod = max(fMod, f1 * (1.0 - (chest - 0.5) * 0.15)); // Deeper F1 for chest
+f1_mod = f1 * (1.0 - (chest - 0.5) * 0.15); // Chest resonance lowers F1 slightly
 a1 = a1_base * (0.5 + chest) * (1.0 - nasal * 0.4);    // Boost F1 for chest, dip for nasal
 a2 = a2_base * (0.5 + chest * 0.5);                    // Slight boost to F2 for chest
 
@@ -91,17 +84,17 @@ a3 = a3_base * (glottal * 2.0);                        // High formants scale wi
 a4 = a4_base * (glottal * 2.0);
 a5 = a5_base * (glottal * 2.0);
 
-f_nasal = 1500.0;
+f_nasal = hslider("nasal_freq", 1500.0, 500.0, 3000.0, 1.0) : si.smoo;
 bw_nasal = 150.0;
 a_nasal = nasal * 0.6; // Nasal formant peak
 
 // BW (bandwidth) per formant - Glottal narrows bandwidth slightly for more buzzy, sharper peaks
 bw_mod = 1.0 - (glottal - 0.5) * 0.3;
-bw1 = 80.0;
-bw2 = 90.0;
-bw3 = 120.0 * bw_mod;
-bw4 = 130.0 * bw_mod;
-bw5 = 160.0 * bw_mod;
+bw1 = hslider("f1_bw", 80.0, 10.0, 500.0, 1.0) * bw_mod : si.smoo;
+bw2 = hslider("f2_bw", 90.0, 10.0, 500.0, 1.0) * bw_mod : si.smoo;
+bw3 = hslider("f3_bw", 120.0, 10.0, 500.0, 1.0) * bw_mod : si.smoo;
+bw4 = hslider("f4_bw", 130.0, 10.0, 500.0, 1.0) * bw_mod : si.smoo;
+bw5 = hslider("f5_bw", 160.0, 10.0, 500.0, 1.0) * bw_mod : si.smoo;
 
 // --- Phase-Aligned Formant (PAF) Core ---
 // Master phase locked to fundamental pitch

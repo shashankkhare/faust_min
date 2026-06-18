@@ -1,16 +1,16 @@
 /*
  * Copyright (c) 2026 Shashank Khare
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -28,66 +28,55 @@
 #include <map>
 #include <fstream>
 #include <sstream>
+#include <iostream>
 
-struct ModelPoint {
-    float note;
-    float velocity;
-    std::map<std::string, float> params;
+struct VoiceTransition {
+    std::string sourcePhoneme;
+    std::string targetPhoneme;
+    std::map<std::string, float> targetParams; // f1_freq, f1_amp, f1_bw, etc.
+    float bez_p1x, bez_p1y, bez_p2x, bez_p2y;
 };
 
 class CSVModelLoader {
 public:
-    static bool load(const std::string& filePath, std::vector<ModelPoint>& points, std::vector<std::string>& paramNames) {
+    static bool loadVoiceMatrix(const std::string& filePath, std::map<std::pair<std::string, std::string>, VoiceTransition>& matrix) {
         std::ifstream file(filePath);
         if (!file.is_open()) return false;
 
         std::string line, header;
         if (!std::getline(file, header)) return false;
 
-        // Parse Header
+        std::vector<std::string> headers;
         std::stringstream ssHeader(header);
         std::string col;
-        std::getline(ssHeader, col, ','); // note
-        std::getline(ssHeader, col, ','); // velocity
         while (std::getline(ssHeader, col, ',')) {
-            paramNames.push_back(col);
+            // Trim carriage returns
+            if (!col.empty() && col.back() == '\r') col.pop_back();
+            headers.push_back(col);
         }
 
-        // Parse Data
         while (std::getline(file, line)) {
+            if (line.empty() || line[0] == '\r') continue;
             std::stringstream ss(line);
-            ModelPoint p;
+            VoiceTransition trans;
             std::string val;
-            
-            std::getline(ss, val, ','); p.note = std::stof(val);
-            std::getline(ss, val, ','); p.velocity = std::stof(val);
-            
-            for (const auto& name : paramNames) {
+
+            std::getline(ss, val, ','); trans.sourcePhoneme = val;
+            std::getline(ss, val, ','); trans.targetPhoneme = val;
+
+            for (size_t i = 2; i < headers.size(); ++i) {
                 if (std::getline(ss, val, ',')) {
-                    p.params[name] = std::stof(val);
+                    if (!val.empty() && val.back() == '\r') val.pop_back();
+                    if (headers[i] == "bez_p1x") trans.bez_p1x = std::stof(val);
+                    else if (headers[i] == "bez_p1y") trans.bez_p1y = std::stof(val);
+                    else if (headers[i] == "bez_p2x") trans.bez_p2x = std::stof(val);
+                    else if (headers[i] == "bez_p2y") trans.bez_p2y = std::stof(val);
+                    else trans.targetParams[headers[i]] = std::stof(val);
                 }
             }
-            points.push_back(p);
+            matrix[{trans.sourcePhoneme, trans.targetPhoneme}] = trans;
         }
         return true;
-    }
-
-    static void interpolate(const std::vector<ModelPoint>& points, float targetNote, float targetVel, std::map<std::string, float>& results) {
-        // Simple nearest neighbor or linear interpolation placeholder
-        // For performance, points should be sorted by note/velocity
-        if (points.empty()) return;
-
-        const ModelPoint* best = &points[0];
-        float minDist = 1000000.0f;
-
-        for (const auto& p : points) {
-            float d = std::abs(p.note - targetNote) + std::abs(p.velocity - targetVel) * 0.1f;
-            if (d < minDist) {
-                minDist = d;
-                best = &p;
-            }
-        }
-        results = best->params;
     }
 };
 

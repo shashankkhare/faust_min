@@ -122,11 +122,14 @@ void playSequenceGroup(FaustMixer& mixer, SequenceOrchestrator& orch, SequenceGr
         // Idiophones stay on melodyTrack (default)
         }
         
-        mixer.addInstrumentToTrack(targetTrack, seqPair.second->getFaustInstrument());
+        if (seqPair.second->getFaustInstrument()) {
+            mixer.addInstrumentToTrack(targetTrack, seqPair.second->getFaustInstrument());
+        }
     }
 
-    // Enable looping feature
-    orch.setLooping(true);
+    orch.linkExtensions();
+
+    // Looping disabled for sequence 12 (single playthrough)
 
     // 2. Play
     for (auto& seqPair : group.sequences) {
@@ -1124,13 +1127,22 @@ int main(int argc, char* argv[]) {
                  return s;
              };
              auto buildVoice = []() -> std::string {
-                  std::string s = "grid: 12\nbpm: 60\nbasefreq: 110\ninstrument: voice\nvibrato_rate: 5.5\nvibrato_depth: 0.04\nbreathiness: 0.2\nvowel: 0\n";
+                  std::string s = "grid: 12\nbpm: 60\nbasefreq: 220\ninstrument: voice\nnotation: Western\nvibrato_rate: 5.5\nvibrato_depth: 0.04\nbreathiness: 0.2\n";
                   s += "delay: 30\n\n";
-                 // Same opening melody as NAF, delayed to start after NAF finishes
-                  s += "5F3.~..........^..5E3..^.5D3..^.5Ab2....~..........^..5D3..^.5F3..^.5E3..^.5F3.. 7G3....~.......>......._ \n";
-                  s += "5F3.~.............5E3...5D3...5Ab2....~............5D3...5F3...5E3...5F3.. 7G3....~............... \n";
-                  s += "5F3....5A3..~..........5G3.....5F3.~........5E3.....5G3.~........... 3F3......4E3...4E3...4E3 ....5F3......... 3D3..~................... \n";
-                  s += "5F3....5A3..~.........5G3.....5F3.~........5E3.....5G3.~........... 3F3......4E3...4E3...4E3.....5F3.......... 3D3..~.................. \n";
+                  // Promontory theme — follows NAF melody, tenor/alto range
+                  s += "5F4.~..........^..5E4..^.5D4..^.5Ab3....~..........^..5D4..^.5F4..^.5E4..^.5F4.. 5G4....~.......>......._ \n";
+                  s += "5F4.~.............5E4...5D4...5Ab3....~............5D4...5F4...5E4...5F4.. 5G4....~............... \n";
+                  s += "5F4....5A4..~..........5G4.....5F4.~........5E4.....5G4.~........... 3F4......4E4...4E4...4E4 ....5F4......... 3D4..~................... \n";
+                  s += "5F4....5A4..~.........5G4.....5F4.~........5E4.....5G4.~........... 3F4......4E4...4E4...4E4.....5F4.......... 3D4..~.................. \n";
+                 return s;
+             };
+             auto buildVoiceExt = []() -> std::string {
+                  std::string s = "grid: 12\nbpm: 60\nbasefreq: 110\ninstrument: voice\nnotation: xsampa\n";
+                  s += "delay: 30\n\n";
+                  s += "5A.............^..5E...^.5I...^.5O................^..5U...^.5A...^.5E...^.5I... 7O.............>......._ \n";
+                  s += "5A................5E....5I....5O..................5U....5A....5E....5I... 7O..................... \n";
+                  s += "5A.....5E..............5I......5O...........5U......5A.............. 3E.......4I....4O....4U .....5A......... 3E........................ \n";
+                  s += "5A.....5E.............5I......5O...........5U......5A.............. 3E.......4I....4O....4U......5A.......... 3E....................... \n";
                  return s;
              };
              auto buildRainmaker = []() -> std::string {
@@ -1149,6 +1161,7 @@ int main(int argc, char* argv[]) {
             //group.sequences.push_back({"Panflute", new UMLSequence("Panflute", 51, buildPanflute())});
             group.sequences.push_back({"NAF", new UMLSequence("NAF", 52, buildNAF())});
             group.sequences.push_back({"Voice", new UMLSequence("Voice", 32, buildVoice())});
+            group.sequences.push_back({"Voice_ext", new UMLSequence("Voice_ext", 32, buildVoiceExt())});
             //group.sequences.push_back({"Rainmaker", new UMLSequence("Rainmaker", 19, buildRainmaker())});
             //group.sequences.push_back({"Dhol", new UMLSequence("Dhol", 38, buildDhol())});
             group.percussionTrackWeight = 1.5f;

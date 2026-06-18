@@ -34,7 +34,8 @@ enum class UMLEventType {
     NoteOff,
     FreqGlide,
     AmpGlide,
-    VibratoOn
+    VibratoOn,
+    PhonemeGlide
 };
 
 struct UMLEvent {
@@ -51,22 +52,25 @@ struct UMLEvent {
     float targetVelocity  = 0.0f;  // For glides
     float targetAmplitude = -1.0f; // For glides
     float targetStrikeVal = -1.0f; // For glides if needed
+    std::string targetNote = "";   // For phoneme glides
 };
 
 class UMLSequence {
 public:
     std::string name;
-    std::string instrument;
-    int instrumentID;
-    std::map<std::string, float> initialParams;
+    std::map<std::string, double> initialParams;
+    std::string notation = "scientific";
+    std::string execType = "static";
+    std::string linkedTrack = ""; // Cross-link to share DSP instance
+
     std::vector<UMLEvent> events;
     double bpm;
     int grid;
     double baseFreq;
     double gain;
     long totalDurationSamples;
-    std::string notation;
-    std::string execType;
+    std::string instrument;
+    int instrumentID;
     std::string umlData;
     bool loop = false;
     double delaySec = 0.0; // delay before first note, in seconds
@@ -78,12 +82,20 @@ public:
 
     UMLSequence(const std::string& seqName, int instID, const std::string& umlDataString, double defaultBaseFreq = 261.63);
 
+    void setBpm(double bpm);
+    long getTotalDurationSamples() const { return totalDurationSamples; }
+
+    void setFaustInstrument(std::shared_ptr<FaustInstrument> inst) {
+        mInstrument = inst;
+    }
     FaustInstrument* getFaustInstrument() {
         return mInstrument.get();
     }
+    std::shared_ptr<FaustInstrument> getFaustInstrumentShared() {
+        return mInstrument;
+    }
     
     void setBaseFrequency(double newBaseFreq);
-    void setBpm(double newBpm);
 
     ~UMLSequence();
 };

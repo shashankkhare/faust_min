@@ -483,6 +483,31 @@ void FaustInstrument::setParam(const char* shortName, float val, int voiceIndex)
     mEventQueue.push_back({shortName, val, voiceIndex});
 }
 
+float FaustInstrument::getParam(const char* shortName) {
+    if (mVoiceUIs.empty()) return 0.0f;
+
+    std::string key(shortName);
+    auto it = mParamAddressCache.find(key);
+    std::string addr = "";
+    if (it != mParamAddressCache.end()) {
+        addr = it->second;
+    } else {
+        for (int i = 0; i < mVoiceUIs[0]->getParamsCount(); i++) {
+            std::string tempAddr = mVoiceUIs[0]->getParamAddress(i);
+            size_t lastSlash = tempAddr.find_last_of('/');
+            std::string baseName = (lastSlash != std::string::npos) ? tempAddr.substr(lastSlash + 1) : tempAddr;
+            if (baseName == key) {
+                addr = tempAddr;
+                mParamAddressCache[key] = addr;
+                break;
+            }
+        }
+    }
+    
+    if (addr.empty()) return 0.0f;
+    return mVoiceUIs[0]->getParamValue(addr.c_str());
+}
+
 void FaustInstrument::setFrequency(float freq) {
     mFrequency = freq;
     setParam("freq", freq, -1);

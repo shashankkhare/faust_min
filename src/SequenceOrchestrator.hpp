@@ -53,6 +53,15 @@ struct ActiveSequence {
     SequenceState state = SequenceState::PLAYING;
     size_t playbackSampleIndex = 0;
 
+    // Phoneme interpolation state
+    std::string currentPhoneme = "aa";
+    std::string targetPhoneme = "NONE";
+    long phonemeGlideSamples = 0;
+    long phonemeGlideSamplesElapsed = 0;
+    std::map<std::string, float> startParams; // Parameters at the start of the glide
+    VoiceTransition currentTransition;
+    bool inPhonemeGlide = false;
+
     ActiveSequence() : sequenceObj(nullptr), currentSample(0), nextEventIndex(0) {}
     ~ActiveSequence() {}
     // Non-copyable — atomics cannot be copied
@@ -116,6 +125,7 @@ public:
      * @param sequence Parsed UML sequence object.
      */
     int addSequence(const std::string& name, UMLSequence* sequence);
+    void linkExtensions();
 
     /**
      * @brief Trigger playback for a registered sequence.
@@ -165,11 +175,7 @@ public:
      */
     void setParameter(const std::string& name, const std::string& param, float value);
 
-    /**
-     * @brief Enable or disable global looping. When true, all sequences restart once all have finished.
-     */
-    void setLooping(bool state) { mLooping.store(state, std::memory_order_relaxed); }
-    bool isLooping() const { return mLooping.load(std::memory_order_relaxed); }
+
 
 
 
@@ -233,13 +239,14 @@ private:
     std::string mAssetBasePath;
 
     std::map<std::string, std::shared_ptr<ActiveSequence>> mActiveSequences;
+    std::vector<std::string> mPendingExtensions;
     std::map<std::string, std::vector<std::string>> mSongRegistry;
     std::vector<std::string> mPendingPlay;
     std::mutex mStateMutex;
     long mMasterSampleCount = 0;
     std::atomic<bool> mIsPaused{false};
     std::atomic<bool> mHumanize{true};
-    std::atomic<bool> mLooping{false};
+
     std::atomic<bool> mDiagEnabled{false};
 
     using SnapshotVec = std::vector<std::shared_ptr<ActiveSequence>>;
@@ -248,6 +255,10 @@ private:
 
     std::atomic<bool> mPendingFinish{false};
     char mFinishedName[128] = {};
+
+    std::map<std::pair<std::string, std::string>, VoiceTransition> mVoiceMatrix;
+    float cubicBezier(float t, float p0, float p1, float p2, float p3);
+    void processPhonemeGlide(std::shared_ptr<ActiveSequence> seqWrapper, int framesToProcess);
 };
 
 #endif // SEQUENCE_ORCHESTRATOR_HPP

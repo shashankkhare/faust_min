@@ -123,6 +123,7 @@ public:
      */
     void setParam(const char* shortName, float val, int voiceIndex = -1);
     void setParamImmediate(const char* shortName, float val, int voiceIndex = -1);
+    float getParam(const char* shortName);
 
 protected:
     std::recursive_mutex mDSPLock; // Dedicated recursive mutex protecting DSP state maps
