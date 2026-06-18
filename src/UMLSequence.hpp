@@ -32,6 +32,7 @@
 enum class UMLEventType {
     NoteOn,
     NoteOff,
+    PhonemeOn,
     FreqGlide,
     AmpGlide,
     VibratoOn,

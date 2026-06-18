@@ -108,6 +108,16 @@ void playSequenceGroup(FaustMixer& mixer, SequenceOrchestrator& orch, SequenceGr
                 std::cout << "  Event " << eIdx << ": VibratoOn at SampleOffset: " << ev.sampleOffset << std::endl;
             } else if (ev.type == UMLEventType::NoteOff) {
                 std::cout << "  Event " << eIdx << ": NoteOff at SampleOffset: " << ev.sampleOffset << std::endl;
+            } else if (ev.type == UMLEventType::PhonemeOn) {
+                double durMs = ev.durationSamples * 1000.0 / InstrumentMapper::DEFAULT_SAMPLE_RATE;
+                std::cout << "  Event " << eIdx << ": Phoneme: " << ev.note
+                          << " | Dur: " << durMs << "ms"
+                          << " | SampleOffset: " << ev.sampleOffset << std::endl;
+            } else if (ev.type == UMLEventType::PhonemeGlide) {
+                double durMs = ev.durationSamples * 1000.0 / InstrumentMapper::DEFAULT_SAMPLE_RATE;
+                std::cout << "  Event " << eIdx << ": Glide: " << ev.targetNote
+                          << " | Dur: " << durMs << "ms"
+                          << " | SampleOffset: " << ev.sampleOffset << std::endl;
             }
         }
         

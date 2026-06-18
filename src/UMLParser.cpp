@@ -407,7 +407,7 @@ void UMLParser::handlePercussionToken(const std::string& tokenNoteName, float am
     ev.frequency = static_cast<float>(baseFreq);
     ev.velocity = -1.0f;
     ev.amplitude = amplitudeScalar;
-    ev.type = UMLEventType::NoteOn;
+    ev.type           = UMLEventType::PhonemeOn;
     ev.note = tokenNoteName;
     ev.durationSamples = durationSamples;
 
@@ -737,7 +737,7 @@ double UMLParser::getFrequency(const std::string& token, const std::string& nota
 void UMLParser::handleXSampaToken(const TokenItem& ti, long sampleOffset, long durationSamples, size_t nextTokenIndex, const std::vector<TokenItem>& tokenItemsArray, std::vector<UMLEvent>& outEvents, double sampleRate) {
     UMLEvent ev;
     ev.sampleOffset   = sampleOffset;
-    ev.type           = UMLEventType::NoteOn;
+    ev.type           = UMLEventType::PhonemeOn;
     ev.note           = ti.noteName;
     ev.durationSamples = durationSamples;
     outEvents.push_back(ev);

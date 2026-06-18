@@ -32,6 +32,7 @@ nasal       = hslider("nasal",       0.0,  0.0, 1.0,  0.01) : si.smoo;
 
 vibratoRate  = hslider("vibrato_rate",  5.5, 0.0, 12.0, 0.1);
 vibratoDepth = hslider("vibrato_depth", 0.012, 0.0, 0.08, 0.001);
+frication    = hslider("frication",   0.0, 0.0, 1.0, 0.01) : si.smoo;
 
 // --- Attack envelope (80ms default — breath-onset phrasing) ---
 velocity = hslider("velocity", 0.8, 0.0, 1.0, 0.01);
@@ -128,12 +129,31 @@ formants = paf(fMod, f1_mod, bw1) * a1
          + paf(fMod, f5, bw5) * a5
          + paf(fMod, f_nasal, bw_nasal) * a_nasal;
 
-// --- Breathiness layer ---
-// We add high-passed noise shaped by the formants for realism
-breath_noise = no.noise : fi.resonbp(fMod, 1.2, 1.0) * breathiness * env;
+// --- Noise Excitation layer (Breath + Consonants) ---
+// Pink noise has a natural -3dB/oct roll-off matching human breath airflow.
+// We pass it through a parallel bank of formant resonators to shape it
+// exactly like the vocal tract shapes the glottal pulse.
+n_src = no.pink_noise * (breathiness + frication) * env;
 
-// --- Output ---
-voiced = (formants * (1.0 - breathiness * 0.5) + breath_noise) * env * 0.25;
+// Convert PAF bandwidths to Q factors for the BPFs
+q1 = f1_mod / max(1.0, bw1);
+q2 = f2 / max(1.0, bw2);
+q3 = f3 / max(1.0, bw3);
+q4 = f4 / max(1.0, bw4);
+q5 = f5 / max(1.0, bw5);
+q_n= f_nasal / max(1.0, bw_nasal);
+
+f_noise = n_src : fi.resonbp(f1_mod, q1, 1.0) * a1
+        + n_src : fi.resonbp(f2, q2, 1.0) * a2
+        + n_src : fi.resonbp(f3, q3, 1.0) * a3
+        + n_src : fi.resonbp(f4, q4, 1.0) * a4
+        + n_src : fi.resonbp(f5, q5, 1.0) * a5
+        + n_src : fi.resonbp(f_nasal, q_n, 1.0) * a_nasal;
+
+// --- Output Mix ---
+// If frication is high (consonant), we duck the voiced component
+voice_mix = 1.0 - (frication * 0.8) - (breathiness * 0.5);
+voiced = (formants * voice_mix + f_noise) * env * 0.25;
 
 // Duplicate to stereo with slight chorus spread for warmth
 chorus = voiced : de.fdelay(4096, 8.5 + os.osc(0.23)*3.0) * 0.35;

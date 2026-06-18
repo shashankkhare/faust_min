@@ -135,11 +135,19 @@ class FaustVoiceDSP : public dsp {
 	float fRec28[2];
 	FAUSTFLOAT fHslider24;
 	float fRec29[2];
+	FAUSTFLOAT fHslider25;
+	float fRec30[2];
+	float fRec32[4];
 	float fConst4;
-	float fRec30[3];
+	float fRec37[3];
+	float fRec36[3];
+	float fRec35[3];
+	float fRec34[3];
+	float fRec33[3];
+	float fRec31[3];
 	float fVec1[14];
 	float fConst5;
-	float fRec31[2];
+	float fRec38[2];
 	
  public:
 	
@@ -235,7 +243,8 @@ class FaustVoiceDSP : public dsp {
 		fHslider21 = FAUSTFLOAT(160.0f);
 		fHslider22 = FAUSTFLOAT(4500.0f);
 		fHslider23 = FAUSTFLOAT(1500.0f);
-		fHslider24 = FAUSTFLOAT(0.14999999999999999f);
+		fHslider24 = FAUSTFLOAT(0.0f);
+		fHslider25 = FAUSTFLOAT(0.14999999999999999f);
 	}
 	
 	virtual void instanceClear() {
@@ -326,14 +335,35 @@ class FaustVoiceDSP : public dsp {
 		for (int l30 = 0; (l30 < 2); l30 = (l30 + 1)) {
 			fRec29[l30] = 0.0f;
 		}
-		for (int l31 = 0; (l31 < 3); l31 = (l31 + 1)) {
+		for (int l31 = 0; (l31 < 2); l31 = (l31 + 1)) {
 			fRec30[l31] = 0.0f;
 		}
-		for (int l32 = 0; (l32 < 14); l32 = (l32 + 1)) {
-			fVec1[l32] = 0.0f;
+		for (int l32 = 0; (l32 < 4); l32 = (l32 + 1)) {
+			fRec32[l32] = 0.0f;
 		}
-		for (int l33 = 0; (l33 < 2); l33 = (l33 + 1)) {
-			fRec31[l33] = 0.0f;
+		for (int l33 = 0; (l33 < 3); l33 = (l33 + 1)) {
+			fRec37[l33] = 0.0f;
+		}
+		for (int l34 = 0; (l34 < 3); l34 = (l34 + 1)) {
+			fRec36[l34] = 0.0f;
+		}
+		for (int l35 = 0; (l35 < 3); l35 = (l35 + 1)) {
+			fRec35[l35] = 0.0f;
+		}
+		for (int l36 = 0; (l36 < 3); l36 = (l36 + 1)) {
+			fRec34[l36] = 0.0f;
+		}
+		for (int l37 = 0; (l37 < 3); l37 = (l37 + 1)) {
+			fRec33[l37] = 0.0f;
+		}
+		for (int l38 = 0; (l38 < 3); l38 = (l38 + 1)) {
+			fRec31[l38] = 0.0f;
+		}
+		for (int l39 = 0; (l39 < 14); l39 = (l39 + 1)) {
+			fVec1[l39] = 0.0f;
+		}
+		for (int l40 = 0; (l40 < 2); l40 = (l40 + 1)) {
+			fRec38[l40] = 0.0f;
 		}
 	}
 	
@@ -357,7 +387,7 @@ class FaustVoiceDSP : public dsp {
 	
 	virtual void buildUserInterface(UI* ui_interface) {
 		ui_interface->openVerticalBox("voice");
-		ui_interface->addHorizontalSlider("breathiness", &fHslider24, FAUSTFLOAT(0.150000006f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("breathiness", &fHslider25, FAUSTFLOAT(0.150000006f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addHorizontalSlider("chest", &fHslider9, FAUSTFLOAT(0.5f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addHorizontalSlider("f1_amp", &fHslider2, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addHorizontalSlider("f1_bw", &fHslider3, FAUSTFLOAT(80.0f), FAUSTFLOAT(10.0f), FAUSTFLOAT(500.0f), FAUSTFLOAT(1.0f));
@@ -376,6 +406,7 @@ class FaustVoiceDSP : public dsp {
 		ui_interface->addHorizontalSlider("f5_freq", &fHslider22, FAUSTFLOAT(4500.0f), FAUSTFLOAT(200.0f), FAUSTFLOAT(5000.0f), FAUSTFLOAT(1.0f));
 		ui_interface->declare(&fHslider5, "unit", "Hz");
 		ui_interface->addHorizontalSlider("freq", &fHslider5, FAUSTFLOAT(220.0f), FAUSTFLOAT(50.0f), FAUSTFLOAT(2000.0f), FAUSTFLOAT(0.100000001f));
+		ui_interface->addHorizontalSlider("frication", &fHslider24, FAUSTFLOAT(0.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addHorizontalSlider("gain", &fHslider1, FAUSTFLOAT(0.699999988f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addButton("gate", &fButton0);
 		ui_interface->addHorizontalSlider("glottal", &fHslider4, FAUSTFLOAT(0.5f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
@@ -419,7 +450,7 @@ class FaustVoiceDSP : public dsp {
 		float fSlow25 = (fConst2 * float(fHslider22));
 		float fSlow26 = (fConst2 * float(fHslider23));
 		float fSlow27 = (fConst2 * float(fHslider24));
-		float fSlow28 = (fConst4 * fSlow7);
+		float fSlow28 = (fConst2 * float(fHslider25));
 		for (int i0 = 0; (i0 < count); i0 = (i0 + 1)) {
 			float fTempFTZ0 = ((fRec0[1] * fSlow2) + fSlow3);
 			fRec0[0] = ((std::fabs(fTempFTZ0) > 1.17549435e-38f) ? fTempFTZ0 : 0.0f);
@@ -448,78 +479,123 @@ class FaustVoiceDSP : public dsp {
 			fRec8[0] = ((std::fabs(fTempFTZ7) > 1.17549435e-38f) ? fTempFTZ7 : 0.0f);
 			float fTempFTZ8 = (fSlow12 + (fConst3 * fRec10[1]));
 			fRec10[0] = ((std::fabs(fTempFTZ8) > 1.17549435e-38f) ? fTempFTZ8 : 0.0f);
-			float fTemp8 = ((fRec8[0] * (1.0f - (0.150000006f * (fRec10[0] + -0.5f)))) / fTemp6);
-			float fTemp9 = std::floor(fTemp8);
+			float fTemp8 = (fRec8[0] * (1.0f - (0.150000006f * (fRec10[0] + -0.5f))));
+			float fTemp9 = (fTemp8 / fTemp6);
+			float fTemp10 = std::floor(fTemp9);
+			float fTemp11 = (fRec10[0] + 0.5f);
 			float fTempFTZ9 = (fSlow13 + (fConst3 * fRec11[1]));
 			fRec11[0] = ((std::fabs(fTempFTZ9) > 1.17549435e-38f) ? fTempFTZ9 : 0.0f);
+			float fTemp12 = (1.0f - (0.400000006f * fRec11[0]));
 			float fTempFTZ10 = (fSlow14 + (fConst3 * fRec12[1]));
 			fRec12[0] = ((std::fabs(fTempFTZ10) > 1.17549435e-38f) ? fTempFTZ10 : 0.0f);
 			float fTempFTZ11 = ((fConst3 * fRec13[1]) + (fSlow15 * fTemp0));
 			fRec13[0] = ((std::fabs(fTempFTZ11) > 1.17549435e-38f) ? fTempFTZ11 : 0.0f);
-			float fTemp10 = FaustVoiceDSP_faustpower2_f(fRec13[0]);
+			float fTemp13 = FaustVoiceDSP_faustpower2_f(fRec13[0]);
 			float fTempFTZ12 = (fSlow16 + (fConst3 * fRec15[1]));
 			fRec15[0] = ((std::fabs(fTempFTZ12) > 1.17549435e-38f) ? fTempFTZ12 : 0.0f);
 			float fTempFTZ13 = ((fConst3 * fRec14[1]) + (fConst2 * fRec15[0]));
 			fRec14[0] = ((std::fabs(fTempFTZ13) > 1.17549435e-38f) ? fTempFTZ13 : 0.0f);
-			float fTemp11 = (fRec14[0] / fTemp6);
-			float fTemp12 = std::floor(fTemp11);
+			float fTemp14 = (fRec14[0] / fTemp6);
+			float fTemp15 = std::floor(fTemp14);
+			float fTemp16 = (fRec10[0] + 1.0f);
 			float fTempFTZ14 = (fSlow17 + (fConst3 * fRec16[1]));
 			fRec16[0] = ((std::fabs(fTempFTZ14) > 1.17549435e-38f) ? fTempFTZ14 : 0.0f);
 			float fTempFTZ15 = ((fConst3 * fRec17[1]) + (fSlow18 * fTemp0));
 			fRec17[0] = ((std::fabs(fTempFTZ15) > 1.17549435e-38f) ? fTempFTZ15 : 0.0f);
-			float fTemp13 = FaustVoiceDSP_faustpower2_f(fRec17[0]);
+			float fTemp17 = FaustVoiceDSP_faustpower2_f(fRec17[0]);
 			float fTempFTZ16 = (fSlow19 + (fConst3 * fRec19[1]));
 			fRec19[0] = ((std::fabs(fTempFTZ16) > 1.17549435e-38f) ? fTempFTZ16 : 0.0f);
 			float fTempFTZ17 = ((fConst3 * fRec18[1]) + (fConst2 * fRec19[0]));
 			fRec18[0] = ((std::fabs(fTempFTZ17) > 1.17549435e-38f) ? fTempFTZ17 : 0.0f);
-			float fTemp14 = (fRec18[0] / fTemp6);
-			float fTemp15 = std::floor(fTemp14);
+			float fTemp18 = (fRec18[0] / fTemp6);
+			float fTemp19 = std::floor(fTemp18);
 			float fTempFTZ18 = (fSlow20 + (fConst3 * fRec20[1]));
 			fRec20[0] = ((std::fabs(fTempFTZ18) > 1.17549435e-38f) ? fTempFTZ18 : 0.0f);
 			float fTempFTZ19 = ((fConst3 * fRec21[1]) + (fSlow21 * fTemp0));
 			fRec21[0] = ((std::fabs(fTempFTZ19) > 1.17549435e-38f) ? fTempFTZ19 : 0.0f);
-			float fTemp16 = FaustVoiceDSP_faustpower2_f(fRec21[0]);
+			float fTemp20 = FaustVoiceDSP_faustpower2_f(fRec21[0]);
 			float fTempFTZ20 = (fSlow22 + (fConst3 * fRec23[1]));
 			fRec23[0] = ((std::fabs(fTempFTZ20) > 1.17549435e-38f) ? fTempFTZ20 : 0.0f);
 			float fTempFTZ21 = ((fConst3 * fRec22[1]) + (fConst2 * fRec23[0]));
 			fRec22[0] = ((std::fabs(fTempFTZ21) > 1.17549435e-38f) ? fTempFTZ21 : 0.0f);
-			float fTemp17 = (fRec22[0] / fTemp6);
-			float fTemp18 = std::floor(fTemp17);
+			float fTemp21 = (fRec22[0] / fTemp6);
+			float fTemp22 = std::floor(fTemp21);
 			float fTempFTZ22 = (fSlow23 + (fConst3 * fRec24[1]));
 			fRec24[0] = ((std::fabs(fTempFTZ22) > 1.17549435e-38f) ? fTempFTZ22 : 0.0f);
 			float fTempFTZ23 = ((fConst3 * fRec25[1]) + (fSlow24 * fTemp0));
 			fRec25[0] = ((std::fabs(fTempFTZ23) > 1.17549435e-38f) ? fTempFTZ23 : 0.0f);
-			float fTemp19 = FaustVoiceDSP_faustpower2_f(fRec25[0]);
+			float fTemp23 = FaustVoiceDSP_faustpower2_f(fRec25[0]);
 			float fTempFTZ24 = (fSlow25 + (fConst3 * fRec27[1]));
 			fRec27[0] = ((std::fabs(fTempFTZ24) > 1.17549435e-38f) ? fTempFTZ24 : 0.0f);
 			float fTempFTZ25 = ((fConst3 * fRec26[1]) + (fConst2 * fRec27[0]));
 			fRec26[0] = ((std::fabs(fTempFTZ25) > 1.17549435e-38f) ? fTempFTZ25 : 0.0f);
-			float fTemp20 = (fRec26[0] / fTemp6);
-			float fTemp21 = std::floor(fTemp20);
+			float fTemp24 = (fRec26[0] / fTemp6);
+			float fTemp25 = std::floor(fTemp24);
 			float fTempFTZ26 = (fSlow26 + (fConst3 * fRec28[1]));
 			fRec28[0] = ((std::fabs(fTempFTZ26) > 1.17549435e-38f) ? fTempFTZ26 : 0.0f);
-			float fTemp22 = (fRec28[0] / fTemp6);
-			float fTemp23 = std::floor(fTemp22);
+			float fTemp26 = (fRec28[0] / fTemp6);
+			float fTemp27 = std::floor(fTemp26);
 			float fTempFTZ27 = (fSlow27 + (fConst3 * fRec29[1]));
 			fRec29[0] = ((std::fabs(fTempFTZ27) > 1.17549435e-38f) ? fTempFTZ27 : 0.0f);
-			float fTemp24 = std::tan((fSlow28 * fTemp3));
-			float fTemp25 = (1.0f / fTemp24);
-			float fTemp26 = (((fTemp25 + 0.833333313f) / fTemp24) + 1.0f);
-			float fTempFTZ28 = ((4.65661287e-10f * fTemp2) - (((fRec30[2] * (((fTemp25 + -0.833333313f) / fTemp24) + 1.0f)) + (2.0f * (fRec30[1] * (1.0f - (1.0f / FaustVoiceDSP_faustpower2_f(fTemp24)))))) / fTemp26));
+			float fTempFTZ28 = (fSlow28 + (fConst3 * fRec30[1]));
 			fRec30[0] = ((std::fabs(fTempFTZ28) > 1.17549435e-38f) ? fTempFTZ28 : 0.0f);
-			float fTemp27 = (fTemp24 * fTemp26);
-			float fTemp28 = (fRec0[0] * ((((((((((fRec1[0] * std::exp(std::max<float>(-80.0f, (0.5f * ((fTemp1 * fTemp5) / fTemp7))))) * (((fTemp9 + (1.0f - fTemp8)) * std::cos((6.28318548f * (fRec4[0] * fTemp9)))) + ((fTemp8 - fTemp9) * std::cos((6.28318548f * (fRec4[0] * (fTemp9 + 1.0f))))))) * std::sqrt(((0.5f * (fTemp1 / fTemp7)) + 1.0f))) * (fRec10[0] + 0.5f)) * (1.0f - (0.400000006f * fRec11[0]))) + (0.5f * ((((fRec12[0] * std::exp(std::max<float>(-80.0f, (0.5f * ((fTemp10 * fTemp5) / fTemp7))))) * (((fTemp12 + (1.0f - fTemp11)) * std::cos((6.28318548f * (fRec4[0] * fTemp12)))) + ((fTemp11 - fTemp12) * std::cos((6.28318548f * (fRec4[0] * (fTemp12 + 1.0f))))))) * std::sqrt(((0.5f * (fTemp10 / fTemp7)) + 1.0f))) * (fRec10[0] + 1.0f)))) + (2.0f * (fRec3[0] * (((((fRec16[0] * std::exp(std::max<float>(-80.0f, (0.5f * ((fTemp13 * fTemp5) / fTemp7))))) * (((fTemp15 + (1.0f - fTemp14)) * std::cos((6.28318548f * (fRec4[0] * fTemp15)))) + ((fTemp14 - fTemp15) * std::cos((6.28318548f * (fRec4[0] * (fTemp15 + 1.0f))))))) * std::sqrt(((0.5f * (fTemp13 / fTemp7)) + 1.0f))) + (((fRec20[0] * std::exp(std::max<float>(-80.0f, (0.5f * ((fTemp16 * fTemp5) / fTemp7))))) * (((fTemp18 + (1.0f - fTemp17)) * std::cos((6.28318548f * (fRec4[0] * fTemp18)))) + ((fTemp17 - fTemp18) * std::cos((6.28318548f * (fRec4[0] * (fTemp18 + 1.0f))))))) * std::sqrt(((0.5f * (fTemp16 / fTemp7)) + 1.0f)))) + (((fRec24[0] * std::exp(std::max<float>(-80.0f, (0.5f * ((fTemp19 * fTemp5) / fTemp7))))) * (((fTemp21 + (1.0f - fTemp20)) * std::cos((6.28318548f * (fRec4[0] * fTemp21)))) + ((fTemp20 - fTemp21) * std::cos((6.28318548f * (fRec4[0] * (fTemp21 + 1.0f))))))) * std::sqrt(((0.5f * (fTemp19 / fTemp7)) + 1.0f))))))) + (0.600000024f * (((fRec11[0] * std::exp(std::max<float>(-80.0f, (11250.0f * (fTemp5 / fTemp7))))) * (((fTemp23 + (1.0f - fTemp22)) * std::cos((6.28318548f * (fRec4[0] * fTemp23)))) + ((fTemp22 - fTemp23) * std::cos((6.28318548f * (fRec4[0] * (fTemp23 + 1.0f))))))) * std::sqrt(((11250.0f / fTemp7) + 1.0f))))) * (1.0f - (0.5f * fRec29[0]))) + ((fRec0[0] * fRec29[0]) * ((fRec30[0] / fTemp27) + (fRec30[2] * (0.0f - (1.0f / fTemp27)))))));
-			fVec1[0] = fTemp28;
-			float fTemp29 = (0.25f * fTemp28);
-			float fTempFTZ29 = (fConst5 + (fRec31[1] - std::floor((fConst5 + fRec31[1]))));
-			fRec31[0] = ((std::fabs(fTempFTZ29) > 1.17549435e-38f) ? fTempFTZ29 : 0.0f);
-			float fTemp30 = (3.0f * ftbl0FaustVoiceDSPSIG0[int((65536.0f * fRec31[0]))]);
-			float fTemp31 = (fTemp30 + 8.5f);
-			int iTemp32 = int(fTemp31);
-			float fTemp33 = std::floor(fTemp31);
-			float fTemp34 = ((fVec1[std::min<int>(4097, std::max<int>(0, iTemp32))] * (fTemp33 + (-7.5f - fTemp30))) + ((fTemp30 + (8.5f - fTemp33)) * fVec1[std::min<int>(4097, std::max<int>(0, (iTemp32 + 1)))]));
-			output0[i0] = FAUSTFLOAT((fTemp29 + (0.0874999985f * fTemp34)));
-			output1[i0] = FAUSTFLOAT((fTemp29 - (0.0437499993f * fTemp34)));
+			float fTempFTZ29 = (((0.522189379f * fRec32[3]) + ((4.65661287e-10f * fTemp2) + (2.49495602f * fRec32[1]))) - (2.0172658f * fRec32[2]));
+			fRec32[0] = ((std::fabs(fTempFTZ29) > 1.17549435e-38f) ? fTempFTZ29 : 0.0f);
+			float fTemp28 = ((fRec0[0] * (((0.0499220341f * fRec32[0]) + (0.0506126992f * fRec32[2])) - ((0.0959935337f * fRec32[1]) + (0.00440878607f * fRec32[3])))) * (fRec29[0] + fRec30[0]));
+			float fTemp29 = std::tan((fConst4 * fTemp8));
+			float fTemp30 = (1.0f / fTemp29);
+			float fTemp31 = (std::max<float>(1.0f, fRec2[0]) / fTemp8);
+			float fTemp32 = (((fTemp30 + fTemp31) / fTemp29) + 1.0f);
+			float fTempFTZ30 = (fTemp28 - (((fRec37[2] * (((fTemp30 - fTemp31) / fTemp29) + 1.0f)) + (2.0f * (fRec37[1] * (1.0f - (1.0f / FaustVoiceDSP_faustpower2_f(fTemp29)))))) / fTemp32));
+			fRec37[0] = ((std::fabs(fTempFTZ30) > 1.17549435e-38f) ? fTempFTZ30 : 0.0f);
+			float fTemp33 = (fTemp29 * fTemp32);
+			float fTemp34 = std::tan((fConst4 * fRec14[0]));
+			float fTemp35 = (1.0f / fTemp34);
+			float fTemp36 = (std::max<float>(1.0f, fRec13[0]) / fRec14[0]);
+			float fTemp37 = (((fTemp35 + fTemp36) / fTemp34) + 1.0f);
+			float fTempFTZ31 = ((fTemp28 + (((fRec1[0] * fTemp11) * fTemp12) * ((fRec37[0] / fTemp33) + (fRec37[2] * (0.0f - (1.0f / fTemp33)))))) - (((fRec36[2] * (((fTemp35 - fTemp36) / fTemp34) + 1.0f)) + (2.0f * (fRec36[1] * (1.0f - (1.0f / FaustVoiceDSP_faustpower2_f(fTemp34)))))) / fTemp37));
+			fRec36[0] = ((std::fabs(fTempFTZ31) > 1.17549435e-38f) ? fTempFTZ31 : 0.0f);
+			float fTemp38 = (fTemp34 * fTemp37);
+			float fTemp39 = std::tan((fConst4 * fRec18[0]));
+			float fTemp40 = (1.0f / fTemp39);
+			float fTemp41 = (std::max<float>(1.0f, fRec17[0]) / fRec18[0]);
+			float fTemp42 = (((fTemp40 + fTemp41) / fTemp39) + 1.0f);
+			float fTempFTZ32 = ((fTemp28 + (0.5f * ((fRec12[0] * fTemp16) * ((fRec36[0] / fTemp38) + (fRec36[2] * (0.0f - (1.0f / fTemp38))))))) - (((fRec35[2] * (((fTemp40 - fTemp41) / fTemp39) + 1.0f)) + (2.0f * (fRec35[1] * (1.0f - (1.0f / FaustVoiceDSP_faustpower2_f(fTemp39)))))) / fTemp42));
+			fRec35[0] = ((std::fabs(fTempFTZ32) > 1.17549435e-38f) ? fTempFTZ32 : 0.0f);
+			float fTemp43 = (fTemp39 * fTemp42);
+			float fTemp44 = std::tan((fConst4 * fRec22[0]));
+			float fTemp45 = (1.0f / fTemp44);
+			float fTemp46 = (std::max<float>(1.0f, fRec21[0]) / fRec22[0]);
+			float fTemp47 = (((fTemp45 + fTemp46) / fTemp44) + 1.0f);
+			float fTempFTZ33 = ((fTemp28 + (2.0f * ((fRec3[0] * fRec16[0]) * ((fRec35[0] / fTemp43) + (fRec35[2] * (0.0f - (1.0f / fTemp43))))))) - (((fRec34[2] * (((fTemp45 - fTemp46) / fTemp44) + 1.0f)) + (2.0f * (fRec34[1] * (1.0f - (1.0f / FaustVoiceDSP_faustpower2_f(fTemp44)))))) / fTemp47));
+			fRec34[0] = ((std::fabs(fTempFTZ33) > 1.17549435e-38f) ? fTempFTZ33 : 0.0f);
+			float fTemp48 = (fTemp44 * fTemp47);
+			float fTemp49 = std::tan((fConst4 * fRec26[0]));
+			float fTemp50 = (1.0f / fTemp49);
+			float fTemp51 = (std::max<float>(1.0f, fRec25[0]) / fRec26[0]);
+			float fTemp52 = (((fTemp50 + fTemp51) / fTemp49) + 1.0f);
+			float fTempFTZ34 = ((fTemp28 + (2.0f * ((fRec3[0] * fRec20[0]) * ((fRec34[0] / fTemp48) + (fRec34[2] * (0.0f - (1.0f / fTemp48))))))) - (((fRec33[2] * (((fTemp50 - fTemp51) / fTemp49) + 1.0f)) + (2.0f * (fRec33[1] * (1.0f - (1.0f / FaustVoiceDSP_faustpower2_f(fTemp49)))))) / fTemp52));
+			fRec33[0] = ((std::fabs(fTempFTZ34) > 1.17549435e-38f) ? fTempFTZ34 : 0.0f);
+			float fTemp53 = (fTemp49 * fTemp52);
+			float fTemp54 = std::tan((fConst4 * fRec28[0]));
+			float fTemp55 = (1.0f / fTemp54);
+			float fTemp56 = (150.0f / fRec28[0]);
+			float fTemp57 = (((fTemp55 + fTemp56) / fTemp54) + 1.0f);
+			float fTempFTZ35 = ((fTemp28 + (2.0f * ((fRec3[0] * fRec24[0]) * ((fRec33[0] / fTemp53) + (fRec33[2] * (0.0f - (1.0f / fTemp53))))))) - (((fRec31[2] * (((fTemp55 - fTemp56) / fTemp54) + 1.0f)) + (2.0f * (fRec31[1] * (1.0f - (1.0f / FaustVoiceDSP_faustpower2_f(fTemp54)))))) / fTemp57));
+			fRec31[0] = ((std::fabs(fTempFTZ35) > 1.17549435e-38f) ? fTempFTZ35 : 0.0f);
+			float fTemp58 = (fTemp54 * fTemp57);
+			float fTemp59 = (fRec0[0] * ((((((((((fRec1[0] * std::exp(std::max<float>(-80.0f, (0.5f * ((fTemp1 * fTemp5) / fTemp7))))) * (((fTemp10 + (1.0f - fTemp9)) * std::cos((6.28318548f * (fRec4[0] * fTemp10)))) + ((fTemp9 - fTemp10) * std::cos((6.28318548f * (fRec4[0] * (fTemp10 + 1.0f))))))) * std::sqrt(((0.5f * (fTemp1 / fTemp7)) + 1.0f))) * fTemp11) * fTemp12) + (0.5f * ((((fRec12[0] * std::exp(std::max<float>(-80.0f, (0.5f * ((fTemp13 * fTemp5) / fTemp7))))) * (((fTemp15 + (1.0f - fTemp14)) * std::cos((6.28318548f * (fRec4[0] * fTemp15)))) + ((fTemp14 - fTemp15) * std::cos((6.28318548f * (fRec4[0] * (fTemp15 + 1.0f))))))) * std::sqrt(((0.5f * (fTemp13 / fTemp7)) + 1.0f))) * fTemp16))) + (2.0f * (fRec3[0] * (((((fRec16[0] * std::exp(std::max<float>(-80.0f, (0.5f * ((fTemp17 * fTemp5) / fTemp7))))) * (((fTemp19 + (1.0f - fTemp18)) * std::cos((6.28318548f * (fRec4[0] * fTemp19)))) + ((fTemp18 - fTemp19) * std::cos((6.28318548f * (fRec4[0] * (fTemp19 + 1.0f))))))) * std::sqrt(((0.5f * (fTemp17 / fTemp7)) + 1.0f))) + (((fRec20[0] * std::exp(std::max<float>(-80.0f, (0.5f * ((fTemp20 * fTemp5) / fTemp7))))) * (((fTemp22 + (1.0f - fTemp21)) * std::cos((6.28318548f * (fRec4[0] * fTemp22)))) + ((fTemp21 - fTemp22) * std::cos((6.28318548f * (fRec4[0] * (fTemp22 + 1.0f))))))) * std::sqrt(((0.5f * (fTemp20 / fTemp7)) + 1.0f)))) + (((fRec24[0] * std::exp(std::max<float>(-80.0f, (0.5f * ((fTemp23 * fTemp5) / fTemp7))))) * (((fTemp25 + (1.0f - fTemp24)) * std::cos((6.28318548f * (fRec4[0] * fTemp25)))) + ((fTemp24 - fTemp25) * std::cos((6.28318548f * (fRec4[0] * (fTemp25 + 1.0f))))))) * std::sqrt(((0.5f * (fTemp23 / fTemp7)) + 1.0f))))))) + (0.600000024f * (((fRec11[0] * std::exp(std::max<float>(-80.0f, (11250.0f * (fTemp5 / fTemp7))))) * (((fTemp27 + (1.0f - fTemp26)) * std::cos((6.28318548f * (fRec4[0] * fTemp27)))) + ((fTemp26 - fTemp27) * std::cos((6.28318548f * (fRec4[0] * (fTemp27 + 1.0f))))))) * std::sqrt(((11250.0f / fTemp7) + 1.0f))))) * (1.0f - ((0.800000012f * fRec29[0]) + (0.5f * fRec30[0])))) + (0.600000024f * (fRec11[0] * ((fRec31[0] / fTemp58) + (fRec31[2] * (0.0f - (1.0f / fTemp58))))))));
+			fVec1[0] = fTemp59;
+			float fTemp60 = (0.25f * fTemp59);
+			float fTempFTZ36 = (fConst5 + (fRec38[1] - std::floor((fConst5 + fRec38[1]))));
+			fRec38[0] = ((std::fabs(fTempFTZ36) > 1.17549435e-38f) ? fTempFTZ36 : 0.0f);
+			float fTemp61 = (3.0f * ftbl0FaustVoiceDSPSIG0[int((65536.0f * fRec38[0]))]);
+			float fTemp62 = (fTemp61 + 8.5f);
+			int iTemp63 = int(fTemp62);
+			float fTemp64 = std::floor(fTemp62);
+			float fTemp65 = ((fVec1[std::min<int>(4097, std::max<int>(0, iTemp63))] * (fTemp64 + (-7.5f - fTemp61))) + ((fTemp61 + (8.5f - fTemp64)) * fVec1[std::min<int>(4097, std::max<int>(0, (iTemp63 + 1)))]));
+			output0[i0] = FAUSTFLOAT((fTemp60 + (0.0874999985f * fTemp65)));
+			output1[i0] = FAUSTFLOAT((fTemp60 - (0.0437499993f * fTemp65)));
 			fRec0[1] = fRec0[0];
 			fRec1[1] = fRec1[0];
 			fRec3[1] = fRec3[0];
@@ -549,12 +625,26 @@ class FaustVoiceDSP : public dsp {
 			fRec26[1] = fRec26[0];
 			fRec28[1] = fRec28[0];
 			fRec29[1] = fRec29[0];
-			fRec30[2] = fRec30[1];
 			fRec30[1] = fRec30[0];
-			for (int j0 = 13; (j0 > 0); j0 = (j0 - 1)) {
-				fVec1[j0] = fVec1[(j0 - 1)];
+			for (int j0 = 3; (j0 > 0); j0 = (j0 - 1)) {
+				fRec32[j0] = fRec32[(j0 - 1)];
 			}
+			fRec37[2] = fRec37[1];
+			fRec37[1] = fRec37[0];
+			fRec36[2] = fRec36[1];
+			fRec36[1] = fRec36[0];
+			fRec35[2] = fRec35[1];
+			fRec35[1] = fRec35[0];
+			fRec34[2] = fRec34[1];
+			fRec34[1] = fRec34[0];
+			fRec33[2] = fRec33[1];
+			fRec33[1] = fRec33[0];
+			fRec31[2] = fRec31[1];
 			fRec31[1] = fRec31[0];
+			for (int j1 = 13; (j1 > 0); j1 = (j1 - 1)) {
+				fVec1[j1] = fVec1[(j1 - 1)];
+			}
+			fRec38[1] = fRec38[0];
 		}
 	}
 

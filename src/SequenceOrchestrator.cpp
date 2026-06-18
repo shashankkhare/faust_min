@@ -455,30 +455,10 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
                 }
                 
                 if (effectiveOffset <= seqWrapper->currentSample + framesToProcess) {
-                    if (ev.type == UMLEventType::NoteOn) {
-                        int instID = seqWrapper->sequenceObj->instrumentID;
-                        if (instID == 32) {
-                            // First phoneme note? Initialize currentPhoneme if needed.
-                            std::string notePhoneme = ev.note;
-                            if (ev.vowelVal >= 0.0f) {
-                                // Vowel values mapping from UMLParser
-                                if (ev.vowelVal == 0.0f) notePhoneme = "aa";
-                                else if (ev.vowelVal == 1.0f) notePhoneme = "ee";
-                                else if (ev.vowelVal == 2.0f) notePhoneme = "ii";
-                                else if (ev.vowelVal == 3.0f) notePhoneme = "oo";
-                                else if (ev.vowelVal == 4.0f) notePhoneme = "uu";
-                            }
-                            // Set base params
-                            if (mVoiceMatrix.count({notePhoneme, "NONE"})) {
-                                auto& steady = mVoiceMatrix[{notePhoneme, "NONE"}];
-                                for (auto& kv : steady.targetParams) {
-                                    if (inst) inst->setParamImmediate(kv.first.c_str(), kv.second, -1);
-                                }
-                            }
-                            seqWrapper->currentPhoneme = notePhoneme;
-                        } else {
-                            updateDSPParams(seqWrapper, ev.frequency, ev.velocity, ev.strikeVal, ev.note);
-                        }
+                    if (ev.type == UMLEventType::PhonemeOn) {
+                        seqWrapper->currentPhoneme = ev.note;
+                    } else if (ev.type == UMLEventType::NoteOn) {
+                        updateDSPParams(seqWrapper, ev.frequency, ev.velocity, ev.strikeVal, ev.note);
                         if (inst) {
                             float durationSec = static_cast<float>(ev.durationSamples) / inst->getSampleRate();
                             
@@ -555,7 +535,7 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
                             inst->setParam("vibrato_rate", vRate);
                         }
                     } else if (ev.type == UMLEventType::PhonemeGlide) {
-                        if (inst && seqWrapper->sequenceObj->instrumentID == 32) {
+                        if (inst) {
                             seqWrapper->inPhonemeGlide = true;
                             
                             std::string tNote = ev.targetNote;
