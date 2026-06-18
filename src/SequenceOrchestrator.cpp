@@ -421,6 +421,7 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
                         seqWrapper->currentSample = 0;
                         seqWrapper->nextEventIndex = 0;
                     } else {
+                        if (auto* mutedInst = seq->getFaustInstrument()) mutedInst->noteOff();
                         seqWrapper->isPlaying.store(false, std::memory_order_release);
                         notifyFinished(seq->name);
                         break;
@@ -610,6 +611,7 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
                     seqWrapper->currentSample = 0;
                     seqWrapper->nextEventIndex = 0;
                 } else {
+                    if (inst) inst->noteOff();
                     seqWrapper->isPlaying.store(false, std::memory_order_release);
                     notifyFinished(seq->name);
                     break;
