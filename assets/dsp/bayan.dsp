@@ -21,7 +21,7 @@ import("stdfaust.lib");
 // strike 3: Ke  — Closed edge hit, sharp attack, no glide
 
 baseFreq = hslider("freq",     110.0, 40, 400, 0.1);
-gain     = hslider("gain",     0.9,   0,  1,   0.01);
+gain     = hslider("gain",     0.9,   0,  10,   0.01);
 velocity = hslider("velocity", 1.0,   0,  1,   0.01);
 gate     = button("gate");
 strike   = hslider("strike",   1,     0,  3,   1);
@@ -99,4 +99,4 @@ bayan = myResonator(smoothedFreq * 1.00, 1.8, bg1, exciter) +
 // =====================================================
 // Output — tanh saturation for natural head compression
 // =====================================================
-process = (bayan * dynamicDrive * 20.0 : ma.tanh) * gain;
+process = (bayan * dynamicDrive * 20.0 : ma.tanh) * gain * 11.9582;

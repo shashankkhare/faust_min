@@ -68,7 +68,7 @@ void testDayan(FaustMixer& mixer, DSPExecutionType execType) {
         double freq = freqs[i];
         float strike = static_cast<float>(i % 4);
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestVelocity, strike);
+        inst->noteOn(freq, gTestAmplitude, gTestVelocity, strike);
         usleep(2500000);
         inst->noteOff();
         if (i < freqs.size() - 1) usleep(1500000);
@@ -90,9 +90,9 @@ void testBayan(FaustMixer& mixer, DSPExecutionType execType) {
     std::vector<double> freqs = getTestFreqsDouble({ 65.41, 85.00, 105.00, 130.81 });
     for (size_t i = 0; i < freqs.size(); ++i) {
         double freq = freqs[i];
-        float strike = static_cast<float>(i % 4);
+        float strike = (gTestFrequency > 0.0) ? 1.0f : static_cast<float>(i % 4);
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestVelocity, strike);
+        inst->noteOn(freq, gTestAmplitude, gTestVelocity, strike);
         usleep(2500000);
         inst->noteOff();
         if (i < freqs.size() - 1) usleep(1500000);
@@ -116,7 +116,7 @@ void testMridangam(FaustMixer& mixer, DSPExecutionType execType) {
         double freq = freqs[i];
         float strike = static_cast<float>(i % 6);
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestVelocity, strike);
+        inst->noteOn(freq, gTestAmplitude, gTestVelocity, strike);
         usleep(2500000);
         inst->noteOff();
         if (i < freqs.size() - 1) usleep(1500000);
@@ -140,7 +140,7 @@ void testGhatam(FaustMixer& mixer, DSPExecutionType execType) {
         double freq = freqs[i];
         float strike = static_cast<float>(i % 5);
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestVelocity, strike);
+        inst->noteOn(freq, gTestAmplitude, gTestVelocity, strike);
         usleep(2500000);
         inst->noteOff();
         if (i < freqs.size() - 1) usleep(1500000);
@@ -404,10 +404,21 @@ void testTanpura(FaustMixer& mixer, DSPExecutionType execType) {
     std::vector<double> freqs = getTestFreqsDouble({ 130.00, 180.50, 231.00 });
     for (size_t i = 0; i < freqs.size(); ++i) {
         double freq = freqs[i];
-        inst->setParam("freq1", freq * 1.5f);
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
-        usleep(4000000);
+        
+        // Trigger 4 voices rapidly within 100ms with the SAME frequency
+        inst->noteOn(freq, gTestAmplitude, gTestVelocity, -1.0f);
+        usleep(25000); // 25ms delay
+        
+        inst->noteOn(freq, gTestAmplitude, gTestVelocity, -1.0f);
+        usleep(25000); // 25ms delay
+        
+        inst->noteOn(freq, gTestAmplitude, gTestVelocity, -1.0f);
+        usleep(25000); // 25ms delay
+        
+        inst->noteOn(freq, gTestAmplitude, gTestVelocity, -1.0f);
+        usleep(3925000); // Wait for remaining 3.925s of the 4-second measurement
+        
         inst->noteOff();
         if (i < freqs.size() - 1) usleep(500000);
         printEnergy(inst.get(), freq);
@@ -1325,7 +1336,7 @@ void testSarod(FaustMixer& mixer, DSPExecutionType execType) {
     });
     for (double freq : freqs) {
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
+        inst->noteOn(freq, gTestAmplitude, gTestVelocity, -1.0f);
         usleep(1500000);
         inst->noteOff();
         usleep(300000);
@@ -1333,16 +1344,20 @@ void testSarod(FaustMixer& mixer, DSPExecutionType execType) {
         if (&freq != &freqs.back()) std::cout << " , ";
         std::cout << std::flush;
     }
-    std::cout << " , ";
+    // Only play chikari test during full frequency sweep, not during calibration (single freq)
+    if (gTestFrequency <= 0.0) {
+        std::cout << " , ";
 
-    inst->clearDiagnosticLogs();
-    inst->setParam("chikari_freq", 880.0f);
-    inst->noteOn(freqs.back(), gTestVelocity, 1.0f, gTestAmplitude);
-    usleep(2000000);
-    inst->noteOff();
-    usleep(500000);
-    printEnergy(inst.get(), freqs.back());
-    std::cout << "_chikari" << std::flush;
+        inst->clearDiagnosticLogs();
+        inst->setParam("chikari_freq1", 111.0f);
+        inst->setParam("chikari_freq2", 166.5f);
+        inst->noteOn(freqs.back(), gTestAmplitude, gTestVelocity, 1.0f);
+        usleep(2000000);
+        inst->noteOff();
+        usleep(500000);
+        printEnergy(inst.get(), freqs.back());
+        std::cout << "_chikari" << std::flush;
+    }
     std::cout << std::endl;
 
     mixer.removeTrack(track);

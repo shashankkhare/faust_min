@@ -146,6 +146,10 @@ Used to bind multiple pitches together into a single simultaneous strike (Chord)
 - **Example**: `4C4|E4|G4 . . . _`
   - *Plays a C Major chord (C, E, G) for 3 units, then stops.*
 
+#### `%` (NOOP Pitch Modifier)
+Triggers the note (with new velocity/strike) but intentionally ignores and preserves the previous frequency. This allows the primary string to continue ringing at its original pitch underneath secondary strikes.
+- **Example**: `61%` (instead of `61Sa` for Chikari strings, to prevent the melody string from pitch-bending).
+
 **Complex Example**: `4Sa . ~ . ^ . 5Re`
 *(Plays Sa for 1 unit, swells in vibrato at the 2nd unit, starts gliding towards Re at the 4th unit)*
 

@@ -6,6 +6,12 @@ Produces consistent perceived loudness across all frequencies for an instrument.
 
 ## Steps
 
+### 0. Preparation
+
+Before running the calibration script, ensure the `gain` slider in the instrument's `.dsp` file has a sufficient maximum range (e.g., `100` instead of `1`). If the range is capped at `1`, the script will fail to hit the target energy if it needs to amplify the signal significantly.
+
+Change `gain = hslider("gain", 1.0, 0, 1, 0.01);` to `gain = hslider("gain", 1.0, 0, 100, 0.01);`.
+
 ### a. Measure & Fit
 
 Run the calibration script to measure the instrument's energy output at each (frequency, amplitude) pair in its CSV, then adjust the `gain` column so that `amp=1.0` produces energy ≈ 0.3.

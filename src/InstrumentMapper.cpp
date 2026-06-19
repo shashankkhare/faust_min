@@ -178,6 +178,7 @@ bool InstrumentMapper::isIdiophone(int id) {
 
 int InstrumentMapper::getPolyphonyVoices(int id) {
     switch (id) {
+        case 11: return 4; // Tanpura
         case 12: return 6; // Piano
         case 21: return 6; // Acoustic Guitar
         case 22: return 6; // Electric Guitar

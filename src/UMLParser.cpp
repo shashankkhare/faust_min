@@ -557,7 +557,8 @@ void UMLParser::handlePitchedToken(const TokenItem& ti, float amplitudeScalar, l
             noteEv.frequency = freq;
             noteEv.velocity = -1.0f; // Reserved for later use per user
             noteEv.amplitude = amplitudeScalar;
-            noteEv.strikeVal = ti.strikeVal;
+            // Default to 0.0 (melody) if unspecified, unless it's a NOOP (%) which stays sticky (-1.0)
+            noteEv.strikeVal = (ti.strikeVal >= 0.0f) ? ti.strikeVal : (ti.rawStr.find('%') != std::string::npos ? -1.0f : 0.0f);
             noteEv.type = UMLEventType::NoteOn;
             noteEv.note = noteStr;
             noteEv.durationSamples = durationSamples;
@@ -623,11 +624,21 @@ void UMLParser::handlePitchedToken(const TokenItem& ti, float amplitudeScalar, l
         }
     }
 
+    bool nextIsNoop = (nextTokenIndex < tokenItemsArray.size() && 
+                       tokenItemsArray[nextTokenIndex].rawStr.find('%') != std::string::npos);
+
+    bool nextIsNote = (nextTokenIndex < tokenItemsArray.size() &&
+                       tokenItemsArray[nextTokenIndex].type == TokenType::NoteWithControl);
+
+    bool shouldBypassNoteOff = false;
+    if (ti.rawStr.find('%') != std::string::npos || nextIsNoop) {
+        shouldBypassNoteOff = true; // Always bypass for NOOP/Chikari
+    } else if (InstrumentMapper::getIDFromName(instrument) == 44 && nextIsNote) {
+        shouldBypassNoteOff = true; // Sarod: let strings ring continuously into the next pluck
+    }
+
     // If no glide is present, schedule a NoteOff event.
-    // Fire early if next token is another note for smooth release decay before noteOn.
-    if (!hasGlide) {
-        bool nextIsNote = (nextTokenIndex < tokenItemsArray.size() && 
-                           tokenItemsArray[nextTokenIndex].type == TokenType::NoteWithControl);
+    if (!hasGlide && !shouldBypassNoteOff) {
         long lookAhead = 0;
         if (nextIsNote) {
             long maxLA = (long)(0.03 * sampleRate);
@@ -685,6 +696,8 @@ static double parseWesternPitch(const std::string& token) {
 }
 
 double UMLParser::getFrequency(const std::string& token, const std::string& notation, double baseFreq, const std::string& instrument) {
+    if (token == "%") return -1.0;
+    
     // 0. Numeric Check (Direct Frequency)
     try {
         if (!token.empty() && std::isdigit(token[0])) {

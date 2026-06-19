@@ -31,7 +31,7 @@ symp_gain = hslider("symp_gain", 0, 0, 1, 0.01);
 strike = hslider("strike", 0, 0, 2, 1);
 chikari_freq1 = hslider("chikari_freq1", 111.0, 40, 2000, 0.01);
 chikari_freq2 = hslider("chikari_freq2", 166.5, 40, 2000, 0.01);
-chikari_gain = hslider("chikari_gain", 0.25, 0, 1, 0.01);
+chikari_gain = hslider("chikari_gain", 0.0, 0, 1, 0.01);
 j_h = hslider("jawari_hardness", 0.05, 0, 0.5, 0.001);
 
 // Velocity-dependent release time (2ms at vel=0, 10ms at vel=1)
@@ -73,12 +73,19 @@ with {
 chikari_pluck_env = en.ar(0.003, 0.015, chikari_pluck_gate);
 chikari_trig_exc = (no.noise : fi.bandpass(2, 80.0, 400.0)) * 0.2 * chikari_pluck_env * velocity;
 
-// Melody string parameters
-normFreq = (freq - 80.0) / (800.0 - 80.0) : min(1.0) : max(0.0);
-dynSustain = 4.0 - normFreq * 3.2; // 4.0s sustain for low notes, 0.8s for high notes
-feedback_gain = pow(0.001, 1.0 / (dynSustain * freq));
+smooth_reset(c, t, x) = loop ~ _
+with {
+    loop(y1) = ba.if(t, x, x * (1 - c) + y1 * c);
+};
 
-del = ma.SR / freq;
+// Melody string parameters
+melody_freq = (freq * (1 - is_chikari)) : + ~ *(is_chikari);
+smooth_melody_freq = melody_freq : smooth_reset(0.999, trig);
+normFreq = (smooth_melody_freq - 80.0) / (800.0 - 80.0) : min(1.0) : max(0.0);
+dynSustain = 4.0 - normFreq * 3.2; // 4.0s sustain for low notes, 0.8s for high notes
+feedback_gain = pow(0.001, 1.0 / (dynSustain * smooth_melody_freq));
+
+del = ma.SR / smooth_melody_freq;
 
 // Fretless steel fingerboard collision model (asymmetric soft clipping)
 fingerboard(x) = ba.if(abs(x) > 0.8, sign(x) * (0.8 + (abs(x) - 0.8) * 0.15), x)
@@ -92,7 +99,10 @@ bridge_contact(x) = max(0, x * 5.0);
 jivari_mod = j_h * 600.0;
 dynamic_delay(x) = de.fdelay(16384, max(2.0, del - jivari_mod * bridge_contact(x)), x);
 
-stringLoop = melody_exc : (+ : dynamic_delay) ~ (dispersion : fingerboard : _ * feedback_gain * gate * (1 - is_chikari));
+melody_gate = max(gate, is_chikari) : si.smoo;
+chikari_gate = max(gate, 1 - is_chikari) : si.smoo;
+
+stringLoop = melody_exc : (+ : dynamic_delay) ~ (dispersion : fingerboard : _ * feedback_gain * melody_gate);
 
 // Goatskin membrane modes in parallel (20 non-degenerate eigenmodes from Manaswi et al. 2013)
 membrane_filter(x) = 
@@ -148,7 +158,7 @@ symp_ks3 = symp_exc : (+ : de.fdelay(16384, symp_del3 - 1.0)) ~ _ * symp_fb;
 symp_strings_ks = (symp_ks1 + symp_ks2 + symp_ks3) / 3;
 
 // 4 Chikari strings: detuned pairs (±1 Hz) for each chikari frequency
-chikari_string(del, fb, exc) = exc : (+ : de.fdelay(16384, del - 1.0)) ~ (*(0.95) : + ~ *(0.05) : _ * fb);
+chikari_string(del, fb, exc) = exc : (+ : de.fdelay(16384, del - 1.0)) ~ (*(0.95) : + ~ *(0.05) : _ * fb * chikari_gate);
 
 chikari_1a_del = ma.SR / (chikari_freq1 - 1.0);
 chikari_1a_fb = pow(0.001, 1.0 / (2.5 * (chikari_freq1 - 1.0)));

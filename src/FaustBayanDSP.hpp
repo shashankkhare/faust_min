@@ -147,7 +147,7 @@ class FaustBayanDSP : public dsp {
 	virtual void buildUserInterface(UI* ui_interface) {
 		ui_interface->openVerticalBox("bayan");
 		ui_interface->addHorizontalSlider("freq", &fHslider3, FAUSTFLOAT(110.0f), FAUSTFLOAT(40.0f), FAUSTFLOAT(400.0f), FAUSTFLOAT(0.100000001f));
-		ui_interface->addHorizontalSlider("gain", &fHslider0, FAUSTFLOAT(0.899999976f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("gain", &fHslider0, FAUSTFLOAT(0.899999976f), FAUSTFLOAT(0.0f), FAUSTFLOAT(10.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addButton("gate", &fButton0);
 		ui_interface->addHorizontalSlider("meend", &fHslider4, FAUSTFLOAT(1.20000005f), FAUSTFLOAT(0.5f), FAUSTFLOAT(4.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addHorizontalSlider("strike", &fHslider1, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(3.0f), FAUSTFLOAT(1.0f));
@@ -157,7 +157,7 @@ class FaustBayanDSP : public dsp {
 	
 	virtual void compute(int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs) {
 		FAUSTFLOAT* output0 = outputs[0];
-		float fSlow0 = float(fHslider0);
+		float fSlow0 = (11.9582005f * float(fHslider0));
 		float fSlow1 = float(fHslider1);
 		int iSlow2 = (fSlow1 >= 2.0f);
 		int iSlow3 = (fSlow1 >= 1.0f);

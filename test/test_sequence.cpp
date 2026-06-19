@@ -263,8 +263,10 @@ int main(int argc, char* argv[]) {
                 "notation: Hindustani\n"
                 "loop: true\n"
                 "\n"
-                "5Sa............... _............... "
-                "5Sa............... _...............";
+                "5Pa... 5Sa... 5Sa... 5Sa/2... "
+                "5Pa... 5Sa... 5Sa... 5Sa/2... "
+                "5Pa... 5Sa... 5Sa... 5Sa/2... "
+                "5Pa... 5Sa... 5Sa... 5Sa/2... ";
             
             // Raag Darbari Kanada — late-night, majestic, deep
             // Arohana: Sa Re ga ma Pa dha ni Sa*
@@ -279,15 +281,17 @@ int main(int argc, char* argv[]) {
                 "glide: 0.03\n"
                 "vibrato_depth: 0.02\n"
                 "vibrato_rate: 5.5\n"
-                // --- Alaap (64 cells) — slow, spacious, meend between notes, rests separate phrases ---
-                "5Sa.. _ _ _ _ _ \n"                      // Sa rings 3 cells, 5 cells rest
-                "5Sa.^ 8re.. _ _ _ \n"                    // Sa→meend, re rings, 3 cells rest
-                "8re.^ 8ga.. _ _ _ \n"                    // re→meend, ga rings, 3 cells rest
-                "8ga.. _ _ _ _ _ \n"                      // ga rings 3 cells (andolan), 5 rest
-                "3Ma _ 8ga.^ 8re _ _ _ \n"                // Ma, rest, ga→re meend, re, rest
-                "8re.^ 5Sa.. _ _ _ \n"                    // re→Sa meend, Sa rings, 3 rest
-                "8ni _ 6dha _ _ _ _ _ \n"                 // ni, rest, dha, 5 cells rest
-                "6dha.^ 5Sa.. _ _ _ \n"                   // dha→Sa meend, Sa rings, 3 rest
+                "chikari_freq1: 222.0\n"
+                "chikari_freq2: 333.0\n"
+                // --- Alaap (64 cells) — slow, spacious, meend between notes, natural decay ---
+                "5Sa.. . . . . . \n"                      // Sa rings 3 cells, 5 cells natural decay
+                "5Sa.^ 8re.. . . . \n"                    // Sa→meend, re rings, 3 cells natural decay
+                "8re.^ 8ga.. . . . \n"                    // re→meend, ga rings, 3 cells natural decay
+                "8ga.. . . . . . \n"                      // ga rings 3 cells (andolan), 5 natural decay
+                "3Ma . 8ga.^ 8re . . . \n"                // Ma, natural decay, ga→re meend, re, natural decay
+                "8re.^ 5Sa.. . . . \n"                    // re→Sa meend, Sa rings, 3 natural decay
+                "8ni . 6dha . . . . . \n"                 // ni, natural decay, dha, 5 cells natural decay
+                "6dha.^ 5Sa.. . . . \n"                   // dha→Sa meend, Sa rings, 3 natural decay
                 // --- Jod (128 cells) — medium pulse, rhythmic Darbari patterns ---
                 "8re . 8ga . 8re . 5Sa . \n"
                 "8re . 8ga . 3Ma . 6Pa . \n"
@@ -306,9 +310,10 @@ int main(int argc, char* argv[]) {
                 "8ga . 3Ma . 6dha . 6Pa . \n"
                 "8re . 8ga . 8re . 5Sa . \n"
                 // --- Jhala (144 cells) — fast chikari patterns ---
-                "61Sa 8ga~ 61Sa 8ga~ 61Sa 8re~ 61Sa 8ga~ \n"
-                "61Sa 8ni~ 61Sa 8dha~ 61Sa 6Pa~ 61Sa 3Ma~ \n"
-                "61Sa 8ga~ 61Sa 8re~ 61Sa 5Sa~ 61Sa 8ga~ \n"
+                "61% 8ga~ 61% 8ga~ 61% 8re~ 61% 8ga~ \n"
+                "61% 8re~ 61% 8re~ 61% 8Sa~ 61% 8re~ \n"
+                "61% 8Sa~ 61% 8Sa~ 61% 8ni~ 61% 8Sa~ \n"
+                "61% 8ni~ 61% 8ni~ 61% 8dha~ 61% 8ni~ \n"
                 "81re 8ga~ 81re 8ga~ 81ni 8dha~ 81ni 6Pa~ \n"
                 "81re 8ga~ 81re 5Sa~ 81re 8ga~ 81re 3Ma~ \n"
                 "81ga 8re~ 81ga 8re~ 81ga 5Sa~ 81ga 8re~ \n"
@@ -809,7 +814,8 @@ int main(int argc, char* argv[]) {
                 "instrument: tanpura\n"
                 "notation: Hindustani\n"
                 "loop: true\n\n"
-                "5Pa...... 5Sa...... "; // Short sequence that loops independently
+                "5Pa. 5Sa. 5Sa. 5Sa/2. "
+                "5Pa. 5Sa. 5Sa. 5Sa/2. "; // Short sequence that loops independently
                 
             std::string umlSitar = 
                 "grid: 4\n"
@@ -942,14 +948,16 @@ int main(int argc, char* argv[]) {
             
             std::string umlTanpura = 
                 "grid: 4\n"
-                "bpm: 80\n"
+                "bpm: 90\n"
                 "basefreq: 222.0\n"
                 "instrument: tanpura\n"
                 "notation: Hindustani\n"
                 "loop: true\n"
                 "\n"
-                "5Sa............... _............... "
-                "5Sa............... _...............";
+                "5Pa... 5Sa... 5Sa... 5Sa/2... "
+                "5Pa... 5Sa... 5Sa... 5Sa/2... "
+                "5Pa... 5Sa... 5Sa... 5Sa/2... "
+                "5Pa... 5Sa... 5Sa... 5Sa/2... ";
             
             // Faster Sarod in Raag Yaman (Ni Re Ga Ma Dha Ni Sa)
             // Structure: Alaap (with glides), Jod, Jhala
@@ -962,7 +970,8 @@ int main(int argc, char* argv[]) {
                 "glide: 0.06\n"
                 "vibrato_depth: 0.02\n"
                 "vibrato_rate: 5.5\n"
-                "chikari_freq: 222.0\n"
+                "chikari_freq1: 222.0\n"
+                "chikari_freq2: 333.0\n"
                 // Alaap — slow with long meend glides (^)
                 "5Sa..^ 5Sa..^ 8Ni..^ 5Sa..^ \n"
                 "8Ni..^ 8Ga..^ 8Re..^ 8Ni..~ \n"

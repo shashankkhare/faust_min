@@ -495,13 +495,19 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
                             if (seqWrapper->sequenceObj->initialParams.count("chikari_freq")) {
                                 inst->setParamImmediate("chikari_freq", seqWrapper->sequenceObj->initialParams["chikari_freq"], -1);
                             }
+                            if (seqWrapper->sequenceObj->initialParams.count("chikari_freq1")) {
+                                inst->setParamImmediate("chikari_freq1", seqWrapper->sequenceObj->initialParams["chikari_freq1"], -1);
+                            }
+                            if (seqWrapper->sequenceObj->initialParams.count("chikari_freq2")) {
+                                inst->setParamImmediate("chikari_freq2", seqWrapper->sequenceObj->initialParams["chikari_freq2"], -1);
+                            }
                             if (seqWrapper->sequenceObj->initialParams.count("freq_right")) {
                                 inst->setParamImmediate("freq_right", seqWrapper->sequenceObj->initialParams["freq_right"], -1);
                             } else if (seqWrapper->sequenceObj->baseFreq > 0) {
                                 inst->setParamImmediate("freq_right", seqWrapper->sequenceObj->baseFreq * 1.5f, -1);
                             }
                             if (ev.frequency > 0.0f) {
-                                inst->noteOn(ev.frequency, dynamicVelocity, ev.strikeVal, ev.amplitude);
+                                inst->noteOn(ev.frequency, ev.amplitude, dynamicVelocity, ev.strikeVal);
                             }
                         }
                     } else if (ev.type == UMLEventType::NoteOff) {

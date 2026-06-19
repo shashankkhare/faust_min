@@ -23,29 +23,27 @@ def resolve_id(name_or_id):
     """Resolve an instrument name or numeric ID to (id, name)."""
     try:
         id_val = int(name_or_id)
-        # Numeric ID — scan CSV dir for a matching instrument
-        for f in os.listdir(CSV_DIR):
-            if f.endswith('.csv'):
-                name = f[:-4]
-                cmd = [TEST_BINARY, "--get-id", name]
-                r = subprocess.run(cmd, capture_output=True, text=True, timeout=5, cwd=WORK_DIR)
-                output = r.stdout.strip().split('\n')[-1].strip()
-                if r.returncode == 0 and output == str(id_val):
-                    return id_val, name
-        print(f"ERROR: no CSV found for instrument ID {id_val}")
+        # Numeric ID — find name by scanning available instruments output
+        cmd = [TEST_BINARY, "--get-id", "none"]
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=5, cwd=WORK_DIR, input="-1\n")
+        for line in r.stdout.split('\n'):
+            m = re.search(r'ID\s+(\d+)\s*:\s*(\S+)', line)
+            if m and int(m.group(1)) == id_val:
+                name = m.group(2)
+                return id_val, name
+        print(f"ERROR: no instrument found for ID {id_val}")
         sys.exit(1)
     except ValueError:
         # String name — resolve ID via test binary
         name = name_or_id
         cmd = [TEST_BINARY, "--get-id", name]
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=5, cwd=WORK_DIR)
-        try:
-            output = result.stdout.strip().split('\n')[-1].strip()
-            id_val = int(output)
-            return id_val, name
-        except:
-            print(f"ERROR: unknown instrument '{name}'")
-            sys.exit(1)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=5, cwd=WORK_DIR, input="-1\n")
+        for line in result.stdout.split('\n'):
+            m = re.search(r'ID\s+(\d+)\s*:\s*(\S+)', line)
+            if m and m.group(2).lower() == name.lower():
+                return int(m.group(1)), m.group(2)
+        print(f"ERROR: unknown instrument '{name}'")
+        sys.exit(1)
 
 def csv_path(instrument_name):
     return os.path.join(CSV_DIR, f"{instrument_name.lower()}.csv")
@@ -83,9 +81,13 @@ def measure(instrument_id, freq, amp):
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=15, cwd=WORK_DIR)
         for line in reversed(result.stdout.strip().split('\n')):
-            m = re.match(r'^([\d.]+)\s*,\s*([\d.eE+-]+)$', line.strip())
-            if m:
-                return float(m.group(2))
+            parts = line.split(' , ')
+            for part in parts:
+                m = re.match(r'^\s*([\d.]+)\s*,\s*([\d.eE+-]+)', part)
+                if m:
+                    f_val = float(m.group(1))
+                    if abs(f_val - freq) < 0.1:
+                        return float(m.group(2))
         return None
     except subprocess.TimeoutExpired:
         return None
@@ -182,20 +184,35 @@ def main():
             if abs(a - 1.0) < 0.01:
                 continue
 
-            e = measure(instrument_id, freq, a)
-            if e is None:
-                continue
+            for iteration in range(3):
+                e = measure(instrument_id, freq, a)
+                if e is None:
+                    break
 
-            sqrt_e = math.sqrt(e)
-            target_sqrt = sqrt_e_ref * a
-            old_g = r[gain_col]
-            new_g = round(old_g * target_sqrt / sqrt_e, 4) if sqrt_e > 0 else old_g
-            new_g = max(0.01, min(50.0, new_g))
-            print(f"    {a:5.1f} {old_g:8.4f} {e:12.6f} {sqrt_e:12.6f} {target_sqrt:12.6f} {new_g:8.4f}")
-
-            if abs(new_g - r[gain_col]) > 0.0001:
-                r[gain_col] = new_g
-                total_changes += 1
+                sqrt_e = math.sqrt(e)
+                target_sqrt = sqrt_e_ref * a
+                
+                target_e = target_sqrt ** 2
+                low = target_e * (1.0 - TARGET_TOLERANCE)
+                high = target_e * (1.0 + TARGET_TOLERANCE)
+                
+                old_g = r[gain_col]
+                
+                if low <= e <= high:
+                    print(f"    {a:5.1f} {old_g:8.4f} {e:12.6f} {sqrt_e:12.6f} {target_sqrt:12.6f} {'OK':>8}")
+                    break
+                
+                new_g = round(old_g * target_sqrt / sqrt_e, 4) if sqrt_e > 0 else old_g
+                new_g = max(0.01, min(50.0, new_g))
+                
+                print(f"    {a:5.1f} {old_g:8.4f} {e:12.6f} {sqrt_e:12.6f} {target_sqrt:12.6f} {new_g:8.4f}")
+                
+                if abs(new_g - r[gain_col]) > 0.0001:
+                    r[gain_col] = new_g
+                    write_csv(path, header, rows, columns)
+                    total_changes += 1
+                else:
+                    break
 
     if total_changes > 0:
         write_csv(path, header, rows, columns)
