@@ -35,8 +35,3 @@ FaustSnare::FaustSnare(float sampleRate) {
     setDSP(new FaustSnareDSP());
     startInternalStream(sampleRate);
 }
-
-void FaustSnare::strike(float velocity) {
-    setParam("velocity", velocity);
-    noteOn();
-}

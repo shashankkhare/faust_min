@@ -28,7 +28,6 @@
 class FaustKick : public FaustInstrument {
 public:
     FaustKick(float sampleRate);
-    void strike(float velocity);
     int getID() const override { return 2; }
 };
 

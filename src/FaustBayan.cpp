@@ -43,8 +43,3 @@ void FaustBayan::setMeend(float multiplier) {
 void FaustBayan::setMute(bool muted) {
     setParam("strike", muted ? 0.0f : 1.0f); // 0.0 = Ka (muted), 1.0 = Ghe (open)
 }
-
-void FaustBayan::strike(float velocity) {
-    setParam("velocity", velocity);
-    noteOn();
-}

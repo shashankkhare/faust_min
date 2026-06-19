@@ -17,8 +17,3 @@ FaustShakuhachi::FaustShakuhachi(float sampleRate) {
 void FaustShakuhachi::setVibrato(float rate, float depth) {
     // No-op for Shakuhachi
 }
-
-void FaustShakuhachi::strike(float velocity) {
-    setParam("gain", velocity);
-    noteOn();
-}

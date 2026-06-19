@@ -35,8 +35,3 @@ FaustTom::FaustTom(float sampleRate) {
     setDSP(new FaustTomDSP());
     startInternalStream(sampleRate);
 }
-
-void FaustTom::strike(float velocity) {
-    setParam("velocity", velocity);
-    noteOn();
-}

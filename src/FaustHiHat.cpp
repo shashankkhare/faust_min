@@ -36,11 +36,6 @@ FaustHiHat::FaustHiHat(float sampleRate) {
     startInternalStream(sampleRate);
 }
 
-void FaustHiHat::strike(float velocity) {
-    setParam("velocity", velocity);
-    noteOn();
-}
-
 void FaustHiHat::setOpenness(float amount) {
     // Map continuous openness to discrete strike indices if needed, 
     // but here we just set the strike directly for now.

@@ -28,7 +28,6 @@
 class FaustCowbell : public FaustInstrument {
 public:
     FaustCowbell(float sampleRate);
-    void strike(float velocity);
     int getID() const override { return 14; }
 };
 

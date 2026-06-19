@@ -28,7 +28,6 @@
 class FaustHiHat : public FaustInstrument {
 public:
     FaustHiHat(float sampleRate);
-    void strike(float velocity);
     void setOpenness(float amount);
     int getID() const override { return 4; }
 };

@@ -28,7 +28,3 @@ FaustTibetanbowl::FaustTibetanbowl(float sampleRate) {
     setDSP(new FaustTibetanbowlDSP());
     startInternalStream(sampleRate);
 }
-
-void FaustTibetanbowl::strike(float velocity) {
-    noteOn(-1.0f, velocity);
-}

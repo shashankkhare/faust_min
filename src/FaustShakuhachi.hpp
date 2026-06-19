@@ -13,7 +13,6 @@
 class FaustShakuhachi : public FaustInstrument {
 public:
     FaustShakuhachi(float sampleRate);
-    void strike(float velocity);
     void setVibrato(float rate, float depth);
     int getID() const override { return 16; }
 };

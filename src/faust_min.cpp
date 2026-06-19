@@ -222,8 +222,8 @@ DART_EXPORT void instrument_set_parameter(FaustInstrument* inst, const char* nam
     if (inst && name) inst->setParameter(name, value);
 }
 
-DART_EXPORT void instrument_note_on(FaustInstrument* inst, float freq, float velocity, float strike) {
-    if (inst) inst->noteOn(freq, velocity, strike);
+DART_EXPORT void instrument_note_on(FaustInstrument* inst, float freq, float amplitude, float velocity, float strike) {
+    if (inst) inst->noteOn(freq, amplitude, velocity, strike);
 }
 
 DART_EXPORT void instrument_note_off(FaustInstrument* inst) {

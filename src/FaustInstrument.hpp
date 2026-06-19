@@ -83,7 +83,18 @@ public:
     float getSampleRate() const;
     DSPExecutionType getExecutionType() const;
 
-    virtual void noteOn(float freq = -1.0f, float velocity = -1.0f, float strikeVal = -1.0f, float amplitude = -1.0f);
+    /**
+     * Play a note.
+     *
+     * @param freq    Note frequency in Hz. Optional — pass -1.0f for
+     *                instruments with built-in pitch (thunder, wind,
+     *                clap, percussion, etc.).
+     * @param amplitude Output level (required: > 0).
+     * @param velocity  Playing velocity. Optional (-1.0f = DSP default).
+     * @param strikeVal Strike type / articulation. Optional (-1.0f = DSP default).
+     *                For percussion, selects different strokes (open, muted, rim, etc).
+     */
+    virtual void noteOn(float freq = -1.0f, float amplitude = 0.5f, float velocity = -1.0f, float strikeVal = -1.0f);
     virtual void noteOff(int voiceIndex = -1, float decayTailMs = 0.0f);
     void render(int numFrames, float* buffer);
 

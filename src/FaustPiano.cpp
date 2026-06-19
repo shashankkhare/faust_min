@@ -43,9 +43,3 @@ void FaustPiano::setSustain(float sustain) {
 void FaustPiano::setStiffness(float stiffness) {
     setParam("stiffness", stiffness);
 }
-
-void FaustPiano::strike(float velocity, float hardness) {
-    setParam("hardness", hardness);
-    setParam("gain", velocity);
-    noteOn();
-}

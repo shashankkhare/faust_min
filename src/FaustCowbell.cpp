@@ -35,8 +35,3 @@ FaustCowbell::FaustCowbell(float sampleRate) {
     setDSP(new FaustCowbellDSP());
     startInternalStream(sampleRate);
 }
-
-void FaustCowbell::strike(float velocity) {
-    setParam("velocity", velocity);
-    noteOn();
-}

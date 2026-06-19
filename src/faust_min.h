@@ -75,7 +75,6 @@ DART_EXPORT void bowl_set_frequency(FaustBowl* bowl, float freq);
 DART_EXPORT void bowl_set_duration(FaustBowl* bowl, float seconds);
 DART_EXPORT void bowl_set_rub(FaustBowl* bowl, float rub);
 DART_EXPORT void bowl_set_waver(FaustBowl* bowl, float waver);
-DART_EXPORT void bowl_strike(FaustBowl* bowl, float velocity);
 DART_EXPORT void bowl_note_on(FaustBowl* bowl, float freq, float velocity);
 DART_EXPORT void bowl_note_off(FaustBowl* bowl);
 DART_EXPORT void bowl_render(FaustBowl* bowl, int numFrames, float* buffer);
@@ -85,7 +84,6 @@ DART_EXPORT FaustDayan* dayan_create(float sampleRate);
 DART_EXPORT void dayan_destroy(FaustDayan* dayan);
 DART_EXPORT void dayan_set_frequency(FaustDayan* dayan, float freq);
 DART_EXPORT void dayan_set_mute(FaustDayan* dayan, int muted);
-DART_EXPORT void dayan_strike(FaustDayan* dayan, float velocity);
 DART_EXPORT void dayan_note_on(FaustDayan* dayan, float freq, float velocity);
 DART_EXPORT void dayan_note_off(FaustDayan* dayan);
 DART_EXPORT void dayan_render(FaustDayan* dayan, int numFrames, float* buffer);
@@ -96,7 +94,6 @@ DART_EXPORT void bayan_destroy(FaustBayan* bayan);
 DART_EXPORT void bayan_set_frequency(FaustBayan* bayan, float freq);
 DART_EXPORT void bayan_set_meend(FaustBayan* bayan, float multiplier);
 DART_EXPORT void bayan_set_mute(FaustBayan* bayan, int muted);
-DART_EXPORT void bayan_strike(FaustBayan* bayan, float velocity);
 DART_EXPORT void bayan_note_on(FaustBayan* bayan, float freq, float velocity);
 DART_EXPORT void bayan_note_off(FaustBayan* bayan);
 DART_EXPORT void bayan_render(FaustBayan* bayan, int numFrames, float* buffer);
@@ -128,7 +125,6 @@ DART_EXPORT void bell_destroy(FaustBell* bell);
 DART_EXPORT void bell_set_frequency(FaustBell* bell, float freq);
 DART_EXPORT void bell_set_ring_time(FaustBell* bell, float seconds);
 DART_EXPORT void bell_set_damping(FaustBell* bell, float damping);
-DART_EXPORT void bell_strike(FaustBell* bell, float velocity);
 DART_EXPORT void bell_note_on(FaustBell* bell, float freq, float velocity);
 DART_EXPORT void bell_note_off(FaustBell* bell);
 DART_EXPORT void bell_render(FaustBell* bell, int numFrames, float* buffer);
@@ -142,35 +138,29 @@ typedef struct FaustRide FaustRide;
 
 DART_EXPORT FaustKick* kick_create(float sampleRate);
 DART_EXPORT void kick_destroy(FaustKick* kick);
-DART_EXPORT void kick_strike(FaustKick* kick, float velocity);
 DART_EXPORT void kick_render(FaustKick* kick, int numFrames, float* buffer);
 
 DART_EXPORT FaustSnare* snare_create(float sampleRate);
 DART_EXPORT void snare_destroy(FaustSnare* snare);
-DART_EXPORT void snare_strike(FaustSnare* snare, float velocity);
 DART_EXPORT void snare_render(FaustSnare* snare, int numFrames, float* buffer);
 
 DART_EXPORT FaustTom* tom_create(float sampleRate);
 DART_EXPORT void tom_destroy(FaustTom* tom);
 DART_EXPORT void tom_set_frequency(FaustTom* tom, float freq);
-DART_EXPORT void tom_strike(FaustTom* tom, float velocity);
 DART_EXPORT void tom_render(FaustTom* tom, int numFrames, float* buffer);
 
 DART_EXPORT FaustHiHat* hihat_create(float sampleRate);
 DART_EXPORT void hihat_destroy(FaustHiHat* hihat);
 DART_EXPORT void hihat_set_openness(FaustHiHat* hihat, float openness);
-DART_EXPORT void hihat_strike(FaustHiHat* hihat, float velocity);
 DART_EXPORT void hihat_render(FaustHiHat* hihat, int numFrames, float* buffer);
 
 DART_EXPORT FaustRide* ride_create(float sampleRate);
 DART_EXPORT void ride_destroy(FaustRide* ride);
-DART_EXPORT void ride_strike(FaustRide* ride, float velocity);
 DART_EXPORT void ride_render(FaustRide* ride, int numFrames, float* buffer);
 
 // --- Cowbell ---
 DART_EXPORT FaustCowbell* cowbell_create(float sampleRate);
 DART_EXPORT void cowbell_destroy(FaustCowbell* cowbell);
-DART_EXPORT void cowbell_strike(FaustCowbell* cowbell, float velocity);
 DART_EXPORT void cowbell_render(FaustCowbell* cowbell, int numFrames, float* buffer);
 
 // --- Piano ---
@@ -179,7 +169,6 @@ DART_EXPORT void piano_destroy(FaustPiano* piano);
 DART_EXPORT void piano_set_frequency(FaustPiano* piano, float freq);
 DART_EXPORT void piano_set_sustain(FaustPiano* piano, float level);
 DART_EXPORT void piano_set_stiffness(FaustPiano* piano, float stiffness);
-DART_EXPORT void piano_strike(FaustPiano* piano, float velocity, float hardness);
 DART_EXPORT void piano_note_on(FaustPiano* piano, float freq, float velocity);
 DART_EXPORT void piano_note_off(FaustPiano* piano);
 DART_EXPORT void piano_render(FaustPiano* piano, int numFrames, float* buffer);
@@ -189,7 +178,6 @@ DART_EXPORT FaustSax* sax_create(float sampleRate);
 DART_EXPORT void sax_destroy(FaustSax* sax);
 DART_EXPORT void sax_set_frequency(FaustSax* sax, float freq);
 DART_EXPORT void sax_set_vibrato(FaustSax* sax, float rate, float depth);
-DART_EXPORT void sax_strike(FaustSax* sax, float velocity);
 DART_EXPORT void sax_note_on(FaustSax* sax, float freq, float velocity);
 DART_EXPORT void sax_note_off(FaustSax* sax);
 DART_EXPORT void sax_render(FaustSax* sax, int numFrames, float* buffer);
@@ -199,7 +187,6 @@ DART_EXPORT FaustTrumpet* trumpet_create(float sampleRate);
 DART_EXPORT void trumpet_destroy(FaustTrumpet* trumpet);
 DART_EXPORT void trumpet_set_frequency(FaustTrumpet* trumpet, float freq);
 DART_EXPORT void trumpet_set_vibrato(FaustTrumpet* trumpet, float rate, float depth);
-DART_EXPORT void trumpet_strike(FaustTrumpet* trumpet, float velocity);
 DART_EXPORT void trumpet_note_on(FaustTrumpet* trumpet, float freq, float velocity);
 DART_EXPORT void trumpet_note_off(FaustTrumpet* trumpet);
 DART_EXPORT void trumpet_render(FaustTrumpet* trumpet, int numFrames, float* buffer);
@@ -209,7 +196,6 @@ DART_EXPORT FaustShakuhachi* shakuhachi_create(float sampleRate);
 DART_EXPORT void shakuhachi_destroy(FaustShakuhachi* shakuhachi);
 DART_EXPORT void shakuhachi_set_frequency(FaustShakuhachi* shakuhachi, float freq);
 DART_EXPORT void shakuhachi_set_vibrato(FaustShakuhachi* shakuhachi, float rate, float depth);
-DART_EXPORT void shakuhachi_strike(FaustShakuhachi* shakuhachi, float velocity);
 DART_EXPORT void shakuhachi_note_on(FaustShakuhachi* shakuhachi, float freq, float velocity);
 DART_EXPORT void shakuhachi_note_off(FaustShakuhachi* shakuhachi);
 DART_EXPORT void shakuhachi_render(FaustShakuhachi* shakuhachi, int numFrames, float* buffer);
@@ -219,7 +205,6 @@ DART_EXPORT FaustBansuri* bansuri_create(float sampleRate);
 DART_EXPORT void bansuri_destroy(FaustBansuri* bansuri);
 DART_EXPORT void bansuri_set_frequency(FaustBansuri* bansuri, float freq);
 DART_EXPORT void bansuri_set_vibrato(FaustBansuri* bansuri, float rate, float depth);
-DART_EXPORT void bansuri_strike(FaustBansuri* bansuri, float velocity);
 DART_EXPORT void bansuri_note_on(FaustBansuri* bansuri, float freq, float velocity);
 DART_EXPORT void bansuri_note_off(FaustBansuri* bansuri);
 DART_EXPORT void bansuri_render(FaustBansuri* bansuri, int numFrames, float* buffer);
@@ -319,7 +304,17 @@ DART_EXPORT FaustInstrument* sequence_get_instrument(UMLSequence* seq);
 DART_EXPORT FaustInstrument* instrument_create(int instrumentID, int execType, float sampleRate);
 DART_EXPORT void instrument_destroy(FaustInstrument* inst);
 DART_EXPORT void instrument_set_parameter(FaustInstrument* inst, const char* name, float value);
-DART_EXPORT void instrument_note_on(FaustInstrument* inst, float freq, float velocity, float strike);
+/**
+ * Play a note.
+ *
+ * freq: frequency in Hz. Pass -1 for instruments with built-in pitch
+ *       (thunder, wind, clap, percussion).
+ * amplitude: output level (required > 0).
+ * velocity: playing velocity (-1 = DSP default).
+ * strike: articulation / stroke type (-1 = DSP default).
+ *         For percussion: selects different strokes (open, muted, rim, etc).
+ */
+DART_EXPORT void instrument_note_on(FaustInstrument* inst, float freq, float amplitude, float velocity, float strike);
 DART_EXPORT void instrument_note_off(FaustInstrument* inst);
 DART_EXPORT void instrument_render(FaustInstrument* inst, float* buffer, int numFrames);
 DART_EXPORT double sequence_get_bpm(UMLSequence* seq);

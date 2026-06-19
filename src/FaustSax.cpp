@@ -40,8 +40,3 @@ void FaustSax::setVibrato(float rate, float depth) {
     setParam("vibrato_rate", rate);
     setParam("vibrato_depth", depth);
 }
-
-void FaustSax::strike(float velocity) {
-    setParam("gain", velocity);
-    noteOn();
-}

@@ -39,8 +39,3 @@ FaustDayan::FaustDayan(float sampleRate) {
 void FaustDayan::setMute(bool muted) {
     setParam("strike", muted ? 1.0f : 0.0f); // 1.0 = tk (muted), 0.0 = Na (open)
 }
-
-void FaustDayan::strike(float velocity) {
-    setParam("velocity", velocity);
-    noteOn();
-}

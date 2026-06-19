@@ -43,8 +43,3 @@ void FaustBell::setRingTime(float seconds) {
 void FaustBell::setDamping(float damping) {
     // Mapping damping to ring_time if needed, but ring_time is already exposed.
 }
-
-void FaustBell::strike(float velocity) {
-    setParam("velocity", velocity);
-    noteOn();
-}

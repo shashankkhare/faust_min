@@ -13,7 +13,6 @@
 class FaustTrumpet : public FaustInstrument {
 public:
     FaustTrumpet(float sampleRate);
-    void strike(float velocity);
     void setVibrato(float rate, float depth);
     int getID() const override { return 15; }
 };

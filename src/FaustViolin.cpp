@@ -20,9 +20,3 @@ void FaustViolin::setVibrato(float rate, float depth) {
     // No-op: violin vibrato is inherent to the physical model's
     // bow-pressure/velocity dynamics. Future: expose via bowPressure modulation.
 }
-
-void FaustViolin::strike(float velocity) {
-    // Bow-on: velocity maps to bowVelocity (drive)
-    setParam("bowVelocity", velocity * 0.08f);
-    noteOn();
-}

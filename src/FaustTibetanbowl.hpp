@@ -28,7 +28,6 @@
 class FaustTibetanbowl : public FaustInstrument {
 public:
     FaustTibetanbowl(float sampleRate);
-    void strike(float velocity);
     int getID() const override { return 47; }
 };
 

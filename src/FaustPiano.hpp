@@ -30,7 +30,6 @@ public:
     FaustPiano(float sampleRate);
     void setSustain(float sustain);
     void setStiffness(float stiffness);
-    void strike(float velocity, float hardness = 0.5f);
     int getID() const override { return 12; }
 };
 

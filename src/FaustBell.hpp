@@ -30,7 +30,6 @@ public:
     FaustBell(float sampleRate);
     void setRingTime(float seconds);
     void setDamping(float damping);
-    void strike(float velocity);
     int getID() const override { return 7; }
 };
 

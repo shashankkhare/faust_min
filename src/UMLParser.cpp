@@ -407,7 +407,7 @@ void UMLParser::handlePercussionToken(const std::string& tokenNoteName, float am
     ev.frequency = static_cast<float>(baseFreq);
     ev.velocity = -1.0f;
     ev.amplitude = amplitudeScalar;
-    ev.type           = UMLEventType::PhonemeOn;
+    ev.type = UMLEventType::NoteOn;
     ev.note = tokenNoteName;
     ev.durationSamples = durationSamples;
 

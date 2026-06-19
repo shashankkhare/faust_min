@@ -17,8 +17,3 @@ FaustBansuri::FaustBansuri(float sampleRate) {
 void FaustBansuri::setVibrato(float rate, float depth) {
     // No-op for Bansuri (vibrato is traditionally physical/breath controlled)
 }
-
-void FaustBansuri::strike(float velocity) {
-    setParam("gain", velocity);
-    noteOn();
-}

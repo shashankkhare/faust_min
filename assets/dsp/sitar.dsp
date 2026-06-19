@@ -61,21 +61,22 @@ body_filter(x) =
      + (x : fi.resonbp(5000.0, 2.0, 0.3))
     );
 
-symp_trig = trig + chikari_trig;
-symp_max_frames = int(3.0 * ma.SR);
-symp_timer_raw = symp_trig : timer(symp_max_frames);
-symp_elapsed = (symp_max_frames - symp_timer_raw) / ma.SR;
-symp_env(mu, sigma, lam) = lam * (1.0 - exp(-4.0 * symp_elapsed / max(mu, 0.001))) * exp(-sigma * max(0.0, symp_elapsed - mu));
-symp_base = ba.if(is_chikari, chikari_freq, freq);
-symp_string(ratio, detune, mu, sigma, lam) = os.osc(symp_base * ratio * detune) * symp_env(mu, sigma, lam);
-symp_strings = symp_string(1.500, 1.000, 0.15, 1.2, 0.08)
-             + symp_string(1.500, 0.998, 0.15, 1.2, 0.08)
-             + symp_string(2.000, 1.000, 0.10, 1.8, 0.10)
-             + symp_string(2.000, 0.998, 0.10, 1.8, 0.10)
-             + symp_string(3.000, 1.000, 0.20, 1.0, 0.06)
-             + symp_string(3.000, 0.998, 0.20, 1.0, 0.06)
-             + symp_string(4.000, 1.000, 0.12, 0.8, 0.05)
-             + symp_string(4.000, 0.998, 0.12, 0.8, 0.05);
+// Sympathetic strings (Taraf) — 3 body-driven KS delay lines
+// Excited by body resonance, gated so they only receive energy during note-on.
+// Feedback keeps them ringing naturally after gate→0.
+// Ratios: 1:1 (unison), 3:2 (fifth), 2:1 (octave)
+symp_fb = 0.997;
+symp_del1 = ma.SR / max(freq, 40.0);
+symp_del2 = ma.SR / max(freq * 1.5, 40.0);
+symp_del3 = ma.SR / max(freq * 2.0, 40.0);
 
-summed = (melodyLoop + chikariLoop + symp_strings * symp_gain) : dcblock : body_filter;
-process = (summed) * gain * 23.0;
+summed = (melodyLoop + chikariLoop) * gate;
+core = summed : dcblock : body_filter;
+
+symp_exc = core * gate;
+symp_ks1 = symp_exc : (+ : de.fdelay(16384, symp_del1 - 1.0)) ~ _ * symp_fb;
+symp_ks2 = symp_exc : (+ : de.fdelay(16384, symp_del2 - 1.0)) ~ _ * symp_fb;
+symp_ks3 = symp_exc : (+ : de.fdelay(16384, symp_del3 - 1.0)) ~ _ * symp_fb;
+symp_strings_ks = (symp_ks1 + symp_ks2 + symp_ks3) / 3;
+
+process = (core + symp_strings_ks * symp_gain) * gain * 23.0;

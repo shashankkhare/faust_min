@@ -36,10 +36,6 @@ FaustBowl::FaustBowl(float sampleRate) {
     startInternalStream(sampleRate);
 }
 
-void FaustBowl::strike(float velocity) {
-    noteOn(-1.0f, velocity);
-}
-
 void FaustBowl::setRub(float rub) {
     setParam("rub", rub);
 }

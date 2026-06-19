@@ -29,7 +29,6 @@ class FaustDayan : public FaustInstrument {
 public:
     FaustDayan(float sampleRate);
     void setMute(bool muted);
-    void strike(float velocity);
     int getID() const override { return 0; }
 };
 

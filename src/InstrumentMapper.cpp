@@ -36,60 +36,60 @@ constexpr int InstrumentMapper::MAX_FRAMES_PER_BUFFER;
 
 std::string InstrumentMapper::getNameFromID(int id) {
     switch (id) {
-        case 0:  return "DA";
-        case 1:  return "BA";
+        case 0:  return "dayan";
+        case 1:  return "bayan";
         case 2:  return "kick";
         case 3:  return "snare";
         case 4:  return "hihat";
         case 5:  return "tom";
         case 6:  return "ride";
-        case 7:  return "BE";
-        case 8:  return "BO";
-        case 9:  return "SI";
-        case 10: return "FL";
-        case 11: return "TA";
-        case 12: return "PI";
-        case 13: return "SX";
-        case 14: return "CB";
-        case 15: return "TR";
-        case 16: return "SH";
-        case 17: return "BN";
-        case 18: return "VI";
-        case 19: return "RM";
-        case 20: return "CH";
-        case 21: return "AG";
-        case 22: return "EG";
-        case 23: return "BS";
-        case 24: return "CE";
-        case 25: return "CR";
-        case 26: return "CU";
-        case 27: return "WF";
-        case 28: return "DJ";
-        case 29: return "MA";
-        case 30: return "CG";
-        case 31: return "BG";
-        case 32: return "VO";
-        case 33: return "SK";
-        case 34: return "SW";
-        case 35: return "CG"; // Chou Gong
-        case 36: return "LN"; // Lag Nga
-        case 37: return "DK"; // Dholak
-        case 38: return "DH"; // Dhol
-        case 39: return "GZ"; // Guzheng
-        case 40: return "EH"; // Erhu
-        case 41: return "WD"; // Wind
-        case 42: return "TH"; // Thunder
-        case 43: return "DG"; // Dagu
-        case 44: return "SR"; // Sarod
-        case 45: return "ST"; // Santoor
-        case 46: return "TB"; // Tumbi
-        case 47: return "TB"; // Tibetan Bowl
-        case 48: return "NC"; // Ngachen
-        case 49: return "MG"; // Mridangam
-        case 50: return "GH"; // Ghatam
-        case 51: return "PF"; // Panflute
-        case 52: return "NF"; // Native American Flute
-        default: return "DA";
+        case 7:  return "bell";
+        case 8:  return "bowl";
+        case 9:  return "sitar";
+        case 10: return "flute";
+        case 11: return "tanpura";
+        case 12: return "piano";
+        case 13: return "sax";
+        case 14: return "cowbell";
+        case 15: return "trumpet";
+        case 16: return "shakuhachi";
+        case 17: return "bansuri";
+        case 18: return "violin";
+        case 19: return "rainmaker";
+        case 20: return "churchbell";
+        case 21: return "acousticguitar";
+        case 22: return "electricguitar";
+        case 23: return "bass";
+        case 24: return "cello";
+        case 25: return "cricket";
+        case 26: return "cuckoo";
+        case 27: return "waterfall";
+        case 28: return "djembe";
+        case 29: return "marimba";
+        case 30: return "conga";
+        case 31: return "bongo";
+        case 32: return "voice";
+        case 33: return "shaker";
+        case 34: return "seawave";
+        case 35: return "chougong";
+        case 36: return "lagnga";
+        case 37: return "dholak";
+        case 38: return "dhol";
+        case 39: return "guzheng";
+        case 40: return "erhu";
+        case 41: return "wind";
+        case 42: return "thunder";
+        case 43: return "dagu";
+        case 44: return "sarod";
+        case 45: return "santoor";
+        case 46: return "tumbi";
+        case 47: return "tibetanbowl";
+        case 48: return "ngachen";
+        case 49: return "mridangam";
+        case 50: return "ghatam";
+        case 51: return "panflute";
+        case 52: return "nativeamericanflute";
+        default: return "dayan";
     }
 }
 
@@ -145,7 +145,14 @@ int InstrumentMapper::getIDFromName(const std::string& name) {
     if (lowerName == "dh" || lowerName == "dhol") return 38;
     if (lowerName == "tb" || lowerName == "tibetanbowl" || lowerName == "tibetan_bowl") return 47;
     if (lowerName == "nc" || lowerName == "ngachen" || lowerName == "nga_chen" || lowerName == "nga chen") return 48;
+    if (lowerName == "gz" || lowerName == "guzheng" || lowerName == "gu_zheng") return 39;
+    if (lowerName == "eh" || lowerName == "erhu" || lowerName == "er_hu") return 40;
+    if (lowerName == "wd" || lowerName == "wind") return 41;
+    if (lowerName == "th" || lowerName == "thunder") return 42;
+    if (lowerName == "dg" || lowerName == "dagu" || lowerName == "da_gu") return 43;
     if (lowerName == "sr" || lowerName == "sarod") return 44;
+    if (lowerName == "st" || lowerName == "santoor") return 45;
+    if (lowerName == "tu" || lowerName == "tumbi") return 46;
     if (lowerName == "mg" || lowerName == "mridangam") return 49;
     if (lowerName == "gh" || lowerName == "ghatam") return 50;
     if (lowerName == "pf" || lowerName == "panflute" || lowerName == "pan_flute") return 51;

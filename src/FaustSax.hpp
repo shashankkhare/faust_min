@@ -28,7 +28,6 @@
 class FaustSax : public FaustInstrument {
 public:
     FaustSax(float sampleRate);
-    void strike(float velocity);
     void setVibrato(float rate, float depth);
     int getID() const override { return 13; }
 };

@@ -35,8 +35,3 @@ FaustKick::FaustKick(float sampleRate) {
     setDSP(new FaustKickDSP());
     startInternalStream(sampleRate);
 }
-
-void FaustKick::strike(float velocity) {
-    setParam("velocity", velocity);
-    noteOn();
-}

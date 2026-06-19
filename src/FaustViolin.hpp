@@ -14,7 +14,7 @@
 class FaustViolin : public FaustInstrument {
 public:
     FaustViolin(float sampleRate);
-    void strike(float velocity);
+
     void setVibrato(float rate, float depth);
     int getID() const override { return 18; }
 };

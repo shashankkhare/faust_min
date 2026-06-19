@@ -613,50 +613,46 @@ void FaustInstrument::gainGlide(float targetGain, float durationSeconds) {
     }
 }
 
-void FaustInstrument::noteOn(float freq, float vel, float strikeVal, float amp) {
+void FaustInstrument::noteOn(float freq, float amp, float vel, float strikeVal) {
+    if (amp <= 0.0f) return;
+
     std::lock_guard<std::recursive_mutex> lock(mDSPLock);
 
     mGateOpen = true;
     mElapsedFrames = 0;
-    mTargetFrames = 0; // Infinite until noteOff
-    
-    // Disable any active glides when a hard note-on is received
+    mTargetFrames = 0;
     mVelGlideActive = false;
     mFreqGlideActive = false;
     mGainGlideActive = false;
 
     int v = mNextVoice;
-    if (mNumVoices > 0) {
+    if (mNumVoices > 0)
         mNextVoice = (mNextVoice + 1) % mNumVoices;
-    } else {
+    else
         v = 0;
-    }
+
+    setParamImmediate("gate", 0.0f, v);
 
     if (freq > 0.0f) {
         mFrequency = freq;
         setParamImmediate("freq", freq, v);
     }
+
+    mAmplitude = amp;
+    if (mLUTActive)
+        applyDynamicLUTParams(mFrequency, mAmplitude, v);
+    else
+        setParamImmediate("gain", amp, v);
+
     if (vel >= 0.0f) {
         mVelocity = vel;
-        setParam("velocity", vel, v);
+        setParamImmediate("velocity", vel, v);
     }
-    if (amp >= 0.0f) {
-        mAmplitude = amp;
-        if (!mLUTActive) setParamImmediate("gain", amp, v);
-    }
-    // Only override strike if caller explicitly provides a non-negative value.
-    // When strikeVal < 0, leave the DSP's own default (1.0 for bowl, etc.).
+
     mStrikeVal = strikeVal;
+    if (strikeVal >= 0.0f)
+        setParamImmediate("strike", strikeVal, v);
 
-    if (strikeVal >= 0.0f) {
-        setParam("strike", strikeVal, v);
-    }
-
-    if (mLUTActive) {
-        applyDynamicLUTParams(mFrequency, mAmplitude, v);
-    }
-    
-    setParam("gate", 0.0f, v);
     setParam("gate", 1.0f, v);
 }
 

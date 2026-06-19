@@ -35,8 +35,3 @@ FaustRide::FaustRide(float sampleRate) {
     setDSP(new FaustRideDSP());
     startInternalStream(sampleRate);
 }
-
-void FaustRide::strike(float velocity) {
-    setParam("velocity", velocity);
-    noteOn();
-}

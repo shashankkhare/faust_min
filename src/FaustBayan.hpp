@@ -30,7 +30,6 @@ public:
     FaustBayan(float sampleRate);
     void setMeend(float multiplier);
     void setMute(bool muted);
-    void strike(float velocity);
     int getID() const override { return 1; }
 };
 

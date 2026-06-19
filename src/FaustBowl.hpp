@@ -28,7 +28,6 @@
 class FaustBowl : public FaustInstrument {
 public:
     FaustBowl(float sampleRate);
-    void strike(float velocity);
     void setRub(float rub);
     void setWaver(float waver);
     int getID() const override { return 8; }
