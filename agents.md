@@ -142,3 +142,9 @@
 - **Rule**: NEVER use absolute file paths in code under any circumstances, not even for temporary testing, logging, or asset resolution.
 - **Protocol**: ALL paths MUST be relative to the dynamic execution workspace or derived from configured asset base paths (e.g., `./assets/libraries`).
 - **Why?**: Hardcoded absolute paths tightly couple the source code to local workstation environments, breaking CI/CD pipelines, multi-platform runtime isolation, and cross-machine collaborative workflows.
+
+## 26. Explicit User Consent for Code Changes
+
+- **Rule**: DO NOT touch the code or make any code changes (especially DSP) without getting explicit permission from the user first.
+- **Protocol**: Always present the exact code change or idea, and WAIT for the user to explicitly say "do it" or approve it before executing any file modification.
+- **Why?**: Unapproved changes, even seemingly trivial ones, can severely disrupt the acoustic balance, overwrite delicate physical modeling parameters, or break the user's intended workflow.

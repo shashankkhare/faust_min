@@ -27,11 +27,11 @@ freq = hslider("freq", 146.83, 40, 1000, 0.01);
 gate = button("gate");
 velocity = hslider("velocity", 0.5, 0, 1, 0.01);
 gain = hslider("gain", 1.0, 0, 1, 0.01);
-symp_gain = hslider("symp_gain", 0, 0, 1, 0.01);
+symp_gain = hslider("symp_gain", 0.1, 0, 1, 0.01);
 strike = hslider("strike", 0, 0, 2, 1);
 chikari_freq1 = hslider("chikari_freq1", 111.0, 40, 2000, 0.01);
 chikari_freq2 = hslider("chikari_freq2", 166.5, 40, 2000, 0.01);
-chikari_gain = hslider("chikari_gain", 0.0, 0, 1, 0.01);
+chikari_gain = hslider("chikari_gain", 0.1, 0, 1, 0.01);
 j_h = hslider("jawari_hardness", 0.05, 0, 0.5, 0.001);
 
 // Velocity-dependent release time (2ms at vel=0, 10ms at vel=1)
@@ -71,7 +71,7 @@ with {
     with { loop(s) = ba.if(t, 150, max(0.0, s - 1.0)); };
 };
 chikari_pluck_env = en.ar(0.003, 0.015, chikari_pluck_gate);
-chikari_trig_exc = (no.noise : fi.bandpass(2, 80.0, 400.0)) * 0.2 * chikari_pluck_env * velocity;
+chikari_trig_exc = (no.noise : fi.bandpass(2, 150.0, 1500.0)) * 0.05 * chikari_pluck_env * velocity;
 
 smooth_reset(c, t, x) = loop ~ _
 with {
