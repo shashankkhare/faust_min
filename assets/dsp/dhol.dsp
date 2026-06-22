@@ -17,8 +17,10 @@ import("stdfaust.lib");
 
 // --- Punjabi Dhol (Bhangra Drum) Physical Model (Multiphonic/Dual-Freq) ---
 
-freq = hslider("freq [unit:Hz]", 110.0, 40.0, 600.0, 0.1);      // Left Head (Dagga/Bass)
-freq_right = hslider("freq_right [unit:Hz]", 880.0, 100.0, 1500.0, 0.1);  // Right Head (Tilli/Treble - thin skin)
+// Expert Play Range: Dhol fundamental typically 60-250 Hz.
+freq = hslider("freq [unit:Hz]", 110.0, 60, 250, 0.1);      // Left Head (Dagga/Bass)
+// Expert Play Range: Dhol fundamental typically 60-250 Hz.
+freq_right = hslider("freq_right [unit:Hz]", 250, 60, 250, 0.1);  // Right Head (Tilli/Treble - thin skin)
 strike = hslider("strike", 0, 0, 4, 1);                       // 0=Dagga open, 1=Dagga closed, 2=Tilli open, 3=Tilli closed, 4=Composite Dha
 gain = hslider("gain", 1.0, 0.0, 2.0, 0.01);
 velocity = hslider("velocity", 1.0, 0.0, 1.0, 0.01);

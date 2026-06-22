@@ -405,7 +405,7 @@ class FaustVoiceDSP : public dsp {
 		ui_interface->addHorizontalSlider("f5_bw", &fHslider21, FAUSTFLOAT(160.0f), FAUSTFLOAT(10.0f), FAUSTFLOAT(500.0f), FAUSTFLOAT(1.0f));
 		ui_interface->addHorizontalSlider("f5_freq", &fHslider22, FAUSTFLOAT(4500.0f), FAUSTFLOAT(200.0f), FAUSTFLOAT(5000.0f), FAUSTFLOAT(1.0f));
 		ui_interface->declare(&fHslider5, "unit", "Hz");
-		ui_interface->addHorizontalSlider("freq", &fHslider5, FAUSTFLOAT(220.0f), FAUSTFLOAT(50.0f), FAUSTFLOAT(2000.0f), FAUSTFLOAT(0.100000001f));
+		ui_interface->addHorizontalSlider("freq", &fHslider5, FAUSTFLOAT(220.0f), FAUSTFLOAT(82.0f), FAUSTFLOAT(1046.0f), FAUSTFLOAT(0.100000001f));
 		ui_interface->addHorizontalSlider("frication", &fHslider24, FAUSTFLOAT(0.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addHorizontalSlider("gain", &fHslider1, FAUSTFLOAT(0.699999988f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addButton("gate", &fButton0);

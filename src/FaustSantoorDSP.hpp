@@ -48,15 +48,15 @@ class FaustSantoorDSP : public dsp {
 	int iRec3[2];
 	float fConst3;
 	int IOTA;
-	float fVec3[8192];
+	float fVec3[2048];
 	float fRec0[2];
 	float fConst4;
 	float fRec5[2];
-	float fVec4[8192];
+	float fVec4[2048];
 	float fRec4[2];
 	float fConst5;
 	float fRec7[2];
-	float fVec5[8192];
+	float fVec5[2048];
 	float fRec6[2];
 	
  public:
@@ -134,7 +134,7 @@ class FaustSantoorDSP : public dsp {
 			iRec3[l5] = 0;
 		}
 		IOTA = 0;
-		for (int l6 = 0; (l6 < 8192); l6 = (l6 + 1)) {
+		for (int l6 = 0; (l6 < 2048); l6 = (l6 + 1)) {
 			fVec3[l6] = 0.0f;
 		}
 		for (int l7 = 0; (l7 < 2); l7 = (l7 + 1)) {
@@ -143,7 +143,7 @@ class FaustSantoorDSP : public dsp {
 		for (int l8 = 0; (l8 < 2); l8 = (l8 + 1)) {
 			fRec5[l8] = 0.0f;
 		}
-		for (int l9 = 0; (l9 < 8192); l9 = (l9 + 1)) {
+		for (int l9 = 0; (l9 < 2048); l9 = (l9 + 1)) {
 			fVec4[l9] = 0.0f;
 		}
 		for (int l10 = 0; (l10 < 2); l10 = (l10 + 1)) {
@@ -152,7 +152,7 @@ class FaustSantoorDSP : public dsp {
 		for (int l11 = 0; (l11 < 2); l11 = (l11 + 1)) {
 			fRec7[l11] = 0.0f;
 		}
-		for (int l12 = 0; (l12 < 8192); l12 = (l12 + 1)) {
+		for (int l12 = 0; (l12 < 2048); l12 = (l12 + 1)) {
 			fVec5[l12] = 0.0f;
 		}
 		for (int l13 = 0; (l13 < 2); l13 = (l13 + 1)) {
@@ -180,7 +180,7 @@ class FaustSantoorDSP : public dsp {
 	
 	virtual void buildUserInterface(UI* ui_interface) {
 		ui_interface->openVerticalBox("santoor");
-		ui_interface->addHorizontalSlider("freq", &fHslider1, FAUSTFLOAT(440.0f), FAUSTFLOAT(40.0f), FAUSTFLOAT(2000.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("freq", &fHslider1, FAUSTFLOAT(440.0f), FAUSTFLOAT(130.0f), FAUSTFLOAT(1046.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addHorizontalSlider("gain", &fHslider0, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addButton("gate", &fButton0);
 		ui_interface->addHorizontalSlider("velocity", &fHslider2, FAUSTFLOAT(0.800000012f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
@@ -226,20 +226,20 @@ class FaustSantoorDSP : public dsp {
 			float fTemp1 = float(iRec3[0]);
 			float fTemp2 = (fSlow6 * ((0.800000012f * float((1 - iVec0[1]))) + (9.31322588e-11f * (float(iRec2[0]) * std::max<float>(0.0f, std::min<float>((fConst2 * fTemp1), ((fConst3 * (fConst1 - fTemp1)) + 1.0f)))))));
 			float fTemp3 = ((0.999000013f * fRec1[0]) + fTemp2);
-			fVec3[(IOTA & 8191)] = fTemp3;
-			float fTempFTZ1 = ((fSlow5 * fVec3[((IOTA - iSlow8) & 8191)]) + (fSlow9 * fVec3[((IOTA - iSlow10) & 8191)]));
+			fVec3[(IOTA & 2047)] = fTemp3;
+			float fTempFTZ1 = ((fSlow5 * fVec3[((IOTA - iSlow8) & 2047)]) + (fSlow9 * fVec3[((IOTA - iSlow10) & 2047)]));
 			fRec0[0] = ((std::fabs(fTempFTZ1) > 1.17549435e-38f) ? fTempFTZ1 : 0.0f);
 			float fTempFTZ2 = ((0.0500000007f * fRec5[1]) + (0.949999988f * fRec4[1]));
 			fRec5[0] = ((std::fabs(fTempFTZ2) > 1.17549435e-38f) ? fTempFTZ2 : 0.0f);
 			float fTemp4 = (fTemp2 + (0.999000013f * fRec5[0]));
-			fVec4[(IOTA & 8191)] = fTemp4;
-			float fTempFTZ3 = ((fSlow14 * fVec4[((IOTA - iSlow15) & 8191)]) + (fSlow16 * fVec4[((IOTA - iSlow17) & 8191)]));
+			fVec4[(IOTA & 2047)] = fTemp4;
+			float fTempFTZ3 = ((fSlow14 * fVec4[((IOTA - iSlow15) & 2047)]) + (fSlow16 * fVec4[((IOTA - iSlow17) & 2047)]));
 			fRec4[0] = ((std::fabs(fTempFTZ3) > 1.17549435e-38f) ? fTempFTZ3 : 0.0f);
 			float fTempFTZ4 = ((0.0500000007f * fRec7[1]) + (0.949999988f * fRec6[1]));
 			fRec7[0] = ((std::fabs(fTempFTZ4) > 1.17549435e-38f) ? fTempFTZ4 : 0.0f);
 			float fTemp5 = (fTemp2 + (0.999000013f * fRec7[0]));
-			fVec5[(IOTA & 8191)] = fTemp5;
-			float fTempFTZ5 = ((fSlow21 * fVec5[((IOTA - iSlow22) & 8191)]) + (fSlow23 * fVec5[((IOTA - iSlow24) & 8191)]));
+			fVec5[(IOTA & 2047)] = fTemp5;
+			float fTempFTZ5 = ((fSlow21 * fVec5[((IOTA - iSlow22) & 2047)]) + (fSlow23 * fVec5[((IOTA - iSlow24) & 2047)]));
 			fRec6[0] = ((std::fabs(fTempFTZ5) > 1.17549435e-38f) ? fTempFTZ5 : 0.0f);
 			output0[i0] = FAUSTFLOAT(std::max<float>(-1.0f, std::min<float>(1.0f, (fSlow0 * ((fRec0[0] + fRec4[0]) + fRec6[0])))));
 			iVec0[1] = iVec0[0];

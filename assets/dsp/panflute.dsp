@@ -2,7 +2,8 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 
 import("stdfaust.lib");
 
-fTarget = hslider("freq", 440, 50, 2000, 0.1);
+// Expert Play Range: Pan Flute typical range C4 (261 Hz) to C7 (2093 Hz).
+fTarget = hslider("freq", 440.0, 261, 2093, 0.1);
 velocity = hslider("velocity", 0.8, 0.0, 1.0, 0.01);
 t = button("gate");
 gain = hslider("gain", 1.0, 0.0, 3.0, 0.01) : si.smoo;

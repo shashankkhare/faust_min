@@ -160,7 +160,7 @@ class FaustCongaDSP : public dsp {
 	
 	virtual void instanceResetUserInterface() {
 		fHslider0 = FAUSTFLOAT(0.80000000000000004f);
-		fHslider1 = FAUSTFLOAT(150.0f);
+		fHslider1 = FAUSTFLOAT(200.0f);
 		fHslider2 = FAUSTFLOAT(0.80000000000000004f);
 		fHslider3 = FAUSTFLOAT(0.0f);
 		fButton0 = FAUSTFLOAT(0.0f);
@@ -232,7 +232,7 @@ class FaustCongaDSP : public dsp {
 	
 	virtual void buildUserInterface(UI* ui_interface) {
 		ui_interface->openVerticalBox("conga");
-		ui_interface->addHorizontalSlider("freq", &fHslider1, FAUSTFLOAT(150.0f), FAUSTFLOAT(80.0f), FAUSTFLOAT(400.0f), FAUSTFLOAT(0.100000001f));
+		ui_interface->addHorizontalSlider("freq", &fHslider1, FAUSTFLOAT(200.0f), FAUSTFLOAT(200.0f), FAUSTFLOAT(500.0f), FAUSTFLOAT(0.100000001f));
 		ui_interface->addHorizontalSlider("gain", &fHslider0, FAUSTFLOAT(0.800000012f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addButton("gate", &fButton0);
 		ui_interface->addHorizontalSlider("position", &fHslider3, FAUSTFLOAT(0.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(2.0f), FAUSTFLOAT(1.0f));

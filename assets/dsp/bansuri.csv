@@ -1,4 +1,4 @@
-frequency,amplitude,gain,pressure,mouthPosition,breathiness
+frequency,velocity,gain,pressure,mouthPosition,breathiness
 220.00,0.1,0.15,0.77,0.60,0.01
 220.00,0.2,0.28,0.77,0.60,0.01
 220.00,0.5,0.64,0.77,0.60,0.02

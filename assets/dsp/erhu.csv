@@ -1,4 +1,4 @@
-frequency,amplitude,bowPressure,bowVelocity,bowPosition,vibrato_rate,vibrato_depth,noiseLvl
+frequency,velocity,bowPressure,bowVelocity,bowPosition,vibrato_rate,vibrato_depth,noiseLvl
 293.0,0.0,0.15,0.10,0.10,4.0,0.002,0.005
 293.0,1.0,0.60,0.35,0.15,5.5,0.002,0.015
 440.0,0.0,0.12,0.12,0.12,4.5,0.003,0.006

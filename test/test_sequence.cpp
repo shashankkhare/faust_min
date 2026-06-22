@@ -94,7 +94,7 @@ void playSequenceGroup(FaustMixer& mixer, SequenceOrchestrator& orch, SequenceGr
                 std::cout << "  Event " << eIdx << ": Note: " << ev.note 
                           << " | Freq: " << ev.frequency << " Hz" 
                           << " | Dur: " << durMs << "ms" 
-                          << " | Amp: " << ev.amplitude;
+                          << " | Amp: " << ev.velocity;
                 if (ev.strikeVal >= 0.0f) {
                     std::cout << " | Strike: " << ev.strikeVal;
                 }
@@ -347,7 +347,7 @@ int main(int argc, char* argv[]) {
             
             auto buildBayan = [bpm = 70]() -> std::string {
                 std::string s = "grid: 4\nbpm: ";
-                s += std::to_string(bpm) + "\nbasefreq: 111.0\ninstrument: bayan\n\n";
+                s += std::to_string(bpm) + "\nbasefreq: 55.0\ninstrument: bayan\n\n";
                 std::string alaap = "Ghe... _... _... Ka... _... Ka... Ghe... _... "; // 32 cells
                 std::string med   = "Ghe. _. _. Ka. _. Ka. Ghe. _. "; // 16 cells
                 std::string jhala = "Ghe _ _ Ka _ Ka Ghe _ "; // 8 cells
@@ -552,7 +552,7 @@ int main(int argc, char* argv[]) {
             std::string umlBowl = 
                 "grid: 1\n"
                 "bpm: 60\n"
-                "basefreq: 111.0\n"
+                "basefreq: 55.0\n"
                 "instrument: bowl\n"
                 "loop: true\n"
                 "\n"
@@ -571,7 +571,7 @@ int main(int argc, char* argv[]) {
             std::string umlLagngaLow =  
                 "grid: 2\n"
                 "bpm: 60\n"
-                "basefreq: 111.0\n"
+                "basefreq: 55.0\n"
                 "instrument: lagnga\n"
                 "mallet_softness: 0.6\n"
                 "loop: true\n"
@@ -810,7 +810,7 @@ int main(int argc, char* argv[]) {
             
             std::string umlTanpura = 
                 "grid: 2\n"
-                "basefreq: 111.0\n"
+                "basefreq: 55.0\n"
                 "instrument: tanpura\n"
                 "notation: Hindustani\n"
                 "loop: true\n\n"
@@ -871,7 +871,7 @@ int main(int argc, char* argv[]) {
                 
             std::string umlBayan = 
                 "grid: 4\n"
-                "basefreq: 111.0\n"
+                "basefreq: 55.0\n"
                 "instrument: bayan\n\n";
             // Alap: Silent (256 cells)
             for (int i = 0; i < 32; ++i) {
@@ -1017,7 +1017,7 @@ int main(int argc, char* argv[]) {
             
             auto buildBayan = [bpm = 80]() -> std::string {
                 std::string s = "grid: 4\nbpm: ";
-                s += std::to_string(bpm) + "\nbasefreq: 111.0\ninstrument: bayan\n\n";
+                s += std::to_string(bpm) + "\nbasefreq: 55.0\ninstrument: bayan\n\n";
                 std::string alaap = "Ghe... _... _... Ka... _... Ka... Ghe... _... ";
                 std::string med   = "Ghe. _. _. Ka. _. Ka. Ghe. _. ";
                 std::string jhala = "Ghe _ _ Ka _ Ka Ghe _ ";

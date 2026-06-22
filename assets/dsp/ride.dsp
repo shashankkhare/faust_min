@@ -15,7 +15,8 @@ import("stdfaust.lib");
 
 // --- Dedicated Meditative Ride Cymbal ---
 
-freq     = hslider("freq [unit:Hz]", 5500, 2000, 10000, 1);
+// Expert Play Range: Unpitched percussion; default 100-1000 Hz.
+freq     = hslider("freq [unit:Hz]", 1000, 100, 1000, 1);
 gain     = hslider("gain", 0.5, 0, 1, 0.01);
 velocity = hslider("velocity", 1, 0, 1, 0.01);
 

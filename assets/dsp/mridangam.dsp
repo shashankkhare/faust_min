@@ -30,7 +30,8 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 // =============================================================================
 import("stdfaust.lib");
 
-freq = hslider("freq", 146.83, 40, 1000, 0.1);
+// Expert Play Range: Mridangam tonal range typically 130-250 Hz depending on pitch (Shruti).
+freq = hslider("freq", 146.83, 130, 250, 0.1);
 gain = hslider("gain", 0.8, 0, 1, 0.01);
 velocity = hslider("velocity", 1, 0, 1, 0.01);
 gate = button("gate");

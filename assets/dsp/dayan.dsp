@@ -15,10 +15,10 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 //   - strike
 //
 // Strokes:
-//   0: Na  — finger on maidan, syahi dominant (70%), fundamental suppressed
+//   0: Tun — open center (syahi) strike, syahi dominant (95%), all harmonics ring
 //   1: tk  — dead muted click, both banks strongly damped
 //   2: Tin — edge (maidan) strike, maidan dominant (70%), 2nd partial emphasized
-//   3: Tun — open center (syahi) strike, syahi dominant (95%), all harmonics ring
+//   3: Na  — finger on maidan, syahi dominant (70%), fundamental suppressed
 //
 // References:
 //   - C.V. Raman (1920) — syahi loading produces near-perfect harmonic series
@@ -26,7 +26,8 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 // =============================================================================
 import("stdfaust.lib");
 
-freq = hslider("freq", 293.66, 100, 1000, 0.1);
+// Expert Play Range: Tabla Dayan (Right hand) typically tuned C# to G (approx 138-392 Hz), simplified to 100-300 Hz.
+freq = hslider("freq", 293.66, 100, 300, 0.1);
 gain = hslider("gain", 0.8, 0, 1, 0.01);
 velocity = hslider("velocity", 1, 0, 1, 0.01);
 gate = button("gate");
@@ -47,10 +48,10 @@ syahiMul = (1.0, 2.0, 3.0, 4.0, 5.0);
 // Per-strike T60 scalar
 // =====================================================
 t60Scale = ba.selectn(4, strike,
-    0.1,   // 0: Na
+    0.5,   // 0: Tun
     0.01,  // 1: tk
     0.3,   // 2: Tin
-    0.5    // 3: Tun
+    0.1    // 3: Na
 );
 
 // =====================================================
@@ -66,27 +67,27 @@ mt60 = (2.5, 2.0, 1.5, 1.0, 0.6);
 
 // =====================================================
 // Syahi bank: per-mode gains per strike
-// selectn(modeIndex, strike, Na, tk, Tin, Tun)
+// selectn(modeIndex, strike, Tun, tk, Tin, Na)
 // =====================================================
-sg1_base = ba.selectn(4, strike, 0.05, 0.30, 0.15, 1.50);
-sg2_base = ba.selectn(4, strike, 0.30, 0.15, 1.00, 0.80);
-sg3_base = ba.selectn(4, strike, 1.00, 0.05, 0.50, 0.40);
-sg4_base = ba.selectn(4, strike, 0.60, 0.02, 0.20, 0.25);
-sg5_base = ba.selectn(4, strike, 0.30, 0.01, 0.10, 0.15);
+sg1_base = ba.selectn(4, strike, 1.50, 0.30, 0.15, 0.05);
+sg2_base = ba.selectn(4, strike, 0.80, 0.15, 1.00, 0.30);
+sg3_base = ba.selectn(4, strike, 0.40, 0.05, 0.50, 1.00);
+sg4_base = ba.selectn(4, strike, 0.25, 0.02, 0.20, 0.60);
+sg5_base = ba.selectn(4, strike, 0.15, 0.01, 0.10, 0.30);
 
 // =====================================================
 // Maidan bank: per-mode gains per strike
 // =====================================================
-mg1_base = ba.selectn(4, strike, 0.05, 0.30, 0.20, 0.20);
-mg2_base = ba.selectn(4, strike, 0.30, 0.15, 0.70, 0.10);
-mg3_base = ba.selectn(4, strike, 1.00, 0.05, 1.00, 0.05);
-mg4_base = ba.selectn(4, strike, 0.60, 0.02, 0.50, 0.02);
-mg5_base = ba.selectn(4, strike, 0.30, 0.01, 0.20, 0.01);
+mg1_base = ba.selectn(4, strike, 0.20, 0.30, 0.20, 0.05);
+mg2_base = ba.selectn(4, strike, 0.10, 0.15, 0.70, 0.30);
+mg3_base = ba.selectn(4, strike, 0.05, 0.05, 1.00, 1.00);
+mg4_base = ba.selectn(4, strike, 0.02, 0.02, 0.50, 0.60);
+mg5_base = ba.selectn(4, strike, 0.01, 0.01, 0.20, 0.30);
 
 // =====================================================
 // Mix ratio between banks (syahi fraction)
 // =====================================================
-syahiMix = ba.selectn(4, strike, 0.70, 0.50, 0.30, 0.95);
+syahiMix = ba.selectn(4, strike, 0.95, 0.50, 0.30, 0.70);
 maidanMix = 1.0 - syahiMix;
 
 // =====================================================
@@ -148,7 +149,7 @@ maidanOut = myResonator(smoothedFreq * 1.000, 2.5, mg1, exciter) +
 dayan = syahiOut * syahiMix + maidanOut * maidanMix;
 
 // Dynamic Drive (per-strike base with velocity boost)
-dynamicDrive = ba.selectn(4, strike, 1.3, 2.0, 1.2, 1.0) * (1.0 + velocity * 0.2);
+dynamicDrive = ba.selectn(4, strike, 1.0, 2.0, 1.2, 1.3) * (1.0 + velocity * 0.2);
 
 // Final Stage
-process = (dayan * dynamicDrive * 24.0 : ma.tanh) * gain;
+process = (dayan * dynamicDrive * 4.0 : ma.tanh) * gain * 14.1637;

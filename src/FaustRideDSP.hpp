@@ -224,7 +224,7 @@ class FaustRideDSP : public dsp {
 	virtual void instanceResetUserInterface() {
 		fHslider0 = FAUSTFLOAT(1.0f);
 		fHslider1 = FAUSTFLOAT(0.5f);
-		fHslider2 = FAUSTFLOAT(5500.0f);
+		fHslider2 = FAUSTFLOAT(1000.0f);
 		fButton0 = FAUSTFLOAT(0.0f);
 		fHslider3 = FAUSTFLOAT(0.0f);
 	}
@@ -307,7 +307,7 @@ class FaustRideDSP : public dsp {
 	virtual void buildUserInterface(UI* ui_interface) {
 		ui_interface->openVerticalBox("ride");
 		ui_interface->declare(&fHslider2, "unit", "Hz");
-		ui_interface->addHorizontalSlider("freq", &fHslider2, FAUSTFLOAT(5500.0f), FAUSTFLOAT(2000.0f), FAUSTFLOAT(10000.0f), FAUSTFLOAT(1.0f));
+		ui_interface->addHorizontalSlider("freq", &fHslider2, FAUSTFLOAT(1000.0f), FAUSTFLOAT(100.0f), FAUSTFLOAT(1000.0f), FAUSTFLOAT(1.0f));
 		ui_interface->addHorizontalSlider("gain", &fHslider1, FAUSTFLOAT(0.5f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addButton("gate", &fButton0);
 		ui_interface->addHorizontalSlider("strike", &fHslider3, FAUSTFLOAT(0.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(3.0f), FAUSTFLOAT(1.0f));

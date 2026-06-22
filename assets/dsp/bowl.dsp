@@ -23,7 +23,8 @@ declare version "1.0";
 // =============================================================================
 import("instruments.lib");
 
-freq = nentry("freq",440,20,20000,1);
+// Expert Play Range: Tibetan singing bowl fundamental typically 100-400 Hz.
+freq = nentry("freq",400.0, 100, 400, 1);
 gain = nentry("gain",0.8,0,1,0.01);
 velocity = hslider("velocity", 0.8, 0, 1, 0.01);
 gate = hslider("gate", 0, 0, 1, 1);
@@ -34,12 +35,14 @@ integrationConstant = hslider("h:Physical_and_Nonlinearity/v:Physical_Parameters
 baseGain = hslider("h:Physical_and_Nonlinearity/v:Physical_Parameters/Base_Gain
 [2][tooltip:A value between 0 and 1]",1,0,1,0.01);
 
+// Expert Play Range: Tibetan singing bowl fundamental typically 100-400 Hz.
 typeModulation = nentry("h:Physical_and_Nonlinearity/v:Nonlinear_Filter_Parameters/Modulation_Type
-[3][tooltip:0=theta modulated by signal; 1=averaged signal; 2=squared signal; 3=sine freqMod; 4=sine freq]",0,0,4,1);
+[3][tooltip:0=theta modulated by signal; 1=averaged signal; 2=squared signal; 3=sine freqMod; 4=sine freq]",100, 100, 400, 1);
 nonLinearity = hslider("h:Physical_and_Nonlinearity/v:Nonlinear_Filter_Parameters/Nonlinearity
 [3][tooltip:Nonlinearity factor (0 to 1)]",0,0,1,0.01);
+// Expert Play Range: Tibetan singing bowl fundamental typically 100-400 Hz.
 frequencyMod = hslider("h:Physical_and_Nonlinearity/v:Nonlinear_Filter_Parameters/Modulation_Frequency
-[3][unit:Hz][tooltip:Sine modulation frequency (works if Modulation Type=3)]",220,20,1000,0.1);
+[3][unit:Hz][tooltip:Sine modulation frequency (works if Modulation Type=3)]",220.0, 100, 400, 0.1);
 
 nlfOrder = 6;
 NLFM = nonLinearModulator((nonLinearity : si.smoo),1,freq,

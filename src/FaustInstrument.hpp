@@ -67,7 +67,7 @@ public:
     void clearVoices();
 
     // --- Native Automation Glides ---
-    void amplitudeGlide(float targetAmplitude, float durationSeconds);
+    void velocityGlide(float targetVelocity, float durationSeconds);
     void frequencyGlide(float targetFreq, float durationSeconds);
     void gainGlide(float targetGain, float durationSeconds);
 
@@ -94,7 +94,7 @@ public:
      * @param strikeVal Strike type / articulation. Optional (-1.0f = DSP default).
      *                For percussion, selects different strokes (open, muted, rim, etc).
      */
-    virtual void noteOn(float freq = -1.0f, float amplitude = 0.5f, float velocity = -1.0f, float strikeVal = -1.0f);
+    virtual void noteOn(float freq = -1.0f, float velocity = 0.5f, float strikeVal = -1.0f);
     virtual void noteOff(int voiceIndex = -1, float decayTailMs = 0.0f);
     void render(int numFrames, float* buffer);
 
@@ -109,8 +109,29 @@ public:
         float freq;
         float amp;
         float value3; // used for energy capture
+        std::vector<float> rawAudio;
     };
     
+    std::vector<float> mGoertzelFreqs;
+    void addDiagnosticFreq(float freq) {
+        std::lock_guard<std::recursive_mutex> lock(mDSPLock);
+        mGoertzelFreqs.push_back(freq);
+    }
+    void clearDiagnosticFreqs() {
+        std::lock_guard<std::recursive_mutex> lock(mDSPLock);
+        mGoertzelFreqs.clear();
+    }
+
+    std::vector<float> mDiagSamplingTimes = {0.5f, 0.6f, 0.7f};
+    void setDiagnosticSamplingTimes(const std::vector<float>& timesSeconds) {
+        std::lock_guard<std::recursive_mutex> lock(mDSPLock);
+        mDiagSamplingTimes = timesSeconds;
+    }
+    std::vector<float> getDiagnosticFreqs() {
+        std::lock_guard<std::recursive_mutex> lock(mDSPLock);
+        return mGoertzelFreqs;
+    }
+
     std::vector<DiagLog> getDiagnosticLogs() { 
         std::lock_guard<std::recursive_mutex> lock(mDSPLock); 
         return mDiagLogs; 
@@ -135,13 +156,14 @@ public:
     void setParam(const char* shortName, float val, int voiceIndex = -1);
     void setParamImmediate(const char* shortName, float val, int voiceIndex = -1);
     float getParam(const char* shortName);
+    bool getParamBounds(const char* shortName, float& outMin, float& outMax);
 
 protected:
     std::recursive_mutex mDSPLock; // Dedicated recursive mutex protecting DSP state maps
     
     struct LUTRecord {
         float frequency;
-        float amplitude;
+        float velocity;
         float strike;
         std::map<std::string, float> targetParams;
     };

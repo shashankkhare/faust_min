@@ -14,7 +14,8 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 // =============================================================================
 import("stdfaust.lib");
 
-freq     = hslider("freq",     55.0, 20,  500,  0.01);
+// Expert Play Range: Bass Guitar typical range E1 (41 Hz) to G4 (392 Hz).
+freq     = hslider("freq",     55.0, 41, 392, 0.01);
 velocity = hslider("velocity", 0.6,  0,   1,    0.01);
 gate     = button("gate");
 gain     = hslider("gain",     0.5,  0,   1,    0.01); // no si.smoo: applied immediately at noteOn

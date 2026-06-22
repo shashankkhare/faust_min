@@ -74,7 +74,7 @@ class FaustMarimbaDSP : public dsp {
 	FAUSTFLOAT fHslider0;
 	float fRec4[2];
 	int IOTA;
-	float fVec0[2048];
+	float fVec0[1024];
 	float fConst2;
 	float fRec2[2];
 	float fRec5[2];
@@ -301,7 +301,7 @@ class FaustMarimbaDSP : public dsp {
 	float fConst215;
 	float fRec61[3];
 	float fVec3[2];
-	float fVec4[2048];
+	float fVec4[1024];
 	float fRec3[2];
 	FAUSTFLOAT fHslider4;
 	float fRec62[2];
@@ -612,7 +612,7 @@ class FaustMarimbaDSP : public dsp {
 			fRec4[l1] = 0.0f;
 		}
 		IOTA = 0;
-		for (int l2 = 0; (l2 < 2048); l2 = (l2 + 1)) {
+		for (int l2 = 0; (l2 < 1024); l2 = (l2 + 1)) {
 			fVec0[l2] = 0.0f;
 		}
 		for (int l3 = 0; (l3 < 2); l3 = (l3 + 1)) {
@@ -798,7 +798,7 @@ class FaustMarimbaDSP : public dsp {
 		for (int l63 = 0; (l63 < 2); l63 = (l63 + 1)) {
 			fVec3[l63] = 0.0f;
 		}
-		for (int l64 = 0; (l64 < 2048); l64 = (l64 + 1)) {
+		for (int l64 = 0; (l64 < 1024); l64 = (l64 + 1)) {
 			fVec4[l64] = 0.0f;
 		}
 		for (int l65 = 0; (l65 < 2); l65 = (l65 + 1)) {
@@ -829,7 +829,7 @@ class FaustMarimbaDSP : public dsp {
 	
 	virtual void buildUserInterface(UI* ui_interface) {
 		ui_interface->openVerticalBox("marimba");
-		ui_interface->addHorizontalSlider("freq", &fHslider0, FAUSTFLOAT(220.0f), FAUSTFLOAT(50.0f), FAUSTFLOAT(1500.0f), FAUSTFLOAT(0.100000001f));
+		ui_interface->addHorizontalSlider("freq", &fHslider0, FAUSTFLOAT(220.0f), FAUSTFLOAT(130.0f), FAUSTFLOAT(2093.0f), FAUSTFLOAT(0.100000001f));
 		ui_interface->addHorizontalSlider("gain", &fHslider4, FAUSTFLOAT(0.800000012f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addButton("gate", &fButton0);
 		ui_interface->addHorizontalSlider("position", &fHslider3, FAUSTFLOAT(2.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(4.0f), FAUSTFLOAT(0.00999999978f));
@@ -972,8 +972,8 @@ class FaustMarimbaDSP : public dsp {
 			float fTempFTZ0 = ((0.949999988f * fRec4[1]) + (0.0500000007f * fRec3[1]));
 			fRec4[0] = ((std::fabs(fTempFTZ0) > 1.17549435e-38f) ? fTempFTZ0 : 0.0f);
 			float fTemp0 = ((0.99000001f * fRec4[0]) + float(iRec0[1]));
-			fVec0[(IOTA & 2047)] = fTemp0;
-			float fTempFTZ1 = ((fSlow8 * fVec0[((IOTA - iSlow10) & 2047)]) + (fSlow11 * ((((fSlow12 * fVec0[((IOTA - iSlow13) & 2047)]) + (fSlow14 * fVec0[((IOTA - iSlow15) & 2047)])) + (fSlow17 * fVec0[((IOTA - iSlow18) & 2047)])) + (fSlow19 * fVec0[((IOTA - iSlow20) & 2047)]))));
+			fVec0[(IOTA & 1023)] = fTemp0;
+			float fTempFTZ1 = ((fSlow8 * fVec0[((IOTA - iSlow10) & 1023)]) + (fSlow11 * ((((fSlow12 * fVec0[((IOTA - iSlow13) & 1023)]) + (fSlow14 * fVec0[((IOTA - iSlow15) & 1023)])) + (fSlow17 * fVec0[((IOTA - iSlow18) & 1023)])) + (fSlow19 * fVec0[((IOTA - iSlow20) & 1023)]))));
 			fRec2[0] = ((std::fabs(fTempFTZ1) > 1.17549435e-38f) ? fTempFTZ1 : 0.0f);
 			float fTempFTZ2 = ((0.949999988f * fRec5[1]) + (0.0500000007f * fRec2[1]));
 			fRec5[0] = ((std::fabs(fTempFTZ2) > 1.17549435e-38f) ? fTempFTZ2 : 0.0f);
@@ -1148,8 +1148,8 @@ class FaustMarimbaDSP : public dsp {
 			float fElse49 = ftbl0FaustMarimbaDSPSIG0[(iTemp7 + 49)];
 			fVec3[0] = (((((((((((((((((((((((((((((((((((((((((((((((((((fRec6[0] - fRec6[2]) * (iSlow26 ? fElse0 : 0.0f)) + ((fRec13[0] - fRec13[2]) * (iSlow29 ? fElse1 : 0.0f))) + ((fRec14[0] - fRec14[2]) * (iSlow31 ? fElse2 : 0.0f))) + ((fRec15[0] - fRec15[2]) * (iSlow33 ? fElse3 : 0.0f))) + ((fRec16[0] - fRec16[2]) * (iSlow35 ? fElse4 : 0.0f))) + ((fRec17[0] - fRec17[2]) * (iSlow37 ? fElse5 : 0.0f))) + ((fRec18[0] - fRec18[2]) * (iSlow39 ? fElse6 : 0.0f))) + ((fRec19[0] - fRec19[2]) * (iSlow41 ? fElse7 : 0.0f))) + ((fRec20[0] - fRec20[2]) * (iSlow43 ? fElse8 : 0.0f))) + ((fRec21[0] - fRec21[2]) * (iSlow45 ? fElse9 : 0.0f))) + ((fRec22[0] - fRec22[2]) * (iSlow47 ? fElse10 : 0.0f))) + ((fRec23[0] - fRec23[2]) * (iSlow49 ? fElse11 : 0.0f))) + ((fRec24[0] - fRec24[2]) * (iSlow51 ? fElse12 : 0.0f))) + ((fRec25[0] - fRec25[2]) * (iSlow53 ? fElse13 : 0.0f))) + ((fRec26[0] - fRec26[2]) * (iSlow55 ? fElse14 : 0.0f))) + ((fRec27[0] - fRec27[2]) * (iSlow57 ? fElse15 : 0.0f))) + ((fRec28[0] - fRec28[2]) * (iSlow59 ? fElse16 : 0.0f))) + ((fRec29[0] - fRec29[2]) * (iSlow61 ? fElse17 : 0.0f))) + ((fRec30[0] - fRec30[2]) * (iSlow63 ? fElse18 : 0.0f))) + ((fRec31[0] - fRec31[2]) * (iSlow65 ? fElse19 : 0.0f))) + ((fRec32[0] - fRec32[2]) * (iSlow67 ? fElse20 : 0.0f))) + ((fRec33[0] - fRec33[2]) * (iSlow69 ? fElse21 : 0.0f))) + ((fRec34[0] - fRec34[2]) * (iSlow71 ? fElse22 : 0.0f))) + ((fRec35[0] - fRec35[2]) * (iSlow73 ? fElse23 : 0.0f))) + ((fRec36[0] - fRec36[2]) * (iSlow75 ? fElse24 : 0.0f))) + ((fRec37[0] - fRec37[2]) * (iSlow77 ? fElse25 : 0.0f))) + ((fRec38[0] - fRec38[2]) * (iSlow79 ? fElse26 : 0.0f))) + ((fRec39[0] - fRec39[2]) * (iSlow81 ? fElse27 : 0.0f))) + ((fRec40[0] - fRec40[2]) * (iSlow83 ? fElse28 : 0.0f))) + ((fRec41[0] - fRec41[2]) * (iSlow85 ? fElse29 : 0.0f))) + ((fRec42[0] - fRec42[2]) * (iSlow87 ? fElse30 : 0.0f))) + ((fRec43[0] - fRec43[2]) * (iSlow89 ? fElse31 : 0.0f))) + ((fRec44[0] - fRec44[2]) * (iSlow91 ? fElse32 : 0.0f))) + ((fRec45[0] - fRec45[2]) * (iSlow93 ? fElse33 : 0.0f))) + ((fRec46[0] - fRec46[2]) * (iSlow95 ? fElse34 : 0.0f))) + ((fRec47[0] - fRec47[2]) * (iSlow97 ? fElse35 : 0.0f))) + ((fRec48[0] - fRec48[2]) * (iSlow99 ? fElse36 : 0.0f))) + ((fRec49[0] - fRec49[2]) * (iSlow101 ? fElse37 : 0.0f))) + ((fRec50[0] - fRec50[2]) * (iSlow103 ? fElse38 : 0.0f))) + ((fRec51[0] - fRec51[2]) * (iSlow105 ? fElse39 : 0.0f))) + ((fRec52[0] - fRec52[2]) * (iSlow107 ? fElse40 : 0.0f))) + ((fRec53[0] - fRec53[2]) * (iSlow109 ? fElse41 : 0.0f))) + ((fRec54[0] - fRec54[2]) * (iSlow111 ? fElse42 : 0.0f))) + ((fRec55[0] - fRec55[2]) * (iSlow113 ? fElse43 : 0.0f))) + ((fRec56[0] - fRec56[2]) * (iSlow115 ? fElse44 : 0.0f))) + ((fRec57[0] - fRec57[2]) * (iSlow117 ? fElse45 : 0.0f))) + ((fRec58[0] - fRec58[2]) * (iSlow119 ? fElse46 : 0.0f))) + ((fRec59[0] - fRec59[2]) * (iSlow121 ? fElse47 : 0.0f))) + ((fRec60[0] - fRec60[2]) * (iSlow123 ? fElse48 : 0.0f))) + ((fRec61[0] - fRec61[2]) * (iSlow125 ? fElse49 : 0.0f)));
 			float fTemp8 = ((0.99000001f * fRec5[0]) + (0.0199999996f * fVec3[1]));
-			fVec4[(IOTA & 2047)] = fTemp8;
-			float fTempFTZ57 = ((fSlow8 * fVec4[((IOTA - iSlow10) & 2047)]) + (fSlow11 * ((((fSlow12 * fVec4[((IOTA - iSlow13) & 2047)]) + (fSlow14 * fVec4[((IOTA - iSlow15) & 2047)])) + (fSlow17 * fVec4[((IOTA - iSlow18) & 2047)])) + (fSlow19 * fVec4[((IOTA - iSlow20) & 2047)]))));
+			fVec4[(IOTA & 1023)] = fTemp8;
+			float fTempFTZ57 = ((fSlow8 * fVec4[((IOTA - iSlow10) & 1023)]) + (fSlow11 * ((((fSlow12 * fVec4[((IOTA - iSlow13) & 1023)]) + (fSlow14 * fVec4[((IOTA - iSlow15) & 1023)])) + (fSlow17 * fVec4[((IOTA - iSlow18) & 1023)])) + (fSlow19 * fVec4[((IOTA - iSlow20) & 1023)]))));
 			fRec3[0] = ((std::fabs(fTempFTZ57) > 1.17549435e-38f) ? fTempFTZ57 : 0.0f);
 			float fTempFTZ58 = fRec3[0];
 			float fTemp9 = ((std::fabs(fTempFTZ58) > 1.17549435e-38f) ? fTempFTZ58 : 0.0f);

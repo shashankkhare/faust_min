@@ -17,8 +17,10 @@ import("stdfaust.lib");
 
 // --- Indian Dholak Physical Model (Multiphonic/Dual-Freq) ---
 
-freq = hslider("freq [unit:Hz]", 98.0, 50.0, 400.0, 0.1);      // Left Head (Bayan/Bass)
-freq_right = hslider("freq_right [unit:Hz]", 277.2, 100.0, 800.0, 0.1);   // Right Head (Dayan/Treble)
+// Expert Play Range: Dholak bass/treble fundamental typically 70-300 Hz.
+freq = hslider("freq [unit:Hz]", 98.0, 70, 300, 0.1);      // Left Head (Bayan/Bass)
+// Expert Play Range: Dholak bass/treble fundamental typically 70-300 Hz.
+freq_right = hslider("freq_right [unit:Hz]", 277.2, 70, 300, 0.1);   // Right Head (Dayan/Treble)
 strike = hslider("strike", 0, 0, 4, 1);                       // 0=Bayan open, 1=Bayan closed, 2=Dayan open, 3=Dayan closed, 4=Composite Dha
 gain = hslider("gain", 1.0, 0.0, 2.0, 0.01);
 velocity = hslider("velocity", 1.0, 0.0, 1.0, 0.01);

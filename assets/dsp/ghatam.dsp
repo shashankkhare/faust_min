@@ -19,7 +19,8 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 // =============================================================================
 import("stdfaust.lib");
 
-freq = hslider("freq", 130.81, 40, 1000, 0.1); // Default C3
+// Expert Play Range: Ghatam tonal range typically 100-300 Hz depending on size/pitch.
+freq = hslider("freq", 130.81, 100, 300, 0.1); // Default C3
 gain = hslider("gain", 0.8, 0, 1, 0.01);
 velocity = hslider("velocity", 1, 0, 1, 0.01);
 slap_force = hslider("slap_force", 1, 0, 1, 0.01);

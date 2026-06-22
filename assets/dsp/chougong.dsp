@@ -16,7 +16,8 @@ import("stdfaust.lib");
 // Authentic large Chinese Gong model using heavily inharmonic modal synthesis
 // and non-linear mallet excitation to simulate the "bloom" and shimmer.
 
-freq = hslider("freq [unit:Hz]", 100, 40, 500, 0.1);
+// Expert Play Range: Chou Gong fundamental typically 80-400 Hz.
+freq = hslider("freq [unit:Hz]", 100.0, 80, 400, 0.1);
 gain = hslider("gain", 0.6, 0, 1, 0.01);
 velocity = hslider("velocity", 1, 0, 1, 0.01);
 gate = button("gate");

@@ -230,7 +230,7 @@ class FaustSnareDSP : public dsp {
 	virtual void buildUserInterface(UI* ui_interface) {
 		ui_interface->openVerticalBox("snare");
 		ui_interface->declare(&fHslider2, "unit", "Hz");
-		ui_interface->addHorizontalSlider("freq", &fHslider2, FAUSTFLOAT(180.0f), FAUSTFLOAT(100.0f), FAUSTFLOAT(400.0f), FAUSTFLOAT(1.0f));
+		ui_interface->addHorizontalSlider("freq", &fHslider2, FAUSTFLOAT(180.0f), FAUSTFLOAT(90.0f), FAUSTFLOAT(260.0f), FAUSTFLOAT(1.0f));
 		ui_interface->addHorizontalSlider("gain", &fHslider1, FAUSTFLOAT(0.600000024f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addButton("gate", &fButton0);
 		ui_interface->addHorizontalSlider("velocity", &fHslider0, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));

@@ -23,19 +23,22 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 //   - symp_gain   — sympathetic string level 0..1
 import("stdfaust.lib");
 
-freq = hslider("freq", 146.83, 40, 1000, 0.01);
+// Expert Play Range: Sarod typical range C3 (~130 Hz) to A5 (~880 Hz).
+freq = hslider("freq", 146.83, 130, 900, 0.01);
 gate = button("gate");
 velocity = hslider("velocity", 0.5, 0, 1, 0.01);
 gain = hslider("gain", 1.0, 0, 1, 0.01);
 symp_gain = hslider("symp_gain", 0.1, 0, 1, 0.01);
 strike = hslider("strike", 0, 0, 2, 1);
-chikari_freq1 = hslider("chikari_freq1", 111.0, 40, 2000, 0.01);
-chikari_freq2 = hslider("chikari_freq2", 166.5, 40, 2000, 0.01);
+// Expert Play Range: Sarod typical range C3 (~130 Hz) to A5 (~880 Hz).
+chikari_freq1 = hslider("chikari_freq1", 130, 130, 900, 0.01);
+// Expert Play Range: Sarod typical range C3 (~130 Hz) to A5 (~880 Hz).
+chikari_freq2 = hslider("chikari_freq2", 166.5, 130, 900, 0.01);
 chikari_gain = hslider("chikari_gain", 0.1, 0, 1, 0.01);
 j_h = hslider("jawari_hardness", 0.05, 0, 0.5, 0.001);
 
-// Velocity-dependent release time (2ms at vel=0, 10ms at vel=1)
-gate_rel = 0.002 + velocity * 0.008;
+// Velocity-dependent release time (10ms at vel=0, 2ms at vel=1)
+gate_rel = 0.010 - velocity * 0.008;
 
 // Melody excitation trigger
 trig = gate > gate';
@@ -105,6 +108,7 @@ chikari_gate = max(gate, 1 - is_chikari) : si.smoo;
 stringLoop = melody_exc : (+ : dynamic_delay) ~ (dispersion : fingerboard : _ * feedback_gain * melody_gate);
 
 // Goatskin membrane modes in parallel (20 non-degenerate eigenmodes from Manaswi et al. 2013)
+// plus 5 synthetic high-frequency modes to emulate tight skin air-loading formants
 membrane_filter(x) = 
     (  (x * 0.5)
      + (x : fi.resonbp(150.0,   4.0, 0.50))
@@ -127,7 +131,12 @@ membrane_filter(x) =
      + (x : fi.resonbp(573.3,   4.0, 0.10))
      + (x : fi.resonbp(606.6,   4.0, 0.08))
      + (x : fi.resonbp(610.3,   4.0, 0.08))
-    ) : fi.lowpass(2, 4200.0);
+     + (x : fi.resonbp(850.0,   5.0, 0.06))
+     + (x : fi.resonbp(1200.0,  5.0, 0.05))
+     + (x : fi.resonbp(1800.0,  6.0, 0.04))
+     + (x : fi.resonbp(2600.0,  6.0, 0.03))
+     + (x : fi.resonbp(3500.0,  8.0, 0.02))
+    ) : fi.lowpass(2, 8000.0);
 
 // Wooden body bowl modes in parallel
 body_filter(x) = 

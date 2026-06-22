@@ -14,7 +14,8 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 import("stdfaust.lib");
 
 // --- Dedicated Snare Drum ---
-freq = hslider("freq [unit:Hz]", 180, 100, 400, 1);
+// Expert Play Range: Standard Snare Drum fundamental typically 150-250 Hz.
+freq = hslider("freq [unit:Hz]", 180.0, 90, 260, 1);
 gain = hslider("gain", 0.6, 0, 1, 0.01);
 velocity = hslider("velocity", 1, 0, 1, 0.01);
 gate = button("gate");

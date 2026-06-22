@@ -14,7 +14,8 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 // =============================================================================
 import("stdfaust.lib");
 
-freq = hslider("freq", 440, 40, 2000, 0.01);
+// Expert Play Range: Guzheng typical range C2 (65 Hz) to C6 (1046 Hz).
+freq = hslider("freq", 440.0, 65, 1046, 0.01);
 gate = button("gate");
 velocity = hslider("velocity", 0.8, 0, 1, 0.01) : si.smoo;
 gain = hslider("gain", 1.0, 0, 5.0, 0.01) : si.smoo;

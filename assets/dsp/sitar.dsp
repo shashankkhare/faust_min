@@ -2,14 +2,16 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 // Reference: http://issta.ie/wp-content/uploads/The-Physical-Modelling-of-a-Sitar.pdf
 import("stdfaust.lib");
 
-freq = hslider("freq [unit:Hz]", 222.0, 40, 1000, 0.01);
+// Expert Play Range: Sitar typical playable range C3 (~130 Hz) to A5 (~880 Hz).
+freq = hslider("freq [unit:Hz]", 222.0, 130, 900, 0.01);
 gate = button("gate");
 gain = hslider("gain", 0.3, 0, 1, 0.01);
 velocity = hslider("velocity", 0.5, 0, 1, 0.01);
 strike = hslider("strike", 0, 0, 2, 1);
 jivari = hslider("jivari", 0.1, 0, 0.5, 0.001);
 symp_gain = hslider("symp_gain", 0.15, 0, 1, 0.01);
-chikari_freq = hslider("chikari_freq [unit:Hz]", 440.0, 40, 2000, 0.01);
+// Expert Play Range: Sitar typical playable range C3 (~130 Hz) to A5 (~880 Hz).
+chikari_freq = hslider("chikari_freq [unit:Hz]", 440.0, 130, 900, 0.01);
 
 trig = (gate - gate') > 0;
 is_chikari = strike > 0.5;

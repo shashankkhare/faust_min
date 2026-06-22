@@ -507,7 +507,7 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
                                 inst->setParamImmediate("freq_right", seqWrapper->sequenceObj->baseFreq * 1.5f, -1);
                             }
                             if (ev.frequency > 0.0f) {
-                                inst->noteOn(ev.frequency, ev.amplitude, dynamicVelocity, ev.strikeVal);
+                                inst->noteOn(ev.frequency, dynamicVelocity, ev.strikeVal);
                             }
                         }
                     } else if (ev.type == UMLEventType::NoteOff) {
@@ -517,10 +517,10 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
                             float durSec = static_cast<float>(ev.durationSamples) / inst->getSampleRate();
                             if (ev.targetFrequency > 0.0f) inst->frequencyGlide(ev.targetFrequency, durSec);
                         }
-                    } else if (ev.type == UMLEventType::AmpGlide) {
+                    } else if (ev.type == UMLEventType::VelGlide) {
                         if (inst) {
                             float durSec = static_cast<float>(ev.durationSamples) / inst->getSampleRate();
-                            if (ev.targetAmplitude >= 0.0f) inst->gainGlide(ev.targetAmplitude, durSec);
+                            if (ev.targetVelocity >= 0.0f) inst->velocityGlide(ev.targetVelocity, durSec);
                         }
                     } else if (ev.type == UMLEventType::VibratoOn) {
                         if (inst) {

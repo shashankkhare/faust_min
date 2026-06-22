@@ -14,7 +14,8 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 import("stdfaust.lib");
 
 // --- Dedicated Tom Drum ---
-freq = hslider("freq [unit:Hz]", 110, 50, 300, 0.1);
+// Expert Play Range: Standard Tom fundamental typically 80-200 Hz.
+freq = hslider("freq [unit:Hz]", 110.0, 90, 260, 0.1);
 gain = hslider("gain", 0.7, 0, 1, 0.01);
 velocity = hslider("velocity", 1, 0, 1, 0.01);
 gate = button("gate");

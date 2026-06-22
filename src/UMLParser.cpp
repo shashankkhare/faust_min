@@ -75,10 +75,10 @@ const std::map<std::string, double> UMLParser::hindustaniRatios = {
 };
 
 const std::map<std::string, double> UMLParser::percussionBols = {
-    {"Na", 0.0}, {"Ta", 0.0}, 
-    {"tk", 1.0}, {"Ka", 1.0}, 
-    {"Ti", 2.0}, {"Tin", 2.0},
-    {"Tu", 3.0}, {"Tun", 3.0}
+    {"Tun", 0.0}, {"Tu", 0.0},
+    {"tk", 1.0}, {"Ka", 1.0},
+    {"Tin", 2.0}, {"Ti", 2.0},
+    {"Na", 3.0}, {"Ta", 3.0}
 };
 
 // Vowel syllables → continuous formant-morph index (0=aa, 1=ee, 2=ii, 3=oo, 4=uu)
@@ -95,15 +95,15 @@ const std::map<std::string, double> UMLParser::bayanBols = {
     // Open resonant strokes
     {"Ge",  0.0}, {"ge",  0.0}, {"Ghe", 0.0}, {"ghe", 0.0},
     // Deep bass press
-    {"Dha", 1.0}, {"dha", 1.0},
+    {"Dha", 0.0}, {"dha", 0.0},
     // Half-muffled
     {"Dhin",2.0}, {"dhin",2.0},
     // Edge stroke
-    {"Ka",  3.0}, {"ka",  3.0}, {"Ke",  3.0}, {"ke",  3.0},
+    {"Ka",  1.0}, {"ka",  1.0}, {"Ke",  3.0}, {"ke",  3.0},
     // Muted centre
-    {"Ghi", 1.0}, {"ghi", 1.0},
+    {"Ghi", 2.0}, {"ghi", 2.0},
     // Silent/dummy stroke
-    {"Tit", 0.0}, {"tit", 0.0}
+    {"Tit", 1.0}, {"tit", 1.0}
 };
 
 // African hand drum stroke names → strikeVal
@@ -252,7 +252,7 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
         ti.controlParam = 5; // Default middle-register/velocity scalar
         ti.strikeVal = 0.0f;
         ti.hasGlideOp = false;
-        ti.hasAmpGlideOp = false;
+        ti.hasVelGlideOp = false;
         ti.hasVibratoOp = false;
 
         if (match[1].matched) {
@@ -260,7 +260,7 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
             std::string rem = match[1].str();
             ti.rawStr = rem;
             if (rem.find('^') != std::string::npos) ti.hasGlideOp = true;
-            if (rem.find('>') != std::string::npos) ti.hasAmpGlideOp = true;
+            if (rem.find('>') != std::string::npos) ti.hasVelGlideOp = true;
             if (rem.find('~') != std::string::npos) ti.hasVibratoOp = true;
         } else if (match[2].matched) {
             ti.type = TokenType::StopRest;
@@ -275,7 +275,7 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
                 rem.erase(std::remove(rem.begin(), rem.end(), '^'), rem.end());
             }
             if (rem.find('>') != std::string::npos) {
-                ti.hasAmpGlideOp = true;
+                ti.hasVelGlideOp = true;
                 rem.erase(std::remove(rem.begin(), rem.end(), '>'), rem.end());
             }
             if (rem.find('~') != std::string::npos) {
@@ -319,7 +319,7 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
             ti.rawStr = match[3].str();
             if (match[3].str() == "~") ti.hasVibratoOp = true;
             if (match[3].str() == "^") ti.hasGlideOp = true;
-            if (match[3].str() == ">") ti.hasAmpGlideOp = true;
+            if (match[3].str() == ">") ti.hasVelGlideOp = true;
         }
         tokenItems.push_back(ti);
         currentGridIndex++;
@@ -347,7 +347,7 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
             std::vector<std::pair<OpType, long>> triggers;
             
             if (ti.hasGlideOp) triggers.push_back({OpType::Glide, 0});
-            if (ti.hasAmpGlideOp) triggers.push_back({OpType::AmpGlide, 0});
+            if (ti.hasVelGlideOp) triggers.push_back({OpType::VelGlide, 0});
             if (ti.hasVibratoOp) triggers.push_back({OpType::Vibrato, 0});
 
             size_t j = i + 1;
@@ -355,8 +355,8 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
                 if (tokenItems[j].hasGlideOp) {
                     triggers.push_back({OpType::Glide, durGrids});
                 }
-                if (tokenItems[j].hasAmpGlideOp) {
-                    triggers.push_back({OpType::AmpGlide, durGrids});
+                if (tokenItems[j].hasVelGlideOp) {
+                    triggers.push_back({OpType::VelGlide, durGrids});
                 }
                 if (tokenItems[j].hasVibratoOp) {
                     triggers.push_back({OpType::Vibrato, durGrids});
@@ -366,16 +366,16 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
             }
             long durationSamples = (long)(durGrids * samplesPerGrid);
             long sampleOffset = (long)(ti.gridIndex * samplesPerGrid);
-            float amplitudeScalar = (float)ti.controlParam / 9.0f;
+            float velocityScalar = (float)ti.controlParam / 9.0f;
 
             if (seq.notation == "XSAMPA" || seq.notation == "xsampa" || seq.notation == "Xsampa") {
                 handleXSampaToken(ti, sampleOffset, durationSamples, j, tokenItems, seq.events, sampleRate);
             } else if (ti.hasCompositeNotes) {
                 handleCompositeNote(ti, sampleOffset, durationSamples, seq.notation, seq.baseFreq, seq.instrument, j, tokenItems, samplesPerGrid, sampleRate, seq.events);
             } else if (InstrumentMapper::isPercussionID(seq.instrumentID)) {
-                handlePercussionToken(ti.noteName, amplitudeScalar, sampleOffset, durationSamples, seq.notation, seq.baseFreq, seq.instrument, seq.events, ti.strikeVal);
+                handlePercussionToken(ti.noteName, velocityScalar, sampleOffset, durationSamples, seq.notation, seq.baseFreq, seq.instrument, seq.events, ti.strikeVal);
             } else {
-                handlePitchedToken(ti, amplitudeScalar, sampleOffset, durationSamples, seq.notation, seq.baseFreq, seq.instrument, samplesPerGrid, sampleRate, j, tokenItems, triggers, seq.events);
+                handlePitchedToken(ti, velocityScalar, sampleOffset, durationSamples, seq.notation, seq.baseFreq, seq.instrument, samplesPerGrid, sampleRate, j, tokenItems, triggers, seq.events);
             }
         } else if (ti.type == TokenType::StopRest) {
             UMLEvent restEv;
@@ -401,31 +401,31 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
     return seq;
 }
 
-void UMLParser::handlePercussionToken(const std::string& tokenNoteName, float amplitudeScalar, long sampleOffset, long durationSamples, const std::string& notation, double baseFreq, const std::string& instrument, std::vector<UMLEvent>& outEvents, float strikeValFromPrefix) {
+void UMLParser::handlePercussionToken(const std::string& tokenNoteName, float velocityScalar, long sampleOffset, long durationSamples, const std::string& notation, double baseFreq, const std::string& instrument, std::vector<UMLEvent>& outEvents, float strikeValFromPrefix) {
     UMLEvent ev; 
     ev.sampleOffset = sampleOffset;
     ev.frequency = static_cast<float>(baseFreq);
     ev.velocity = -1.0f;
-    ev.amplitude = amplitudeScalar;
+    ev.velocity = velocityScalar;
     ev.type = UMLEventType::NoteOn;
     ev.note = tokenNoteName;
     ev.durationSamples = durationSamples;
 
     int instID = InstrumentMapper::getIDFromName(instrument);
     if (instID == 0) {
-        if (tokenNoteName == "Na" || tokenNoteName == "Ta" || tokenNoteName == "na" || tokenNoteName == "ta") ev.strikeVal = 0.0f;
+        if (tokenNoteName == "Tun" || tokenNoteName == "Tu" || tokenNoteName == "tun" || tokenNoteName == "tu") ev.strikeVal = 0.0f;
         else if (tokenNoteName == "tk") ev.strikeVal = 1.0f;
         else if (tokenNoteName == "Tin" || tokenNoteName == "Ti" || tokenNoteName == "tin" || tokenNoteName == "ti") ev.strikeVal = 2.0f;
-        else if (tokenNoteName == "Tun" || tokenNoteName == "Tu" || tokenNoteName == "tun" || tokenNoteName == "tu") ev.strikeVal = 3.0f;
-        else if (tokenNoteName == "Dha" || tokenNoteName == "dha") ev.strikeVal = 0.0f;
+        else if (tokenNoteName == "Na" || tokenNoteName == "Ta" || tokenNoteName == "na" || tokenNoteName == "ta") ev.strikeVal = 3.0f;
+        else if (tokenNoteName == "Dha" || tokenNoteName == "dha") ev.strikeVal = 3.0f;
         else if (tokenNoteName == "Dhin" || tokenNoteName == "dhin") ev.strikeVal = 2.0f;
         else if (tokenNoteName == "Tit" || tokenNoteName == "tit") ev.strikeVal = 1.0f;
     } else if (instID == 1) {
         if (bayanBols.count(tokenNoteName)) {
             ev.strikeVal = static_cast<float>(bayanBols.at(tokenNoteName));
         } else {
-            if (tokenNoteName == "Ka" || tokenNoteName == "ka") ev.strikeVal = 0.0f;
-            else if (tokenNoteName == "Ghe" || tokenNoteName == "ghe") ev.strikeVal = 1.0f;
+            if (tokenNoteName == "Ghe" || tokenNoteName == "ghe") ev.strikeVal = 0.0f;
+            else if (tokenNoteName == "Ka" || tokenNoteName == "ka") ev.strikeVal = 1.0f;
             else if (tokenNoteName == "Ghi" || tokenNoteName == "ghi") ev.strikeVal = 2.0f;
             else if (tokenNoteName == "Ke" || tokenNoteName == "ke") ev.strikeVal = 3.0f;
         }
@@ -533,7 +533,7 @@ void UMLParser::handlePercussionToken(const std::string& tokenNoteName, float am
     outEvents.push_back(ev);
 }
 
-void UMLParser::handlePitchedToken(const TokenItem& ti, float amplitudeScalar, long sampleOffset, long durationSamples, 
+void UMLParser::handlePitchedToken(const TokenItem& ti, float velocityScalar, long sampleOffset, long durationSamples, 
                                    const std::string& notation, double baseFreq, const std::string& instrument,
                                    double samplesPerGrid, double sampleRate, size_t nextTokenIndex, 
                                    const std::vector<TokenItem>& tokenItemsArray, 
@@ -556,7 +556,7 @@ void UMLParser::handlePitchedToken(const TokenItem& ti, float amplitudeScalar, l
             noteEv.sampleOffset = sampleOffset;
             noteEv.frequency = freq;
             noteEv.velocity = -1.0f; // Reserved for later use per user
-            noteEv.amplitude = amplitudeScalar;
+            noteEv.velocity = velocityScalar;
             // Default to 0.0 (melody) if unspecified, unless it's a NOOP (%) which stays sticky (-1.0)
             noteEv.strikeVal = (ti.strikeVal >= 0.0f) ? ti.strikeVal : (ti.rawStr.find('%') != std::string::npos ? -1.0f : 0.0f);
             noteEv.type = UMLEventType::NoteOn;
@@ -595,17 +595,17 @@ void UMLParser::handlePitchedToken(const TokenItem& ti, float amplitudeScalar, l
                     fg.durationSamples = (sampleOffset + durationSamples) - triggerOffset;
                     outEvents.push_back(fg);
                 }
-                // AmpGlide: ramp amplitude to next note
+                // VelGlide: ramp amplitude to next note
                 {
                     UMLEvent ag;
                     ag.sampleOffset = triggerOffset;
-                    ag.type = UMLEventType::AmpGlide;
-                    ag.targetAmplitude = tVel;
+                    ag.type = UMLEventType::VelGlide;
+                    ag.targetVelocity = tVel;
                     ag.durationSamples = (sampleOffset + durationSamples) - triggerOffset;
                     outEvents.push_back(ag);
                 }
             }
-        } else if (trigger.first == OpType::AmpGlide) {
+        } else if (trigger.first == OpType::VelGlide) {
             hasGlide = true;
             size_t targetIdx = nextTokenIndex;
             while (targetIdx < tokenItemsArray.size() && tokenItemsArray[targetIdx].type != TokenType::NoteWithControl) {
@@ -616,8 +616,8 @@ void UMLParser::handlePitchedToken(const TokenItem& ti, float amplitudeScalar, l
                 
                 UMLEvent ag;
                 ag.sampleOffset = triggerOffset;
-                ag.type = UMLEventType::AmpGlide;
-                ag.targetAmplitude = tVel;
+                ag.type = UMLEventType::VelGlide;
+                ag.targetVelocity = tVel;
                 ag.durationSamples = (sampleOffset + durationSamples) - triggerOffset;
                 outEvents.push_back(ag);
             }
@@ -785,7 +785,7 @@ void UMLParser::handleXSampaToken(const TokenItem& ti, long sampleOffset, long d
     }
 }
 
-void UMLParser::handleVoiceToken(const TokenItem& ti, float amplitudeScalar, long sampleOffset, long durationSamples,
+void UMLParser::handleVoiceToken(const TokenItem& ti, float velocityScalar, long sampleOffset, long durationSamples,
                                  const std::string& notation, double baseFreq,
                                  double samplesPerGrid, size_t nextTokenIndex, const std::vector<TokenItem>& tokenItemsArray, std::vector<UMLEvent>& outEvents) {
     // tokenNoteName is the raw string from the UML token (e.g., "6Sa")
@@ -795,7 +795,7 @@ void UMLParser::handleVoiceToken(const TokenItem& ti, float amplitudeScalar, lon
     UMLEvent ev;
     ev.sampleOffset   = sampleOffset;
     ev.velocity       = -1.0f;
-    ev.amplitude      = amplitudeScalar;
+    ev.velocity      = velocityScalar;
     ev.type           = UMLEventType::NoteOn;
     ev.note           = token;
     ev.durationSamples = durationSamples;
@@ -832,7 +832,7 @@ void UMLParser::handleVoiceToken(const TokenItem& ti, float amplitudeScalar, lon
             float tVel = static_cast<float>(tokenItemsArray[targetIdx].controlParam) / 9.0f;
             
             // Emit Freq and Amp glides
-            if (std::abs(tFreq - ev.frequency) > 0.01f || std::abs(tVel - amplitudeScalar) > 0.01f) {
+            if (std::abs(tFreq - ev.frequency) > 0.01f || std::abs(tVel - velocityScalar) > 0.01f) {
                 UMLEvent fg;
                 fg.sampleOffset     = sampleOffset;
                 fg.type             = UMLEventType::FreqGlide;
@@ -842,8 +842,8 @@ void UMLParser::handleVoiceToken(const TokenItem& ti, float amplitudeScalar, lon
 
                 UMLEvent ag;
                 ag.sampleOffset     = sampleOffset;
-                ag.type             = UMLEventType::AmpGlide;
-                ag.targetAmplitude  = tVel;
+                ag.type             = UMLEventType::VelGlide;
+                ag.targetVelocity  = tVel;
                 ag.durationSamples  = durationSamples;
                 outEvents.push_back(ag);
             }
@@ -874,8 +874,8 @@ void UMLParser::handleVoiceToken(const TokenItem& ti, float amplitudeScalar, lon
             outEvents.push_back(pg);
         }
     }
-    // Amp-only glide: if the token has '>', emit AmpGlide event
-    if (ti.hasAmpGlideOp) {
+    // Amp-only glide: if the token has '>', emit VelGlide event
+    if (ti.hasVelGlideOp) {
         size_t targetIdx = nextTokenIndex;
         while (targetIdx < tokenItemsArray.size() &&
                (tokenItemsArray[targetIdx].type == TokenType::ContinuityDot ||
@@ -884,11 +884,11 @@ void UMLParser::handleVoiceToken(const TokenItem& ti, float amplitudeScalar, lon
         }
         if (targetIdx < tokenItemsArray.size() && tokenItemsArray[targetIdx].type == TokenType::NoteWithControl) {
             float tVel = static_cast<float>(tokenItemsArray[targetIdx].controlParam) / 9.0f;
-            if (std::abs(tVel - amplitudeScalar) > 0.01f) {
+            if (std::abs(tVel - velocityScalar) > 0.01f) {
                 UMLEvent ag;
                 ag.sampleOffset     = sampleOffset;
-                ag.type             = UMLEventType::AmpGlide;
-                ag.targetAmplitude  = tVel;
+                ag.type             = UMLEventType::VelGlide;
+                ag.targetVelocity  = tVel;
                 ag.durationSamples  = durationSamples;
                 outEvents.push_back(ag);
             }
@@ -929,7 +929,7 @@ void UMLParser::handleCompositeNote(const TokenItem& ti, long sampleOffset, long
         noteEv.sampleOffset = sampleOffset;
         noteEv.frequency = freq;
         noteEv.velocity = -1.0f;
-        noteEv.amplitude = amp;
+        noteEv.velocity = amp;
         noteEv.strikeVal = subStrike;
         noteEv.type = UMLEventType::NoteOn;
         noteEv.note = subNote;

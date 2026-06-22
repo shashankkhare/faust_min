@@ -25,7 +25,9 @@ import("stdfaust.lib");
 // TANPURA WITH STABLE PARAMETER-DRIVEN JAWARI
 // =====================================================
 
-freq = hslider("freq", 130.81, 40, 600, 0.01);
+// Expert Play Range: Tanpura typical male/female base frequencies 130-300 Hz.
+freq = hslider("freq", 130.81, 130, 300, 0.01);
+smoothedFreq = freq : si.smoo;
 
 gain = hslider("gain", 0.8, 0, 100, 0.01);
 
@@ -84,7 +86,6 @@ stringLoop(freqVal, trigSig, susVal) =
         : fi.allpassnn(1, dispersion)
         : bridgeReflection
         : *(feedback(freqVal, susVal))
-        : *(1.0 - perStringTrig)
     )
 with {
     perStringTrig = (trigSig - trigSig') > 0.0;
@@ -102,7 +103,7 @@ with {
 // SINGLE STRING
 // =====================================================
 
-s0 = stringLoop(freq, t0, sustain) * stringGainVal;
+s0 = stringLoop(smoothedFreq, t0, sustain) * stringGainVal;
 
 // =====================================================
 // MIX

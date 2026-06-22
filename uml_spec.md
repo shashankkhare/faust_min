@@ -163,23 +163,25 @@ Used when `instrument` resolves to a percussion ID (IDs 0–6). Tokens map to a 
 
 | Token(s) | strikeVal | Character |
 |---|---|---|
-| `Na`, `na`, `Ta`, `ta` | 0.0 | Open centre ring |
-| `Dha`, `dha` | 0.0 | Compound — dayan open ring component |
+| `Tu`, `tu`, `Tun`, `tun` | 0.0 | Deep bass resonance |
 | `tk` | 1.0 | Edge flick |
 | `Tit`, `tit` | 1.0 | Sharp muted |
 | `Ti`, `ti`, `Tin`, `tin` | 2.0 | Ringing centre |
 | `Dhin`, `dhin` | 2.0 | Compound — dayan Tin-style resonance |
-| `Tu`, `tu`, `Tun`, `tun` | 3.0 | Deep bass resonance |
+| `Na`, `na`, `Ta`, `ta` | 3.0 | Open centre ring |
+| `Dha`, `dha` | 3.0 | Compound — dayan open ring component |
 
 ### 3.2 Bayan Bols (ID 1)
 
 | Token(s) | strikeVal | Character |
 |---|---|---|
 | `Ge`, `ge`, `Ghe`, `ghe` | 0.0 | Open resonant bass |
-| `Tit`, `tit` | 0.0 | Silent / ghost stroke |
-| `Dha`, `dha`, `Ghi`, `ghi` | 1.0 | Deep bass press / half-open |
+| `Dha`, `dha` | 0.0 | Deep bass press |
+| `Ka`, `ka` | 1.0 | Edge stroke / Closed Syahi |
+| `Tit`, `tit` | 1.0 | Silent / ghost stroke |
+| `Ghi`, `ghi` | 2.0 | Half-open / Muted centre |
 | `Dhin`, `dhin` | 2.0 | Half-muffled bass |
-| `Tu`, `tu`, `Tun`, `tun` | 3.0 | Deep bass resonance |
+| `Ke`, `ke` | 3.0 | Edge stroke / Closed Syahi edge |
 
 ### 3.3 Djembe (ID 28)
 
@@ -258,10 +260,10 @@ grid: 4
 
 | Token(s) | strikeVal |
 |---|---|
-| `Na`, `Ta` | 0.0 |
+| `Tu`, `Tun` | 0.0 |
 | `tk`, `Ka` | 1.0 |
 | `Ti`, `Tin` | 2.0 |
-| `Tu`, `Tun` | 3.0 |
+| `Na`, `Ta` | 3.0 |
 
 **Tabla Example**:
 ```

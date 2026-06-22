@@ -24,7 +24,8 @@ import("stdfaust.lib");
 // - strike: Strike articulation (0 = Open/Resonant Pop, 1 = Rim Slap, 2 = Muted/Tapped Rim).
 
 // UI Controls (Discrete sliders)
-freq = hslider("freq", 300.0, 150, 600, 0.1);
+// Expert Play Range: Bongo fundamental typically 300-800 Hz.
+freq = hslider("freq", 300.0, 300, 800, 0.1);
 gain = hslider("gain", 0.8, 0, 1, 0.01) : si.smoo;
 velocity = hslider("velocity", 0.8, 0, 1, 0.01);
 gate = button("gate");

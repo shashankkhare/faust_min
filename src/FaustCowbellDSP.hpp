@@ -50,8 +50,8 @@ class FaustCowbellDSP : public dsp {
 	float fVec2[2];
 	float fConst4;
 	int IOTA;
-	float fVec3[512];
-	float fVec4[512];
+	float fVec3[256];
+	float fVec4[256];
 	float fConst5;
 	float fConst6;
 	FAUSTFLOAT fButton0;
@@ -149,10 +149,10 @@ class FaustCowbellDSP : public dsp {
 			fVec2[l4] = 0.0f;
 		}
 		IOTA = 0;
-		for (int l5 = 0; (l5 < 512); l5 = (l5 + 1)) {
+		for (int l5 = 0; (l5 < 256); l5 = (l5 + 1)) {
 			fVec3[l5] = 0.0f;
 		}
-		for (int l6 = 0; (l6 < 512); l6 = (l6 + 1)) {
+		for (int l6 = 0; (l6 < 256); l6 = (l6 + 1)) {
 			fVec4[l6] = 0.0f;
 		}
 		for (int l7 = 0; (l7 < 2); l7 = (l7 + 1)) {
@@ -188,7 +188,7 @@ class FaustCowbellDSP : public dsp {
 		ui_interface->openVerticalBox("cowbell");
 		ui_interface->addHorizontalSlider("clang_intensity", &fHslider2, FAUSTFLOAT(0.5f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->declare(&fHslider3, "unit", "Hz");
-		ui_interface->addHorizontalSlider("freq", &fHslider3, FAUSTFLOAT(560.0f), FAUSTFLOAT(200.0f), FAUSTFLOAT(1000.0f), FAUSTFLOAT(1.0f));
+		ui_interface->addHorizontalSlider("freq", &fHslider3, FAUSTFLOAT(560.0f), FAUSTFLOAT(400.0f), FAUSTFLOAT(800.0f), FAUSTFLOAT(1.0f));
 		ui_interface->addHorizontalSlider("gain", &fHslider1, FAUSTFLOAT(0.5f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addButton("gate", &fButton0);
 		ui_interface->addHorizontalSlider("velocity", &fHslider0, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
@@ -246,13 +246,13 @@ class FaustCowbellDSP : public dsp {
 			fVec2[0] = fTemp3;
 			float fTemp4 = (fTemp3 - fVec2[1]);
 			float fTemp5 = (fSlow19 * (fTemp0 * fTemp4));
-			fVec3[(IOTA & 511)] = fTemp5;
+			fVec3[(IOTA & 255)] = fTemp5;
 			float fTemp6 = (fSlow25 * (fTemp0 * fTemp2));
-			fVec4[(IOTA & 511)] = fTemp6;
+			fVec4[(IOTA & 255)] = fTemp6;
 			fVec5[0] = fSlow30;
 			iRec3[0] = (((iRec3[1] + (iRec3[1] > 0)) * (fSlow30 <= fVec5[1])) + (fSlow30 > fVec5[1]));
 			float fTemp7 = float(iRec3[0]);
-			float fTempFTZ2 = ((((fConst2 * (fTemp0 * ((fSlow10 * fTemp2) + (fSlow14 * fTemp4)))) - ((fSlow18 * fVec3[((IOTA - iSlow21) & 511)]) + (((fSlow24 * fVec4[((IOTA - iSlow26) & 511)]) + (fSlow27 * fVec4[((IOTA - iSlow28) & 511)])) + (fSlow29 * fVec3[((IOTA - iSlow20) & 511)])))) * std::max<float>(0.0f, std::min<float>((fConst6 * fTemp7), ((fConst7 * (fConst5 - fTemp7)) + 1.0f)))) - (fSlow31 * ((fSlow32 * fRec0[2]) + (fSlow33 * fRec0[1]))));
+			float fTempFTZ2 = ((((fConst2 * (fTemp0 * ((fSlow10 * fTemp2) + (fSlow14 * fTemp4)))) - ((fSlow18 * fVec3[((IOTA - iSlow21) & 255)]) + (((fSlow24 * fVec4[((IOTA - iSlow26) & 255)]) + (fSlow27 * fVec4[((IOTA - iSlow28) & 255)])) + (fSlow29 * fVec3[((IOTA - iSlow20) & 255)])))) * std::max<float>(0.0f, std::min<float>((fConst6 * fTemp7), ((fConst7 * (fConst5 - fTemp7)) + 1.0f)))) - (fSlow31 * ((fSlow32 * fRec0[2]) + (fSlow33 * fRec0[1]))));
 			fRec0[0] = ((std::fabs(fTempFTZ2) > 1.17549435e-38f) ? fTempFTZ2 : 0.0f);
 			output0[i0] = FAUSTFLOAT((fSlow4 * (((fSlow6 * fRec0[0]) + (fSlow34 * fRec0[1])) + (fSlow6 * fRec0[2]))));
 			iVec0[1] = iVec0[0];

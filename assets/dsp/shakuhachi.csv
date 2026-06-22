@@ -1,4 +1,4 @@
-frequency,amplitude,pressure,mouthPosition,breath_noise
+frequency,velocity,pressure,mouthPosition,breath_noise
 200.0,0.1,0.60,0.50,0.02
 200.0,0.5,0.88,0.50,0.05
 200.0,1.0,0.95,0.50,0.08

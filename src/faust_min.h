@@ -314,7 +314,7 @@ DART_EXPORT void instrument_set_parameter(FaustInstrument* inst, const char* nam
  * strike: articulation / stroke type (-1 = DSP default).
  *         For percussion: selects different strokes (open, muted, rim, etc).
  */
-DART_EXPORT void instrument_note_on(FaustInstrument* inst, float freq, float amplitude, float velocity, float strike);
+DART_EXPORT void instrument_note_on(FaustInstrument* inst, float freq, float velocity, float strike);
 DART_EXPORT void instrument_note_off(FaustInstrument* inst);
 DART_EXPORT void instrument_render(FaustInstrument* inst, float* buffer, int numFrames);
 DART_EXPORT double sequence_get_bpm(UMLSequence* seq);

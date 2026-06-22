@@ -255,7 +255,7 @@ class FaustMasterReverbDSP : public dsp {
 	
 	virtual void instanceResetUserInterface() {
 		fHslider0 = FAUSTFLOAT(8.0f);
-		fHslider1 = FAUSTFLOAT(6000.0f);
+		fHslider1 = FAUSTFLOAT(1000.0f);
 		fHslider2 = FAUSTFLOAT(2.0f);
 	}
 	
@@ -439,7 +439,7 @@ class FaustMasterReverbDSP : public dsp {
 	
 	virtual void buildUserInterface(UI* ui_interface) {
 		ui_interface->openVerticalBox("master_reverb");
-		ui_interface->addHorizontalSlider("damping_freq", &fHslider1, FAUSTFLOAT(6000.0f), FAUSTFLOAT(1000.0f), FAUSTFLOAT(10000.0f), FAUSTFLOAT(10.0f));
+		ui_interface->addHorizontalSlider("damping_freq", &fHslider1, FAUSTFLOAT(1000.0f), FAUSTFLOAT(100.0f), FAUSTFLOAT(1000.0f), FAUSTFLOAT(10.0f));
 		ui_interface->addHorizontalSlider("decay_time", &fHslider0, FAUSTFLOAT(8.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(30.0f), FAUSTFLOAT(0.100000001f));
 		ui_interface->addHorizontalSlider("low_rt60", &fHslider2, FAUSTFLOAT(2.0f), FAUSTFLOAT(0.100000001f), FAUSTFLOAT(8.0f), FAUSTFLOAT(0.100000001f));
 		ui_interface->closeBox();

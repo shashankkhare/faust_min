@@ -34,7 +34,7 @@ enum class UMLEventType {
     NoteOff,
     PhonemeOn,
     FreqGlide,
-    AmpGlide,
+    VelGlide,
     VibratoOn,
     PhonemeGlide
 };
@@ -44,14 +44,12 @@ struct UMLEvent {
     UMLEventType type = UMLEventType::NoteOn;
     float frequency = 0.0f;
     float velocity = -1.0f;  // -1.0 = not set (use DSP default)
-    float amplitude = -1.0f; // -1.0 = not set (use DSP default)
     float strikeVal = 0.0f;   // Default to 0.0f (normal strike)
     float vowelVal  = -1.0f;   // -1.0 = not a voice event; 0=aa 1=ee 2=ii 3=oo 4=uu
     std::string note = "";
     long durationSamples = 0;  // For glides
     float targetFrequency = 0.0f;  // For glides
-    float targetVelocity  = 0.0f;  // For glides
-    float targetAmplitude = -1.0f; // For glides
+    float targetVelocity  = -1.0f;  // For glides
     float targetStrikeVal = -1.0f; // For glides if needed
     std::string targetNote = "";   // For phoneme glides
 };

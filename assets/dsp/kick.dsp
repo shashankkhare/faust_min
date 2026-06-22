@@ -14,7 +14,8 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 import("stdfaust.lib");
 
 // --- Dedicated Kick Drum ---
-freq = hslider("freq [unit:Hz]", 100, 20, 200, 0.1);
+// Expert Play Range: Standard Kick Drum fundamental typically 40-100 Hz.
+freq = hslider("freq [unit:Hz]", 100.0, 40, 100, 0.1);
 gain = hslider("gain", 0.8, 0, 1, 0.01);
 velocity = hslider("velocity", 1, 0, 1, 0.01);
 gate = button("gate");

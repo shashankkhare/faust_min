@@ -21,7 +21,8 @@ import("stdfaust.lib");
 // Vowel morphing: 0=aa, 1=ee, 2=ii, 3=oo, 4=uu
 // ============================================================
 
-freq     = hslider("freq [unit:Hz]",  220,  50,  2000, 0.1);
+// Expert Play Range: Human voice (Bass to Soprano) broadly spans E2 (82 Hz) to C6 (1046 Hz).
+freq     = hslider("freq [unit:Hz]",  220.0, 82, 1046, 0.1);
 gain     = hslider("gain",            0.7,  0.0, 1.0,  0.01);
 gate     = button("gate");
 

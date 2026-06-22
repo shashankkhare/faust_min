@@ -24,7 +24,8 @@ import("stdfaust.lib");
 // - strike: Strike sharpness (0 = dull/soft mallet, 1 = sharp/finger slap).
 
 // UI Controls
-freq = hslider("freq", 110, 30, 500, 0.1);
+// Expert Play Range: Djembe bass/tone fundamental typically 80-300 Hz.
+freq = hslider("freq", 110.0, 80, 300, 0.1);
 gain = hslider("gain", 0.8, 0, 1, 0.01) : si.smoo;
 velocity = hslider("velocity", 0.8, 0, 1, 0.01);
 gate = button("gate");

@@ -32,7 +32,7 @@
 class UMLParser {
 public:
     enum class TokenType { NoteWithControl, ContinuityDot, StopRest };
-    enum class OpType { Glide, AmpGlide, Vibrato };
+    enum class OpType { Glide, VelGlide, Vibrato };
     struct TokenItem {
         TokenType type;
         std::string rawStr;
@@ -41,7 +41,7 @@ public:
         float strikeVal = 0.0f; // Strike type prefix modifier (default 0.0f)
         std::string noteName;
         bool hasGlideOp;
-        bool hasAmpGlideOp = false;
+        bool hasVelGlideOp = false;
         bool hasVibratoOp;
         bool isGlideTarget = false;
         bool hasCompositeNotes = false;
@@ -52,15 +52,15 @@ public:
 private:
     static void parseHeader(std::stringstream& ss, UMLSequence& seq, int& grid, std::string& notesSection);
     static double getFrequency(const std::string& token, const std::string& notation, double baseFreq, const std::string& instrument);
-    static void handlePercussionToken(const std::string& tokenNoteName, float amplitudeScalar, long sampleOffset, long durationSamples, 
+    static void handlePercussionToken(const std::string& tokenNoteName, float velocityScalar, long sampleOffset, long durationSamples, 
                                      const std::string& notation, double baseFreq, const std::string& instrument, std::vector<UMLEvent>& outEvents,
                                      float strikeValFromPrefix = -1.0f);
-    static void handlePitchedToken(const TokenItem& ti, float amplitudeScalar, long sampleOffset, long durationSamples, 
+    static void handlePitchedToken(const TokenItem& ti, float velocityScalar, long sampleOffset, long durationSamples, 
                                    const std::string& notation, double baseFreq, const std::string& instrument,
                                    double samplesPerGrid, double sampleRate, size_t nextTokenIndex, 
                                    const std::vector<TokenItem>& tokenItemsArray,
                                    const std::vector<std::pair<OpType, long>>& triggers, std::vector<UMLEvent>& outEvents);
-    static void handleVoiceToken(const TokenItem& ti, float amplitudeScalar, long sampleOffset, long durationSamples,
+    static void handleVoiceToken(const TokenItem& ti, float velocityScalar, long sampleOffset, long durationSamples,
                                  const std::string& notation, double baseFreq,
                                  double samplesPerGrid, size_t nextTokenIndex, const std::vector<TokenItem>& tokenItemsArray, std::vector<UMLEvent>& outEvents);
 

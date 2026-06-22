@@ -18,7 +18,8 @@ import("stdfaust.lib");
 
 mypm = library("physmodels.lib") with { maxLength = 20; };
 
-freq = hslider("freq", 196.0, 50, 2000, 0.01);
+// Expert Play Range: Electric Guitar typical range E2 (82 Hz) to C6 (1046 Hz).
+freq = hslider("freq", 196.0, 82, 1046, 0.01);
 velocity = hslider("velocity", 0.5, 0, 1, 0.01);
 gate = button("gate");
 gain = hslider("gain", 0.5, 0, 1, 0.01) : si.smoo;

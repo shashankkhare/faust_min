@@ -14,7 +14,8 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 import("stdfaust.lib");
 
 // --- Dedicated Meditative Bell ---
-freq = hslider("freq [unit:Hz]", 440, 200, 2000, 1);
+// Expert Play Range: Bell fundamental usually spans 200-800 Hz depending on size.
+freq = hslider("freq [unit:Hz]", 440.0, 200, 800, 1);
 gain = hslider("gain", 0.5, 0, 1, 0.01);
 velocity = hslider("velocity", 1, 0, 1, 0.01);
 gate = button("gate");

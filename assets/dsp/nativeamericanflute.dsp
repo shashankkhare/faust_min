@@ -2,7 +2,8 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 
 import("stdfaust.lib");
 
-fTarget = hslider("freq", 440, 50, 2000, 0.1);
+// Expert Play Range: Native American Flute typical range D4 (293 Hz) to D6 (1174 Hz).
+fTarget = hslider("freq", 440.0, 293, 1174, 0.1);
 velocity = hslider("velocity", 0.5, 0.0, 1.0, 0.01);
 t = button("gate");
 gain = hslider("gain", 1.0, 0.0, 3.0, 0.01) : si.smoo;

@@ -18,7 +18,8 @@ import("stdfaust.lib");
 // SIMPLE GRAND PIANO MODEL
 // =====================================================
 
-freq = hslider("freq [unit:Hz]", 110, 27, 4000, 0.1);
+// Expert Play Range: Piano full range A0 (27.5 Hz) to C8 (4186 Hz).
+freq = hslider("freq [unit:Hz]", 110.0, 27.5, 4186, 0.1);
 
 gain = hslider("gain", 0.5, 0, 1, 0.01);
 

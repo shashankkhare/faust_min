@@ -54,7 +54,7 @@ class FaustBassDSP : public dsp {
 	float fConst4;
 	float fRec6[2];
 	int IOTA;
-	float fVec2[16384];
+	float fVec2[8192];
 	float fRec2[3];
 	FAUSTFLOAT fHslider4;
 	float fRec7[2];
@@ -168,7 +168,7 @@ class FaustBassDSP : public dsp {
 			fRec6[l5] = 0.0f;
 		}
 		IOTA = 0;
-		for (int l6 = 0; (l6 < 16384); l6 = (l6 + 1)) {
+		for (int l6 = 0; (l6 < 8192); l6 = (l6 + 1)) {
 			fVec2[l6] = 0.0f;
 		}
 		for (int l7 = 0; (l7 < 3); l7 = (l7 + 1)) {
@@ -208,7 +208,7 @@ class FaustBassDSP : public dsp {
 	
 	virtual void buildUserInterface(UI* ui_interface) {
 		ui_interface->openVerticalBox("bass");
-		ui_interface->addHorizontalSlider("freq", &fHslider1, FAUSTFLOAT(55.0f), FAUSTFLOAT(20.0f), FAUSTFLOAT(500.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("freq", &fHslider1, FAUSTFLOAT(55.0f), FAUSTFLOAT(41.0f), FAUSTFLOAT(392.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addHorizontalSlider("gain", &fHslider0, FAUSTFLOAT(0.5f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addButton("gate", &fButton0);
 		ui_interface->addHorizontalSlider("mute", &fHslider2, FAUSTFLOAT(0.949999988f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
@@ -250,8 +250,8 @@ class FaustBassDSP : public dsp {
 			float fTempFTZ2 = ((fSlow5 > fVec0[1]) ? fConst4 : fThen1);
 			fRec6[0] = ((std::fabs(fTempFTZ2) > 1.17549435e-38f) ? fTempFTZ2 : 0.0f);
 			float fTemp1 = ((0.5f * ((fSlow6 * (fRec2[1] + fRec2[2])) * std::pow(0.00100000005f, (fSlow7 / ((7.8499999f * fRec3[0]) + 0.150000006f))))) + (fSlow9 * (fRec4[0] * float((fRec6[0] > 0.0f)))));
-			fVec2[(IOTA & 16383)] = fTemp1;
-			float fTempFTZ3 = ((fSlow4 * fVec2[((IOTA - iSlow14) & 16383)]) + (fSlow15 * fVec2[((IOTA - iSlow16) & 16383)]));
+			fVec2[(IOTA & 8191)] = fTemp1;
+			float fTempFTZ3 = ((fSlow4 * fVec2[((IOTA - iSlow14) & 8191)]) + (fSlow15 * fVec2[((IOTA - iSlow16) & 8191)]));
 			fRec2[0] = ((std::fabs(fTempFTZ3) > 1.17549435e-38f) ? fTempFTZ3 : 0.0f);
 			float fTempFTZ4 = (fSlow17 + (fConst2 * fRec7[1]));
 			fRec7[0] = ((std::fabs(fTempFTZ4) > 1.17549435e-38f) ? fTempFTZ4 : 0.0f);

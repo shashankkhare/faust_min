@@ -15,7 +15,8 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 // =============================================================================
 import("stdfaust.lib");
 
-freq = hslider("freq", 329.63, 80, 2000, 0.1);
+// Expert Play Range: Tumbi typical range C4 (261 Hz) to C6 (1046 Hz).
+freq = hslider("freq", 329.63, 261, 1046, 0.1);
 gate = button("gate");
 velocity = hslider("velocity", 0.8, 0, 1, 0.01);
 gain = hslider("gain", 1.0, 0, 1, 0.01);

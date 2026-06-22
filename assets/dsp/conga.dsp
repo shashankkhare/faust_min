@@ -24,7 +24,8 @@ import("stdfaust.lib");
 // - strike: Strike articulation (0 = Open Tone, 1 = Slap Tone, 2 = Muffled/Touch).
 
 // UI Controls (Discrete sliders)
-freq = hslider("freq", 150.0, 80, 400, 0.1);
+// Expert Play Range: Conga fundamental typically 200-500 Hz.
+freq = hslider("freq", 200.0, 200, 500, 0.1);
 gain = hslider("gain", 0.8, 0, 1, 0.01) : si.smoo;
 velocity = hslider("velocity", 0.8, 0, 1, 0.01);
 gate = button("gate");

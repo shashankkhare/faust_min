@@ -48,7 +48,8 @@ import("stdfaust.lib");
 //                    lowpass cutoff (2800 Hz hard → 700 Hz soft). Affects attack brightness.
 // =======================================================================================
 
-freq            = hslider("freq [unit:Hz]", 220.0, 120.0, 400.0, 0.1);
+// Expert Play Range: Lag-nga (Tibetan frame drum) fundamental typically 80-300 Hz.
+freq            = hslider("freq [unit:Hz]", 220.0, 80, 300, 0.1);
 gain            = hslider("gain", 1.0, 0.0, 2.0, 0.01);
 velocity        = hslider("velocity", 1.0, 0.0, 1.0, 0.01);
 gate            = button("gate");

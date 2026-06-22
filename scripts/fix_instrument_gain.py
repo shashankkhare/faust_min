@@ -10,7 +10,7 @@ Usage: python3 scripts/fix_instrument_gain.py <instrument_name_or_id>
 Example: python3 scripts/fix_instrument_gain.py sarod
 """
 
-import subprocess, sys, os, math, re
+import subprocess, sys, os, math, re, argparse
 
 CSV_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "dsp")
 TEST_BINARY = "./build-release/test_instruments"
@@ -18,6 +18,7 @@ WORK_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 TARGET_E_AT_AMP1 = 0.3
 TARGET_TOLERANCE = 0.10  # ±10%
+STRIKE = "0"
 
 def resolve_id(name_or_id):
     """Resolve an instrument name or numeric ID to (id, name)."""
@@ -77,13 +78,13 @@ def write_csv(path, header, rows, columns):
             f.write(','.join(str(r.get(c, '')) for c in columns) + '\n')
 
 def measure(instrument_id, freq, amp):
-    cmd = [TEST_BINARY, str(instrument_id), f"f={freq}", f"a={amp}"]
+    cmd = [TEST_BINARY, str(instrument_id), f"f={freq}", f"a={amp}", f"s={STRIKE}"]
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=15, cwd=WORK_DIR)
         for line in reversed(result.stdout.strip().split('\n')):
             parts = line.split(' , ')
             for part in parts:
-                m = re.match(r'^\s*([\d.]+)\s*,\s*([\d.eE+-]+)', part)
+                m = re.search(r'(?:\{)?\s*([\d.]+)\s*,\s*([\d.eE+-]+)', part)
                 if m:
                     f_val = float(m.group(1))
                     if abs(f_val - freq) < 0.1:
@@ -93,20 +94,27 @@ def measure(instrument_id, freq, amp):
         return None
 
 def main():
-    if len(sys.argv) < 2:
-        print("Usage: python3 scripts/fix_instrument_gain.py <instrument_name_or_id>")
-        print("Example: python3 scripts/fix_instrument_gain.py sarod")
-        sys.exit(1)
+    global TARGET_E_AT_AMP1, STRIKE
+    
+    parser = argparse.ArgumentParser(description="Linearize energy output across CSV amplitude levels.")
+    parser.add_argument("instrument", help="Instrument name or ID")
+    parser.add_argument("--target", type=float, default=0.3, help="Target energy at amp=1.0 (default 0.3)")
+    parser.add_argument("--strike", type=str, default="0", help="Strike type to use for testing (default 0)")
+    
+    args = parser.parse_args()
+    TARGET_E_AT_AMP1 = args.target
+    STRIKE = args.strike
 
     if not os.path.exists(TEST_BINARY):
         print(f"ERROR: {TEST_BINARY} not found. Run build first.")
         sys.exit(1)
 
-    instrument_id, instrument_name = resolve_id(sys.argv[1])
+    instrument_id, instrument_name = resolve_id(args.instrument)
     path = csv_path(instrument_name)
 
     print(f"Instrument: {instrument_name} (ID {instrument_id})")
     print(f"Reading: {path}")
+    print(f"Target Energy: {TARGET_E_AT_AMP1}, Strike: {STRIKE}")
     header, rows, columns = read_csv(path)
     print(f"Loaded {len(rows)} rows, columns: {columns}")
 
@@ -164,7 +172,7 @@ def main():
                 print("  OK")
                 break
             else:
-                new_g = round(ref_row[gain_col] * math.sqrt(TARGET_E_AT_AMP1 / e), 4)
+                new_g = round(ref_row[gain_col] * math.sqrt(TARGET_E_AT_AMP1 / e) if e > 0 else ref_row[gain_col], 4)
                 new_g = max(0.01, min(50.0, new_g))
                 print(f"  adjust gain {ref_row[gain_col]:.4f} -> {new_g:.4f}")
                 ref_row[gain_col] = new_g

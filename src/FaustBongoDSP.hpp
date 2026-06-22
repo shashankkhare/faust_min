@@ -230,7 +230,7 @@ class FaustBongoDSP : public dsp {
 	
 	virtual void buildUserInterface(UI* ui_interface) {
 		ui_interface->openVerticalBox("bongo");
-		ui_interface->addHorizontalSlider("freq", &fHslider4, FAUSTFLOAT(300.0f), FAUSTFLOAT(150.0f), FAUSTFLOAT(600.0f), FAUSTFLOAT(0.100000001f));
+		ui_interface->addHorizontalSlider("freq", &fHslider4, FAUSTFLOAT(300.0f), FAUSTFLOAT(300.0f), FAUSTFLOAT(800.0f), FAUSTFLOAT(0.100000001f));
 		ui_interface->addHorizontalSlider("gain", &fHslider0, FAUSTFLOAT(0.800000012f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addButton("gate", &fButton0);
 		ui_interface->addHorizontalSlider("position", &fHslider2, FAUSTFLOAT(0.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(2.0f), FAUSTFLOAT(1.0f));

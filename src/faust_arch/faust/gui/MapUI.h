@@ -61,10 +61,27 @@ class FAUST_API MapUI : public UI, public PathBuilder
     
         void addZoneLabel(const std::string& label, FAUSTFLOAT* zone)
         {
-            std::string path = buildPath(label);
+        std::string path = buildPath(label);
             fFullPaths.push_back(path);
             fPathZoneMap[path] = zone;
             fLabelZoneMap[label] = zone;
+        }
+
+        std::map<std::string, FAUSTFLOAT> fLabelMinMap;
+        std::map<std::string, FAUSTFLOAT> fLabelMaxMap;
+        std::map<std::string, FAUSTFLOAT> fShortnameMinMap;
+        std::map<std::string, FAUSTFLOAT> fShortnameMaxMap;
+        std::map<std::string, FAUSTFLOAT> fPathMinMap;
+        std::map<std::string, FAUSTFLOAT> fPathMaxMap;
+
+        void addZoneLabelBounds(const std::string& label, FAUSTFLOAT* zone, FAUSTFLOAT fmin, FAUSTFLOAT fmax)
+        {
+            addZoneLabel(label, zone);
+            std::string path = fFullPaths.back();
+            fPathMinMap[path] = fmin;
+            fPathMaxMap[path] = fmax;
+            fLabelMinMap[label] = fmin;
+            fLabelMaxMap[label] = fmax;
         }
     
     public:
@@ -92,7 +109,12 @@ class FAUST_API MapUI : public UI, public PathBuilder
                 computeShortNames();
                 // Fill 'shortname' map
                 for (const auto& it : fFullPaths) {
-                    fShortnameZoneMap[fFull2Short[it]] = fPathZoneMap[it];
+                    std::string shortname = fFull2Short[it];
+                    fShortnameZoneMap[shortname] = fPathZoneMap[it];
+                    if (fPathMinMap.find(it) != fPathMinMap.end()) {
+                        fShortnameMinMap[shortname] = fPathMinMap[it];
+                        fShortnameMaxMap[shortname] = fPathMaxMap[it];
+                    }
                 }
             }
         }
@@ -108,15 +130,15 @@ class FAUST_API MapUI : public UI, public PathBuilder
         }
         void addVerticalSlider(const char* label, FAUSTFLOAT* zone, FAUSTFLOAT init, FAUSTFLOAT fmin, FAUSTFLOAT fmax, FAUSTFLOAT step)
         {
-            addZoneLabel(label, zone);
+            addZoneLabelBounds(label, zone, fmin, fmax);
         }
         void addHorizontalSlider(const char* label, FAUSTFLOAT* zone, FAUSTFLOAT init, FAUSTFLOAT fmin, FAUSTFLOAT fmax, FAUSTFLOAT step)
         {
-            addZoneLabel(label, zone);
+            addZoneLabelBounds(label, zone, fmin, fmax);
         }
         void addNumEntry(const char* label, FAUSTFLOAT* zone, FAUSTFLOAT init, FAUSTFLOAT fmin, FAUSTFLOAT fmax, FAUSTFLOAT step)
         {
-            addZoneLabel(label, zone);
+            addZoneLabelBounds(label, zone, fmin, fmax);
         }
         
         // -- passive widgets
@@ -196,6 +218,29 @@ class FAUST_API MapUI : public UI, public PathBuilder
             
             fprintf(stderr, "ERROR : getParamValue '%s' not found\n", str.c_str());
             return 0;
+        }
+
+        bool getParamBounds(const std::string& str, FAUSTFLOAT& outMin, FAUSTFLOAT& outMax) const
+        {
+            const auto fPathMinMapIter = fPathMinMap.find(str);
+            if (fPathMinMapIter != fPathMinMap.end()) {
+                outMin = fPathMinMapIter->second;
+                outMax = fPathMaxMap.at(str);
+                return true;
+            }
+            const auto fShortnameMinMapIter = fShortnameMinMap.find(str);
+            if (fShortnameMinMapIter != fShortnameMinMap.end()) {
+                outMin = fShortnameMinMapIter->second;
+                outMax = fShortnameMaxMap.at(str);
+                return true;
+            }
+            const auto fLabelMinMapIter = fLabelMinMap.find(str);
+            if (fLabelMinMapIter != fLabelMinMap.end()) {
+                outMin = fLabelMinMapIter->second;
+                outMax = fLabelMaxMap.at(str);
+                return true;
+            }
+            return false;
         }
     
         // map access 

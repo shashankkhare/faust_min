@@ -103,7 +103,7 @@
 FaustInstrument::FaustInstrument(int instrumentID, DSPExecutionType execType,
                                  float sampleRate, float gain, float freq, float velocity, float amplitude) 
     : mInstrumentID(instrumentID), mExecType(execType), mSampleRate(sampleRate), mGain(gain),
-      mFrequency(freq), mVelocity(velocity), mAmplitude(amplitude), mDuration(-1.0f), mReverbSend(0.0f), mGateOpen(false),
+      mFrequency(freq), mVelocity(velocity), mAmplitude(1.0f), mDuration(-1.0f), mReverbSend(0.0f), mGateOpen(false),
       mTargetFrames(0), mElapsedFrames(0), mDecayFramesTarget(0), mDecayElapsedFrames(0),
       mVelGlideActive(false), mVelGlideStart(velocity), mVelGlideTarget(velocity), mVelGlideFramesTotal(0), mVelGlideFramesElapsed(0),
       mFreqGlideActive(false), mFreqGlideStart(freq), mFreqGlideTarget(freq), mFreqGlideFramesTotal(0), mFreqGlideFramesElapsed(0),
@@ -274,7 +274,7 @@ void FaustInstrument::loadTargetDSP() {
                 std::stringstream rss(rLine);
                 std::string cell;
                 float rowFreq = 0.0f;
-                float rowAmp = 1.0f;
+                float rowVel = 1.0f;
                 float rowStrike = 0.0f;
                 std::map<std::string, float> paramsMap;
                 int cIdx = 0;
@@ -284,8 +284,8 @@ void FaustInstrument::loadTargetDSP() {
                             float val = std::stof(cell);
                             if (columns[cIdx] == "frequency" || columns[cIdx] == "freq" || cIdx == 0) {
                                 rowFreq = val;
-                            } else if (columns[cIdx] == "amplitude" || columns[cIdx] == "amp" || cIdx == 1) {
-                                rowAmp = val;
+                            } else if (columns[cIdx] == "velocity" || columns[cIdx] == "vel" || cIdx == 1) {
+                                rowVel = val;
                             } else if (columns[cIdx] == "strike") {
                                 rowStrike = val;
                             } else {
@@ -296,7 +296,7 @@ void FaustInstrument::loadTargetDSP() {
                     cIdx++;
                 }
                 if (rowFreq > 0.0f && !paramsMap.empty()) {
-                    mLUTRecords.push_back({rowFreq, rowAmp, rowStrike, paramsMap});
+                    mLUTRecords.push_back({rowFreq, rowVel, rowStrike, paramsMap});
                 }
             }
         }
@@ -508,6 +508,37 @@ float FaustInstrument::getParam(const char* shortName) {
     return mVoiceUIs[0]->getParamValue(addr.c_str());
 }
 
+bool FaustInstrument::getParamBounds(const char* shortName, float& outMin, float& outMax) {
+    if (mVoiceUIs.empty() || !mVoiceUIs[0]) return false;
+
+    std::string key(shortName);
+    auto it = mParamAddressCache.find(key);
+    std::string addr = "";
+    if (it != mParamAddressCache.end()) {
+        addr = it->second;
+    } else {
+        for (int i = 0; i < mVoiceUIs[0]->getParamsCount(); i++) {
+            std::string tempAddr = mVoiceUIs[0]->getParamAddress(i);
+            size_t lastSlash = tempAddr.find_last_of('/');
+            std::string baseName = (lastSlash != std::string::npos) ? tempAddr.substr(lastSlash + 1) : tempAddr;
+            if (baseName == key) {
+                addr = tempAddr;
+                mParamAddressCache[key] = addr;
+                break;
+            }
+        }
+    }
+
+    if (addr.empty()) return false;
+    FAUSTFLOAT fmin, fmax;
+    if (mVoiceUIs[0]->getParamBounds(addr, fmin, fmax)) {
+        outMin = fmin;
+        outMax = fmax;
+        return true;
+    }
+    return false;
+}
+
 void FaustInstrument::setFrequency(float freq) {
     mFrequency = freq;
     setParam("freq", freq, -1);
@@ -573,14 +604,14 @@ float FaustInstrument::getSampleRate() const { return mSampleRate; }
 void FaustInstrument::setReverbSend(float send) { mReverbSend = send; }
 DSPExecutionType FaustInstrument::getExecutionType() const { return mExecType; }
 
-void FaustInstrument::amplitudeGlide(float targetAmplitude, float durationSeconds) {
+void FaustInstrument::velocityGlide(float targetVelocity, float durationSeconds) {
     mVelGlideStart = mVelocity;
-    mVelGlideTarget = targetAmplitude;
+    mVelGlideTarget = targetVelocity;
     mVelGlideFramesTotal = static_cast<long>(durationSeconds * mSampleRate);
     mVelGlideFramesElapsed = 0;
     mVelGlideActive = (mVelGlideFramesTotal > 0);
     if (!mVelGlideActive) {
-        setVelocity(targetAmplitude);
+        setVelocity(targetVelocity);
     }
 }
 
@@ -613,8 +644,8 @@ void FaustInstrument::gainGlide(float targetGain, float durationSeconds) {
     }
 }
 
-void FaustInstrument::noteOn(float freq, float amp, float vel, float strikeVal) {
-    if (amp <= 0.0f) return;
+void FaustInstrument::noteOn(float freq, float vel, float strikeVal) {
+    if (vel <= 0.0f) return;
 
     std::lock_guard<std::recursive_mutex> lock(mDSPLock);
 
@@ -638,16 +669,13 @@ void FaustInstrument::noteOn(float freq, float amp, float vel, float strikeVal) 
         setParamImmediate("freq", freq, v);
     }
 
-    mAmplitude = amp;
-    if (mLUTActive)
-        applyDynamicLUTParams(mFrequency, mAmplitude, v);
-    else
-        setParamImmediate("gain", amp, v);
-
     if (vel >= 0.0f) {
         mVelocity = vel;
         setParamImmediate("velocity", vel, v);
     }
+
+    if (mLUTActive)
+        applyDynamicLUTParams(mFrequency, mVelocity, v);
 
     mStrikeVal = strikeVal;
     if (strikeVal >= 0.0f)
@@ -853,22 +881,26 @@ void FaustInstrument::processRealtimeStream(float* buffer, int numFrames) {
             mElapsedFrames += remaining;
             
             if (mEnableDiagLogging) {
-                long f500 = 0.5f * mSampleRate;
-                long f600 = 0.6f * mSampleRate;
-                long f700 = 0.7f * mSampleRate;
-                
-                if ((prevElapsed < f500 && mElapsedFrames >= f500) ||
-                    (prevElapsed < f600 && mElapsedFrames >= f600) ||
-                    (prevElapsed < f700 && mElapsedFrames >= f700)) {
-                    
-                    float sumSq = 0.0f;
-                    for (int i = 0; i < remaining; ++i) {
-                        float valL = chunkBuffer[i * 2];
-                        float valR = chunkBuffer[i * 2 + 1];
-                        sumSq += (valL * valL + valR * valR) * 0.5f;
+                for (float t : mDiagSamplingTimes) {
+                    long targetFrame = static_cast<long>(t * mSampleRate);
+                    if (prevElapsed < targetFrame && mElapsedFrames >= targetFrame) {
+                        float sumSq = 0.0f;
+                        for (int i = 0; i < remaining; ++i) {
+                            float valL = chunkBuffer[i * 2];
+                            float valR = chunkBuffer[i * 2 + 1];
+                            sumSq += (valL * valL + valR * valR) * 0.5f;
+                        }
+                        float energy = sumSq / remaining;
+                        DiagLog log = {mElapsedFrames, mFrequency, 0.0f, energy, {}};
+
+                        {
+                            std::lock_guard<std::recursive_mutex> lock(mDSPLock);
+                            if (!mGoertzelFreqs.empty()) {
+                                log.rawAudio.assign(chunkBuffer, chunkBuffer + (remaining * 2));
+                            }
+                            mDiagLogs.push_back(log);
+                        }
                     }
-                    float energy = sumSq / remaining;
-                    mDiagLogs.push_back({mElapsedFrames, mFrequency, 0.0f, energy});
                 }
             }
 
@@ -889,7 +921,7 @@ void FaustInstrument::stopInternalStream() {
     mIsStreamActive = false;
 }
 
-void FaustInstrument::applyDynamicLUTParams(float freq, float amp, int voiceIndex) {
+void FaustInstrument::applyDynamicLUTParams(float freq, float velocity, int voiceIndex) {
     if (!mLUTActive || mLUTRecords.empty()) return;
 
     constexpr int K = 3;
@@ -907,8 +939,8 @@ void FaustInstrument::applyDynamicLUTParams(float freq, float amp, int voiceInde
 
         float fDenom = freq + rec.frequency;
         float fNorm = (fDenom > 0.0001f) ? (freq - rec.frequency) / fDenom : 0.0f;
-        float aDenom = amp + rec.amplitude;
-        float aNorm = (aDenom > 0.0001f) ? (amp - rec.amplitude) / aDenom : 0.0f;
+        float aDenom = velocity + rec.velocity;
+        float aNorm = (aDenom > 0.0001f) ? (velocity - rec.velocity) / aDenom : 0.0f;
         
         float distSq = fNorm * fNorm + aNorm * aNorm;
 
@@ -931,7 +963,7 @@ void FaustInstrument::applyDynamicLUTParams(float freq, float amp, int voiceInde
 #ifdef DEBUG
     // To prevent flooding the console if the test is fast, we only print if requested. 
     // Usually it's helpful to see it per-note.
-    printf("\n[DEBUG LUT] Interpolating for Request: Freq=%.1f, Amp=%.2f, TargetStrike=%.1f\n", freq, amp, mStrikeVal >= 0.0f ? mStrikeVal : 1.0f);
+    printf("\n[DEBUG LUT] Interpolating for Request: Freq=%.1f, Vel=%.2f, TargetStrike=%.1f\n", freq, velocity, mStrikeVal >= 0.0f ? mStrikeVal : 1.0f);
 #endif
 
     std::map<std::string, float> accumulatedParams, totalWeights;

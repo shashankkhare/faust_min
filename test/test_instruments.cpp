@@ -19,16 +19,53 @@
 // =====================================================
 // HELPER: print horizontal freq,energy from diagnostic logs
 // =====================================================
-static void printEnergy(FaustInstrument* inst, double freq) {
+static void printEnergy(FaustInstrument* inst, double baseFreq) {
     if (!inst) return;
     auto logs = inst->getDiagnosticLogs();
-    float avgEnergy = 0.0f;
-    if (!logs.empty()) {
-        float sumSq = 0.0f;
-        for (const auto& log : logs) sumSq += log.value3 * log.value3;
-        avgEnergy = std::sqrt(sumSq / logs.size());
+    if (logs.empty()) {
+        std::cout << "{ " << baseFreq << ", 0.0 }";
+        return;
     }
-    std::cout << freq << "," << avgEnergy;
+
+    auto targets = inst->getDiagnosticFreqs();
+    float sampleRate = inst->getSampleRate();
+
+    // Average the RMS and Goertzel energies across all snapshots
+    float sumSqRMS = 0.0f;
+    std::vector<float> sumSqGoertzel(targets.size(), 0.0f);
+
+    for (const auto& log : logs) {
+        sumSqRMS += log.value3 * log.value3;
+        
+        if (!log.rawAudio.empty() && !targets.empty()) {
+            int remaining = log.rawAudio.size() / 2; // Stereo interleaved
+            for (size_t t = 0; t < targets.size(); ++t) {
+                float targetFreq = targets[t];
+                float k = (0.5f + (remaining * targetFreq) / sampleRate);
+                float omega = (2.0f * M_PI * k) / remaining;
+                float coeff = 2.0f * cos(omega);
+                float q1 = 0.0f;
+                float q2 = 0.0f;
+                for (int i = 0; i < remaining; ++i) {
+                    float x = (log.rawAudio[i * 2] + log.rawAudio[i * 2 + 1]) * 0.5f;
+                    float q0 = coeff * q1 - q2 + x;
+                    q2 = q1;
+                    q1 = q0;
+                }
+                float magnitudeSq = q1 * q1 + q2 * q2 - q1 * q2 * coeff;
+                float magnitude = sqrt(std::max(0.0f, magnitudeSq)) / remaining;
+                sumSqGoertzel[t] += magnitude * magnitude;
+            }
+        }
+    }
+
+    float avgRMS = std::sqrt(sumSqRMS / logs.size());
+    std::cout << "{ " << baseFreq << ", " << avgRMS;
+    for (size_t t = 0; t < targets.size(); ++t) {
+        float avgGoertzel = std::sqrt(sumSqGoertzel[t] / logs.size());
+        std::cout << ", " << avgGoertzel;
+    }
+    std::cout << " }";
 }
 
 // =====================================================
@@ -41,7 +78,26 @@ static float gTestAmplitude = 0.8f;
 static double gTestFrequency = -1.0; // -1 means use default test sequence
 static float gTestStrike = -1.0f; // -1 means use default strikes
 
-static std::vector<double> getTestFreqsDouble(const std::vector<double>& defaultFreqs) {
+static std::vector<double> getTestFreqsDouble(FaustInstrument* inst, const std::vector<double>& defaultFreqs) {
+    if (gTestFrequency > 0.0) {
+        return { gTestFrequency };
+    }
+    float fmin = 0, fmax = 0;
+    if (inst && inst->getParamBounds("freq", fmin, fmax)) {
+        std::vector<double> dynamicFreqs;
+        for (int midi = 12; midi <= 108; midi += 12) {
+            double freq = 440.0 * std::pow(2.0, (midi - 69.0) / 12.0);
+            if (freq >= fmin && freq <= fmax) {
+                dynamicFreqs.push_back(freq);
+            }
+        }
+        if (!dynamicFreqs.empty()) return dynamicFreqs;
+        return { fmin, fmin + (fmax - fmin)*0.5, fmax };
+    }
+    return defaultFreqs;
+}
+
+static std::vector<double> getTestFreqsDouble(const std::vector<double>& defaultFreqs) { // fallback
     if (gTestFrequency > 0.0) {
         return { gTestFrequency };
     }
@@ -63,18 +119,40 @@ void testDayan(FaustMixer& mixer, DSPExecutionType execType) {
     int track = mixer.addTrack(0.8f);
     mixer.addInstrumentToTrack(track, inst.get());
     inst->enableDiagnosticLogging(true);
-    std::vector<double> freqs = getTestFreqsDouble({ 130.81, 170.00, 210.00, 261.63 });
+
+    std::vector<double> freqs = getTestFreqsDouble(inst.get(), { 130.81, 170.00, 210.00, 261.63 });
     for (size_t i = 0; i < freqs.size(); ++i) {
         double freq = freqs[i];
-        float strike = static_cast<float>(i % 4);
-        inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestAmplitude, gTestVelocity, strike);
-        usleep(2500000);
-        inst->noteOff();
-        if (i < freqs.size() - 1) usleep(1500000);
-        printEnergy(inst.get(), freq);
-        if (i < freqs.size() - 1) std::cout << " , ";
-        std::cout << std::flush;
+        std::vector<float> strikes = { 0.0f, 1.0f, 2.0f, 3.0f };
+        if (gTestStrike >= 0.0f) strikes = { gTestStrike };
+        for (float strike : strikes) {
+            int s = static_cast<int>(strike);
+            inst->clearDiagnosticFreqs();
+            inst->addDiagnosticFreq(freq * 1.0f);
+            inst->addDiagnosticFreq(freq * 1.593f);
+            inst->addDiagnosticFreq(freq * 2.0f);
+            inst->addDiagnosticFreq(freq * 2.135f);
+            inst->addDiagnosticFreq(freq * 2.295f);
+            inst->addDiagnosticFreq(freq * 2.653f);
+            inst->addDiagnosticFreq(freq * 3.0f);
+            inst->addDiagnosticFreq(freq * 4.0f);
+            inst->addDiagnosticFreq(freq * 5.0f);
+            
+            inst->clearDiagnosticLogs();
+            if (s == 0 || s == 3) {
+                inst->setDiagnosticSamplingTimes({0.05f, 0.10f, 0.15f});
+            } else {
+                inst->setDiagnosticSamplingTimes({0.30f, 0.50f, 0.70f});
+            }
+            std::cout << "freq:" << freq << " strike:" << strike << "\n";
+            inst->noteOn(freq, gTestAmplitude, strike);
+            usleep(1000000);
+            inst->noteOff();
+            usleep(500000);
+            
+            printEnergy(inst.get(), freq);
+            std::cout << "\n" << std::flush;
+        }
     }
     std::cout << std::endl;
     usleep(1500000);
@@ -84,21 +162,43 @@ void testDayan(FaustMixer& mixer, DSPExecutionType execType) {
 void testBayan(FaustMixer& mixer, DSPExecutionType execType) {
     std::cout << "\n=== [Test] Bayan ===" << std::endl;
     auto inst = std::make_shared<FaustInstrument>(1, execType, InstrumentMapper::DEFAULT_SAMPLE_RATE);
-    int track = mixer.addTrack(0.8f);
+    int track = mixer.addTrack(0.4f); // Reduced from 0.8f to prevent clipping
     mixer.addInstrumentToTrack(track, inst.get());
     inst->enableDiagnosticLogging(true);
-    std::vector<double> freqs = getTestFreqsDouble({ 65.41, 85.00, 105.00, 130.81 });
+    
+    std::vector<double> freqs = getTestFreqsDouble(inst.get(), { 65.41, 85.00, 105.00, 130.81 });
     for (size_t i = 0; i < freqs.size(); ++i) {
         double freq = freqs[i];
-        float strike = (gTestFrequency > 0.0) ? 1.0f : static_cast<float>(i % 4);
-        inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestAmplitude, gTestVelocity, strike);
-        usleep(2500000);
-        inst->noteOff();
-        if (i < freqs.size() - 1) usleep(1500000);
-        printEnergy(inst.get(), freq);
-        if (i < freqs.size() - 1) std::cout << " , ";
-        std::cout << std::flush;
+        std::vector<float> strikes = { 0.0f, 1.0f, 2.0f, 3.0f };
+        if (gTestStrike >= 0.0f) strikes = { gTestStrike };
+        for (float strike : strikes) {
+            int s = static_cast<int>(strike);
+            inst->clearDiagnosticFreqs();
+            inst->addDiagnosticFreq(freq * 1.0f);
+            inst->addDiagnosticFreq(freq * 1.593f);
+            inst->addDiagnosticFreq(freq * 2.0f);
+            inst->addDiagnosticFreq(freq * 2.135f);
+            inst->addDiagnosticFreq(freq * 2.295f);
+            inst->addDiagnosticFreq(freq * 2.653f);
+            inst->addDiagnosticFreq(freq * 3.0f);
+            inst->addDiagnosticFreq(freq * 4.0f);
+            inst->addDiagnosticFreq(freq * 5.0f);
+            
+            inst->clearDiagnosticLogs();
+            if (s == 0 || s == 3) {
+                inst->setDiagnosticSamplingTimes({0.05f, 0.10f, 0.15f});
+            } else {
+                inst->setDiagnosticSamplingTimes({0.30f, 0.50f, 0.70f});
+            }
+            std::cout << "freq:" << freq << " strike:" << strike << "\n";
+            inst->noteOn(freq, gTestAmplitude, strike);
+            usleep(1000000);
+            inst->noteOff();
+            usleep(500000);
+            
+            printEnergy(inst.get(), freq);
+            std::cout << "\n" << std::flush;
+        }
     }
     std::cout << std::endl;
     usleep(1500000);
@@ -111,12 +211,12 @@ void testMridangam(FaustMixer& mixer, DSPExecutionType execType) {
     int track = mixer.addTrack(0.8f);
     mixer.addInstrumentToTrack(track, inst.get());
     inst->enableDiagnosticLogging(true);
-    std::vector<double> freqs = getTestFreqsDouble({ 146.83, 146.83, 146.83, 146.83, 146.83, 146.83 });
+    std::vector<double> freqs = getTestFreqsDouble(inst.get(), { 146.83, 146.83, 146.83, 146.83, 146.83, 146.83 });
     for (size_t i = 0; i < freqs.size(); ++i) {
         double freq = freqs[i];
         float strike = static_cast<float>(i % 6);
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestAmplitude, gTestVelocity, strike);
+        inst->noteOn(freq, gTestAmplitude, strike);
         usleep(2500000);
         inst->noteOff();
         if (i < freqs.size() - 1) usleep(1500000);
@@ -135,12 +235,12 @@ void testGhatam(FaustMixer& mixer, DSPExecutionType execType) {
     int track = mixer.addTrack(0.8f);
     mixer.addInstrumentToTrack(track, inst.get());
     inst->enableDiagnosticLogging(true);
-    std::vector<double> freqs = getTestFreqsDouble({ 130.81, 130.81, 130.81, 130.81, 130.81 });
+    std::vector<double> freqs = getTestFreqsDouble(inst.get(), { 130.81, 130.81, 130.81, 130.81, 130.81 });
     for (size_t i = 0; i < freqs.size(); ++i) {
         double freq = freqs[i];
         float strike = static_cast<float>(i % 5);
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestAmplitude, gTestVelocity, strike);
+        inst->noteOn(freq, gTestAmplitude, strike);
         usleep(2500000);
         inst->noteOff();
         if (i < freqs.size() - 1) usleep(1500000);
@@ -159,7 +259,7 @@ void testKick(FaustMixer& mixer, DSPExecutionType execType) {
     int track = mixer.addTrack(0.8f);
     mixer.addInstrumentToTrack(track, inst.get());
     inst->enableDiagnosticLogging(true);
-    std::vector<double> freqs = getTestFreqsDouble({ 65.41, 98.00, 130.81 });
+    std::vector<double> freqs = getTestFreqsDouble(inst.get(), { 65.41, 98.00, 130.81 });
     for (size_t i = 0; i < freqs.size(); ++i) {
         double freq = freqs[i];
         inst->clearDiagnosticLogs();
@@ -183,11 +283,11 @@ void testSnare(FaustMixer& mixer, DSPExecutionType execType) {
     mixer.addInstrumentToTrack(track, inst.get());
     inst->enableDiagnosticLogging(true);
     
-    std::vector<double> freqs = getTestFreqsDouble({ 150.0, 180.0, 220.0 });
+    std::vector<double> freqs = getTestFreqsDouble(inst.get(), { 150.0, 180.0, 220.0 });
     for (size_t i = 0; i < freqs.size(); ++i) {
         double freq = freqs[i];
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
+        inst->noteOn(freq, gTestVelocity, gTestAmplitude);
         usleep(2000000);
         inst->noteOff();
         if (i < freqs.size() - 1) usleep(1000000);
@@ -213,7 +313,7 @@ void testHiHat(FaustMixer& mixer, DSPExecutionType execType) {
     };
     for (int i = 0; i < 3; ++i) {
         inst->clearDiagnosticLogs();
-        inst->noteOn(0.0f, gTestVelocity, hits[i].strike, gTestAmplitude);
+        inst->noteOn(0.0f, gTestVelocity, gTestAmplitude);
         usleep(hits[i].sleep);
         inst->noteOff();
         if (i < 2) usleep(1000000);
@@ -233,11 +333,11 @@ void testTom(FaustMixer& mixer, DSPExecutionType execType) {
     mixer.addInstrumentToTrack(track, inst.get());
     inst->enableDiagnosticLogging(true);
     
-    std::vector<double> freqs = getTestFreqsDouble({ 80.0, 110.0, 140.0 });
+    std::vector<double> freqs = getTestFreqsDouble(inst.get(), { 80.0, 110.0, 140.0 });
     for (size_t i = 0; i < freqs.size(); ++i) {
         double freq = freqs[i];
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
+        inst->noteOn(freq, gTestVelocity, gTestAmplitude);
         usleep(2000000);
         inst->noteOff();
         if (i < freqs.size() - 1) usleep(1000000);
@@ -257,11 +357,11 @@ void testRide(FaustMixer& mixer, DSPExecutionType execType) {
     mixer.addInstrumentToTrack(track, inst.get());
     inst->enableDiagnosticLogging(true);
     
-    std::vector<double> freqs = getTestFreqsDouble({ 4000.0, 5500.0, 7000.0 });
+    std::vector<double> freqs = getTestFreqsDouble(inst.get(), { 4000.0, 5500.0, 7000.0 });
     for (size_t i = 0; i < freqs.size(); ++i) {
         double freq = freqs[i];
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
+        inst->noteOn(freq, gTestVelocity, gTestAmplitude);
         usleep(2500000);
         inst->noteOff();
         if (i < freqs.size() - 1) usleep(1000000);
@@ -280,11 +380,11 @@ void testBell(FaustMixer& mixer, DSPExecutionType execType) {
     int track = mixer.addTrack(0.8f);
     mixer.addInstrumentToTrack(track, inst.get());
     inst->enableDiagnosticLogging(true);
-    std::vector<double> freqs = getTestFreqsDouble({ 261.63, 329.63, 392.00 });
+    std::vector<double> freqs = getTestFreqsDouble(inst.get(), { 261.63, 329.63, 392.00 });
     for (size_t i = 0; i < freqs.size(); ++i) {
         double freq = freqs[i];
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
+        inst->noteOn(freq, gTestVelocity, gTestAmplitude);
         usleep(3500000);
         inst->noteOff();
         if (i < freqs.size() - 1) usleep(1500000);
@@ -303,11 +403,11 @@ void testBowl(FaustMixer& mixer, DSPExecutionType execType) {
     int track = mixer.addTrack(0.8f);
     mixer.addInstrumentToTrack(track, inst.get());
     inst->enableDiagnosticLogging(true);
-    std::vector<double> freqs = getTestFreqsDouble({ 100.0, 150.0, 200.0, 250.0, 300.0, 350.0, 400.0 });
+    std::vector<double> freqs = getTestFreqsDouble(inst.get(), { 100.0, 150.0, 200.0, 250.0, 300.0, 350.0, 400.0 });
     for (size_t i = 0; i < freqs.size(); ++i) {
         double freq = freqs[i];
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
+        inst->noteOn(freq, gTestVelocity, gTestAmplitude);
         usleep(2500000);
         inst->noteOff();
         if (i < freqs.size() - 1) usleep(800000);
@@ -341,7 +441,7 @@ void testSitar(FaustMixer& mixer, DSPExecutionType execType) {
         for (size_t j = 0; j < amps.size(); ++j) {
             float amp = amps[j];
             inst->clearDiagnosticLogs();
-            inst->noteOn(freq, amp, -1.0f, amp);
+            inst->noteOn(freq, amp, amp);
             usleep(1800000);
             inst->noteOff();
             if (j < amps.size() - 1) usleep(800000);
@@ -381,7 +481,7 @@ void testFlute(FaustMixer& mixer, DSPExecutionType execType) {
     for (size_t i = 0; i < freqs.size(); ++i) {
         double freq = freqs[i];
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
+        inst->noteOn(freq, gTestVelocity, gTestAmplitude);
         usleep(2000000);
         inst->noteOff();
         if (i < freqs.size() - 1) usleep(200000);
@@ -401,22 +501,22 @@ void testTanpura(FaustMixer& mixer, DSPExecutionType execType) {
     mixer.addInstrumentToTrack(track, inst.get());
     inst->enableDiagnosticLogging(true);
     
-    std::vector<double> freqs = getTestFreqsDouble({ 130.00, 180.50, 231.00 });
+    std::vector<double> freqs = getTestFreqsDouble(inst.get(), { 130.00, 180.50, 231.00 });
     for (size_t i = 0; i < freqs.size(); ++i) {
         double freq = freqs[i];
         inst->clearDiagnosticLogs();
         
         // Trigger 4 voices rapidly within 100ms with the SAME frequency
-        inst->noteOn(freq, gTestAmplitude, gTestVelocity, -1.0f);
+        inst->noteOn(freq, gTestAmplitude, -1.0f);
         usleep(25000); // 25ms delay
         
-        inst->noteOn(freq, gTestAmplitude, gTestVelocity, -1.0f);
+        inst->noteOn(freq, gTestAmplitude, -1.0f);
         usleep(25000); // 25ms delay
         
-        inst->noteOn(freq, gTestAmplitude, gTestVelocity, -1.0f);
+        inst->noteOn(freq, gTestAmplitude, -1.0f);
         usleep(25000); // 25ms delay
         
-        inst->noteOn(freq, gTestAmplitude, gTestVelocity, -1.0f);
+        inst->noteOn(freq, gTestAmplitude, -1.0f);
         usleep(3925000); // Wait for remaining 3.925s of the 4-second measurement
         
         inst->noteOff();
@@ -448,7 +548,7 @@ void testPiano(FaustMixer& mixer, DSPExecutionType execType) {
     }
     for (double freq : freqs) {
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
+        inst->noteOn(freq, gTestVelocity, gTestAmplitude);
         usleep(1000000);
         inst->noteOff();
         usleep(200000);
@@ -483,7 +583,7 @@ void testSax(FaustMixer& mixer, DSPExecutionType execType) {
     }
     for (double freq : freqs) {
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
+        inst->noteOn(freq, gTestVelocity, gTestAmplitude);
         usleep(1000000);
         inst->noteOff();
         usleep(200000);
@@ -518,7 +618,7 @@ void testTrumpet(FaustMixer& mixer, DSPExecutionType execType) {
     }
     for (double freq : freqs) {
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
+        inst->noteOn(freq, gTestVelocity, gTestAmplitude);
         usleep(1000000);
         inst->noteOff();
         usleep(200000);
@@ -550,7 +650,7 @@ void testShakuhachi(FaustMixer& mixer, DSPExecutionType execType) {
     }
     for (double freq : freqs) {
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
+        inst->noteOn(freq, gTestVelocity, gTestAmplitude);
         usleep(2000000);
         inst->noteOff();
         usleep(300000);
@@ -574,7 +674,7 @@ void testBansuri(FaustMixer& mixer, DSPExecutionType execType) {
 
     if (gTestFrequency > 0.0) {
         inst->clearDiagnosticLogs();
-        inst->noteOn(gTestFrequency, gTestVelocity, -1.0f, gTestAmplitude);
+        inst->noteOn(gTestFrequency, gTestVelocity, gTestAmplitude);
         usleep(2000000);
         inst->noteOff();
         usleep(100000);
@@ -589,7 +689,7 @@ void testBansuri(FaustMixer& mixer, DSPExecutionType execType) {
             for (int i = 0; i < 7; ++i) {
                 double freq = baseFreq * swaraRatios[i];
                 inst->clearDiagnosticLogs();
-                inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
+                inst->noteOn(freq, gTestVelocity, gTestAmplitude);
                 usleep(2000000);
                 inst->noteOff();
                 usleep(200000);
@@ -638,7 +738,7 @@ void testViolin(FaustMixer& mixer, DSPExecutionType execType) {
             inst->clearDiagnosticLogs();
             
             // Note On
-            inst->noteOn(freq, gTestVelocity, strike, gTestAmplitude);
+            inst->noteOn(freq, gTestVelocity, gTestAmplitude);
             // Force gain to the user-specified amplitude — LUT may override it otherwise
             inst->setParam("gain", gTestAmplitude);
             
@@ -680,11 +780,11 @@ void testCowbell(FaustMixer& mixer, DSPExecutionType execType) {
     mixer.addInstrumentToTrack(track, inst.get());
     inst->enableDiagnosticLogging(true);
     
-    std::vector<double> freqs = getTestFreqsDouble({ 400.0, 560.0, 700.0 });
+    std::vector<double> freqs = getTestFreqsDouble(inst.get(), { 400.0, 560.0, 700.0 });
     for (size_t i = 0; i < freqs.size(); ++i) {
         double freq = freqs[i];
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
+        inst->noteOn(freq, gTestVelocity, gTestAmplitude);
         usleep(2000000);
         inst->noteOff();
         if (i < freqs.size() - 1) usleep(1000000);
@@ -707,7 +807,7 @@ void testRainmaker(FaustMixer& mixer, DSPExecutionType execType) {
     inst->setParam("Instrument_Material", 0.0f);
     inst->setParam("Tilt_Speed_Hz", 0.05f);
     inst->clearDiagnosticLogs();
-    inst->noteOn(220.0f, gTestVelocity, -1.0f, gTestAmplitude);
+    inst->noteOn(220.0f, gTestVelocity, gTestAmplitude);
     usleep(5000000);
     printEnergy(inst.get(), 220.0);
     std::cout << "_bamboo , " << std::flush;
@@ -715,7 +815,7 @@ void testRainmaker(FaustMixer& mixer, DSPExecutionType execType) {
     inst->setParam("Instrument_Material", 1.0f);
     inst->setParam("Tilt_Speed_Hz", 0.2f);
     inst->clearDiagnosticLogs();
-    inst->noteOn(880.0f, gTestVelocity, -1.0f, gTestAmplitude);
+    inst->noteOn(880.0f, gTestVelocity, gTestAmplitude);
     usleep(5000000);
     printEnergy(inst.get(), 880.0);
     std::cout << "_metal" << std::flush;
@@ -735,10 +835,10 @@ void testChurchBell(FaustMixer& mixer, DSPExecutionType execType) {
     
     inst->setReverbSend(0.8f);
     
-    std::vector<double> freqs = getTestFreqsDouble({ 164.81, 130.81, 146.83, 98.00 });
+    std::vector<double> freqs = getTestFreqsDouble(inst.get(), { 164.81, 130.81, 146.83, 98.00 });
     for (double freq : freqs) {
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
+        inst->noteOn(freq, gTestVelocity, gTestAmplitude);
         usleep(6000000);
         inst->noteOff();
         printEnergy(inst.get(), freq);
@@ -757,10 +857,10 @@ void testAcousticGuitar(FaustMixer& mixer, DSPExecutionType execType) {
     mixer.addInstrumentToTrack(track, inst.get());
     inst->enableDiagnosticLogging(true);
     
-    std::vector<double> notes = getTestFreqsDouble({ 130.81, 164.81, 196.00, 261.63 });
+    std::vector<double> notes = getTestFreqsDouble(inst.get(), { 130.81, 164.81, 196.00, 261.63 });
     for (double freq : notes) {
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
+        inst->noteOn(freq, gTestVelocity, gTestAmplitude);
         usleep(1500000);
         inst->noteOff();
         usleep(300000);
@@ -783,10 +883,10 @@ void testElectricGuitar(FaustMixer& mixer, DSPExecutionType execType) {
     inst->setParam("drive", 0.8f);
     inst->setParam("sustain", 0.7f);
     
-    std::vector<double> notes = getTestFreqsDouble({ 110.00, 165.00, 220.00 });
+    std::vector<double> notes = getTestFreqsDouble(inst.get(), { 110.00, 165.00, 220.00 });
     for (double freq : notes) {
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
+        inst->noteOn(freq, gTestVelocity, gTestAmplitude);
         usleep(1500000);
         inst->noteOff();
         usleep(300000);
@@ -818,7 +918,7 @@ void testBassGuitar(FaustMixer& mixer, DSPExecutionType execType) {
     for (double freq : notes) {
         for (float amp : amps) {
             inst->clearDiagnosticLogs();
-            inst->noteOn(freq, amp, -1.0f, amp);
+            inst->noteOn(freq, amp, amp);
             usleep(1500000);
             inst->noteOff();
             if (&amp != &amps.back()) usleep(300000);
@@ -841,10 +941,10 @@ void testCello(FaustMixer& mixer, DSPExecutionType execType) {
     mixer.addInstrumentToTrack(track, inst.get());
     inst->enableDiagnosticLogging(true);
     
-    std::vector<double> notes = getTestFreqsDouble({ 65.41, 98.00, 146.83, 196.00 });
+    std::vector<double> notes = getTestFreqsDouble(inst.get(), { 65.41, 98.00, 146.83, 196.00 });
     for (double freq : notes) {
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
+        inst->noteOn(freq, gTestVelocity, gTestAmplitude);
         usleep(2000000);
         inst->noteOff();
         usleep(400000);
@@ -864,7 +964,7 @@ void testCricket(FaustMixer& mixer, DSPExecutionType execType) {
     mixer.addInstrumentToTrack(track, inst.get());
     inst->enableDiagnosticLogging(true);
     inst->clearDiagnosticLogs();
-    inst->noteOn(-1.0f, gTestVelocity, -1.0f, gTestAmplitude);
+    inst->noteOn(-1.0f, gTestVelocity, gTestAmplitude);
     usleep(8000000);
     inst->noteOff();
     usleep(500000);
@@ -888,7 +988,7 @@ void testCuckoo(FaustMixer& mixer, DSPExecutionType execType) {
     for (int i = 0; i < 3; ++i) {
         inst->setParam("type", modes[i].type);
         inst->clearDiagnosticLogs();
-        inst->noteOn(modes[i].freq, gTestVelocity, -1.0f, gTestAmplitude);
+        inst->noteOn(modes[i].freq, gTestVelocity, gTestAmplitude);
         usleep(4000000);
         inst->noteOff();
         usleep(2500000);
@@ -908,7 +1008,7 @@ void testWaterfall(FaustMixer& mixer, DSPExecutionType execType) {
     mixer.addInstrumentToTrack(track, inst.get());
     inst->enableDiagnosticLogging(true);
     inst->clearDiagnosticLogs();
-    inst->noteOn(-1.0f, gTestVelocity, -1.0f, gTestAmplitude);
+    inst->noteOn(-1.0f, gTestVelocity, gTestAmplitude);
     usleep(6000000);
     inst->noteOff();
     usleep(500000);
@@ -930,7 +1030,7 @@ void testDjembe(FaustMixer& mixer, DSPExecutionType execType) {
         inst->clearDiagnosticLogs();
         inst->setParam("position", positions[i]);
         inst->setParam("strike", 0.5f + 0.15f * i);
-        inst->noteOn(freqs[i], gTestVelocity, -1.0f, gTestAmplitude);
+        inst->noteOn(freqs[i], gTestVelocity, gTestAmplitude);
         usleep(1500000);
         inst->noteOff();
         usleep(500000);
@@ -955,7 +1055,7 @@ void testMarimba(FaustMixer& mixer, DSPExecutionType execType) {
         inst->clearDiagnosticLogs();
         inst->setParam("position", positions[i]);
         inst->setParam("strike", 0.3f + 0.15f * i);
-        inst->noteOn(freqs[i], gTestVelocity, -1.0f, gTestAmplitude);
+        inst->noteOn(freqs[i], gTestVelocity, gTestAmplitude);
         usleep(1000000);
         inst->noteOff();
         usleep(300000);
@@ -984,7 +1084,7 @@ void testConga(FaustMixer& mixer, DSPExecutionType execType) {
             inst->clearDiagnosticLogs();
             inst->setParam("position", pos);
             inst->setParam("strike", strike);
-            inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
+            inst->noteOn(freq, gTestVelocity, gTestAmplitude);
             usleep(1000000);
             inst->noteOff();
             usleep(300000);
@@ -1016,7 +1116,7 @@ void testBongo(FaustMixer& mixer, DSPExecutionType execType) {
             inst->clearDiagnosticLogs();
             inst->setParam("position", pos);
             inst->setParam("strike", strike);
-            inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
+            inst->noteOn(freq, gTestVelocity, gTestAmplitude);
             usleep(1000000);
             inst->noteOff();
             usleep(300000);
@@ -1050,7 +1150,7 @@ void testVoice(FaustMixer& mixer, DSPExecutionType execType) {
 
     for (double f : freqs) {
         inst->clearDiagnosticLogs();
-        inst->noteOn(f, gTestVelocity, -1.0f, gTestAmplitude);
+        inst->noteOn(f, gTestVelocity, gTestAmplitude);
         for (size_t i = 0; i < vowels.size(); ++i) {
             inst->setParam("vowel", vowels[i]);
             usleep(600000);
@@ -1072,7 +1172,7 @@ void testShaker(FaustMixer& mixer, DSPExecutionType execType) {
     mixer.addInstrumentToTrack(track, inst.get());
     inst->enableDiagnosticLogging(true);
     inst->clearDiagnosticLogs();
-    inst->noteOn(-1.0f, gTestVelocity, -1.0f, gTestAmplitude);
+    inst->noteOn(-1.0f, gTestVelocity, gTestAmplitude);
     usleep(2000000);
     inst->noteOff();
     usleep(1000000);
@@ -1088,7 +1188,7 @@ void testSeaWave(FaustMixer& mixer, DSPExecutionType execType) {
     mixer.addInstrumentToTrack(track, inst.get());
     inst->enableDiagnosticLogging(true);
     inst->clearDiagnosticLogs();
-    inst->noteOn(-1.0f, gTestVelocity, -1.0f, gTestAmplitude);
+    inst->noteOn(-1.0f, gTestVelocity, gTestAmplitude);
     usleep(5000000);
     inst->noteOff();
     usleep(2000000);
@@ -1105,7 +1205,7 @@ void testChouGong(FaustMixer& mixer, DSPExecutionType execType) {
     inst->enableDiagnosticLogging(true);
     float testFreq = (gTestFrequency > 0.0) ? (float)gTestFrequency : 100.0f;
     inst->clearDiagnosticLogs();
-    inst->noteOn(testFreq, gTestVelocity, -1.0f, gTestAmplitude);
+    inst->noteOn(testFreq, gTestVelocity, gTestAmplitude);
     usleep(4000000);
     inst->noteOff();
     usleep(2000000);
@@ -1130,7 +1230,7 @@ void testLagNga(FaustMixer& mixer, DSPExecutionType execType) {
     
     for (double freq : notes) {
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
+        inst->noteOn(freq, gTestVelocity, gTestAmplitude);
         usleep(2000000);
         inst->noteOff();
         usleep(1500000);
@@ -1158,7 +1258,7 @@ void testNgachen(FaustMixer& mixer, DSPExecutionType execType) {
     
     for (double freq : notes) {
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
+        inst->noteOn(freq, gTestVelocity, gTestAmplitude);
         usleep(2000000);
         inst->noteOff();
         usleep(1500000);
@@ -1186,7 +1286,7 @@ void testDholak(FaustMixer& mixer, DSPExecutionType execType) {
     };
     for (size_t i = 0; i < strokes.size(); ++i) {
         inst->clearDiagnosticLogs();
-        inst->noteOn(110.0f, gTestVelocity, strokes[i].first, gTestAmplitude);
+        inst->noteOn(110.0f, gTestVelocity, gTestAmplitude);
         usleep(1500000);
         inst->noteOff();
         usleep(500000);
@@ -1215,7 +1315,7 @@ void testDhol(FaustMixer& mixer, DSPExecutionType execType) {
     };
     for (size_t i = 0; i < strokes.size(); ++i) {
         inst->clearDiagnosticLogs();
-        inst->noteOn(110.0f, gTestVelocity, strokes[i].first, gTestAmplitude);
+        inst->noteOn(110.0f, gTestVelocity, gTestAmplitude);
         usleep(1500000);
         inst->noteOff();
         usleep(500000);
@@ -1235,10 +1335,10 @@ void testGuzheng(FaustMixer& mixer, DSPExecutionType execType) {
     mixer.addInstrumentToTrack(track, inst.get());
     inst->enableDiagnosticLogging(true);
     
-    std::vector<double> freqs = getTestFreqsDouble({ 261.63, 392.00, 523.25, 783.99, 1046.50 });
+    std::vector<double> freqs = getTestFreqsDouble(inst.get(), { 261.63, 392.00, 523.25, 783.99, 1046.50 });
     for (double freq : freqs) {
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
+        inst->noteOn(freq, gTestVelocity, gTestAmplitude);
         usleep(1500000);
         inst->noteOff();
         usleep(300000);
@@ -1258,10 +1358,10 @@ void testErhu(FaustMixer& mixer, DSPExecutionType execType) {
     inst->enableDiagnosticLogging(true);
     
     // Test the actual playable range of the Erhu (D4 to D6/D7)
-    std::vector<double> freqs = getTestFreqsDouble({ 293.66, 440.00, 659.25, 880.00, 1174.66 });
+    std::vector<double> freqs = getTestFreqsDouble(inst.get(), { 293.66, 440.00, 659.25, 880.00, 1174.66 });
     for (double freq : freqs) {
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
+        inst->noteOn(freq, gTestVelocity, gTestAmplitude);
         usleep(2000000);
         inst->noteOff();
         usleep(400000);
@@ -1280,7 +1380,7 @@ void testWind(FaustMixer& mixer, DSPExecutionType execType) {
     mixer.addInstrumentToTrack(track, inst.get());
     inst->enableDiagnosticLogging(true);
     inst->clearDiagnosticLogs();
-    inst->noteOn(-1.0f, gTestVelocity, -1.0f, gTestAmplitude);
+    inst->noteOn(-1.0f, gTestVelocity, gTestAmplitude);
     usleep(5000000);
     inst->noteOff();
     usleep(1000000);
@@ -1296,7 +1396,7 @@ void testThunder(FaustMixer& mixer, DSPExecutionType execType) {
     mixer.addInstrumentToTrack(track, inst.get());
     inst->enableDiagnosticLogging(true);
     inst->clearDiagnosticLogs();
-    inst->noteOn(-1.0f, gTestVelocity, -1.0f, gTestAmplitude);
+    inst->noteOn(-1.0f, gTestVelocity, gTestAmplitude);
     usleep(5000000);
     inst->noteOff();
     usleep(2000000);
@@ -1312,7 +1412,7 @@ void testDagu(FaustMixer& mixer, DSPExecutionType execType) {
     mixer.addInstrumentToTrack(track, inst.get());
     inst->enableDiagnosticLogging(true);
     inst->clearDiagnosticLogs();
-    inst->noteOn(-1.0f, gTestVelocity, -1.0f, gTestAmplitude);
+    inst->noteOn(-1.0f, gTestVelocity, gTestAmplitude);
     usleep(3000000);
     inst->noteOff();
     usleep(1000000);
@@ -1328,7 +1428,7 @@ void testSarod(FaustMixer& mixer, DSPExecutionType execType) {
     mixer.addInstrumentToTrack(track, inst.get());
     inst->enableDiagnosticLogging(true);
     
-    std::vector<double> freqs = getTestFreqsDouble({ 
+    std::vector<double> freqs = getTestFreqsDouble(inst.get(), { 
         65.41, 73.42, 82.41, 87.31, 98.00, 110.00, 123.47,
         130.81, 146.83, 164.81, 174.61, 196.00, 220.00, 246.94,
         261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88,
@@ -1336,7 +1436,7 @@ void testSarod(FaustMixer& mixer, DSPExecutionType execType) {
     });
     for (double freq : freqs) {
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestAmplitude, gTestVelocity, -1.0f);
+        inst->noteOn(freq, gTestAmplitude, -1.0f);
         usleep(1500000);
         inst->noteOff();
         usleep(300000);
@@ -1351,7 +1451,7 @@ void testSarod(FaustMixer& mixer, DSPExecutionType execType) {
         inst->clearDiagnosticLogs();
         inst->setParam("chikari_freq1", 111.0f);
         inst->setParam("chikari_freq2", 166.5f);
-        inst->noteOn(freqs.back(), gTestAmplitude, gTestVelocity, 1.0f);
+        inst->noteOn(freqs.back(), gTestAmplitude, 1.0f);
         usleep(2000000);
         inst->noteOff();
         usleep(500000);
@@ -1370,10 +1470,10 @@ void testSantoor(FaustMixer& mixer, DSPExecutionType execType) {
     mixer.addInstrumentToTrack(track, inst.get());
     inst->enableDiagnosticLogging(true);
     
-    std::vector<double> freqs = getTestFreqsDouble({ 523.25, 587.33, 659.25, 783.99 });
+    std::vector<double> freqs = getTestFreqsDouble(inst.get(), { 523.25, 587.33, 659.25, 783.99 });
     for (double freq : freqs) {
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
+        inst->noteOn(freq, gTestVelocity, gTestAmplitude);
         usleep(1000000);
         inst->noteOff();
         usleep(200000);
@@ -1392,13 +1492,13 @@ void testTumbi(FaustMixer& mixer, DSPExecutionType execType) {
     mixer.addInstrumentToTrack(track, inst.get());
     inst->enableDiagnosticLogging(true);
     
-    std::vector<double> freqs = getTestFreqsDouble({ 659.25, 739.99, 830.61 });
+    std::vector<double> freqs = getTestFreqsDouble(inst.get(), { 659.25, 739.99, 830.61 });
     if (gTestFrequency > 0.0) {
         freqs = { gTestFrequency };
     }
     for (double freq : freqs) {
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestVelocity, 0.0f, gTestAmplitude);
+        inst->noteOn(freq, gTestVelocity, gTestAmplitude);
         usleep(1000000);
         inst->noteOff();
         usleep(300000);
@@ -1406,7 +1506,7 @@ void testTumbi(FaustMixer& mixer, DSPExecutionType execType) {
         std::cout << "_flesh , " << std::flush;
         
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestVelocity, 1.0f, gTestAmplitude);
+        inst->noteOn(freq, gTestVelocity, gTestAmplitude);
         usleep(1000000);
         inst->noteOff();
         usleep(300000);
@@ -1427,10 +1527,10 @@ void testTibetanbowl(FaustMixer& mixer, DSPExecutionType execType) {
     int track = mixer.addTrack(0.8f);
     mixer.addInstrumentToTrack(track, inst.get());
     inst->enableDiagnosticLogging(true);
-    std::vector<double> freqs = getTestFreqsDouble({ 111.0, 222.0 });
+    std::vector<double> freqs = getTestFreqsDouble(inst.get(), { 111.0, 222.0 });
     for (double freq : freqs) {
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
+        inst->noteOn(freq, gTestVelocity, gTestAmplitude);
         usleep(4000000);
         inst->noteOff();
         usleep(1500000);
@@ -1459,7 +1559,7 @@ void testPanflute(FaustMixer& mixer, DSPExecutionType execType) {
     for (size_t i = 0; i < freqs.size(); ++i) {
         double freq = freqs[i];
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
+        inst->noteOn(freq, gTestVelocity, gTestAmplitude);
         usleep(2000000);
         inst->noteOff();
         if (i < freqs.size() - 1) usleep(200000);
@@ -1489,7 +1589,7 @@ void testNativeAmericanFlute(FaustMixer& mixer, DSPExecutionType execType) {
     for (size_t i = 0; i < freqs.size(); ++i) {
         double freq = freqs[i];
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestVelocity, -1.0f, gTestAmplitude);
+        inst->noteOn(freq, gTestVelocity, gTestAmplitude);
         usleep(2000000);
         inst->noteOff();
         if (i < freqs.size() - 1) usleep(200000);

@@ -99,7 +99,7 @@ class FaustGuzhengDSP : public dsp {
 	int iRec9[2];
 	float fConst6;
 	int IOTA;
-	float fVec4[8192];
+	float fVec4[4096];
 	float fRec3[512];
 	
  public:
@@ -203,7 +203,7 @@ class FaustGuzhengDSP : public dsp {
 			iRec9[l12] = 0;
 		}
 		IOTA = 0;
-		for (int l13 = 0; (l13 < 8192); l13 = (l13 + 1)) {
+		for (int l13 = 0; (l13 < 4096); l13 = (l13 + 1)) {
 			fVec4[l13] = 0.0f;
 		}
 		for (int l14 = 0; (l14 < 512); l14 = (l14 + 1)) {
@@ -232,7 +232,7 @@ class FaustGuzhengDSP : public dsp {
 	virtual void buildUserInterface(UI* ui_interface) {
 		ui_interface->openVerticalBox("guzheng");
 		ui_interface->addHorizontalSlider("damping", &fHslider2, FAUSTFLOAT(0.995000005f), FAUSTFLOAT(0.899999976f), FAUSTFLOAT(0.999899983f), FAUSTFLOAT(9.99999975e-05f));
-		ui_interface->addHorizontalSlider("freq", &fHslider1, FAUSTFLOAT(440.0f), FAUSTFLOAT(40.0f), FAUSTFLOAT(2000.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("freq", &fHslider1, FAUSTFLOAT(440.0f), FAUSTFLOAT(65.0f), FAUSTFLOAT(1046.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addHorizontalSlider("gain", &fHslider0, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(5.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addButton("gate", &fButton0);
 		ui_interface->addHorizontalSlider("pluck_noise", &fHslider4, FAUSTFLOAT(0.5f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
@@ -278,8 +278,8 @@ class FaustGuzhengDSP : public dsp {
 			iRec9[0] = (((iRec9[1] + (iRec9[1] > 0)) * (iTemp3 <= iVec3[1])) + (iTemp3 > iVec3[1]));
 			float fTemp4 = float(iRec9[0]);
 			float fTemp5 = ((fRec4[0] * fRec5[0]) + (fRec6[0] * (((1.0f - fRec7[0]) * float((1 - iVec0[1]))) + (4.65661287e-10f * ((fRec7[0] * float(iRec8[0])) * std::max<float>(0.0f, std::min<float>((fConst5 * fTemp4), ((fConst6 * (fConst4 - fTemp4)) + 1.0f))))))));
-			fVec4[(IOTA & 8191)] = fTemp5;
-			float fTempFTZ6 = ((fSlow4 * fVec4[((IOTA - iSlow9) & 8191)]) + (fSlow10 * fVec4[((IOTA - iSlow11) & 8191)]));
+			fVec4[(IOTA & 4095)] = fTemp5;
+			float fTempFTZ6 = ((fSlow4 * fVec4[((IOTA - iSlow9) & 4095)]) + (fSlow10 * fVec4[((IOTA - iSlow11) & 4095)]));
 			fRec3[(IOTA & 511)] = ((std::fabs(fTempFTZ6) > 1.17549435e-38f) ? fTempFTZ6 : 0.0f);
 			int iTemp6 = int(fTemp1);
 			output0[i0] = FAUSTFLOAT(std::max<float>(-1.0f, std::min<float>(1.0f, (0.5f * (fRec0[0] * (((fTemp0 + (200.0f - fTemp2)) * fRec3[((IOTA - std::min<int>(4097, std::max<int>(0, (iTemp6 + 1)))) & 511)]) + (fRec3[((IOTA - 0) & 511)] + (fRec3[((IOTA - std::min<int>(4097, std::max<int>(0, iTemp6))) & 511)] * (fTemp2 + (-199.0f - fTemp0))))))))));

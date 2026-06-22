@@ -17,10 +17,11 @@ Change `gain = hslider("gain", 1.0, 0, 1, 0.01);` to `gain = hslider("gain", 1.0
 Run the calibration script to measure the instrument's energy output at each (frequency, amplitude) pair in its CSV, then adjust the `gain` column so that `amp=1.0` produces energy ≈ 0.3.
 
 ```bash
-python3 scripts/fix_instrument_gain.py <instrument_id>
+python3 scripts/fix_instrument_gain.py <instrument_name_or_id> [--target <energy>] [--strike <strike_id>]
 ```
+Example: `python3 scripts/fix_instrument_gain.py bayan --strike 1 --target 0.3`
 
-The script requires a Release build of `test_instruments` at `./build/test_instruments`.
+The script requires a Release build of `test_instruments` at `./build-release/test_instruments`.
 
 ### b. Normalize CSV Gains
 
@@ -61,3 +62,9 @@ process = flute * gain * 1.5207;
 ```
 
 Now the DSP supplies the absolute scaling and the CSV only stores the relative frequency correction.
+
+### d. Revert Slider
+
+Now that the internal DSP handles the massive scaling factor, restore the user-facing `gain` slider back to its normal `0` to `1` range.
+
+Change `gain = hslider("gain", 1.0, 0, 100, 0.01);` back to `gain = hslider("gain", 1.0, 0, 1, 0.01);`.

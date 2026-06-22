@@ -25,7 +25,8 @@ import("stdfaust.lib");
 //           Internally modulates both excitation filter cutoff and mallet sharpness.
 
 // UI Controls
-freq = hslider("freq", 220, 50, 1500, 0.1);
+// Expert Play Range: Marimba typical range C3 (130 Hz) to C7 (2093 Hz).
+freq = hslider("freq", 220.0, 130, 2093, 0.1);
 gain = hslider("gain", 0.8, 0, 1, 0.01) : si.smoo;
 velocity = hslider("velocity", 0.8, 0, 1, 0.01);
 gate = button("gate");

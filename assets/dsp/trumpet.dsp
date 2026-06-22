@@ -14,7 +14,8 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 import("stdfaust.lib");
 
 // --- Trumpet: simplified from Saxophone (no pitch dip on attack) ---
-freq = hslider("freq [unit:Hz]", 440, 50, 2000, 0.1);
+// Expert Play Range: Trumpet typical range E3 (~164 Hz) to C6 (~1046 Hz).
+freq = hslider("freq [unit:Hz]", 440.0, 164, 1046, 0.1);
 gain = hslider("gain", 0.5, 0, 1, 0.01);
 gate = button("gate");
 

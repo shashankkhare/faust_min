@@ -12,7 +12,8 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 // =============================================================================
 import("stdfaust.lib");
 
-freq = hslider("freq", 200, 50, 1000, 0.1); // No si.smoo on freq to avoid biquad pops on note changes
+// Expert Play Range: Church bell fundamental typically 100-1000 Hz.
+freq = hslider("freq", 200.0, 100, 1000, 0.1); // No si.smoo on freq to avoid biquad pops on note changes
 velocity = hslider("velocity", 0.8, 0, 1, 0.01); // No smoothing to preserve instant strike dynamics
 gate = button("gate");
 gain = hslider("gain", 0.6, 0, 1, 0.01) : si.smoo;

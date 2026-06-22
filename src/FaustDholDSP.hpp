@@ -188,7 +188,7 @@ class FaustDholDSP : public dsp {
 		fHslider3 = FAUSTFLOAT(110.0f);
 		fHslider4 = FAUSTFLOAT(1.0f);
 		fButton0 = FAUSTFLOAT(0.0f);
-		fHslider5 = FAUSTFLOAT(880.0f);
+		fHslider5 = FAUSTFLOAT(250.0f);
 	}
 	
 	virtual void instanceClear() {
@@ -264,9 +264,9 @@ class FaustDholDSP : public dsp {
 		ui_interface->openVerticalBox("dhol");
 		ui_interface->addHorizontalSlider("decay_scale", &fHslider1, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.100000001f), FAUSTFLOAT(4.0f), FAUSTFLOAT(0.0500000007f));
 		ui_interface->declare(&fHslider3, "unit", "Hz");
-		ui_interface->addHorizontalSlider("freq", &fHslider3, FAUSTFLOAT(110.0f), FAUSTFLOAT(40.0f), FAUSTFLOAT(600.0f), FAUSTFLOAT(0.100000001f));
+		ui_interface->addHorizontalSlider("freq", &fHslider3, FAUSTFLOAT(110.0f), FAUSTFLOAT(60.0f), FAUSTFLOAT(250.0f), FAUSTFLOAT(0.100000001f));
 		ui_interface->declare(&fHslider5, "unit", "Hz");
-		ui_interface->addHorizontalSlider("freq_right", &fHslider5, FAUSTFLOAT(880.0f), FAUSTFLOAT(100.0f), FAUSTFLOAT(1500.0f), FAUSTFLOAT(0.100000001f));
+		ui_interface->addHorizontalSlider("freq_right", &fHslider5, FAUSTFLOAT(250.0f), FAUSTFLOAT(60.0f), FAUSTFLOAT(250.0f), FAUSTFLOAT(0.100000001f));
 		ui_interface->addHorizontalSlider("gain", &fHslider0, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(2.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addButton("gate", &fButton0);
 		ui_interface->addHorizontalSlider("strike", &fHslider2, FAUSTFLOAT(0.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(4.0f), FAUSTFLOAT(1.0f));

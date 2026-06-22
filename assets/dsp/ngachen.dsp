@@ -19,7 +19,8 @@ import("stdfaust.lib");
 // The enclosed pot acts as a Helmholtz resonator, strongly boosting the fundamental.
 // Sound character: deep, sustained boom — like a deep timpani with long sacred ring.
 
-freq           = hslider("freq [unit:Hz]", 75.0, 40.0, 130.0, 0.1);
+// Expert Play Range: Nga-chen (large Tibetan drum) fundamental typically 60-200 Hz.
+freq           = hslider("freq [unit:Hz]", 75.0, 60, 200, 0.1);
 gain           = hslider("gain", 1.0, 0.0, 2.0, 0.01);
 velocity       = hslider("velocity", 1.0, 0.0, 1.0, 0.01);
 gate           = button("gate");
