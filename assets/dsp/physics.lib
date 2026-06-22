@@ -1,0 +1,27 @@
+declare name "Acoustic Physics Library";
+declare description "Reusable acoustic physics formulas for modal and waveguide synthesis.";
+declare author "Shashank Khare";
+declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+import("stdfaust.lib");
+
+// =============================================================================
+// Helmholtz Cavity Resonator
+// =============================================================================
+// Calculates the resonant frequency of a cavity with a single opening.
+// 
+// Parameters:
+//   radius : Radius of the opening in meters (e.g., 0.12 for a 12cm drumhead)
+//   volume : Internal volume of the cavity in cubic meters (e.g., 0.01 for 10 Liters)
+//
+// Assumptions:
+//   - Speed of sound in air (v) = 343.0 m/s
+//   - Flangeless open end correction factor = 1.5 * radius (since drums have no "neck")
+//
+// Formula: f_H = (v / 2pi) * sqrt(A / (V * L_eq))
+//   where A = pi * r^2
+//         L_eq = 1.5 * r
+// =============================================================================
+helmholtz_freq(radius, volume) = (343.0 / (2.0 * ma.PI)) * sqrt(
+    max(0.0001, (ma.PI * pow(radius, 2.0)) / max(0.0001, (volume * (1.5 * radius))))
+);
