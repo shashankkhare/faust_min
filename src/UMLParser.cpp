@@ -94,16 +94,13 @@ const std::map<std::string, double> UMLParser::vowelValues = {
 const std::map<std::string, double> UMLParser::bayanBols = {
     // Open resonant strokes
     {"Ge",  0.0}, {"ge",  0.0}, {"Ghe", 0.0}, {"ghe", 0.0},
-    // Deep bass press
-    {"Dha", 0.0}, {"dha", 0.0},
-    // Half-muffled
-    {"Dhin",2.0}, {"dhin",2.0},
-    // Edge stroke
-    {"Ka",  1.0}, {"ka",  1.0}, {"Ke",  3.0}, {"ke",  3.0},
-    // Muted centre
-    {"Ghi", 2.0}, {"ghi", 2.0},
+    {"Ka",  1.0}, {"ka",  1.0},
     // Silent/dummy stroke
-    {"Tit", 1.0}, {"tit", 1.0}
+    {"Tit", 2.0}, {"tit", 2.0},
+    // Muted centre
+    {"Ghi", 3.0}, {"ghi", 3.0},
+    // Edge stroke
+    {"Ke",  4.0}, {"ke",  4.0}
 };
 
 // African hand drum stroke names → strikeVal
@@ -381,6 +378,17 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
             UMLEvent restEv;
             restEv.sampleOffset = (long)(ti.gridIndex * samplesPerGrid);
             restEv.type = UMLEventType::NoteOff;
+
+            restEv.frequency = -1.0f; // Default: stop all
+            if (i > 0) {
+                if (tokenItems[i - 1].type == TokenType::NoteWithControl) {
+                    std::string targetNote = tokenItems[i - 1].noteName;
+                    auto pipePos = targetNote.find('|');
+                    if (pipePos != std::string::npos) targetNote = targetNote.substr(0, pipePos);
+                    restEv.frequency = static_cast<float>(getFrequency(targetNote, seq.notation, seq.baseFreq, seq.instrument));
+                }
+            }
+
             seq.events.push_back(restEv);
         }
     }
@@ -415,19 +423,18 @@ void UMLParser::handlePercussionToken(const std::string& tokenNoteName, float ve
     if (instID == 0) {
         if (tokenNoteName == "Tun" || tokenNoteName == "Tu" || tokenNoteName == "tun" || tokenNoteName == "tu") ev.strikeVal = 0.0f;
         else if (tokenNoteName == "tk") ev.strikeVal = 1.0f;
-        else if (tokenNoteName == "Tin" || tokenNoteName == "Ti" || tokenNoteName == "tin" || tokenNoteName == "ti") ev.strikeVal = 2.0f;
-        else if (tokenNoteName == "Na" || tokenNoteName == "Ta" || tokenNoteName == "na" || tokenNoteName == "ta") ev.strikeVal = 3.0f;
-        else if (tokenNoteName == "Dha" || tokenNoteName == "dha") ev.strikeVal = 3.0f;
-        else if (tokenNoteName == "Dhin" || tokenNoteName == "dhin") ev.strikeVal = 2.0f;
-        else if (tokenNoteName == "Tit" || tokenNoteName == "tit") ev.strikeVal = 1.0f;
+        else if (tokenNoteName == "Tit" || tokenNoteName == "tit") ev.strikeVal = 2.0f;
+        else if (tokenNoteName == "Tin" || tokenNoteName == "Ti" || tokenNoteName == "tin" || tokenNoteName == "ti") ev.strikeVal = 3.0f;
+        else if (tokenNoteName == "Na" || tokenNoteName == "Ta" || tokenNoteName == "na" || tokenNoteName == "ta") ev.strikeVal = 4.0f;
     } else if (instID == 1) {
         if (bayanBols.count(tokenNoteName)) {
             ev.strikeVal = static_cast<float>(bayanBols.at(tokenNoteName));
         } else {
             if (tokenNoteName == "Ghe" || tokenNoteName == "ghe") ev.strikeVal = 0.0f;
             else if (tokenNoteName == "Ka" || tokenNoteName == "ka") ev.strikeVal = 1.0f;
-            else if (tokenNoteName == "Ghi" || tokenNoteName == "ghi") ev.strikeVal = 2.0f;
-            else if (tokenNoteName == "Ke" || tokenNoteName == "ke") ev.strikeVal = 3.0f;
+            else if (tokenNoteName == "Tit" || tokenNoteName == "tit") ev.strikeVal = 2.0f;
+            else if (tokenNoteName == "Ghi" || tokenNoteName == "ghi") ev.strikeVal = 3.0f;
+            else if (tokenNoteName == "Ke" || tokenNoteName == "ke") ev.strikeVal = 4.0f;
         }
     } else if (instID == 28 || instID == 30 || instID == 31) {
         if (africanDrumBols.count(tokenNoteName)) {
@@ -447,7 +454,7 @@ void UMLParser::handlePercussionToken(const std::string& tokenNoteName, float ve
         bool isOpenTreble = (tokenNoteName == "Na" || tokenNoteName == "na" || tokenNoteName == "Ta" || tokenNoteName == "ta" || tokenNoteName == "treble");
         bool isClosedTreble = (tokenNoteName == "Tin" || tokenNoteName == "tin" || tokenNoteName == "Ti" || tokenNoteName == "ti" ||
                                tokenNoteName == "Tun" || tokenNoteName == "tun" || tokenNoteName == "Tu" || tokenNoteName == "tu");
-        bool isComposite = (tokenNoteName == "Dha" || tokenNoteName == "dha" || tokenNoteName == "Dhin" || tokenNoteName == "dhin");
+        bool isComposite = false; // Compound strokes removed from vocabulary
 
         if (isComposite) ev.strikeVal = 4.0f;
         else if (isOpenBass) ev.strikeVal = 0.0f;
@@ -631,7 +638,9 @@ void UMLParser::handlePitchedToken(const TokenItem& ti, float velocityScalar, lo
                        tokenItemsArray[nextTokenIndex].type == TokenType::NoteWithControl);
 
     bool shouldBypassNoteOff = false;
-    if (ti.rawStr.find('%') != std::string::npos || nextIsNoop) {
+    if (notes.size() > 1) {
+        shouldBypassNoteOff = true; // Polyphonic chords act as fire-and-forget
+    } else if (ti.rawStr.find('%') != std::string::npos || nextIsNoop) {
         shouldBypassNoteOff = true; // Always bypass for NOOP/Chikari
     } else if (InstrumentMapper::getIDFromName(instrument) == 44 && nextIsNote) {
         shouldBypassNoteOff = true; // Sarod: let strings ring continuously into the next pluck
@@ -651,6 +660,11 @@ void UMLParser::handlePitchedToken(const TokenItem& ti, float velocityScalar, lo
         UMLEvent offEv;
         offEv.sampleOffset = offOffset;
         offEv.type = UMLEventType::NoteOff;
+        
+        // Ensure automatic note-offs explicitly target this specific frequency
+        std::string targetNote = notes[0]; // notes is already defined above
+        offEv.frequency = static_cast<float>(getFrequency(targetNote, notation, baseFreq, instrument));
+
         outEvents.push_back(offEv);
     }
 }

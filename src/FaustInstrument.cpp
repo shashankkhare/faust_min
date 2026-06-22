@@ -141,6 +141,7 @@ void FaustInstrument::addVoice(dsp* newDSP) {
     mVoices.back()->init(static_cast<int>(mSampleRate));
     mVoiceUIs.emplace_back(new MapUI());
     mVoices.back()->buildUserInterface(mVoiceUIs.back().get());
+    mVoiceFreqs.push_back(0.0f);
 }
 
 void FaustInstrument::initializeVoices() {
@@ -656,16 +657,35 @@ void FaustInstrument::noteOn(float freq, float vel, float strikeVal) {
     mFreqGlideActive = false;
     mGainGlideActive = false;
 
-    int v = mNextVoice;
-    if (mNumVoices > 0)
-        mNextVoice = (mNextVoice + 1) % mNumVoices;
-    else
-        v = 0;
+    int v = -1;
 
+    // Check if we can reuse a voice already playing this exact frequency
+    if (mIsPolyphonic && freq > 0.0f && mNumVoices > 0) {
+        for (int i = 0; i < mNumVoices; ++i) {
+            if (std::abs(mVoiceFreqs[i] - freq) < 0.1f) {
+                v = i;
+                break;
+            }
+        }
+    }
+
+    // If no matching voice was found, fall back to round-robin allocation
+    if (v == -1) {
+        v = mNextVoice;
+        if (mNumVoices > 0)
+            mNextVoice = (mNextVoice + 1) % mNumVoices;
+        else
+            v = 0;
+    }
+
+    // Stop the voice completely before re-triggering
+    noteOff(v);
+    // Explicitly zero the immediate gate value as well to clear smoothers instantly
     setParamImmediate("gate", 0.0f, v);
 
     if (freq > 0.0f) {
         mFrequency = freq;
+        mVoiceFreqs[v] = freq; // Track frequency in O(1) array
         setParamImmediate("freq", freq, v);
     }
 
@@ -682,6 +702,17 @@ void FaustInstrument::noteOn(float freq, float vel, float strikeVal) {
         setParamImmediate("strike", strikeVal, v);
 
     setParam("gate", 1.0f, v);
+}
+
+void FaustInstrument::noteOffTargetFreq(float targetFreq, float decayTailMs) {
+    std::lock_guard<std::recursive_mutex> lock(mDSPLock);
+    if (mVoices.empty() || !mIsPolyphonic) return;
+
+    for (int i = 0; i < mNumVoices; ++i) {
+        if (std::abs(mVoiceFreqs[i] - targetFreq) < 0.1f) {
+            noteOff(i, decayTailMs);
+        }
+    }
 }
 
 void FaustInstrument::noteOff(int voiceIndex, float decayTailMs) {

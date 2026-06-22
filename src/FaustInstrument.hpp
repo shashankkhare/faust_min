@@ -96,6 +96,7 @@ public:
      */
     virtual void noteOn(float freq = -1.0f, float velocity = 0.5f, float strikeVal = -1.0f);
     virtual void noteOff(int voiceIndex = -1, float decayTailMs = 0.0f);
+    virtual void noteOffTargetFreq(float targetFreq, float decayTailMs = 0.0f);
     void render(int numFrames, float* buffer);
 
     // Diagnostics
@@ -181,6 +182,7 @@ protected:
 
     std::vector<std::unique_ptr<dsp>> mVoices;
     std::vector<std::unique_ptr<MapUI>> mVoiceUIs;
+    std::vector<float> mVoiceFreqs; // Tracks the frequency each voice is currently playing
     bool mIsPolyphonic;
     int mNumVoices;
     int mNextVoice;

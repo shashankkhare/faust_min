@@ -511,7 +511,13 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
                             }
                         }
                     } else if (ev.type == UMLEventType::NoteOff) {
-                        if (inst) inst->noteOff();
+                        if (inst) {
+                            if (ev.frequency > 0.0f) {
+                                inst->noteOffTargetFreq(ev.frequency);
+                            } else {
+                                inst->noteOff();
+                            }
+                        }
                     } else if (ev.type == UMLEventType::FreqGlide) {
                         if (inst) {
                             float durSec = static_cast<float>(ev.durationSamples) / inst->getSampleRate();
