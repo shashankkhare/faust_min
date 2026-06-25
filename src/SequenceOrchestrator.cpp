@@ -61,12 +61,6 @@ inline long getDeterministicJitter(size_t eventIndex, int instID) {
 }
 
 SequenceOrchestrator::SequenceOrchestrator() {
-    std::string csvPath = "assets/dsp/voice.csv";
-    if (CSVModelLoader::loadVoiceMatrix(csvPath, mVoiceMatrix)) {
-        printf("[Native] Loaded voice transition matrix from %s\n", csvPath.c_str());
-    } else {
-        printf("[Native Error] Failed to load voice transition matrix from %s\n", csvPath.c_str());
-    }
 }
 
 SequenceOrchestrator::~SequenceOrchestrator() {

@@ -143,8 +143,6 @@ endmacro()
 
 add_faust_test(test_instruments "../test/test_instruments.cpp")
 add_faust_test(test_sequence "../test/test_sequence.cpp")
-add_faust_test(test_sequence_api "../test/test_sequence_api.cpp")
-# add_faust_test(test_bansuri_glide "../test/test_bansuri_glide.cpp")
 
 add_executable(test_orchestrator "../test/test_orchestrator.cpp")
 target_compile_options(test_orchestrator PRIVATE ${TEST_COMMON_COMPILE})

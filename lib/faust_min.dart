@@ -224,17 +224,6 @@ typedef TickCallbackDart = void Function(int, int, Pointer<Utf8>, Pointer<Void>)
 typedef WaveformCallbackNative = Void Function(Float, Float, Pointer<Void>);
 typedef WaveformCallbackDart = void Function(double, double, Pointer<Void>);
 
-typedef _c_orch_register_tick_callback = Void Function(
-    Pointer<NativeOrchestratorOpaque>,
-    Pointer<NativeFunction<TickCallbackNative>>,
-    Pointer<Void>,
-);
-typedef _dart_orch_register_tick_callback = void Function(
-    Pointer<NativeOrchestratorOpaque>,
-    Pointer<NativeFunction<TickCallbackNative>>,
-    Pointer<Void>,
-);
-
 typedef _c_mixer_register_waveform_callback = Void Function(
     Pointer<NativeMixerOpaque>,
     Pointer<NativeFunction<WaveformCallbackNative>>,
