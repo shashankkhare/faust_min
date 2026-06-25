@@ -171,6 +171,11 @@ public:
     void muteTrack(const std::string& name, bool mute = true);
 
     /**
+     * @brief Set the mixer weight (volume) for a specific track.
+     */
+    void setWeight(const std::string& name, float weight);
+
+    /**
      * @brief Manually override a DSP parameter for a specific track.
      */
     void setParameter(const std::string& name, const std::string& param, float value);
@@ -181,6 +186,20 @@ public:
 
 
 
+
+    /**
+     * @brief Tick callback type: receives current playhead sample, active note index, and sequence name.
+     * Called from updateTimeline on the audio thread — must be non-blocking.
+     */
+    typedef void (*TickCallback)(long tick, int noteIndex, const char* seqName, void* userData);
+
+    /**
+     * @brief Register a callback invoked on every audio block with current playhead state.
+     */
+    void setTickCallback(TickCallback cb, void* userData) {
+        mTickCallback = cb;
+        mTickUserData = userData;
+    }
 
     /**
      * @brief Poll for finished sequence notifications (for Dart FFI).
@@ -255,6 +274,10 @@ private:
 
     std::atomic<bool> mPendingFinish{false};
     char mFinishedName[128] = {};
+
+    // Tick callback (registered from Dart FFI, called from updateTimeline)
+    TickCallback mTickCallback = nullptr;
+    void* mTickUserData = nullptr;
 
     std::map<std::pair<std::string, std::string>, VoiceTransition> mVoiceMatrix;
     float cubicBezier(float t, float p0, float p1, float p2, float p3);

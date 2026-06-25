@@ -59,7 +59,7 @@ freq     = hslider("freq",     110.0, 50, 200, 0.1);
 gain     = hslider("gain",     0.8,   0,  1,   0.01);
 velocity = hslider("velocity", 1.0,   0,  1,   0.01);
 gate     = button("gate");
-strike   = hslider("strike",   0,     0,  3,   1);
+strike   = hslider("strike",   0,     0,  4,   1);
 meend_inc_freq = hslider("meend_inc_freq", 2.0, 0.0, 12.0, 0.01); // Semitones to bend up
 eccentricity = hslider("eccentricity", 1.02, 1.0, 1.05, 0.001); // Syahi Mode Splitting Ratio
 bowl_radius  = hslider("bowl_radius", 0.12, 0.05, 0.20, 0.01);  // Meters
@@ -68,12 +68,13 @@ bowl_volume  = hslider("bowl_volume", 0.01, 0.005, 0.05, 0.001); // Cubic Meters
 // --- Bayan Strokes ---
 // 0: Ghe — Open Maidan/Bass
 // 1: Ka  — Closed Syahi
-// 2: Ghi — Half-open Maidan
-// 3: Ke  — Closed Syahi edge
+// 2: Tit — Silent/ghost stroke
+// 3: Ghi — Half-open Maidan
+// 4: Ke  — Closed Syahi edge
 
 int_strike = int(strike + 0.5);
-is_open = (int_strike == 0) | (int_strike == 2);
-is_closed = (int_strike == 1) | (int_strike == 3);
+is_open = (int_strike == 0) | (int_strike == 3);
+is_closed = (int_strike == 1) | (int_strike == 2) | (int_strike == 4);
 
 // =====================================================
 // Exciter
@@ -122,11 +123,13 @@ rho_open = 0.93 + (velocity * 0.04);
 // A rho of ~0.92 at 65 Hz yields a ~0.8-second T60.
 rho_ghi = 0.88 + (velocity * 0.04);
 
-// Closed Ka/Ke: Hand pressed hard against Syahi, massive immediate absorption.
+// Closed Ka: Hand pressed hard against Syahi, massive immediate absorption.
 // A rho of 0.83 yields a ~0.5s T60, ensuring it doesn't choke out before the 100ms snapshot.
 rho_closed = 0.83;
+rho_tit = 0.70; // Massive immediate absorption for ghost stroke
+rho_ke = 0.85;  // Slightly more ring than Ka for Ke edge snap
 
-fb_gain = ba.selectn(4, int_strike, rho_open, rho_closed, rho_ghi, rho_closed);
+fb_gain = ba.selectn(5, int_strike, rho_open, rho_closed, rho_tit, rho_ghi, rho_ke);
 
 // Maintain higher cutoff to prevent unnatural high-frequency choking
 damping_cutoff = ba.if(is_open, 2000.0, 800.0) + (velocity * 1500.0);
@@ -160,7 +163,7 @@ maidan_g4 = 0.2;
 // Open strokes ring out (0.15 to 0.4s depending on velocity/pitch). 
 // Closed strokes (Ka/Ke) choke the Maidan in 0.03s.
 mt_open = 0.15 + (velocity * 0.25) + (((200.0 - active_freq)/150.0) * 0.15);
-mt_base = ba.selectn(4, int_strike, mt_open, 0.03, mt_open * 0.7, 0.03);
+mt_base = ba.selectn(5, int_strike, mt_open, 0.03, 0.01, mt_open * 0.7, 0.05);
 
 // The wrist pressing into the drum heavily dampens the bare goatskin.
 maidan_damping = 1.0 - (meend_env * 0.85); // Kills up to 85% of ringing at peak pressure
@@ -176,10 +179,11 @@ maidan_bank = myResonator(active_freq * 1.593, mt * 0.8, maidan_g1, exciter) +
 // =====================================================
 // 0: Ghe (50% Syahi, 50% Maidan)
 // 1: Ka (20% Syahi, 80% Maidan - heavy damped thap)
-// 2: Ghi (40% Syahi, 60% Maidan)
-// 3: Ke (10% Syahi, 90% Maidan)
-syahi_mix = ba.selectn(4, int_strike, 0.5, 0.2, 0.4, 0.1);
-maidan_mix = ba.selectn(4, int_strike, 0.5, 0.8, 0.6, 0.9);
+// 2: Tit (5% Syahi, 20% Maidan - very faint muted tap)
+// 3: Ghi (40% Syahi, 60% Maidan)
+// 4: Ke (10% Syahi, 90% Maidan)
+syahi_mix = ba.selectn(5, int_strike, 0.5, 0.2, 0.05, 0.4, 0.1);
+maidan_mix = ba.selectn(5, int_strike, 0.5, 0.8, 0.20, 0.6, 0.9);
 
 // The entire vibrating membrane (Syahi + Maidan) displaces air into the bowl cavity.
 membrane_mix = (syahi_waveguide * syahi_mix) + (maidan_bank * maidan_mix);
@@ -192,5 +196,5 @@ bowl_resonance = membrane_mix : fi.resonbp(bowl_freq, 2.0, 1.5) : fi.lowpass(2, 
 // We hear direct radiation from the skin + radiation out of the bowl
 bayan_raw = membrane_mix + (bowl_resonance * 0.9);
 
-dynamicDrive = ba.selectn(4, int_strike, 1.2, 1.5, 1.0, 1.5);
+dynamicDrive = ba.selectn(5, int_strike, 1.2, 1.5, 0.5, 1.0, 1.6);
 process = (bayan_raw * dynamicDrive * 4.0 : ma.tanh) * gain * 2.2211;

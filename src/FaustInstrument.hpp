@@ -158,6 +158,7 @@ public:
     void setParamImmediate(const char* shortName, float val, int voiceIndex = -1);
     float getParam(const char* shortName);
     bool getParamBounds(const char* shortName, float& outMin, float& outMax);
+    std::string getParametersJSON();
 
 protected:
     std::recursive_mutex mDSPLock; // Dedicated recursive mutex protecting DSP state maps
@@ -245,6 +246,7 @@ protected:
     void stopInternalStream();
     void setSampleRate(float sampleRate);  // accessible to subclass constructors
     void loadTargetDSP();                  // accessible to subclass constructors
+    void initParams();                     // refactored INI parsing
 
 private:
     std::map<std::string, std::string> mParamAddressCache;

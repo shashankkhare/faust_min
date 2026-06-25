@@ -427,6 +427,41 @@ void FaustInstrument::loadTargetDSP() {
         }
     }
 #endif
+
+    initParams();
+}
+
+void FaustInstrument::initParams() {
+    if (mVoices.empty()) return;
+
+    std::string iniPath = InstrumentMapper::getDSPPathForID(mInstrumentID, "");
+    if (iniPath.length() > 4 && iniPath.substr(iniPath.length() - 4) == ".dsp") {
+        iniPath = iniPath.substr(0, iniPath.length() - 4) + ".ini";
+    }
+    std::ifstream iniFile(iniPath);
+    if (iniFile.is_open()) {
+        std::string line;
+        while (std::getline(iniFile, line)) {
+            while (!line.empty() && std::isspace(line.front())) line.erase(line.begin());
+            if (line.empty() || line[0] == '#' || line[0] == ';' || line.find("//") == 0) continue;
+            
+            auto pos = line.find('=');
+            if (pos != std::string::npos) {
+                std::string key = line.substr(0, pos);
+                std::string valStr = line.substr(pos + 1);
+                while (!key.empty() && std::isspace(key.back())) key.pop_back();
+                while (!valStr.empty() && std::isspace(valStr.front())) valStr.erase(valStr.begin());
+                while (!valStr.empty() && std::isspace(valStr.back())) valStr.pop_back();
+                try {
+                    float val = std::stof(valStr);
+                    setParamImmediate(key.c_str(), val);
+                } catch(...) {}
+            }
+        }
+        iniFile.close();
+        printf("[Native] Loaded INI parameters from '%s'\n", iniPath.c_str());
+        fflush(stdout);
+    }
 }
 
 void FaustInstrument::setSampleRate(float sampleRate) {
@@ -538,6 +573,33 @@ bool FaustInstrument::getParamBounds(const char* shortName, float& outMin, float
         return true;
     }
     return false;
+}
+
+std::string FaustInstrument::getParametersJSON() {
+    if (mVoiceUIs.empty() || !mVoiceUIs[0]) return "[]";
+    
+    std::stringstream ss;
+    ss << "[";
+    bool first = true;
+    for (int i = 0; i < mVoiceUIs[0]->getParamsCount(); i++) {
+        std::string fullPath = mVoiceUIs[0]->getParamAddress(i);
+        size_t lastSlash = fullPath.find_last_of('/');
+        std::string baseName = (lastSlash != std::string::npos) ? fullPath.substr(lastSlash + 1) : fullPath;
+        
+        FAUSTFLOAT fmin = 0, fmax = 1;
+        mVoiceUIs[0]->getParamBounds(fullPath.c_str(), fmin, fmax);
+        float val = mVoiceUIs[0]->getParamValue(fullPath.c_str());
+        
+        if (!first) ss << ",";
+        ss << "{\"name\":\"" << baseName << "\",";
+        ss << "\"address\":\"" << fullPath << "\",";
+        ss << "\"min\":" << fmin << ",";
+        ss << "\"max\":" << fmax << ",";
+        ss << "\"value\":" << val << "}";
+        first = false;
+    }
+    ss << "]";
+    return ss.str();
 }
 
 void FaustInstrument::setFrequency(float freq) {

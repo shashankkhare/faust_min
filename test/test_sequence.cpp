@@ -209,6 +209,30 @@ int main(int argc, char* argv[]) {
     mixer.setPreRenderCallback(SequenceOrchestrator::staticPreRender, &orch);
     mixer.start(); 
 
+    // --- Tick callback demo: rate-limited console output ---
+    static int gTickCounter = 0;
+    orch.setTickCallback([](long tick, int noteIndex, const char* seqName, void*) {
+        gTickCounter++;
+        if ((gTickCounter % 128) == 0) {
+            int sec = static_cast<int>(tick / 48000);
+            int ms = static_cast<int>((tick % 48000) * 1000 / 48000);
+            printf("[TICK] seq=%s  tick=%ld (%d.%03ds)  noteIdx=%d\n", seqName, tick, sec, ms, noteIndex);
+            fflush(stdout);
+        }
+    }, nullptr);
+    std::cout << "[TickCallback] Registered tick callback with rate-limited (~128-block) console output\n";
+
+    // --- Waveform callback demo: RMS/peak of master output ---
+    static int gWaveformCounter = 0;
+    mixer.setWaveformCallback([](float rms, float peak, void*) {
+        gWaveformCounter++;
+        if ((gWaveformCounter % 256) == 0) {
+            printf("[WAVEFORM] rms=%.4f  peak=%.4f\n", rms, peak);
+            fflush(stdout);
+        }
+    }, nullptr);
+    std::cout << "[WaveformCallback] Registered waveform callback with rate-limited (~256-block) console output\n";
+
     // Command-line or interactive selection
     int selection = -1;
     int timeoutSec = -1;

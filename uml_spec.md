@@ -119,9 +119,8 @@ The notes component handles discrete triggers and melodic movement for the seque
     - Example: `C4|E4|G4` (Plays C major chord).
 - `ArticToken`:
   - `.` (Dot): Continuity. Extends the previous state (note or silence) by 1 grid unit.
-  - `_` (Underscore): Full Stop. Ends the current note and starts silence.
 
-### 2.1 Note Operators (`^`, `~`, `>`, `|`)
+### 2.1 Note Operators (`^`, `~`, `>`, `|`, `_`)
 
 Operators are placed within the sequence of continuity dots to trigger dynamic changes at exact grid offsets.
 
@@ -146,6 +145,11 @@ Used to bind multiple pitches together into a single simultaneous strike (Chord)
 - **Example**: `4C4|E4|G4 . . . _`
   - *Plays a C Major chord (C, E, G) for 3 units, then stops.*
 
+#### `_` (Targeted Note-Off / Silence)
+Silences the specific note it is attached to. Left-associative — the silence triggers immediately following the note. Unlike a global stop, this only kills the specific polyphonic voice playing that pitch, allowing other overlapping strings to ring out naturally.
+- **Example**: `4C4|E4|G4 . . C4_`
+  - *Plays a C Major chord, then at the 3rd unit, the C4 string is muted while E4 and G4 continue ringing.*
+
 #### `%` (NOOP Pitch Modifier)
 Triggers the note (with new velocity/strike) but intentionally ignores and preserves the previous frequency. This allows the primary string to continue ringing at its original pitch underneath secondary strikes.
 - **Example**: `61%` (instead of `61Sa` for Chikari strings, to prevent the melody string from pitch-bending).
@@ -159,6 +163,9 @@ Triggers the note (with new velocity/strike) but intentionally ignores and prese
 
 Used when `instrument` resolves to a percussion ID (IDs 0–6). Tokens map to a `strikeVal` controlling physical model articulation. Pitch is not used; `basefreq` passes through as a static tuning reference.
 
+> [!IMPORTANT]
+> **Compound Strokes Removed:** Compound strokes (such as *Dha* and *Dhin*) are intentionally omitted from this vocabulary. To orchestrate a compound stroke, you must explicitly sequence it by placing the respective primitive tokens at the exact same grid offset across two independent tracks (e.g., triggering a `Na` on the Dayan track simultaneously with a `Ge` on the Bayan track).
+
 ### 3.1 Dayan Bols (ID 0)
 
 | Token(s) | strikeVal | Character |
@@ -167,20 +174,16 @@ Used when `instrument` resolves to a percussion ID (IDs 0–6). Tokens map to a 
 | `tk` | 1.0 | Edge flick |
 | `Tit`, `tit` | 1.0 | Sharp muted |
 | `Ti`, `ti`, `Tin`, `tin` | 2.0 | Ringing centre |
-| `Dhin`, `dhin` | 2.0 | Compound — dayan Tin-style resonance |
 | `Na`, `na`, `Ta`, `ta` | 3.0 | Open centre ring |
-| `Dha`, `dha` | 3.0 | Compound — dayan open ring component |
 
 ### 3.2 Bayan Bols (ID 1)
 
 | Token(s) | strikeVal | Character |
 |---|---|---|
 | `Ge`, `ge`, `Ghe`, `ghe` | 0.0 | Open resonant bass |
-| `Dha`, `dha` | 0.0 | Deep bass press |
 | `Ka`, `ka` | 1.0 | Edge stroke / Closed Syahi |
 | `Tit`, `tit` | 1.0 | Silent / ghost stroke |
 | `Ghi`, `ghi` | 2.0 | Half-open / Muted centre |
-| `Dhin`, `dhin` | 2.0 | Half-muffled bass |
 | `Ke`, `ke` | 3.0 | Edge stroke / Closed Syahi edge |
 
 ### 3.3 Djembe (ID 28)

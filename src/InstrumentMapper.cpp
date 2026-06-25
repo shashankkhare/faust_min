@@ -187,6 +187,32 @@ int InstrumentMapper::getPolyphonyVoices(int id) {
     }
 }
 
+std::string InstrumentMapper::getInstrumentClass(int id) {
+    if (isPercussionID(id)) return "Percussion";
+    if (id == 19 || id == 25 || id == 27 || id == 34 || id == 41 || id == 42) return "Ambience";
+    return "Melody";
+}
+
+std::string InstrumentMapper::getInstrumentOrigin(int id) {
+    // Indian
+    if (id == 0 || id == 1 || id == 9 || id == 10 || id == 11 || id == 17 || id == 36 || id == 37 || id == 38 || id == 44 || id == 45 || id == 46 || id == 49 || id == 50) return "Indian";
+    // Chinese / East Asian
+    if (id == 35 || id == 39 || id == 40 || id == 43) return "Chinese";
+    // Japanese
+    if (id == 16) return "Japanese";
+    // Tibetan
+    if (id == 8 || id == 47 || id == 48) return "Tibetan";
+    // Native American
+    if (id == 51 || id == 52) return "Native American";
+    // Arabic/African/Latin
+    if (id == 28 || id == 30 || id == 31) return "World";
+    // Ambience — no regional category
+    if (id == 19 || id == 25 || id == 26 || id == 27 || id == 34 || id == 41 || id == 42) return "Ambience";
+    
+    // Default to Western for standard drum kit and orchestral/band instruments
+    return "Western";
+}
+
 std::string InstrumentMapper::getDSPPathForID(int id, const std::string& assetBasePath) {
     std::string base = assetBasePath.empty() ? DEFAULT_DSP_DIR : (assetBasePath + "/dsp/");
     switch (id) {

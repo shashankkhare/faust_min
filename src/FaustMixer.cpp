@@ -251,6 +251,11 @@ void FaustMixer::setPreRenderCallback(PreRenderCallback callback, void* userData
     fflush(stdout);
 }
 
+void FaustMixer::setWaveformCallback(WaveformCallback callback, void* userData) {
+    mWaveformCallback = callback;
+    mWaveformUserData = userData;
+}
+
 void FaustMixer::close() {
     stopWorkers();
 }
@@ -774,4 +779,18 @@ void FaustMixer::onAudioReady(float* stereoOutput, int numFrames) {
     }
 
     applyMasterGainAndLimiter(stereoOutput, numFrames);
+
+    // Fire waveform callback with RMS and peak of final output
+    if (mWaveformCallback) {
+        float sumSq = 0.0f;
+        float peakVal = 0.0f;
+        for (int i = 0; i < numFrames * 2; i++) {
+            float s = stereoOutput[i];
+            sumSq += s * s;
+            float absS = fabsf(s);
+            if (absS > peakVal) peakVal = absS;
+        }
+        float rms = sqrtf(sumSq / (numFrames * 2));
+        mWaveformCallback(rms, peakVal, mWaveformUserData);
+    }
 }

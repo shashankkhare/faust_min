@@ -62,6 +62,12 @@ public:
     // Retrieves the number of polyphonic voices supported by a given instrument ID
     static int getPolyphonyVoices(int id);
 
+    // Returns the broad instrument class (e.g. "Melody", "Percussion", "Ambience")
+    static std::string getInstrumentClass(int id);
+
+    // Returns the geographical origin/category (e.g. "Indian", "Western", "Chinese", "Arabic")
+    static std::string getInstrumentOrigin(int id);
+
     // Resolves absolute/relative target source file URI based on numeric ID
     static std::string getDSPPathForID(int id, const std::string& assetBasePath = "");
 

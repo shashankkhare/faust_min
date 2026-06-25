@@ -107,6 +107,10 @@ public:
     typedef int (*PreRenderCallback)(int numFrames, void* userData);
     void setPreRenderCallback(PreRenderCallback cb, void* userData);
 
+    // Waveform callback: RMS and peak of the mixed output after each block.
+    typedef void (*WaveformCallback)(float rms, float peak, void* userData);
+    void setWaveformCallback(WaveformCallback cb, void* userData);
+
     /**
      * @brief Static hardware callback wrapper for miniaudio/oboe.
      */
@@ -233,6 +237,9 @@ private:
     bool mIsHardwareStarted = false;
     PreRenderCallback mPreRenderCallback = nullptr;
     void* mPreRenderUserData = nullptr;
+
+    WaveformCallback mWaveformCallback = nullptr;
+    void* mWaveformUserData = nullptr;
 };
 
 #endif // FAUST_MIXER_HPP

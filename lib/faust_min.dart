@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 
+import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:typed_data';
@@ -91,12 +92,26 @@ typedef _dart_sequence_get_bpm = double Function(Pointer<NativeSequenceOpaque>);
 typedef _c_sequence_get_grid = Int32 Function(Pointer<NativeSequenceOpaque>);
 typedef _dart_sequence_get_grid = int Function(Pointer<NativeSequenceOpaque>);
 
+typedef _c_sequence_get_measure = Int32 Function(Pointer<NativeSequenceOpaque>);
+typedef _dart_sequence_get_measure = int Function(Pointer<NativeSequenceOpaque>);
 typedef _c_sequence_get_basefreq = Double Function(Pointer<NativeSequenceOpaque>);
 typedef _dart_sequence_get_basefreq = double Function(Pointer<NativeSequenceOpaque>);
-
 typedef _c_sequence_set_basefreq = Void Function(Pointer<NativeSequenceOpaque>, Double);
 typedef _dart_sequence_set_basefreq = void Function(Pointer<NativeSequenceOpaque>, double);
 
+typedef _c_sequence_add_note = Void Function(Pointer<NativeSequenceOpaque>, Float, Float, Float, Float);
+typedef _dart_sequence_add_note = void Function(Pointer<NativeSequenceOpaque>, double, double, double, double);
+
+typedef _c_sequence_remove_note = Void Function(Pointer<NativeSequenceOpaque>, Float, Float);
+typedef _dart_sequence_remove_note = void Function(Pointer<NativeSequenceOpaque>, double, double);
+
+typedef _c_sequence_clear_notes = Void Function(Pointer<NativeSequenceOpaque>);
+typedef _dart_sequence_clear_notes = void Function(Pointer<NativeSequenceOpaque>);
+
+typedef _c_sequence_get_notes = Int32 Function(Pointer<NativeSequenceOpaque>, Float, Float, Pointer<Float>, Int32);
+typedef _dart_sequence_get_notes = int Function(Pointer<NativeSequenceOpaque>, double, double, Pointer<Float>, int);
+
+// Orchestrator FFI (Opaque structure: orchestrator)
 typedef _c_sequence_get_instrument = Pointer<NativeInstrumentOpaque> Function(Pointer<NativeSequenceOpaque>);
 typedef _dart_sequence_get_instrument = Pointer<NativeInstrumentOpaque> Function(Pointer<NativeSequenceOpaque>);
 
@@ -114,6 +129,12 @@ typedef _dart_inst_note_on = void Function(Pointer<NativeInstrumentOpaque>, doub
 
 typedef _c_inst_note_off = Void Function(Pointer<NativeInstrumentOpaque>);
 typedef _dart_inst_note_off = void Function(Pointer<NativeInstrumentOpaque>);
+
+typedef _c_inst_get_params_json = Pointer<Utf8> Function(Pointer<NativeInstrumentOpaque>);
+typedef _dart_inst_get_params_json = Pointer<Utf8> Function(Pointer<NativeInstrumentOpaque>);
+
+typedef _c_inst_free_json = Void Function(Pointer<Utf8>);
+typedef _dart_inst_free_json = void Function(Pointer<Utf8>);
 
 typedef _c_inst_render = Void Function(Pointer<NativeInstrumentOpaque>, Pointer<Float>, Int32);
 typedef _dart_inst_render = void Function(Pointer<NativeInstrumentOpaque>, Pointer<Float>, int);
@@ -156,6 +177,12 @@ typedef _dart_orch_set_weight = void Function(Pointer<NativeOrchestratorOpaque>,
 typedef _c_orch_poll_finished = Pointer<Utf8> Function(Pointer<NativeOrchestratorOpaque>);
 typedef _dart_orch_poll_finished = Pointer<Utf8> Function(Pointer<NativeOrchestratorOpaque>);
 
+// TickCallback: void(long tick, int noteIndex, const char* seqName, void* userData)
+typedef _c_orch_register_tick_callback = Void Function(
+    Pointer<NativeOrchestratorOpaque>, Pointer<NativeFunction<TickCallbackNative>>, Pointer<Void>);
+typedef _dart_orch_register_tick_callback = void Function(
+    Pointer<NativeOrchestratorOpaque>, Pointer<NativeFunction<TickCallbackNative>>, Pointer<Void>);
+
 typedef _c_orch_load_song = Int32 Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>);
 typedef _dart_orch_load_song = int Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>);
 
@@ -167,6 +194,57 @@ typedef _dart_orch_play_song = void Function(Pointer<NativeOrchestratorOpaque>, 
 
 typedef _c_orch_stop_song = Void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>);
 typedef _dart_orch_stop_song = void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>);
+
+typedef _c_mapper_get_name = Pointer<Utf8> Function(Int32);
+typedef _dart_mapper_get_name = Pointer<Utf8> Function(int);
+
+typedef _c_mapper_get_id = Int32 Function(Pointer<Utf8>);
+typedef _dart_mapper_get_id = int Function(Pointer<Utf8>);
+
+typedef _c_mapper_is_percussion = Int32 Function(Int32);
+typedef _dart_mapper_is_percussion = int Function(int);
+
+
+typedef _c_mapper_get_polyphony = Int32 Function(Int32);
+typedef _dart_mapper_get_polyphony = int Function(int);
+
+typedef _c_mapper_get_class = Pointer<Utf8> Function(Int32);
+typedef _dart_mapper_get_class = Pointer<Utf8> Function(int);
+
+typedef _c_mapper_get_origin = Pointer<Utf8> Function(Int32);
+typedef _dart_mapper_get_origin = Pointer<Utf8> Function(int);
+
+typedef _c_mapper_get_available = Int32 Function(Pointer<Int32>, Int32);
+typedef _dart_mapper_get_available = int Function(Pointer<Int32>, int);
+
+// Callback typedefs for native tick and waveform callbacks
+typedef TickCallbackNative = Void Function(Int64, Int32, Pointer<Utf8>, Pointer<Void>);
+typedef TickCallbackDart = void Function(int, int, Pointer<Utf8>, Pointer<Void>);
+
+typedef WaveformCallbackNative = Void Function(Float, Float, Pointer<Void>);
+typedef WaveformCallbackDart = void Function(double, double, Pointer<Void>);
+
+typedef _c_orch_register_tick_callback = Void Function(
+    Pointer<NativeOrchestratorOpaque>,
+    Pointer<NativeFunction<TickCallbackNative>>,
+    Pointer<Void>,
+);
+typedef _dart_orch_register_tick_callback = void Function(
+    Pointer<NativeOrchestratorOpaque>,
+    Pointer<NativeFunction<TickCallbackNative>>,
+    Pointer<Void>,
+);
+
+typedef _c_mixer_register_waveform_callback = Void Function(
+    Pointer<NativeMixerOpaque>,
+    Pointer<NativeFunction<WaveformCallbackNative>>,
+    Pointer<Void>,
+);
+typedef _dart_mixer_register_waveform_callback = void Function(
+    Pointer<NativeMixerOpaque>,
+    Pointer<NativeFunction<WaveformCallbackNative>>,
+    Pointer<Void>,
+);
 
 // --- Classes ---
 
@@ -188,6 +266,56 @@ typedef _dart_orch_stop_song = void Function(Pointer<NativeOrchestratorOpaque>, 
 /// flute.noteOff();
 /// ```
 /// {@end-tool}
+class InstrumentMapper {
+  static bool isPercussion(int id) {
+    return _funcIsPercussion(id) == 1;
+  }
+
+  static bool isMelody(int id) {
+    return !isPercussion(id);
+  }
+
+  static int getPolyphony(int id) {
+    return _funcGetPolyphony(id);
+  }
+
+  static String getClass(int id) {
+    final ptr = _funcGetClass(id);
+    if (ptr == nullptr) return 'Unknown';
+    return ptr.cast<Utf8>().toDartString();
+  }
+
+  static String getOrigin(int id) {
+    final ptr = _funcGetOrigin(id);
+    if (ptr == nullptr) return 'Unknown';
+    return ptr.cast<Utf8>().toDartString();
+  }
+
+  static String getName(int id) {
+    final ptr = _funcGetName(id);
+    if (ptr == nullptr) return '';
+    return ptr.cast<Utf8>().toDartString();
+  }
+
+  static List<int> getAvailableInstruments() {
+    final outArray = calloc<Int32>(256);
+    final count = _funcGetAvailable(outArray, 256);
+    final result = <int>[];
+    for (var i = 0; i < count; i++) {
+      result.add(outArray[i]);
+    }
+    calloc.free(outArray);
+    return result;
+  }
+
+  static late final _funcIsPercussion = _dylib.lookupFunction<_c_mapper_is_percussion, _dart_mapper_is_percussion>('instrument_mapper_is_percussion');
+  static late final _funcGetName = _dylib.lookupFunction<_c_mapper_get_name, _dart_mapper_get_name>('instrument_mapper_get_name');
+  static late final _funcGetPolyphony = _dylib.lookupFunction<_c_mapper_get_polyphony, _dart_mapper_get_polyphony>('instrument_mapper_get_polyphony');
+  static late final _funcGetClass = _dylib.lookupFunction<_c_mapper_get_class, _dart_mapper_get_class>('instrument_mapper_get_class');
+  static late final _funcGetOrigin = _dylib.lookupFunction<_c_mapper_get_origin, _dart_mapper_get_origin>('instrument_mapper_get_origin');
+  static late final _funcGetAvailable = _dylib.lookupFunction<_c_mapper_get_available, _dart_mapper_get_available>('instrument_mapper_get_available');
+}
+
 class FaustInstrument {
   final Pointer<NativeInstrumentOpaque> _handle;
   final bool _owned;
@@ -198,6 +326,8 @@ class FaustInstrument {
   static late final _funcSetParam = _dylib.lookupFunction<_c_inst_set_param, _dart_inst_set_param>('instrument_set_parameter');
   static late final _funcNoteOn = _dylib.lookupFunction<_c_inst_note_on, _dart_inst_note_on>('instrument_note_on');
   static late final _funcNoteOff = _dylib.lookupFunction<_c_inst_note_off, _dart_inst_note_off>('instrument_note_off');
+  static late final _funcGetParamsJson = _dylib.lookupFunction<_c_inst_get_params_json, _dart_inst_get_params_json>('instrument_get_parameters_json');
+  static late final _funcFreeJson = _dylib.lookupFunction<_c_inst_free_json, _dart_inst_free_json>('instrument_free_json');
   static late final _funcRender = _dylib.lookupFunction<_c_inst_render, _dart_inst_render>('instrument_render');
   static late final _funcGetSampleRate = _dylib.lookupFunction<_c_inst_get_sample_rate, _dart_inst_get_sample_rate>('instrument_get_sample_rate');
 
@@ -235,6 +365,23 @@ class FaustInstrument {
     }
   }
 
+  /// Get a list of all active DSP parameters for this instrument.
+  List<Map<String, dynamic>> getParameters() {
+    if (_isDisposed || _handle == nullptr) return [];
+    final ptr = _funcGetParamsJson(_handle);
+    if (ptr == nullptr) return [];
+    try {
+      final jsonStr = ptr.toDartString();
+      final decoded = jsonDecode(jsonStr);
+      if (decoded is List) {
+        return List<Map<String, dynamic>>.from(decoded);
+      }
+    } finally {
+      _funcFreeJson(ptr);
+    }
+    return [];
+  }
+
   /// Trigger a note-on event.
   ///
   /// [freq] — frequency in Hz (-1 uses the DSP default).
@@ -269,6 +416,69 @@ class FaustInstrument {
     }
   }
 
+  /// Renders a WAV file byte array in memory for the given duration.
+  /// Used for pre-rendering test buffers for SoLoud playback.
+  Future<Uint8List> renderWavBytes(double durationSeconds, double freq, double vel) async {
+    final sr = sampleRate;
+    if (sr <= 0) return Uint8List(0);
+    
+    final numFrames = (durationSeconds * sr).toInt();
+    final numChannels = 2; // interleaved stereo
+    final bufferSize = numFrames * numChannels;
+    
+    final floatBuffer = calloc<Float>(bufferSize);
+    
+    // Trigger note on
+    noteOn(freq: freq, velocity: vel);
+    
+    // Render the entire sustained buffer
+    _funcRender(_handle, floatBuffer, numFrames);
+    
+    // Construct WAV byte array (32-bit float PCM)
+    final byteData = ByteData(44 + bufferSize * 4);
+    
+    // RIFF chunk
+    byteData.setUint8(0, 0x52); // R
+    byteData.setUint8(1, 0x49); // I
+    byteData.setUint8(2, 0x46); // F
+    byteData.setUint8(3, 0x46); // F
+    byteData.setUint32(4, 36 + bufferSize * 4, Endian.little); // chunk size
+    byteData.setUint8(8, 0x57); // W
+    byteData.setUint8(9, 0x41); // A
+    byteData.setUint8(10, 0x56); // V
+    byteData.setUint8(11, 0x45); // E
+    
+    // fmt chunk
+    byteData.setUint8(12, 0x66); // f
+    byteData.setUint8(13, 0x6D); // m
+    byteData.setUint8(14, 0x74); // t
+    byteData.setUint8(15, 0x20); // ' '
+    byteData.setUint32(16, 16, Endian.little); // Subchunk1Size
+    byteData.setUint16(20, 3, Endian.little); // AudioFormat (3 = IEEE float)
+    byteData.setUint16(22, numChannels, Endian.little); // NumChannels
+    byteData.setUint32(24, sr.toInt(), Endian.little); // SampleRate
+    byteData.setUint32(28, sr.toInt() * numChannels * 4, Endian.little); // ByteRate
+    byteData.setUint16(32, numChannels * 4, Endian.little); // BlockAlign
+    byteData.setUint16(34, 32, Endian.little); // BitsPerSample
+    
+    // data chunk
+    byteData.setUint8(36, 0x64); // d
+    byteData.setUint8(37, 0x61); // a
+    byteData.setUint8(38, 0x74); // t
+    byteData.setUint8(39, 0x61); // a
+    byteData.setUint32(40, bufferSize * 4, Endian.little); // Subchunk2Size
+    
+    // Copy floats directly into ByteData payload
+    var offset = 44;
+    for (var i = 0; i < bufferSize; i++) {
+      byteData.setFloat32(offset, floatBuffer[i], Endian.little);
+      offset += 4;
+    }
+    
+    calloc.free(floatBuffer);
+    return byteData.buffer.asUint8List();
+  }
+
   void dispose() {
     if (_isDisposed) return;
     _isDisposed = true;
@@ -279,6 +489,20 @@ class FaustInstrument {
 
   /// The native FFI pointer backing this instrument.
   Pointer<NativeInstrumentOpaque> get nativePointer => _handle;
+}
+
+class UMLRawNote {
+  final double pitch;
+  final double velocity;
+  final double startBeat;
+  final double durationBeats;
+
+  UMLRawNote({
+    required this.pitch,
+    required this.velocity,
+    required this.startBeat,
+    required this.durationBeats,
+  });
 }
 
 /// A parsed UML (Universal Music Language) sequence backed by a native timeline object.
@@ -292,6 +516,8 @@ class FaustInstrument {
 class UMLSequence {
   late final Pointer<NativeSequenceOpaque> _handle;
   bool _isDisposed = false;
+  final int instrumentId;
+  final String name;
 
   static late final _funcCreate = _dylib.lookupFunction<_c_sequence_create, _dart_sequence_create>('sequence_create');
   static late final _funcDestroy = _dylib.lookupFunction<_c_sequence_destroy, _dart_sequence_destroy>('sequence_destroy');
@@ -301,11 +527,11 @@ class UMLSequence {
   /// [name] — unique identifier for the sequence.
   /// [instrumentID] — target instrument (0–48).
   /// [umlDataString] — the UML notation text.
-  UMLSequence(String name, int instrumentID, String umlDataString) {
+  UMLSequence(this.name, this.instrumentId, String umlDataString) {
     final namePtr = name.toNativeUtf8();
     final dataPtr = umlDataString.toNativeUtf8();
     try {
-      _handle = _funcCreate(namePtr.cast(), instrumentID, dataPtr.cast());
+      _handle = _funcCreate(namePtr.cast(), instrumentId, dataPtr.cast());
     } finally {
       malloc.free(namePtr);
       malloc.free(dataPtr);
@@ -314,14 +540,22 @@ class UMLSequence {
 
   static late final _funcGetBpm = _dylib.lookupFunction<_c_sequence_get_bpm, _dart_sequence_get_bpm>('sequence_get_bpm');
   static late final _funcGetGrid = _dylib.lookupFunction<_c_sequence_get_grid, _dart_sequence_get_grid>('sequence_get_grid');
+  static late final _funcGetMeasure = _dylib.lookupFunction<_c_sequence_get_measure, _dart_sequence_get_measure>('sequence_get_measure');
   static late final _funcGetInst = _dylib.lookupFunction<_c_sequence_get_instrument, _dart_sequence_get_instrument>('sequence_get_instrument');
   static late final _funcGetBasefreq = _dylib.lookupFunction<_c_sequence_get_basefreq, _dart_sequence_get_basefreq>('sequence_get_basefreq');
   static late final _funcSetBasefreq = _dylib.lookupFunction<_c_sequence_set_basefreq, _dart_sequence_set_basefreq>('sequence_set_basefreq');
+
+  static late final _funcAddNote = _dylib.lookupFunction<_c_sequence_add_note, _dart_sequence_add_note>('sequence_add_note');
+  static late final _funcRemoveNote = _dylib.lookupFunction<_c_sequence_remove_note, _dart_sequence_remove_note>('sequence_remove_note');
+  static late final _funcClearNotes = _dylib.lookupFunction<_c_sequence_clear_notes, _dart_sequence_clear_notes>('sequence_clear_notes');
+  static late final _funcGetNotes = _dylib.lookupFunction<_c_sequence_get_notes, _dart_sequence_get_notes>('sequence_get_notes');
 
   /// The parsed BPM (beats per minute). Defaults to 120.0.
   double get bpm => _isDisposed ? 120.0 : _funcGetBpm(_handle);
   /// The grid subdivision (cells per beat). Defaults to 4.
   int get grid => _isDisposed ? 4 : _funcGetGrid(_handle);
+  /// The number of beats per measure. Defaults to 4.
+  int get measure => _isDisposed ? 4 : _funcGetMeasure(_handle);
   /// The base frequency (fundamental pitch anchor) in Hz.
   double get basefreq => _isDisposed ? 261.63 : _funcGetBasefreq(_handle);
   /// Set the base frequency. Affects all note frequencies computed relative to this anchor.
@@ -332,6 +566,39 @@ class UMLSequence {
     if (_isDisposed) throw StateError("UMLSequence is disposed");
     final instHandle = _funcGetInst(_handle);
     return FaustInstrument.fromNative(instHandle);
+  }
+
+  void addNote(double pitch, double velocity, double startBeat, double durationBeats) {
+    if (!_isDisposed) _funcAddNote(_handle, pitch, velocity, startBeat, durationBeats);
+  }
+
+  void removeNote(double pitch, double startBeat) {
+    if (!_isDisposed) _funcRemoveNote(_handle, pitch, startBeat);
+  }
+
+  void clearNotes() {
+    if (!_isDisposed) _funcClearNotes(_handle);
+  }
+
+  List<UMLRawNote> getNotes(double fromBeat, double toBeat, {int maxNotes = 128}) {
+    if (_isDisposed) return [];
+    final Pointer<Float> buffer = malloc.allocate<Float>(maxNotes * 4 * sizeOf<Float>());
+    try {
+      final int count = _funcGetNotes(_handle, fromBeat, toBeat, buffer, maxNotes);
+      List<UMLRawNote> result = [];
+      for (int i = 0; i < count; i++) {
+        int idx = i * 4;
+        result.add(UMLRawNote(
+          pitch: buffer[idx],
+          velocity: buffer[idx + 1],
+          startBeat: buffer[idx + 2],
+          durationBeats: buffer[idx + 3],
+        ));
+      }
+      return result;
+    } finally {
+      malloc.free(buffer);
+    }
   }
 
   /// Free the native sequence and its event timeline.
@@ -370,6 +637,7 @@ class SequenceOrchestrator {
   static late final _funcSetWeight = _dylib.lookupFunction<_c_orch_set_weight, _dart_orch_set_weight>('orchestrator_set_weight');
   static late final _funcSetParam = _dylib.lookupFunction<_c_orch_set_param, _dart_orch_set_param>('orchestrator_set_parameter');
 
+  static late final _funcRegisterTickCb = _dylib.lookupFunction<_c_orch_register_tick_callback, _dart_orch_register_tick_callback>('orchestrator_register_tick_callback');
   static late final _funcPollFinished = _dylib.lookupFunction<_c_orch_poll_finished, _dart_orch_poll_finished>('orchestrator_poll_finished');
   static late final _funcLoadSong = _dylib.lookupFunction<_c_orch_load_song, _dart_orch_load_song>('orchestrator_load_song');
   static late final _funcUnloadSong = _dylib.lookupFunction<_c_orch_unload_song, _dart_orch_unload_song>('orchestrator_unload_song');
@@ -493,6 +761,11 @@ class SequenceOrchestrator {
     }
   }
 
+  /// Register a tick callback that fires on every audio block with playhead state.
+  void registerTickCallback(Pointer<NativeFunction<TickCallbackNative>> callback, Pointer<Void> userData) {
+    _funcRegisterTickCb(_handle, callback, userData);
+  }
+
   /// Poll the orchestrator for finished sequence names.
   ///
   /// Returns the name of the first completed sequence, or null if none finished.
@@ -538,6 +811,7 @@ class FaustMixer {
   static late final _funcGetSR = _dylib.lookupFunction<_c_mixer_get_sr, _dart_mixer_get_sr>('mixer_get_sample_rate');
   static late final _funcSetGain = _dylib.lookupFunction<_c_mixer_set_gain, _dart_mixer_set_gain>('mixer_set_master_gain');
   static late final _funcSetInstWeight = _dylib.lookupFunction<_c_mixer_set_inst_weight, _dart_mixer_set_inst_weight>('mixer_set_instrument_weight');
+  static late final _funcRegisterWaveformCb = _dylib.lookupFunction<_c_mixer_register_waveform_callback, _dart_mixer_register_waveform_callback>('mixer_register_waveform_callback');
   static late final _funcRegisterInst = _dylib.lookupFunction<_c_mixer_register_inst, _dart_mixer_register_inst>('mixer_register_instrument');
   static late final _funcUnregisterInst = _dylib.lookupFunction<_c_mixer_unregister_inst, _dart_mixer_unregister_inst>('mixer_unregister_instrument');
 
@@ -559,6 +833,11 @@ class FaustMixer {
 
   /// Get the hardware sample rate.
   double get sampleRate => _funcGetSR(_handle);
+
+  /// Register a waveform callback that fires on every audio block with RMS and peak.
+  void registerWaveformCallback(Pointer<NativeFunction<WaveformCallbackNative>> callback, Pointer<Void> userData) {
+    _funcRegisterWaveformCb(_handle, callback, userData);
+  }
 
   /// Set the master bus gain (0.0 to 1.0+).
   set masterGain(double gain) => _funcSetGain(_handle, gain);

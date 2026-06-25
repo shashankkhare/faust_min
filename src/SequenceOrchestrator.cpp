@@ -186,6 +186,9 @@ void SequenceOrchestrator::playSong(const std::string& songDirectory) {
         for (const auto& seqName : mSongRegistry[songDirectory]) {
             if (mActiveSequences.count(seqName)) {
                 if (std::find(mPendingPlay.begin(), mPendingPlay.end(), seqName) == mPendingPlay.end()) {
+                    if (mActiveSequences[seqName]->sequenceObj) {
+                        mActiveSequences[seqName]->sequenceObj->regenerateEventsIfNeeded();
+                    }
                     mPendingPlay.push_back(seqName);
                 }
             }
@@ -274,6 +277,7 @@ void SequenceOrchestrator::play(const std::string& name) {
         
         auto seqWrapper = mActiveSequences[name];
         if (seqWrapper && seqWrapper->sequenceObj) {
+            seqWrapper->sequenceObj->regenerateEventsIfNeeded();
             auto inst = seqWrapper->sequenceObj->getFaustInstrument();
             if (inst) {
                 // Initialize the instrument frequency immediately to the first note's frequency
@@ -323,6 +327,14 @@ void SequenceOrchestrator::muteTrack(const std::string& name, bool mute) {
         rebuildSnapshot();
         printf("[Native] Track '%s' mute state set to: %s\n", name.c_str(), mute ? "true" : "false");
         fflush(stdout);
+    }
+}
+
+void SequenceOrchestrator::setWeight(const std::string& name, float weight) {
+    std::lock_guard<std::mutex> lock(mStateMutex);
+    if (mActiveSequences.count(name) && mActiveSequences[name]->sequenceObj) {
+        auto inst = mActiveSequences[name]->sequenceObj->getFaustInstrument();
+        if (inst) inst->setParameter("gain", weight);
     }
 }
 
@@ -611,6 +623,40 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
             }
         }
     }
+    // Fire tick callback with playhead position + active raw note index
+    if (mTickCallback) {
+        snapshot = getRenderSnapshot();
+        if (snapshot) {
+            for (auto& seqWrapper : *snapshot) {
+                if (seqWrapper->isPlaying.load(std::memory_order_acquire)) {
+                    UMLSequence* seq = seqWrapper->sequenceObj;
+                    int activeNote = -1;
+                    if (seq && seq->bpm > 0.0) {
+                        double samplesPerBeat = (60.0 / seq->bpm)
+                                              * InstrumentMapper::DEFAULT_SAMPLE_RATE;
+                        double currentBeat = static_cast<double>(seqWrapper->currentSample)
+                                           / samplesPerBeat;
+                        for (int i = 0; i < static_cast<int>(seq->rawNotes.size()); ++i) {
+                            const auto& rn = seq->rawNotes[i];
+                            if (currentBeat >= rn.startBeat &&
+                                currentBeat < rn.startBeat + rn.durationBeats) {
+                                activeNote = i;
+                                break;
+                            }
+                        }
+                    }
+                    mTickCallback(
+                        seqWrapper->currentSample,
+                        activeNote,
+                        seq ? seq->name.c_str() : "",
+                        mTickUserData
+                    );
+                    break;
+                }
+            }
+        }
+    }
+
     mMasterSampleCount += numFrames;
 }
 

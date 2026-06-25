@@ -270,9 +270,13 @@ typedef struct UMLSequence UMLSequence;
 typedef struct FaustInstrument FaustInstrument;
 typedef struct FaustMixer FaustMixer;
 
+// Tick callback type: called from audio thread with playhead position
+typedef void (*TickCallback)(long tick, int noteIndex, const char* seqName, void* userData);
+
 // --- Real-time Sequence Orchestrator Object Exposure ---
 DART_EXPORT SequenceOrchestrator* orchestrator_create();
 DART_EXPORT void orchestrator_destroy(SequenceOrchestrator* orch);
+DART_EXPORT void orchestrator_register_tick_callback(SequenceOrchestrator* orch, TickCallback cb, void* userData);
 
 DART_EXPORT void orchestrator_set_asset_base_path(SequenceOrchestrator* orch, const char* path);
 DART_EXPORT int orchestrator_add_sequence(SequenceOrchestrator* orch, const char* name, UMLSequence* seq);
@@ -295,15 +299,27 @@ DART_EXPORT void mixer_stop(FaustMixer* mixer);
 DART_EXPORT void mixer_clear_all(FaustMixer* mixer);
 DART_EXPORT float mixer_get_sample_rate(FaustMixer* mixer);
 DART_EXPORT void mixer_set_master_gain(FaustMixer* mixer, float gain);
+DART_EXPORT void mixer_register_waveform_callback(FaustMixer* mixer, void (*cb)(float rms, float peak, void* userData), void* userData);
 
 
 // --- UMLSequence and FaustInstrument Flat Endpoints ---
+DART_EXPORT const char* instrument_mapper_get_name(int id);
+DART_EXPORT int instrument_mapper_get_id(const char* name);
+DART_EXPORT int instrument_mapper_is_percussion(int id);
+DART_EXPORT int instrument_mapper_get_polyphony(int id);
+DART_EXPORT const char* instrument_mapper_get_class(int id);
+DART_EXPORT const char* instrument_mapper_get_origin(int id);
+DART_EXPORT int instrument_mapper_get_available(int* outArray, int maxElements);
+
 DART_EXPORT UMLSequence* sequence_create(const char* name, int instID, const char* umlDataString);
 DART_EXPORT void sequence_destroy(UMLSequence* seq);
 DART_EXPORT FaustInstrument* sequence_get_instrument(UMLSequence* seq);
 DART_EXPORT FaustInstrument* instrument_create(int instrumentID, int execType, float sampleRate);
 DART_EXPORT void instrument_destroy(FaustInstrument* inst);
+DART_EXPORT float instrument_get_sample_rate(FaustInstrument* inst);
 DART_EXPORT void instrument_set_parameter(FaustInstrument* inst, const char* name, float value);
+DART_EXPORT const char* instrument_get_parameters_json(FaustInstrument* inst);
+DART_EXPORT void instrument_free_json(const char* jsonPtr);
 /**
  * Play a note.
  *
@@ -321,6 +337,11 @@ DART_EXPORT double sequence_get_bpm(UMLSequence* seq);
 DART_EXPORT int sequence_get_grid(UMLSequence* seq);
 DART_EXPORT double sequence_get_basefreq(UMLSequence* seq);
 DART_EXPORT void sequence_set_basefreq(UMLSequence* seq, double freq);
+
+DART_EXPORT void sequence_add_note(UMLSequence* seq, float pitch, float velocity, float startBeat, float durationBeats);
+DART_EXPORT void sequence_remove_note(UMLSequence* seq, float pitch, float startBeat);
+DART_EXPORT void sequence_clear_notes(UMLSequence* seq);
+DART_EXPORT int sequence_get_notes(UMLSequence* seq, float fromBeat, float toBeat, float* outBuffer, int maxNotes);
 
 #ifdef __cplusplus
 }

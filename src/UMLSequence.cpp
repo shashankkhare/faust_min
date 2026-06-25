@@ -30,12 +30,28 @@ UMLSequence::UMLSequence(const std::string& seqName, int instID, const std::stri
     UMLSequence parsed = UMLParser::parse(seqName, umlDataString, InstrumentMapper::DEFAULT_SAMPLE_RATE, defaultBaseFreq);
     this->name = parsed.name;
     this->instrument = parsed.instrument;
-    this->instrumentID = instID != -1 ? instID : parsed.instrumentID;
+    this->instrumentID = parsed.instrumentID != -1 ? parsed.instrumentID : instID;
     this->initialParams = parsed.initialParams;
     this->events = parsed.events;
     this->bpm = parsed.bpm;
     this->grid = parsed.grid;
     this->baseFreq = parsed.baseFreq;
+    this->gain = parsed.gain;
+    this->totalDurationSamples = parsed.totalDurationSamples;
+    this->notation = parsed.notation;
+    this->execType = parsed.execType;
+    this->umlData = umlDataString;
+    this->loop = parsed.loop;
+    this->measure = parsed.measure;
+    double samplesPerBeat = (60.0 / bpm) * InstrumentMapper::DEFAULT_SAMPLE_RATE;
+    for (const auto& ev : this->events) {
+        if (ev.type == UMLEventType::NoteOn) {
+            float midiPitch = ev.frequency > 0.0f ? 69.0f + 12.0f * log2f(ev.frequency / 440.0f) : 0.0f;
+            float start = static_cast<float>(ev.sampleOffset / samplesPerBeat);
+            float dur = static_cast<float>(ev.durationSamples / samplesPerBeat);
+            rawNotes.push_back({midiPitch, ev.velocity, start, dur});
+        }
+    }
     this->gain = parsed.gain;
     this->totalDurationSamples = parsed.totalDurationSamples;
     this->notation = parsed.notation;
@@ -99,4 +115,76 @@ void UMLSequence::setBpm(double newBpm) {
 UMLSequence::~UMLSequence() {
     // Note: FaustMixer unregistration must be handled by the caller/owner
     // to strictly preserve zero-coupling architecture.
+}
+
+void UMLSequence::addNote(float pitch, float velocity, float startBeat, float durationBeats) {
+    rawNotes.push_back({pitch, velocity, startBeat, durationBeats});
+    isDirty = true;
+}
+
+void UMLSequence::removeNote(float pitch, float startBeat) {
+    for (auto it = rawNotes.begin(); it != rawNotes.end(); ++it) {
+        if (std::abs(it->pitch - pitch) < 0.01f && std::abs(it->startBeat - startBeat) < 0.01f) {
+            rawNotes.erase(it);
+            isDirty = true;
+            break;
+        }
+    }
+}
+
+void UMLSequence::clearNotes() {
+    rawNotes.clear();
+    isDirty = true;
+}
+
+int UMLSequence::getNotes(float fromBeat, float toBeat, float* outBuffer, int maxNotes) {
+    int count = 0;
+    for (const auto& note : rawNotes) {
+        if (note.startBeat >= fromBeat && note.startBeat <= toBeat) {
+            if (count < maxNotes) {
+                int idx = count * 4;
+                outBuffer[idx] = note.pitch;
+                outBuffer[idx+1] = note.velocity;
+                outBuffer[idx+2] = note.startBeat;
+                outBuffer[idx+3] = note.durationBeats;
+                count++;
+            }
+        }
+    }
+    return count;
+}
+
+void UMLSequence::regenerateEventsIfNeeded() {
+    if (!isDirty) return;
+    
+    // Simplistic full regeneration of the event timeline from rawNotes
+    events.clear();
+    double samplesPerBeat = (60.0 / bpm) * InstrumentMapper::DEFAULT_SAMPLE_RATE;
+    
+    for (const auto& raw : rawNotes) {
+        UMLEvent onEv;
+        onEv.sampleOffset = static_cast<long>(raw.startBeat * samplesPerBeat);
+        onEv.type = UMLEventType::NoteOn;
+        onEv.frequency = raw.pitch;
+        onEv.velocity = raw.velocity;
+        onEv.durationSamples = static_cast<long>(raw.durationBeats * samplesPerBeat);
+        events.push_back(onEv);
+        
+        UMLEvent offEv;
+        offEv.sampleOffset = onEv.sampleOffset + onEv.durationSamples;
+        offEv.type = UMLEventType::NoteOff;
+        offEv.frequency = raw.pitch;
+        events.push_back(offEv);
+    }
+    
+    // Re-sort the event timeline
+    std::sort(events.begin(), events.end(), [](const UMLEvent& a, const UMLEvent& b) {
+        return a.sampleOffset < b.sampleOffset;
+    });
+    
+    if (!events.empty()) {
+        totalDurationSamples = events.back().sampleOffset;
+    }
+    
+    isDirty = false;
 }

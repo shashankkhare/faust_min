@@ -54,6 +54,13 @@ struct UMLEvent {
     std::string targetNote = "";   // For phoneme glides
 };
 
+struct UMLRawNote {
+    float pitch;
+    float velocity;
+    float startBeat;
+    float durationBeats;
+};
+
 class UMLSequence {
 public:
     std::string name;
@@ -75,14 +82,23 @@ public:
     double delaySec = 0.0; // delay before first note, in seconds
     int measure = 0; // display-only: number of beats per measure (e.g., 4 for 4/4)
 
+    std::vector<UMLRawNote> rawNotes;
+    bool isDirty = false;
+
     std::shared_ptr<FaustInstrument> mInstrument;
 
-    UMLSequence() : instrumentID(-1), bpm(120.0), grid(4), baseFreq(261.63), gain(1.0), totalDurationSamples(0), notation("Indian"), execType("static") {}
+    UMLSequence() : instrumentID(-1), bpm(120.0), grid(4), baseFreq(261.63), gain(1.0), totalDurationSamples(0), notation("Indian"), execType("static"), isDirty(false) {}
 
     UMLSequence(const std::string& seqName, int instID, const std::string& umlDataString, double defaultBaseFreq = 261.63);
 
     void setBpm(double bpm);
     long getTotalDurationSamples() const { return totalDurationSamples; }
+
+    void addNote(float pitch, float velocity, float startBeat, float durationBeats);
+    void removeNote(float pitch, float startBeat);
+    void clearNotes();
+    int getNotes(float fromBeat, float toBeat, float* outBuffer, int maxNotes);
+    void regenerateEventsIfNeeded();
 
     void setFaustInstrument(std::shared_ptr<FaustInstrument> inst) {
         mInstrument = inst;
