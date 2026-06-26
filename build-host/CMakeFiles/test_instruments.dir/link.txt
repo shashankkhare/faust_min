@@ -1,0 +1,1 @@
+/usr/bin/g++ -O3 -DNDEBUG -rdynamic CMakeFiles/test_instruments.dir/home/shashankkhare/AndroidStudioProjects/faust_min/test/test_instruments.cpp.o -o test_instruments  -Wl,-rpath,/home/shashankkhare/AndroidStudioProjects/faust_min/build-host libfaust_min.so /usr/lib/x86_64-linux-gnu/libfaust.so -lpthread -ldl 

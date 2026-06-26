@@ -338,7 +338,7 @@ DART_EXPORT int sequence_get_grid(UMLSequence* seq);
 DART_EXPORT double sequence_get_basefreq(UMLSequence* seq);
 DART_EXPORT void sequence_set_basefreq(UMLSequence* seq, double freq);
 
-DART_EXPORT void sequence_add_note(UMLSequence* seq, float pitch, float velocity, float startBeat, float durationBeats);
+DART_EXPORT void sequence_add_note(UMLSequence* seq, float pitch, float velocity, float startBeat, float durationBeats, float strikeVal = 0.0f);
 DART_EXPORT void sequence_remove_note(UMLSequence* seq, float pitch, float startBeat);
 DART_EXPORT void sequence_clear_notes(UMLSequence* seq);
 DART_EXPORT int sequence_get_notes(UMLSequence* seq, float fromBeat, float toBeat, float* outBuffer, int maxNotes);

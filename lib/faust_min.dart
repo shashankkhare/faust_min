@@ -99,8 +99,8 @@ typedef _dart_sequence_get_basefreq = double Function(Pointer<NativeSequenceOpaq
 typedef _c_sequence_set_basefreq = Void Function(Pointer<NativeSequenceOpaque>, Double);
 typedef _dart_sequence_set_basefreq = void Function(Pointer<NativeSequenceOpaque>, double);
 
-typedef _c_sequence_add_note = Void Function(Pointer<NativeSequenceOpaque>, Float, Float, Float, Float);
-typedef _dart_sequence_add_note = void Function(Pointer<NativeSequenceOpaque>, double, double, double, double);
+typedef _c_sequence_add_note = Void Function(Pointer<NativeSequenceOpaque>, Float, Float, Float, Float, Float);
+typedef _dart_sequence_add_note = void Function(Pointer<NativeSequenceOpaque>, double, double, double, double, double);
 
 typedef _c_sequence_remove_note = Void Function(Pointer<NativeSequenceOpaque>, Float, Float);
 typedef _dart_sequence_remove_note = void Function(Pointer<NativeSequenceOpaque>, double, double);
@@ -485,12 +485,14 @@ class UMLRawNote {
   final double velocity;
   final double startBeat;
   final double durationBeats;
+  final double strikeVal;
 
   UMLRawNote({
     required this.pitch,
     required this.velocity,
     required this.startBeat,
     required this.durationBeats,
+    this.strikeVal = 0.0,
   });
 }
 
@@ -557,8 +559,8 @@ class UMLSequence {
     return FaustInstrument.fromNative(instHandle);
   }
 
-  void addNote(double pitch, double velocity, double startBeat, double durationBeats) {
-    if (!_isDisposed) _funcAddNote(_handle, pitch, velocity, startBeat, durationBeats);
+  void addNote(double pitch, double velocity, double startBeat, double durationBeats, {double strikeVal = 0.0}) {
+    if (!_isDisposed) _funcAddNote(_handle, pitch, velocity, startBeat, durationBeats, strikeVal);
   }
 
   void removeNote(double pitch, double startBeat) {
@@ -571,17 +573,18 @@ class UMLSequence {
 
   List<UMLRawNote> getNotes(double fromBeat, double toBeat, {int maxNotes = 128}) {
     if (_isDisposed) return [];
-    final Pointer<Float> buffer = malloc.allocate<Float>(maxNotes * 4 * sizeOf<Float>());
+    final Pointer<Float> buffer = malloc.allocate<Float>(maxNotes * 5 * sizeOf<Float>());
     try {
       final int count = _funcGetNotes(_handle, fromBeat, toBeat, buffer, maxNotes);
       List<UMLRawNote> result = [];
       for (int i = 0; i < count; i++) {
-        int idx = i * 4;
+        int idx = i * 5;
         result.add(UMLRawNote(
           pitch: buffer[idx],
           velocity: buffer[idx + 1],
           startBeat: buffer[idx + 2],
           durationBeats: buffer[idx + 3],
+          strikeVal: buffer[idx + 4],
         ));
       }
       return result;

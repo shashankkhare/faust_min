@@ -49,7 +49,7 @@ UMLSequence::UMLSequence(const std::string& seqName, int instID, const std::stri
             float midiPitch = ev.frequency > 0.0f ? 69.0f + 12.0f * log2f(ev.frequency / 440.0f) : 0.0f;
             float start = static_cast<float>(ev.sampleOffset / samplesPerBeat);
             float dur = static_cast<float>(ev.durationSamples / samplesPerBeat);
-            rawNotes.push_back({midiPitch, ev.velocity, start, dur});
+            rawNotes.push_back({midiPitch, ev.velocity, start, dur, ev.strikeVal});
         }
     }
     this->gain = parsed.gain;
@@ -117,8 +117,8 @@ UMLSequence::~UMLSequence() {
     // to strictly preserve zero-coupling architecture.
 }
 
-void UMLSequence::addNote(float pitch, float velocity, float startBeat, float durationBeats) {
-    rawNotes.push_back({pitch, velocity, startBeat, durationBeats});
+void UMLSequence::addNote(float pitch, float velocity, float startBeat, float durationBeats, float strikeVal) {
+    rawNotes.push_back({pitch, velocity, startBeat, durationBeats, strikeVal});
     isDirty = true;
 }
 
@@ -142,11 +142,12 @@ int UMLSequence::getNotes(float fromBeat, float toBeat, float* outBuffer, int ma
     for (const auto& note : rawNotes) {
         if (note.startBeat >= fromBeat && note.startBeat <= toBeat) {
             if (count < maxNotes) {
-                int idx = count * 4;
+                int idx = count * 5;
                 outBuffer[idx] = note.pitch;
                 outBuffer[idx+1] = note.velocity;
                 outBuffer[idx+2] = note.startBeat;
                 outBuffer[idx+3] = note.durationBeats;
+                outBuffer[idx+4] = note.strikeVal;
                 count++;
             }
         }

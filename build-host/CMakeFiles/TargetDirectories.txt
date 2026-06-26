@@ -1,0 +1,7 @@
+/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles/compile_faust_dsps.dir
+/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles/faust_min.dir
+/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles/test_instruments.dir
+/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles/test_sequence.dir
+/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles/test_orchestrator.dir
+/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles/edit_cache.dir
+/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles/rebuild_cache.dir

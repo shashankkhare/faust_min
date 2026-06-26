@@ -276,8 +276,8 @@ DART_EXPORT void sequence_set_basefreq(UMLSequence* seq, double freq) {
     if (seq) seq->setBaseFrequency(freq);
 }
 
-DART_EXPORT void sequence_add_note(UMLSequence* seq, float pitch, float velocity, float startBeat, float durationBeats) {
-    if (seq) seq->addNote(pitch, velocity, startBeat, durationBeats);
+DART_EXPORT void sequence_add_note(UMLSequence* seq, float pitch, float velocity, float startBeat, float durationBeats, float strikeVal) {
+    if (seq) seq->addNote(pitch, velocity, startBeat, durationBeats, strikeVal);
 }
 
 DART_EXPORT void sequence_remove_note(UMLSequence* seq, float pitch, float startBeat) {
