@@ -46,6 +46,7 @@ struct UMLEvent {
     float velocity = -1.0f;  // -1.0 = not set (use DSP default)
     float strikeVal = 0.0f;   // Default to 0.0f (normal strike)
     float vowelVal  = -1.0f;   // -1.0 = not a voice event; 0=aa 1=ee 2=ii 3=oo 4=uu
+    float noteNameCode = 0.0f; // 0=pitch-based, 1=X, 2=Na, 3=Tin, 4=Tun, 5=tk, 6=Ghe, 7=Ka
     std::string note = "";
     long durationSamples = 0;  // For glides
     float targetFrequency = 0.0f;  // For glides
@@ -60,6 +61,7 @@ struct UMLRawNote {
     float startBeat;
     float durationBeats;
     float strikeVal = 0.0f;
+    bool hasUnderscore = false;
 };
 
 class UMLSequence {
@@ -84,6 +86,7 @@ public:
     int measure = 0; // display-only: number of beats per measure (e.g., 4 for 4/4)
 
     std::vector<UMLRawNote> rawNotes;
+    std::vector<std::string> noteNames;
     bool isDirty = false;
 
     std::shared_ptr<FaustInstrument> mInstrument;
@@ -98,7 +101,7 @@ public:
     void addNote(float pitch, float velocity, float startBeat, float durationBeats, float strikeVal = 0.0f);
     void removeNote(float pitch, float startBeat);
     void clearNotes();
-    int getNotes(float fromBeat, float toBeat, float* outBuffer, int maxNotes);
+    int getNotes(float fromBeat, float toBeat, float* outBuffer, int maxNotes, char* outNames = nullptr);
     void regenerateEventsIfNeeded();
 
     void setFaustInstrument(std::shared_ptr<FaustInstrument> inst) {

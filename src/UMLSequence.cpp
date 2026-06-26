@@ -25,6 +25,7 @@
 #include "InstrumentMapper.hpp"
 #include <cstdio>
 #include <cmath>
+#include <cstring>
 
 UMLSequence::UMLSequence(const std::string& seqName, int instID, const std::string& umlDataString, double defaultBaseFreq) {
     UMLSequence parsed = UMLParser::parse(seqName, umlDataString, InstrumentMapper::DEFAULT_SAMPLE_RATE, defaultBaseFreq);
@@ -44,12 +45,28 @@ UMLSequence::UMLSequence(const std::string& seqName, int instID, const std::stri
     this->loop = parsed.loop;
     this->measure = parsed.measure;
     double samplesPerBeat = (60.0 / bpm) * InstrumentMapper::DEFAULT_SAMPLE_RATE;
-    for (const auto& ev : this->events) {
+    for (size_t ei = 0; ei < this->events.size(); ++ei) {
+        const auto& ev = this->events[ei];
         if (ev.type == UMLEventType::NoteOn) {
             float midiPitch = ev.frequency > 0.0f ? 69.0f + 12.0f * log2f(ev.frequency / 440.0f) : 0.0f;
             float start = static_cast<float>(ev.sampleOffset / samplesPerBeat);
             float dur = static_cast<float>(ev.durationSamples / samplesPerBeat);
-            rawNotes.push_back({midiPitch, ev.velocity, start, dur, ev.strikeVal});
+
+            bool hasUnderscore = false;
+            long noteEndSample = ev.sampleOffset + ev.durationSamples;
+            for (size_t ni = ei + 1; ni < this->events.size(); ++ni) {
+                const auto& nextEv = this->events[ni];
+                if (nextEv.sampleOffset > noteEndSample) break;
+                if (nextEv.type == UMLEventType::NoteOff &&
+                    nextEv.sampleOffset == noteEndSample &&
+                    (nextEv.frequency == ev.frequency || nextEv.frequency == -1.0f)) {
+                    hasUnderscore = true;
+                    break;
+                }
+            }
+
+            rawNotes.push_back({midiPitch, ev.velocity, start, dur, ev.strikeVal, hasUnderscore});
+            noteNames.push_back(ev.note);
         }
     }
     this->gain = parsed.gain;
@@ -137,19 +154,29 @@ void UMLSequence::clearNotes() {
     isDirty = true;
 }
 
-int UMLSequence::getNotes(float fromBeat, float toBeat, float* outBuffer, int maxNotes) {
+int UMLSequence::getNotes(float fromBeat, float toBeat, float* outBuffer, int maxNotes, char* outNames) {
     int count = 0;
-    for (const auto& note : rawNotes) {
+    int nameOffset = 0;
+    for (size_t i = 0; i < rawNotes.size() && count < maxNotes; ++i) {
+        const auto& note = rawNotes[i];
         if (note.startBeat >= fromBeat && note.startBeat <= toBeat) {
-            if (count < maxNotes) {
-                int idx = count * 5;
-                outBuffer[idx] = note.pitch;
-                outBuffer[idx+1] = note.velocity;
-                outBuffer[idx+2] = note.startBeat;
-                outBuffer[idx+3] = note.durationBeats;
-                outBuffer[idx+4] = note.strikeVal;
-                count++;
+            int idx = count * 6;
+            outBuffer[idx] = note.pitch;
+            outBuffer[idx+1] = note.velocity;
+            outBuffer[idx+2] = note.startBeat;
+            outBuffer[idx+3] = note.durationBeats;
+            outBuffer[idx+4] = note.strikeVal;
+            outBuffer[idx+5] = note.hasUnderscore ? 1.0f : 0.0f;
+            if (outNames && i < noteNames.size()) {
+                const char* name = noteNames[i].c_str();
+                int len = static_cast<int>(strlen(name)) + 1;
+                memcpy(outNames + nameOffset, name, len);
+                nameOffset += len;
+            } else if (outNames) {
+                outNames[nameOffset] = '\0';
+                nameOffset++;
             }
+            count++;
         }
     }
     return count;

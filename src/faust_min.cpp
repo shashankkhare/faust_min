@@ -288,8 +288,8 @@ DART_EXPORT void sequence_clear_notes(UMLSequence* seq) {
     if (seq) seq->clearNotes();
 }
 
-DART_EXPORT int sequence_get_notes(UMLSequence* seq, float fromBeat, float toBeat, float* outBuffer, int maxNotes) {
-    if (seq) return seq->getNotes(fromBeat, toBeat, outBuffer, maxNotes);
+DART_EXPORT int sequence_get_notes(UMLSequence* seq, float fromBeat, float toBeat, float* outBuffer, int maxNotes, char* outNames) {
+    if (seq) return seq->getNotes(fromBeat, toBeat, outBuffer, maxNotes, outNames);
     return 0;
 }
 

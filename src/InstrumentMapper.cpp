@@ -168,7 +168,7 @@ bool InstrumentMapper::isPercussionID(int id) {
 bool InstrumentMapper::isMembraneophone(int id) {
     return id == 0 || id == 1 || id == 2 || id == 3 || id == 5
         || id == 28 || id == 30 || id == 31 || id == 36 || id == 37
-        || id == 38 || id == 48 || id == 49;
+        || id == 38 || id == 43 || id == 48 || id == 49;
 }
 
 bool InstrumentMapper::isIdiophone(int id) {

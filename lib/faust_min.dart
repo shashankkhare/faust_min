@@ -108,8 +108,8 @@ typedef _dart_sequence_remove_note = void Function(Pointer<NativeSequenceOpaque>
 typedef _c_sequence_clear_notes = Void Function(Pointer<NativeSequenceOpaque>);
 typedef _dart_sequence_clear_notes = void Function(Pointer<NativeSequenceOpaque>);
 
-typedef _c_sequence_get_notes = Int32 Function(Pointer<NativeSequenceOpaque>, Float, Float, Pointer<Float>, Int32);
-typedef _dart_sequence_get_notes = int Function(Pointer<NativeSequenceOpaque>, double, double, Pointer<Float>, int);
+typedef _c_sequence_get_notes = Int32 Function(Pointer<NativeSequenceOpaque>, Float, Float, Pointer<Float>, Int32, Pointer<Uint8>);
+typedef _dart_sequence_get_notes = int Function(Pointer<NativeSequenceOpaque>, double, double, Pointer<Float>, int, Pointer<Uint8>);
 
 // Orchestrator FFI (Opaque structure: orchestrator)
 typedef _c_sequence_get_instrument = Pointer<NativeInstrumentOpaque> Function(Pointer<NativeSequenceOpaque>);
@@ -297,7 +297,17 @@ class InstrumentMapper {
     return result;
   }
 
+  static int getId(String name) {
+    final ptr = name.toNativeUtf8();
+    try {
+      return _funcGetId(ptr.cast());
+    } finally {
+      malloc.free(ptr);
+    }
+  }
+
   static late final _funcIsPercussion = _dylib.lookupFunction<_c_mapper_is_percussion, _dart_mapper_is_percussion>('instrument_mapper_is_percussion');
+  static late final _funcGetId = _dylib.lookupFunction<_c_mapper_get_id, _dart_mapper_get_id>('instrument_mapper_get_id');
   static late final _funcGetName = _dylib.lookupFunction<_c_mapper_get_name, _dart_mapper_get_name>('instrument_mapper_get_name');
   static late final _funcGetPolyphony = _dylib.lookupFunction<_c_mapper_get_polyphony, _dart_mapper_get_polyphony>('instrument_mapper_get_polyphony');
   static late final _funcGetClass = _dylib.lookupFunction<_c_mapper_get_class, _dart_mapper_get_class>('instrument_mapper_get_class');
@@ -486,6 +496,8 @@ class UMLRawNote {
   final double startBeat;
   final double durationBeats;
   final double strikeVal;
+  final String noteName;
+  final bool hasUnderscore;
 
   UMLRawNote({
     required this.pitch,
@@ -493,6 +505,8 @@ class UMLRawNote {
     required this.startBeat,
     required this.durationBeats,
     this.strikeVal = 0.0,
+    this.noteName = '',
+    this.hasUnderscore = false,
   });
 }
 
@@ -573,23 +587,31 @@ class UMLSequence {
 
   List<UMLRawNote> getNotes(double fromBeat, double toBeat, {int maxNotes = 128}) {
     if (_isDisposed) return [];
-    final Pointer<Float> buffer = malloc.allocate<Float>(maxNotes * 5 * sizeOf<Float>());
+    final Pointer<Float> buffer = malloc.allocate<Float>(maxNotes * 6 * sizeOf<Float>());
+    final int nameBufSize = maxNotes * 64;
+    final Pointer<Uint8> nameBuf = malloc.allocate<Uint8>(nameBufSize);
     try {
-      final int count = _funcGetNotes(_handle, fromBeat, toBeat, buffer, maxNotes);
+      final int count = _funcGetNotes(_handle, fromBeat, toBeat, buffer, maxNotes, nameBuf);
       List<UMLRawNote> result = [];
+      int nameOffset = 0;
       for (int i = 0; i < count; i++) {
-        int idx = i * 5;
+        int idx = i * 6;
+        final name = nameBuf.elementAt(nameOffset).cast<Utf8>().toDartString();
+        nameOffset += name.length + 1;
         result.add(UMLRawNote(
           pitch: buffer[idx],
           velocity: buffer[idx + 1],
           startBeat: buffer[idx + 2],
           durationBeats: buffer[idx + 3],
           strikeVal: buffer[idx + 4],
+          hasUnderscore: buffer[idx + 5] > 0.5,
+          noteName: name,
         ));
       }
       return result;
     } finally {
       malloc.free(buffer);
+      malloc.free(nameBuf);
     }
   }
 

@@ -265,6 +265,10 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
         } else if (match[4].matched) {
             ti.type = TokenType::NoteWithControl;
             std::string rem = match[4].str();
+            // Bar-line separators are decorative — skip entirely
+            if (rem == "|") {
+                continue;
+            }
             ti.rawStr = rem;
 
             if (rem.find('^') != std::string::npos) {
@@ -361,6 +365,11 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
                 durGrids++;
                 j++;
             }
+            // _ supercedes all operators: clear triggers when followed by a StopRest
+            if (j < tokenItems.size() && tokenItems[j].type == TokenType::StopRest) {
+                triggers.clear();
+            }
+
             long durationSamples = (long)(durGrids * samplesPerGrid);
             long sampleOffset = (long)(ti.gridIndex * samplesPerGrid);
             float velocityScalar = (float)ti.controlParam / 9.0f;
