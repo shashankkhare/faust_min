@@ -497,7 +497,7 @@ class UMLRawNote {
   final double durationBeats;
   final double strikeVal;
   final String noteName;
-  final bool hasUnderscore;
+  final bool hasStop;
 
   UMLRawNote({
     required this.pitch,
@@ -506,7 +506,7 @@ class UMLRawNote {
     required this.durationBeats,
     this.strikeVal = 0.0,
     this.noteName = '',
-    this.hasUnderscore = false,
+    this.hasStop = false,
   });
 }
 
@@ -604,7 +604,7 @@ class UMLSequence {
           startBeat: buffer[idx + 2],
           durationBeats: buffer[idx + 3],
           strikeVal: buffer[idx + 4],
-          hasUnderscore: buffer[idx + 5] > 0.5,
+          hasStop: buffer[idx + 5] > 0.5,
           noteName: name,
         ));
       }

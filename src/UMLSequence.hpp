@@ -61,7 +61,10 @@ struct UMLRawNote {
     float startBeat;
     float durationBeats;
     float strikeVal = 0.0f;
-    bool hasUnderscore = false;
+    bool hasStop = false;
+    bool hasGlide = false;
+    bool hasVibrato = false;
+    bool hasVelGlide = false;
 };
 
 class UMLSequence {
@@ -102,7 +105,7 @@ public:
     void removeNote(float pitch, float startBeat);
     void clearNotes();
     int getNotes(float fromBeat, float toBeat, float* outBuffer, int maxNotes, char* outNames = nullptr);
-    void regenerateEventsIfNeeded();
+    void prepare();
 
     void setFaustInstrument(std::shared_ptr<FaustInstrument> inst) {
         mInstrument = inst;

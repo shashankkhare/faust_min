@@ -44,37 +44,8 @@ UMLSequence::UMLSequence(const std::string& seqName, int instID, const std::stri
     this->umlData = umlDataString;
     this->loop = parsed.loop;
     this->measure = parsed.measure;
-    double samplesPerBeat = (60.0 / bpm) * InstrumentMapper::DEFAULT_SAMPLE_RATE;
-    for (size_t ei = 0; ei < this->events.size(); ++ei) {
-        const auto& ev = this->events[ei];
-        if (ev.type == UMLEventType::NoteOn) {
-            float midiPitch = ev.frequency > 0.0f ? 69.0f + 12.0f * log2f(ev.frequency / 440.0f) : 0.0f;
-            float start = static_cast<float>(ev.sampleOffset / samplesPerBeat);
-            float dur = static_cast<float>(ev.durationSamples / samplesPerBeat);
-
-            bool hasUnderscore = false;
-            long noteEndSample = ev.sampleOffset + ev.durationSamples;
-            for (size_t ni = ei + 1; ni < this->events.size(); ++ni) {
-                const auto& nextEv = this->events[ni];
-                if (nextEv.sampleOffset > noteEndSample) break;
-                if (nextEv.type == UMLEventType::NoteOff &&
-                    nextEv.sampleOffset == noteEndSample &&
-                    (nextEv.frequency == ev.frequency || nextEv.frequency == -1.0f)) {
-                    hasUnderscore = true;
-                    break;
-                }
-            }
-
-            rawNotes.push_back({midiPitch, ev.velocity, start, dur, ev.strikeVal, hasUnderscore});
-            noteNames.push_back(ev.note);
-        }
-    }
-    this->gain = parsed.gain;
-    this->totalDurationSamples = parsed.totalDurationSamples;
-    this->notation = parsed.notation;
-    this->execType = parsed.execType;
-    this->umlData = umlDataString;
-    this->loop = parsed.loop;
+    this->rawNotes = parsed.rawNotes;
+    this->noteNames = parsed.noteNames;
 
     int targetID = this->instrumentID;
     if (targetID == -1 && !this->instrument.empty()) {
@@ -166,7 +137,7 @@ int UMLSequence::getNotes(float fromBeat, float toBeat, float* outBuffer, int ma
             outBuffer[idx+2] = note.startBeat;
             outBuffer[idx+3] = note.durationBeats;
             outBuffer[idx+4] = note.strikeVal;
-            outBuffer[idx+5] = note.hasUnderscore ? 1.0f : 0.0f;
+            outBuffer[idx+5] = note.hasStop ? 1.0f : 0.0f;
             if (outNames && i < noteNames.size()) {
                 const char* name = noteNames[i].c_str();
                 int len = static_cast<int>(strlen(name)) + 1;
@@ -182,37 +153,79 @@ int UMLSequence::getNotes(float fromBeat, float toBeat, float* outBuffer, int ma
     return count;
 }
 
-void UMLSequence::regenerateEventsIfNeeded() {
+void UMLSequence::prepare() {
     if (!isDirty) return;
+
+    std::string serialized = "";
     
-    // Simplistic full regeneration of the event timeline from rawNotes
-    events.clear();
-    double samplesPerBeat = (60.0 / bpm) * InstrumentMapper::DEFAULT_SAMPLE_RATE;
+    serialized += "bpm: " + std::to_string(bpm) + "\n";
+    serialized += "grid: " + std::to_string(grid) + "\n";
+    serialized += "notation: " + notation + "\n";
+    serialized += "instrument: " + instrument + "\n";
+    serialized += "instrumentID: " + std::to_string(instrumentID) + "\n";
+    serialized += "measure: " + std::to_string(measure) + "\n";
+    serialized += "loop: " + std::string(loop ? "true" : "false") + "\n";
+    serialized += "gain: " + std::to_string(gain) + "\n";
+    serialized += "delay: " + std::to_string(delaySec) + "\n";
     
-    for (const auto& raw : rawNotes) {
-        UMLEvent onEv;
-        onEv.sampleOffset = static_cast<long>(raw.startBeat * samplesPerBeat);
-        onEv.type = UMLEventType::NoteOn;
-        onEv.frequency = raw.pitch;
-        onEv.velocity = raw.velocity;
-        onEv.durationSamples = static_cast<long>(raw.durationBeats * samplesPerBeat);
-        events.push_back(onEv);
-        
-        UMLEvent offEv;
-        offEv.sampleOffset = onEv.sampleOffset + onEv.durationSamples;
-        offEv.type = UMLEventType::NoteOff;
-        offEv.frequency = raw.pitch;
-        events.push_back(offEv);
+    if (!initialParams.empty()) {
+        serialized += "parameters: ";
+        bool first = true;
+        for (const auto& pair : initialParams) {
+            if (!first) serialized += ",";
+            serialized += pair.first + "=" + std::to_string(pair.second);
+            first = false;
+        }
+        serialized += "\n";
     }
     
-    // Re-sort the event timeline
-    std::sort(events.begin(), events.end(), [](const UMLEvent& a, const UMLEvent& b) {
-        return a.sampleOffset < b.sampleOffset;
-    });
-    
-    if (!events.empty()) {
-        totalDurationSamples = events.back().sampleOffset;
+    serialized += "\n";
+
+    float maxBeat = 0.0f;
+    for (const auto& note : rawNotes) {
+        if (note.startBeat + note.durationBeats > maxBeat) {
+            maxBeat = note.startBeat + note.durationBeats;
+        }
     }
+    
+    int totalGrids = static_cast<int>(std::round(maxBeat * grid));
+    std::map<int, size_t> gridToNote;
+    for (size_t i = 0; i < rawNotes.size(); ++i) {
+        int idx = static_cast<int>(std::round(rawNotes[i].startBeat * grid));
+        gridToNote[idx] = i;
+    }
+
+    for (int g = 0; g < totalGrids; ++g) {
+        if (g > 0) serialized += " ";
+        if (gridToNote.count(g)) {
+            size_t idx = gridToNote[g];
+            const auto& raw = rawNotes[idx];
+            std::string token = "";
+            
+            int controlParam = static_cast<int>(std::round(raw.velocity * 9.0f));
+            if (raw.strikeVal > 0.0f) {
+                token += std::to_string(controlParam) + std::to_string(static_cast<int>(raw.strikeVal));
+            } else if (controlParam != 5) {
+                token += std::to_string(controlParam);
+            }
+            
+            token += (idx < noteNames.size()) ? noteNames[idx] : ".";
+            
+            if (raw.hasGlide) token += "^";
+            if (raw.hasVibrato) token += "~";
+            if (raw.hasVelGlide) token += ">";
+            if (raw.hasStop) token += "_";
+            
+            serialized += token;
+        } else {
+            serialized += ".";
+        }
+    }
+
+    UMLSequence parsed = UMLParser::parse(name, serialized, InstrumentMapper::DEFAULT_SAMPLE_RATE, baseFreq);
+    
+    this->events = parsed.events;
+    this->totalDurationSamples = parsed.totalDurationSamples;
     
     isDirty = false;
 }

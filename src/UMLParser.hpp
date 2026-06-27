@@ -45,6 +45,7 @@ public:
         bool hasVibratoOp;
         bool isGlideTarget = false;
         bool hasCompositeNotes = false;
+        bool hasStop = false;
     };
 
     static UMLSequence parse(const std::string& name, const std::string& input, double sampleRate, double defaultBaseFreq = 261.63);

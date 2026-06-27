@@ -235,10 +235,9 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
     long currentGridIndex = 0;
 
     // Regex parsing layout:
-    // Group 1 matches standalone dots with optional operators (\.[\^\~>]*) -> ContinuityDot
-    // Group 2 matches standalone underscores (_) -> StopRest
-    // Group 3 matches general notes starting with optional digits/chars ending with optional operators -> NoteWithControl
-    std::regex tokenRegex(R"((\.[\^\~>]*)|(\_)|([\^\~>])|([^\s\.\_]+))");
+    // Group 1 matches standalone dots with optional operators (\.[\^\~>\_]*) -> ContinuityDot
+    // Group 2 matches notes with optional operators -> NoteWithControl
+    std::regex tokenRegex(R"((\.[\^\~>\_]*)|([^\s\.]+))");
     auto words_begin = std::sregex_iterator(notesSection.begin(), notesSection.end(), tokenRegex);
     auto words_end = std::sregex_iterator();
 
@@ -251,6 +250,7 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
         ti.hasGlideOp = false;
         ti.hasVelGlideOp = false;
         ti.hasVibratoOp = false;
+        ti.hasStop = false;
 
         if (match[1].matched) {
             ti.type = TokenType::ContinuityDot;
@@ -259,12 +259,10 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
             if (rem.find('^') != std::string::npos) ti.hasGlideOp = true;
             if (rem.find('>') != std::string::npos) ti.hasVelGlideOp = true;
             if (rem.find('~') != std::string::npos) ti.hasVibratoOp = true;
+            if (rem.find('_') != std::string::npos) ti.hasStop = true;
         } else if (match[2].matched) {
-            ti.type = TokenType::StopRest;
-            ti.rawStr = "_";
-        } else if (match[4].matched) {
             ti.type = TokenType::NoteWithControl;
-            std::string rem = match[4].str();
+            std::string rem = match[2].str();
             // Bar-line separators are decorative — skip entirely
             if (rem == "|") {
                 continue;
@@ -282,6 +280,10 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
             if (rem.find('~') != std::string::npos) {
                 ti.hasVibratoOp = true;
                 rem.erase(std::remove(rem.begin(), rem.end(), '~'), rem.end());
+            }
+            if (rem.find('_') != std::string::npos) {
+                ti.hasStop = true;
+                rem.erase(std::remove(rem.begin(), rem.end(), '_'), rem.end());
             }
 
             // Composite note — comma-separated sub-notes, each with its own prefix
@@ -314,13 +316,6 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
             }
             ti.noteName = rem;
         done_parsing:;
-        } else if (match[3].matched) {
-            // Standalone operator (^ or ~ with space before/after) — still occupies a grid cell
-            ti.type = TokenType::ContinuityDot;
-            ti.rawStr = match[3].str();
-            if (match[3].str() == "~") ti.hasVibratoOp = true;
-            if (match[3].str() == "^") ti.hasGlideOp = true;
-            if (match[3].str() == ">") ti.hasVelGlideOp = true;
         }
         tokenItems.push_back(ti);
         currentGridIndex++;
@@ -352,6 +347,7 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
             if (ti.hasVibratoOp) triggers.push_back({OpType::Vibrato, 0});
 
             size_t j = i + 1;
+            bool hasStopStop = ti.hasStop;
             while (j < tokenItems.size() && tokenItems[j].type == TokenType::ContinuityDot) {
                 if (tokenItems[j].hasGlideOp) {
                     triggers.push_back({OpType::Glide, durGrids});
@@ -362,11 +358,14 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
                 if (tokenItems[j].hasVibratoOp) {
                     triggers.push_back({OpType::Vibrato, durGrids});
                 }
+                if (tokenItems[j].hasStop) {
+                    hasStopStop = true;
+                }
                 durGrids++;
                 j++;
             }
-            // _ supercedes all operators: clear triggers when followed by a StopRest
-            if (j < tokenItems.size() && tokenItems[j].type == TokenType::StopRest) {
+            // _ supercedes all operators: clear triggers if stop is present
+            if (hasStopStop) {
                 triggers.clear();
             }
 
@@ -383,22 +382,48 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
             } else {
                 handlePitchedToken(ti, velocityScalar, sampleOffset, durationSamples, seq.notation, seq.baseFreq, seq.instrument, samplesPerGrid, sampleRate, j, tokenItems, triggers, seq.events);
             }
-        } else if (ti.type == TokenType::StopRest) {
-            UMLEvent restEv;
-            restEv.sampleOffset = (long)(ti.gridIndex * samplesPerGrid);
-            restEv.type = UMLEventType::NoteOff;
 
-            restEv.frequency = -1.0f; // Default: stop all
-            if (i > 0) {
-                if (tokenItems[i - 1].type == TokenType::NoteWithControl) {
-                    std::string targetNote = tokenItems[i - 1].noteName;
-                    auto pipePos = targetNote.find('|');
-                    if (pipePos != std::string::npos) targetNote = targetNote.substr(0, pipePos);
-                    restEv.frequency = static_cast<float>(getFrequency(targetNote, seq.notation, seq.baseFreq, seq.instrument));
-                }
+            if (hasStopStop) {
+                UMLEvent restEv;
+                restEv.sampleOffset = sampleOffset + durationSamples;
+                restEv.type = UMLEventType::NoteOff;
+                restEv.frequency = -1.0f; // Default: stop all
+                std::string targetNote = ti.noteName;
+                auto pipePos = targetNote.find('|');
+                if (pipePos != std::string::npos) targetNote = targetNote.substr(0, pipePos);
+                restEv.frequency = static_cast<float>(getFrequency(targetNote, seq.notation, seq.baseFreq, seq.instrument));
+                seq.events.push_back(restEv);
             }
+        }
+    }
 
-            seq.events.push_back(restEv);
+    // --- Pass 4: Build rawNotes and noteNames directly from tokenItems ---
+    float lastPitch = 0.0f;
+    float lastVelocity = 5.0f / 9.0f;
+    float lastStrikeVal = 0.0f;
+
+    for (size_t i = 0; i < tokenItems.size(); ++i) {
+        const auto& ti = tokenItems[i];
+        float start = static_cast<float>(ti.gridIndex) / grid;
+        float dur = 1.0f / grid;
+
+        if (ti.type == TokenType::NoteWithControl) {
+            std::string targetNote = ti.noteName;
+            auto pipePos = targetNote.find('|');
+            if (pipePos != std::string::npos) targetNote = targetNote.substr(0, pipePos);
+            float freq = static_cast<float>(getFrequency(targetNote, seq.notation, seq.baseFreq, seq.instrument));
+            float midiPitch = freq > 0.0f ? 69.0f + 12.0f * log2f(freq / 440.0f) : 0.0f;
+            float vel = (float)ti.controlParam / 9.0f;
+
+            lastPitch = midiPitch;
+            lastVelocity = vel;
+            lastStrikeVal = ti.strikeVal;
+
+            seq.rawNotes.push_back({midiPitch, vel, start, dur, ti.strikeVal, ti.hasStop});
+            seq.noteNames.push_back(ti.noteName);
+        } else if (ti.type == TokenType::ContinuityDot) {
+            seq.rawNotes.push_back({lastPitch, lastVelocity, start, dur, lastStrikeVal, ti.hasStop});
+            seq.noteNames.push_back(".");
         }
     }
 

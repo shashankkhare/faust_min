@@ -181,7 +181,7 @@ void SequenceOrchestrator::playSong(const std::string& songDirectory) {
             if (mActiveSequences.count(seqName)) {
                 if (std::find(mPendingPlay.begin(), mPendingPlay.end(), seqName) == mPendingPlay.end()) {
                     if (mActiveSequences[seqName]->sequenceObj) {
-                        mActiveSequences[seqName]->sequenceObj->regenerateEventsIfNeeded();
+                        mActiveSequences[seqName]->sequenceObj->prepare();
                     }
                     mPendingPlay.push_back(seqName);
                 }
@@ -271,7 +271,7 @@ void SequenceOrchestrator::play(const std::string& name) {
         
         auto seqWrapper = mActiveSequences[name];
         if (seqWrapper && seqWrapper->sequenceObj) {
-            seqWrapper->sequenceObj->regenerateEventsIfNeeded();
+            seqWrapper->sequenceObj->prepare();
             auto inst = seqWrapper->sequenceObj->getFaustInstrument();
             if (inst) {
                 // Initialize the instrument frequency immediately to the first note's frequency
