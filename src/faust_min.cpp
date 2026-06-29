@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Shashank Khare
+ * Copyright (c) 2026 Shashank Khare (Rebuild Trigger)
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -31,6 +31,12 @@
 #include <cmath>
 #include <algorithm>
 #include <cstdio>
+#include <chrono>
+#define TLOG(msg) do { \
+    auto __now = std::chrono::steady_clock::now(); \
+    auto __us = std::chrono::duration_cast<std::chrono::microseconds>(__now.time_since_epoch()).count(); \
+    printf("[TIMESTAMP %ld] %s\n", __us, msg); fflush(stdout); \
+} while(0)
 #include "FaustFlute.hpp"
 #include "FaustBowl.hpp"
 #include "FaustDayan.hpp"
@@ -84,7 +90,21 @@ DART_EXPORT int orchestrator_add_sequence(SequenceOrchestrator* orch, const char
 }
 
 DART_EXPORT void orchestrator_play(SequenceOrchestrator* orch, const char* name) {
-    if (orch && name) orch->play(name);
+    if (orch && name) {
+        TLOG("orchestrator_play() called - queuing sequence");
+        orch->play(name);
+        TLOG("orchestrator_play() returned - sequence queued");
+    }
+}
+
+DART_EXPORT void orchestrator_play_sequences(SequenceOrchestrator* orch, const char** names, int count) {
+    if (orch && names && count > 0) {
+        std::vector<std::string> vec;
+        for (int i = 0; i < count; ++i) {
+            if (names[i]) vec.push_back(names[i]);
+        }
+        orch->playSequences(vec);
+    }
 }
 
 DART_EXPORT void orchestrator_destroy(SequenceOrchestrator* orchestrator) {
@@ -106,12 +126,20 @@ DART_EXPORT void orchestrator_resume(SequenceOrchestrator* orch) {
     if (orch) orch->resume();
 }
 
+DART_EXPORT void orchestrator_seek(SequenceOrchestrator* orch, long sampleOffset) {
+    if (orch) orch->seek(sampleOffset);
+}
+
+DART_EXPORT void orchestrator_set_song_looping(SequenceOrchestrator* orch, int loop) {
+    if (orch) orch->setSongLooping(loop != 0);
+}
+
 DART_EXPORT void orchestrator_set_weight(SequenceOrchestrator* orch, const char* name, float weight) {
     if (orch && name) orch->setWeight(std::string(name), weight);
 }
 
-DART_EXPORT void orchestrator_mute_track(SequenceOrchestrator* orch, const char* name, int mute) {
-    if (orch && name) orch->muteTrack(name, mute != 0);
+DART_EXPORT void orchestrator_mute_sequence(SequenceOrchestrator* orch, const char* name, int mute) {
+    if (orch && name) orch->muteSequence(name, mute != 0);
 }
 
 DART_EXPORT void orchestrator_set_parameter(SequenceOrchestrator* orch, const char* name, const char* param, float value) {
@@ -158,6 +186,30 @@ DART_EXPORT int mixer_start(FaustMixer* mixer) {
     return mixer ? (mixer->start() ? 0 : -1) : -1;
 }
 
+/**
+ * @brief Asynchronously starts the FaustMixer audio hardware.
+ * 
+ * This function spawns a background C++ thread to execute the potentially 
+ * blocking initialization of the hardware audio driver (e.g., waking up a suspended 
+ * PulseAudio sink). Once the hardware driver is fully started, the provided callback 
+ * is fired on the background thread.
+ * 
+ * @param mixer A pointer to the FaustMixer singleton instance.
+ * @param onComplete A function pointer (callback) executed when initialization finishes.
+ */
+DART_EXPORT void mixer_start_async(FaustMixer* mixer, void (*onComplete)()) {
+    if (!mixer) return;
+    TLOG("mixer_start_async ENTER - spawning start thread");
+    std::thread([mixer, onComplete]() {
+        mixer->start();
+        TLOG("mixer->start() RETURNED - calling onComplete()");
+        if (onComplete) {
+            onComplete();
+            TLOG("onComplete() DONE - device reported as ready");
+        }
+    }).detach();
+}
+
 // --- InstrumentMapper FFI ---
 DART_EXPORT const char* instrument_mapper_get_name(int id) {
     static std::string static_name;
@@ -193,7 +245,7 @@ DART_EXPORT const char* instrument_mapper_get_origin(int id) {
 DART_EXPORT int instrument_mapper_get_available(int* outArray, int maxElements) {
     if (!outArray || maxElements <= 0) return 0;
     // Known valid IDs up to 52, excluding duplicates/aliases.
-    int valid_ids[] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52};
+    int valid_ids[] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53};
     int count = sizeof(valid_ids) / sizeof(valid_ids[0]);
     int written = std::min(count, maxElements);
     for (int i = 0; i < written; ++i) {
@@ -259,6 +311,17 @@ DART_EXPORT double sequence_get_bpm(UMLSequence* seq) {
     return seq ? seq->bpm : 120.0;
 }
 
+DART_EXPORT void sequence_set_bpm(UMLSequence* seq, double bpm) {
+    if (seq) {
+        seq->setBpm(bpm);
+        seq->isDirty = true;
+    }
+}
+
+DART_EXPORT const char* sequence_get_uml_data(UMLSequence* seq) {
+    return seq ? seq->umlData.c_str() : "";
+}
+
 DART_EXPORT int sequence_get_grid(UMLSequence* seq) {
     return seq ? seq->grid : 4;
 }
@@ -276,8 +339,16 @@ DART_EXPORT void sequence_set_basefreq(UMLSequence* seq, double freq) {
     if (seq) seq->setBaseFrequency(freq);
 }
 
-DART_EXPORT void sequence_add_note(UMLSequence* seq, float pitch, float velocity, float startBeat, float durationBeats, float strikeVal) {
-    if (seq) seq->addNote(pitch, velocity, startBeat, durationBeats, strikeVal);
+DART_EXPORT void sequence_prepare(UMLSequence* seq) {
+    if (seq) seq->prepare();
+}
+
+DART_EXPORT int sequence_is_dirty(UMLSequence* seq) {
+    return (seq && seq->isDirty) ? 1 : 0;
+}
+
+DART_EXPORT void sequence_add_note(UMLSequence* seq, float pitch, float velocity, float startBeat, float durationBeats, const char* noteName, float strikeVal) {
+    if (seq) seq->addNote(pitch, velocity, startBeat, durationBeats, noteName ? noteName : ".", strikeVal);
 }
 
 DART_EXPORT void sequence_remove_note(UMLSequence* seq, float pitch, float startBeat) {

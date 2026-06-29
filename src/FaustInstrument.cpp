@@ -225,15 +225,7 @@ void FaustInstrument::unloadDSP() {
 void FaustInstrument::loadTargetDSP() {
     // Force StaticCompiled execution mode for complex physical model DSPs that cause libfaust interpreter stack overflows
     if (mExecType == DSPExecutionType::InterpretedByte) {
-        if (mInstrumentID == 0 || mInstrumentID == 1 || mInstrumentID == 9 || mInstrumentID == 11 || 
-            mInstrumentID == 12 || mInstrumentID == 13 || mInstrumentID == 15 || mInstrumentID == 16 || 
-            mInstrumentID == 17 || mInstrumentID == 18 || mInstrumentID == 21 || mInstrumentID == 22 || 
-            mInstrumentID == 23 || mInstrumentID == 24 || mInstrumentID == 28 || mInstrumentID == 29 || 
-            mInstrumentID == 30 || mInstrumentID == 31 || mInstrumentID == 32 || mInstrumentID == 35 ||
-            mInstrumentID == 36 || mInstrumentID == 37 || mInstrumentID == 38 || mInstrumentID == 39 ||
-            mInstrumentID == 40 || mInstrumentID == 41 || mInstrumentID == 42 || mInstrumentID == 43 ||
-            mInstrumentID == 44 || mInstrumentID == 45 || mInstrumentID == 46 || mInstrumentID == 47 ||
-            mInstrumentID == 48) {
+        if (mInstrumentID >= 0 && mInstrumentID <= 53) {
             mExecType = DSPExecutionType::StaticCompiled;
         }
     }
@@ -368,6 +360,7 @@ void FaustInstrument::loadTargetDSP() {
                 case 50: addVoice(new FaustGhatamDSP()); break;
                 case 51: addVoice(new FaustPanfluteDSP()); break;
                 case 52: addVoice(new FaustNativeamericanfluteDSP()); break;
+                case 53: addVoice(new FaustDiziDSP()); break;
                 default: addVoice(new FaustDayanDSP()); break;
             }
         }
@@ -863,26 +856,33 @@ void FaustInstrument::render(int numFrames, float* buffer) {
     int nOuts = mVoices[0]->getNumOutputs();
     float scale = mIsPolyphonic ? (1.0f / (float)mNumVoices) : 1.0f;
     
-    for (int v = 0; v < mNumVoices; ++v) {
-        FAUSTFLOAT* outputs[2] = { mRenderBuffer, mRenderBuffer + numFrames };
-        mVoices[v]->compute(numFrames, nullptr, outputs);
-
-        if (nOuts == 1) {
-            for (int i = 0; i < numFrames; ++i) {
-                float val = mRenderBuffer[i] * scale;
-                if (mGain != 1.0f) val *= mGain;
-                buffer[i * 2] += val;
-                buffer[i * 2 + 1] += val;
-            }
-        } else if (nOuts == 2) {
-            for (int i = 0; i < numFrames; ++i) {
-                float valL = outputs[0][i] * scale;
-                float valR = outputs[1][i] * scale;
-                if (mGain != 1.0f) { valL *= mGain; valR *= mGain; }
-                buffer[i * 2] += valL;
-                buffer[i * 2 + 1] += valR;
+    int framesProcessed = 0;
+    while (framesProcessed < numFrames) {
+        int chunkSize = std::min(numFrames - framesProcessed, InstrumentMapper::MAX_FRAMES_PER_BUFFER);
+        
+        for (int v = 0; v < mNumVoices; ++v) {
+            FAUSTFLOAT* outputs[2] = { mRenderBuffer, mRenderBuffer + chunkSize };
+            mVoices[v]->compute(chunkSize, nullptr, outputs);
+            
+            float* chunkDest = buffer + (framesProcessed * 2);
+            if (nOuts == 1) {
+                for (int i = 0; i < chunkSize; ++i) {
+                    float val = mRenderBuffer[i] * scale;
+                    if (mGain != 1.0f) val *= mGain;
+                    chunkDest[i * 2] += val;
+                    chunkDest[i * 2 + 1] += val;
+                }
+            } else if (nOuts == 2) {
+                for (int i = 0; i < chunkSize; ++i) {
+                    float valL = outputs[0][i] * scale;
+                    float valR = outputs[1][i] * scale;
+                    if (mGain != 1.0f) { valL *= mGain; valR *= mGain; }
+                    chunkDest[i * 2] += valL;
+                    chunkDest[i * 2 + 1] += valR;
+                }
             }
         }
+        framesProcessed += chunkSize;
     }
 }
 
@@ -1004,6 +1004,10 @@ void FaustInstrument::processRealtimeStream(float* buffer, int numFrames) {
     }
 
     mEventQueue.clear();
+
+    if (mIsMuted.load(std::memory_order_acquire)) {
+        std::memset(buffer, 0, sizeof(float) * numFrames * 2);
+    }
 }
 
 void FaustInstrument::startInternalStream(float sampleRate) {

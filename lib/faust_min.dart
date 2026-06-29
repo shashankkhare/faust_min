@@ -23,6 +23,8 @@
 import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
+import 'dart:async';
+import 'dart:isolate';
 import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
 
@@ -57,6 +59,10 @@ typedef _dart_mixer_init = void Function(Pointer<NativeMixerOpaque> mixer, doubl
 typedef _c_mixer_start = Int32 Function(Pointer<NativeMixerOpaque> mixer);
 typedef _dart_mixer_start = int Function(Pointer<NativeMixerOpaque> mixer);
 
+typedef VoidFunctionNative = Void Function();
+typedef _c_mixer_start_async = Void Function(Pointer<NativeMixerOpaque> mixer, Pointer<NativeFunction<VoidFunctionNative>> callback);
+typedef _dart_mixer_start_async = void Function(Pointer<NativeMixerOpaque> mixer, Pointer<NativeFunction<VoidFunctionNative>> callback);
+
 typedef _c_mixer_stop = Void Function(Pointer<NativeMixerOpaque> mixer);
 typedef _dart_mixer_stop = void Function(Pointer<NativeMixerOpaque> mixer);
 
@@ -89,6 +95,14 @@ typedef _dart_sequence_destroy = void Function(Pointer<NativeSequenceOpaque>);
 typedef _c_sequence_get_bpm = Double Function(Pointer<NativeSequenceOpaque>);
 typedef _dart_sequence_get_bpm = double Function(Pointer<NativeSequenceOpaque>);
 
+typedef _c_sequence_set_bpm = Void Function(Pointer<NativeSequenceOpaque>, Double);
+typedef _dart_sequence_set_bpm = void Function(Pointer<NativeSequenceOpaque>, double);
+
+typedef _c_sequence_get_uml_data = Pointer<Utf8> Function(Pointer<NativeSequenceOpaque>);
+typedef _dart_sequence_get_uml_data = Pointer<Utf8> Function(Pointer<NativeSequenceOpaque>);
+typedef _c_sequence_is_dirty = Int32 Function(Pointer<NativeSequenceOpaque>);
+typedef _dart_sequence_is_dirty = int Function(Pointer<NativeSequenceOpaque>);
+
 typedef _c_sequence_get_grid = Int32 Function(Pointer<NativeSequenceOpaque>);
 typedef _dart_sequence_get_grid = int Function(Pointer<NativeSequenceOpaque>);
 
@@ -99,8 +113,11 @@ typedef _dart_sequence_get_basefreq = double Function(Pointer<NativeSequenceOpaq
 typedef _c_sequence_set_basefreq = Void Function(Pointer<NativeSequenceOpaque>, Double);
 typedef _dart_sequence_set_basefreq = void Function(Pointer<NativeSequenceOpaque>, double);
 
-typedef _c_sequence_add_note = Void Function(Pointer<NativeSequenceOpaque>, Float, Float, Float, Float, Float);
-typedef _dart_sequence_add_note = void Function(Pointer<NativeSequenceOpaque>, double, double, double, double, double);
+typedef _c_sequence_prepare = Void Function(Pointer<NativeSequenceOpaque>);
+typedef _dart_sequence_prepare = void Function(Pointer<NativeSequenceOpaque>);
+
+typedef _c_sequence_add_note = Void Function(Pointer<NativeSequenceOpaque>, Float, Float, Float, Float, Pointer<Utf8>, Float);
+typedef _dart_sequence_add_note = void Function(Pointer<NativeSequenceOpaque>, double, double, double, double, Pointer<Utf8>, double);
 
 typedef _c_sequence_remove_note = Void Function(Pointer<NativeSequenceOpaque>, Float, Float);
 typedef _dart_sequence_remove_note = void Function(Pointer<NativeSequenceOpaque>, double, double);
@@ -154,6 +171,9 @@ typedef _dart_orch_add_seq = void Function(Pointer<NativeOrchestratorOpaque>, Po
 typedef _c_orch_play = Void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>);
 typedef _dart_orch_play = void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>);
 
+typedef _c_orch_play_sequences = Void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Pointer<Utf8>>, Int32);
+typedef _dart_orch_play_sequences = void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Pointer<Utf8>>, int);
+
 
 
 typedef _c_orch_stop = Void Function(Pointer<NativeOrchestratorOpaque>);
@@ -165,8 +185,14 @@ typedef _dart_orch_pause = void Function(Pointer<NativeOrchestratorOpaque>);
 typedef _c_orch_resume = Void Function(Pointer<NativeOrchestratorOpaque>);
 typedef _dart_orch_resume = void Function(Pointer<NativeOrchestratorOpaque>);
 
-typedef _c_orch_mute_track = Void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>, Int32);
-typedef _dart_orch_mute_track = void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>, int);
+typedef _c_orch_seek = Void Function(Pointer<NativeOrchestratorOpaque>, Int64);
+typedef _dart_orch_seek = void Function(Pointer<NativeOrchestratorOpaque>, int);
+
+typedef _c_orch_set_song_looping = Void Function(Pointer<NativeOrchestratorOpaque>, Int32);
+typedef _dart_orch_set_song_looping = void Function(Pointer<NativeOrchestratorOpaque>, int);
+
+typedef _c_orch_mute_sequence = Void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>, Int32);
+typedef _dart_orch_mute_sequence = void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>, int);
 
 typedef _c_orch_set_param = Void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>, Pointer<Utf8>, Float);
 typedef _dart_orch_set_param = void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>, Pointer<Utf8>, double);
@@ -498,6 +524,9 @@ class UMLRawNote {
   final double strikeVal;
   final String noteName;
   final bool hasStop;
+  final bool hasGlide;
+  final bool hasVibrato;
+  final bool hasVelGlide;
 
   UMLRawNote({
     required this.pitch,
@@ -507,6 +536,9 @@ class UMLRawNote {
     this.strikeVal = 0.0,
     this.noteName = '',
     this.hasStop = false,
+    this.hasGlide = false,
+    this.hasVibrato = false,
+    this.hasVelGlide = false,
   });
 }
 
@@ -544,6 +576,8 @@ class UMLSequence {
   }
 
   static late final _funcGetBpm = _dylib.lookupFunction<_c_sequence_get_bpm, _dart_sequence_get_bpm>('sequence_get_bpm');
+  static late final _funcSetBpm = _dylib.lookupFunction<_c_sequence_set_bpm, _dart_sequence_set_bpm>('sequence_set_bpm');
+  static late final _funcGetUmlData = _dylib.lookupFunction<_c_sequence_get_uml_data, _dart_sequence_get_uml_data>('sequence_get_uml_data');
   static late final _funcGetGrid = _dylib.lookupFunction<_c_sequence_get_grid, _dart_sequence_get_grid>('sequence_get_grid');
   static late final _funcGetMeasure = _dylib.lookupFunction<_c_sequence_get_measure, _dart_sequence_get_measure>('sequence_get_measure');
   static late final _funcGetInst = _dylib.lookupFunction<_c_sequence_get_instrument, _dart_sequence_get_instrument>('sequence_get_instrument');
@@ -554,9 +588,20 @@ class UMLSequence {
   static late final _funcRemoveNote = _dylib.lookupFunction<_c_sequence_remove_note, _dart_sequence_remove_note>('sequence_remove_note');
   static late final _funcClearNotes = _dylib.lookupFunction<_c_sequence_clear_notes, _dart_sequence_clear_notes>('sequence_clear_notes');
   static late final _funcGetNotes = _dylib.lookupFunction<_c_sequence_get_notes, _dart_sequence_get_notes>('sequence_get_notes');
+  static late final _funcPrepare = _dylib.lookupFunction<_c_sequence_prepare, _dart_sequence_prepare>('sequence_prepare');
+  static late final _funcIsDirty = _dylib.lookupFunction<_c_sequence_is_dirty, _dart_sequence_is_dirty>('sequence_is_dirty');
+
+  /// Whether the sequence has unsaved modifications.
+  bool get isDirty => _isDisposed ? false : _funcIsDirty(_handle) != 0;
 
   /// The parsed BPM (beats per minute). Defaults to 120.0.
   double get bpm => _isDisposed ? 120.0 : _funcGetBpm(_handle);
+  /// Set the BPM. Scales internal event times.
+  set bpm(double value) { if (!_isDisposed) _funcSetBpm(_handle, value); }
+
+  /// The serialized UML sequence representation.
+  String get umlData => _isDisposed ? "" : _funcGetUmlData(_handle).toDartString();
+
   /// The grid subdivision (cells per beat). Defaults to 4.
   int get grid => _isDisposed ? 4 : _funcGetGrid(_handle);
   /// The number of beats per measure. Defaults to 4.
@@ -573,8 +618,19 @@ class UMLSequence {
     return FaustInstrument.fromNative(instHandle);
   }
 
-  void addNote(double pitch, double velocity, double startBeat, double durationBeats, {double strikeVal = 0.0}) {
-    if (!_isDisposed) _funcAddNote(_handle, pitch, velocity, startBeat, durationBeats, strikeVal);
+  void prepare() {
+    if (!_isDisposed) _funcPrepare(_handle);
+  }
+
+  void addNote(double pitch, double velocity, double startBeat, double durationBeats, String noteName, {double strikeVal = 0.0}) {
+    if (!_isDisposed) {
+      final namePtr = noteName.toNativeUtf8();
+      try {
+        _funcAddNote(_handle, pitch, velocity, startBeat, durationBeats, namePtr, strikeVal);
+      } finally {
+        malloc.free(namePtr);
+      }
+    }
   }
 
   void removeNote(double pitch, double startBeat) {
@@ -587,7 +643,7 @@ class UMLSequence {
 
   List<UMLRawNote> getNotes(double fromBeat, double toBeat, {int maxNotes = 128}) {
     if (_isDisposed) return [];
-    final Pointer<Float> buffer = malloc.allocate<Float>(maxNotes * 6 * sizeOf<Float>());
+    final Pointer<Float> buffer = malloc.allocate<Float>(maxNotes * 9 * sizeOf<Float>());
     final int nameBufSize = maxNotes * 64;
     final Pointer<Uint8> nameBuf = malloc.allocate<Uint8>(nameBufSize);
     try {
@@ -595,7 +651,7 @@ class UMLSequence {
       List<UMLRawNote> result = [];
       int nameOffset = 0;
       for (int i = 0; i < count; i++) {
-        int idx = i * 6;
+        int idx = i * 9;
         final name = nameBuf.elementAt(nameOffset).cast<Utf8>().toDartString();
         nameOffset += name.length + 1;
         result.add(UMLRawNote(
@@ -605,6 +661,9 @@ class UMLSequence {
           durationBeats: buffer[idx + 3],
           strikeVal: buffer[idx + 4],
           hasStop: buffer[idx + 5] > 0.5,
+          hasGlide: buffer[idx + 6] > 0.5,
+          hasVibrato: buffer[idx + 7] > 0.5,
+          hasVelGlide: buffer[idx + 8] > 0.5,
           noteName: name,
         ));
       }
@@ -643,11 +702,14 @@ class SequenceOrchestrator {
   static late final _funcDestroy = _dylib.lookupFunction<_c_orch_destroy, _dart_orch_destroy>('orchestrator_destroy');
   static late final _funcAddSeq = _dylib.lookupFunction<_c_orch_add_seq, _dart_orch_add_seq>('orchestrator_add_sequence');
   static late final _funcPlay = _dylib.lookupFunction<_c_orch_play, _dart_orch_play>('orchestrator_play');
+  static late final _funcPlaySequences = _dylib.lookupFunction<_c_orch_play_sequences, _dart_orch_play_sequences>('orchestrator_play_sequences');
 
   static late final _funcStop = _dylib.lookupFunction<_c_orch_stop, _dart_orch_stop>('orchestrator_stop');
   static late final _funcPause = _dylib.lookupFunction<_c_orch_pause, _dart_orch_pause>('orchestrator_pause');
   static late final _funcResume = _dylib.lookupFunction<_c_orch_resume, _dart_orch_resume>('orchestrator_resume');
-  static late final _funcMuteTrack = _dylib.lookupFunction<_c_orch_mute_track, _dart_orch_mute_track>('orchestrator_mute_track');
+  static late final _funcSeek = _dylib.lookupFunction<_c_orch_seek, _dart_orch_seek>('orchestrator_seek');
+  static late final _funcSetSongLooping = _dylib.lookupFunction<_c_orch_set_song_looping, _dart_orch_set_song_looping>('orchestrator_set_song_looping');
+  static late final _funcMuteSequence = _dylib.lookupFunction<_c_orch_mute_sequence, _dart_orch_mute_sequence>('orchestrator_mute_sequence');
   static late final _funcSetWeight = _dylib.lookupFunction<_c_orch_set_weight, _dart_orch_set_weight>('orchestrator_set_weight');
   static late final _funcSetParam = _dylib.lookupFunction<_c_orch_set_param, _dart_orch_set_param>('orchestrator_set_parameter');
 
@@ -718,7 +780,7 @@ class SequenceOrchestrator {
     }
   }
 
-  /// Start playback of a registered sequence.
+  /// Trigger playback for a registered sequence by name.
   void play(String name) {
     if (_isDisposed) return;
     final namePtr = name.toNativeUtf8();
@@ -729,6 +791,28 @@ class SequenceOrchestrator {
     }
   }
 
+  /// Trigger playback for a list of registered sequences in a single batch FFI call.
+  /// This prevents the audio thread from running between play triggers, which could
+  /// cause first-note skipping on subsequent tracks due to clock misalignment.
+  void playSequences(List<String> names) {
+    if (_isDisposed || names.isEmpty) return;
+    final Pointer<Pointer<Utf8>> pointerArray = malloc<Pointer<Utf8>>(names.length);
+    final List<Pointer<Utf8>> allocatedPointers = [];
+    try {
+      for (int i = 0; i < names.length; i++) {
+        final ptr = names[i].toNativeUtf8();
+        pointerArray[i] = ptr;
+        allocatedPointers.add(ptr);
+      }
+      _funcPlaySequences(_handle, pointerArray, names.length);
+    } finally {
+      for (final ptr in allocatedPointers) {
+        malloc.free(ptr);
+      }
+      malloc.free(pointerArray);
+    }
+  }
+
   /// Stop all playback.
   void stop() => _isDisposed ? null : _funcStop(_handle);
   /// Pause all playback (suspends the audio device).
@@ -736,12 +820,18 @@ class SequenceOrchestrator {
   /// Resume from pause.
   void resume() => _isDisposed ? null : _funcResume(_handle);
 
+  /// Seek to a global sample offset.
+  void seek(int sampleOffset) => _isDisposed ? null : _funcSeek(_handle, sampleOffset);
+
+  /// Enable or disable global song looping.
+  void setSongLooping(bool loop) => _isDisposed ? null : _funcSetSongLooping(_handle, loop ? 1 : 0);
+
   /// Mute or unmute a sequence by name.
-  void muteTrack(String name, {bool mute = true}) {
+  void muteSequence(String name, {bool mute = true}) {
     if (_isDisposed) return;
     final namePtr = name.toNativeUtf8();
     try {
-      _funcMuteTrack(_handle, namePtr.cast(), mute ? 1 : 0);
+      _funcMuteSequence(_handle, namePtr.cast(), mute ? 1 : 0);
     } finally {
       malloc.free(namePtr);
     }
@@ -820,6 +910,7 @@ class FaustMixer {
   static late final _funcGetInstance = _dylib.lookupFunction<_c_mixer_get_instance, _dart_mixer_get_instance>('mixer_get_instance');
   static late final _funcInit = _dylib.lookupFunction<_c_mixer_init, _dart_mixer_init>('mixer_init');
   static late final _funcStart = _dylib.lookupFunction<_c_mixer_start, _dart_mixer_start>('mixer_start');
+  static late final _funcStartAsync = _dylib.lookupFunction<_c_mixer_start_async, _dart_mixer_start_async>('mixer_start_async');
   static late final _funcStop = _dylib.lookupFunction<_c_mixer_stop, _dart_mixer_stop>('mixer_stop');
   static late final _funcClearAll = _dylib.lookupFunction<_c_mixer_clear_all, _dart_mixer_clear_all>('mixer_clear_all');
   static late final _funcGetSR = _dylib.lookupFunction<_c_mixer_get_sr, _dart_mixer_get_sr>('mixer_get_sample_rate');
@@ -838,6 +929,20 @@ class FaustMixer {
 
   /// Start the hardware audio device.
   bool start() => _funcStart(_handle) != 0;
+
+  /// Asynchronously starts the audio mixer and waits for initialization to complete.
+  /// 
+  /// This prevents the UI from freezing when the hardware driver (like PulseAudio)
+  /// needs to wake up from a suspended state.
+  Future<void> startAsync() async {
+    final completer = Completer<void>();
+    final callable = NativeCallable<VoidFunctionNative>.listener(() {
+      completer.complete();
+    });
+    _funcStartAsync(_handle, callable.nativeFunction);
+    await completer.future;
+    callable.close();
+  }
 
   /// Stop the hardware audio device.
   void stop() => _funcStop(_handle);

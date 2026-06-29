@@ -89,6 +89,7 @@ std::string InstrumentMapper::getNameFromID(int id) {
         case 50: return "ghatam";
         case 51: return "panflute";
         case 52: return "nativeamericanflute";
+        case 53: return "dizi";
         default: return "dayan";
     }
 }
@@ -157,6 +158,7 @@ int InstrumentMapper::getIDFromName(const std::string& name) {
     if (lowerName == "gh" || lowerName == "ghatam") return 50;
     if (lowerName == "pf" || lowerName == "panflute" || lowerName == "pan_flute") return 51;
     if (lowerName == "nf" || lowerName == "naf" || lowerName == "nativeamericanflute" || lowerName == "native_american_flute") return 52;
+    if (lowerName == "dz" || lowerName == "dizi") return 53;
 
     return -1;
 }
@@ -197,7 +199,7 @@ std::string InstrumentMapper::getInstrumentOrigin(int id) {
     // Indian
     if (id == 0 || id == 1 || id == 9 || id == 10 || id == 11 || id == 17 || id == 36 || id == 37 || id == 38 || id == 44 || id == 45 || id == 46 || id == 49 || id == 50) return "Indian";
     // Chinese / East Asian
-    if (id == 35 || id == 39 || id == 40 || id == 43) return "Chinese";
+    if (id == 35 || id == 39 || id == 40 || id == 43 || id == 53) return "Chinese";
     // Japanese
     if (id == 16) return "Japanese";
     // Tibetan
@@ -262,6 +264,7 @@ std::string InstrumentMapper::getDSPPathForID(int id, const std::string& assetBa
         case 50: return base + "ghatam.dsp";
         case 51: return base + "panflute.dsp";
         case 52: return base + "nativeamericanflute.dsp";
+        case 53: return base + "dizi.dsp";
         default: return base + "dayan.dsp";
     }
 }
