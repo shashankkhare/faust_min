@@ -395,7 +395,7 @@ class FaustDiziDSP : public dsp {
 			fRec24[0] = ((std::fabs(fTempFTZ5) > 1.17549435e-38f) ? fTempFTZ5 : 0.0f);
 			float fTempFTZ6 = (fSlow7 + (fConst2 * fRec26[1]));
 			fRec26[0] = ((std::fabs(fTempFTZ6) > 1.17549435e-38f) ? fTempFTZ6 : 0.0f);
-			float fTempFTZ7 = ((fConst4 * fRec27[1]) + (0.5f * float(((fSlow4 - fVec0[1]) > 0.0f))));
+			float fTempFTZ7 = ((fConst4 * fRec27[1]) + (0.0799999982f * float(((fSlow4 - fVec0[1]) > 0.0f))));
 			fRec27[0] = ((std::fabs(fTempFTZ7) > 1.17549435e-38f) ? fTempFTZ7 : 0.0f);
 			iRec28[0] = ((1103515245 * iRec28[1]) + 12345);
 			float fTemp0 = float(iRec28[0]);
@@ -522,7 +522,7 @@ class FaustDiziDSP : public dsp {
 			float fTemp61 = (fTemp58 * fTemp60);
 			float fTempFTZ36 = (((0.522189379f * fRec40[3]) + ((4.65661287e-10f * fTemp0) + (2.49495602f * fRec40[1]))) - (2.0172658f * fRec40[2]));
 			fRec40[0] = ((std::fabs(fTempFTZ36) > 1.17549435e-38f) ? fTempFTZ36 : 0.0f);
-			output0[i0] = FAUSTFLOAT((fRec0[0] * (((fRec1[0] * (1.0f - fRec36[0])) + (2.0f * (fRec36[0] * ((fRec37[0] / fTemp61) + (fRec37[2] * (0.0f - (1.0f / fTemp61))))))) + (0.0599999987f * (fRec27[0] * (((0.0499220341f * fRec40[0]) + (0.0506126992f * fRec40[2])) - ((0.0959935337f * fRec40[1]) + (0.00440878607f * fRec40[3]))))))));
+			output0[i0] = FAUSTFLOAT((fRec0[0] * (((fRec1[0] * (1.0f - fRec36[0])) + (2.0f * (fRec36[0] * ((fRec37[0] / fTemp61) + (fRec37[2] * (0.0f - (1.0f / fTemp61))))))) + (0.0149999997f * (fRec27[0] * (((0.0499220341f * fRec40[0]) + (0.0506126992f * fRec40[2])) - ((0.0959935337f * fRec40[1]) + (0.00440878607f * fRec40[3]))))))));
 			fRec0[1] = fRec0[0];
 			iRec16[1] = iRec16[0];
 			fRec23[1] = fRec23[0];

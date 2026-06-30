@@ -52,7 +52,7 @@ breathIntensity = hslider("breathiness", 0.08, 0.0, 1.0, 0.01) : si.smoo;
 // Breath attack: decaying noise burst
 burstRelease = 0.08;
 poleRel = ba.tau2pole(burstRelease);
-burstScale = 0.5 / (1.0 - poleRel);
+burstScale = 0.08 / (1.0 - poleRel);
 tDel = t : mem;
 risingEdge = t - tDel : >(0);
 gateBurst = risingEdge * burstScale : si.smooth(poleRel);
@@ -137,4 +137,4 @@ buzzMix = buzzIntensity;
 output = (cleanSignal * (1.0 - buzzMix)) + (buzzSignal * buzzMix);
 
 // Add breath burst
-process = (output + no.pink_noise * gateBurst * 0.06) : *(gain * 1.0);
+process = (output + no.pink_noise * gateBurst * 0.015) : *(gain * 1.0);
