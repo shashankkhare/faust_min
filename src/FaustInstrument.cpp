@@ -83,6 +83,7 @@
 #include "FaustThunderDSP.hpp"
 #include "FaustDaguDSP.hpp"
 #include "FaustSarodDSP.hpp"
+#include "FaustDiziDSP.hpp"
 #include "FaustSantoorDSP.hpp"
 #include "FaustTumbiDSP.hpp"
 #include "FaustNgachenDSP.hpp"

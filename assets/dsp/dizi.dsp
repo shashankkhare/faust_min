@@ -63,8 +63,6 @@ actualBreath = breathIntensity + gateBurst;
 jetTurbulence = filteredNoise * actualBreath * 1.0;
 noisyPressure = pressure + (jetTurbulence * pressure);
 
-releaseEnv = t : si.smooth(ba.tau2pole(0.030));
-
 // =============================================================================
 // Core Dizi waveguide (same structure as bansuri — transverse flute)
 // =============================================================================
@@ -117,10 +115,10 @@ waveshaper(x) = (x * (1.0 + buzzIntensity * 1.5)) +
 
 // Extract the pressure signal from the waveguide (post-embouchure, pre-output)
 // We drive the dimo model from the main audio signal
-dimoDrive = _ : fi.dcblocker;
+dimoDrive = fi.dcblocker;
 
-// Bandpass filter at dimo resonance (controlled by buzzFrequency slider)
-dimoBP = fi.bandpass(buzzFrequency, dimoQ, 1.0);
+// Resonant bandpass filter at dimo resonance (controlled by buzzFrequency slider)
+dimoBP = fi.resonbp(buzzFrequency, dimoQ, 1.0);
 
 // Complete dimo processing chain
 dimoProcessor = dimoDrive : waveshaper : dimoBP : *(2.0);

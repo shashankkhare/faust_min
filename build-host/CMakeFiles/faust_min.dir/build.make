@@ -197,106 +197,110 @@ include CMakeFiles/faust_min.dir/flags.make
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_32) "Auto-compiling Faust DSP: dholak -> FaustDholakDSP.hpp"
 	faust -lang cpp -es 1 -single -ftz 1 -I /home/shashankkhare/AndroidStudioProjects/faust_min/src/faust_arch -cn FaustDholakDSP /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/dholak.dsp -o /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustDholakDSP.hpp
 
+/home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustDiziDSP.hpp: /home/shashankkhare/AndroidStudioProjects/faust_min/assets/dsp/dizi.dsp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_33) "Auto-compiling Faust DSP: dizi -> FaustDiziDSP.hpp"
+	faust -lang cpp -es 1 -single -ftz 1 -I /home/shashankkhare/AndroidStudioProjects/faust_min/src/faust_arch -cn FaustDiziDSP /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/dizi.dsp -o /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustDiziDSP.hpp
+
 /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustDjembeDSP.hpp: /home/shashankkhare/AndroidStudioProjects/faust_min/assets/dsp/djembe.dsp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_33) "Auto-compiling Faust DSP: djembe -> FaustDjembeDSP.hpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_34) "Auto-compiling Faust DSP: djembe -> FaustDjembeDSP.hpp"
 	faust -lang cpp -es 1 -single -ftz 1 -I /home/shashankkhare/AndroidStudioProjects/faust_min/src/faust_arch -cn FaustDjembeDSP /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/djembe.dsp -o /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustDjembeDSP.hpp
 
 /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustElectric_guitarDSP.hpp: /home/shashankkhare/AndroidStudioProjects/faust_min/assets/dsp/electric_guitar.dsp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_34) "Auto-compiling Faust DSP: electric_guitar -> FaustElectric_guitarDSP.hpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_35) "Auto-compiling Faust DSP: electric_guitar -> FaustElectric_guitarDSP.hpp"
 	faust -lang cpp -es 1 -single -ftz 1 -I /home/shashankkhare/AndroidStudioProjects/faust_min/src/faust_arch -cn FaustElectric_guitarDSP /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/electric_guitar.dsp -o /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustElectric_guitarDSP.hpp
 
 /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustErhuDSP.hpp: /home/shashankkhare/AndroidStudioProjects/faust_min/assets/dsp/erhu.dsp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_35) "Auto-compiling Faust DSP: erhu -> FaustErhuDSP.hpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_36) "Auto-compiling Faust DSP: erhu -> FaustErhuDSP.hpp"
 	faust -lang cpp -es 1 -single -ftz 1 -I /home/shashankkhare/AndroidStudioProjects/faust_min/src/faust_arch -cn FaustErhuDSP /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/erhu.dsp -o /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustErhuDSP.hpp
 
 /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustGhatamDSP.hpp: /home/shashankkhare/AndroidStudioProjects/faust_min/assets/dsp/ghatam.dsp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_36) "Auto-compiling Faust DSP: ghatam -> FaustGhatamDSP.hpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_37) "Auto-compiling Faust DSP: ghatam -> FaustGhatamDSP.hpp"
 	faust -lang cpp -es 1 -single -ftz 1 -I /home/shashankkhare/AndroidStudioProjects/faust_min/src/faust_arch -cn FaustGhatamDSP /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/ghatam.dsp -o /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustGhatamDSP.hpp
 
 /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustGuzhengDSP.hpp: /home/shashankkhare/AndroidStudioProjects/faust_min/assets/dsp/guzheng.dsp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_37) "Auto-compiling Faust DSP: guzheng -> FaustGuzhengDSP.hpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_38) "Auto-compiling Faust DSP: guzheng -> FaustGuzhengDSP.hpp"
 	faust -lang cpp -es 1 -single -ftz 1 -I /home/shashankkhare/AndroidStudioProjects/faust_min/src/faust_arch -cn FaustGuzhengDSP /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/guzheng.dsp -o /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustGuzhengDSP.hpp
 
 /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustHihatDSP.hpp: /home/shashankkhare/AndroidStudioProjects/faust_min/assets/dsp/hihat.dsp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_38) "Auto-compiling Faust DSP: hihat -> FaustHihatDSP.hpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_39) "Auto-compiling Faust DSP: hihat -> FaustHihatDSP.hpp"
 	faust -lang cpp -es 1 -single -ftz 1 -I /home/shashankkhare/AndroidStudioProjects/faust_min/src/faust_arch -cn FaustHihatDSP /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/hihat.dsp -o /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustHihatDSP.hpp
 
 /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustLagngaDSP.hpp: /home/shashankkhare/AndroidStudioProjects/faust_min/assets/dsp/lagnga.dsp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_39) "Auto-compiling Faust DSP: lagnga -> FaustLagngaDSP.hpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_40) "Auto-compiling Faust DSP: lagnga -> FaustLagngaDSP.hpp"
 	faust -lang cpp -es 1 -single -ftz 1 -I /home/shashankkhare/AndroidStudioProjects/faust_min/src/faust_arch -cn FaustLagngaDSP /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/lagnga.dsp -o /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustLagngaDSP.hpp
 
 /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustMarimbaDSP.hpp: /home/shashankkhare/AndroidStudioProjects/faust_min/assets/dsp/marimba.dsp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_40) "Auto-compiling Faust DSP: marimba -> FaustMarimbaDSP.hpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_41) "Auto-compiling Faust DSP: marimba -> FaustMarimbaDSP.hpp"
 	faust -lang cpp -es 1 -single -ftz 1 -I /home/shashankkhare/AndroidStudioProjects/faust_min/src/faust_arch -cn FaustMarimbaDSP /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/marimba.dsp -o /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustMarimbaDSP.hpp
 
 /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustMasterReverbDSP.hpp: /home/shashankkhare/AndroidStudioProjects/faust_min/assets/dsp/master_reverb.dsp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_41) "Auto-compiling Faust DSP: master_reverb -> FaustMasterReverbDSP.hpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_42) "Auto-compiling Faust DSP: master_reverb -> FaustMasterReverbDSP.hpp"
 	faust -lang cpp -es 1 -single -ftz 1 -I /home/shashankkhare/AndroidStudioProjects/faust_min/src/faust_arch -cn FaustMasterReverbDSP /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/master_reverb.dsp -o /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustMasterReverbDSP.hpp
 
 /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustMridangamDSP.hpp: /home/shashankkhare/AndroidStudioProjects/faust_min/assets/dsp/mridangam.dsp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_42) "Auto-compiling Faust DSP: mridangam -> FaustMridangamDSP.hpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_43) "Auto-compiling Faust DSP: mridangam -> FaustMridangamDSP.hpp"
 	faust -lang cpp -es 1 -single -ftz 1 -I /home/shashankkhare/AndroidStudioProjects/faust_min/src/faust_arch -cn FaustMridangamDSP /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/mridangam.dsp -o /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustMridangamDSP.hpp
 
 /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustNativeamericanfluteDSP.hpp: /home/shashankkhare/AndroidStudioProjects/faust_min/assets/dsp/nativeamericanflute.dsp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_43) "Auto-compiling Faust DSP: nativeamericanflute -> FaustNativeamericanfluteDSP.hpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_44) "Auto-compiling Faust DSP: nativeamericanflute -> FaustNativeamericanfluteDSP.hpp"
 	faust -lang cpp -es 1 -single -ftz 1 -I /home/shashankkhare/AndroidStudioProjects/faust_min/src/faust_arch -cn FaustNativeamericanfluteDSP /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/nativeamericanflute.dsp -o /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustNativeamericanfluteDSP.hpp
 
 /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustNgachenDSP.hpp: /home/shashankkhare/AndroidStudioProjects/faust_min/assets/dsp/ngachen.dsp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_44) "Auto-compiling Faust DSP: ngachen -> FaustNgachenDSP.hpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_45) "Auto-compiling Faust DSP: ngachen -> FaustNgachenDSP.hpp"
 	faust -lang cpp -es 1 -single -ftz 1 -I /home/shashankkhare/AndroidStudioProjects/faust_min/src/faust_arch -cn FaustNgachenDSP /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/ngachen.dsp -o /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustNgachenDSP.hpp
 
 /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustPanfluteDSP.hpp: /home/shashankkhare/AndroidStudioProjects/faust_min/assets/dsp/panflute.dsp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_45) "Auto-compiling Faust DSP: panflute -> FaustPanfluteDSP.hpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_46) "Auto-compiling Faust DSP: panflute -> FaustPanfluteDSP.hpp"
 	faust -lang cpp -es 1 -single -ftz 1 -I /home/shashankkhare/AndroidStudioProjects/faust_min/src/faust_arch -cn FaustPanfluteDSP /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/panflute.dsp -o /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustPanfluteDSP.hpp
 
 /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustRainmakerDSP.hpp: /home/shashankkhare/AndroidStudioProjects/faust_min/assets/dsp/rainmaker.dsp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_46) "Auto-compiling Faust DSP: rainmaker -> FaustRainmakerDSP.hpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_47) "Auto-compiling Faust DSP: rainmaker -> FaustRainmakerDSP.hpp"
 	faust -lang cpp -es 1 -single -ftz 1 -I /home/shashankkhare/AndroidStudioProjects/faust_min/src/faust_arch -cn FaustRainmakerDSP /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/rainmaker.dsp -o /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustRainmakerDSP.hpp
 
 /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustSantoorDSP.hpp: /home/shashankkhare/AndroidStudioProjects/faust_min/assets/dsp/santoor.dsp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_47) "Auto-compiling Faust DSP: santoor -> FaustSantoorDSP.hpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_48) "Auto-compiling Faust DSP: santoor -> FaustSantoorDSP.hpp"
 	faust -lang cpp -es 1 -single -ftz 1 -I /home/shashankkhare/AndroidStudioProjects/faust_min/src/faust_arch -cn FaustSantoorDSP /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/santoor.dsp -o /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustSantoorDSP.hpp
 
 /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustSarodDSP.hpp: /home/shashankkhare/AndroidStudioProjects/faust_min/assets/dsp/sarod.dsp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_48) "Auto-compiling Faust DSP: sarod -> FaustSarodDSP.hpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_49) "Auto-compiling Faust DSP: sarod -> FaustSarodDSP.hpp"
 	faust -lang cpp -es 1 -single -ftz 1 -I /home/shashankkhare/AndroidStudioProjects/faust_min/src/faust_arch -cn FaustSarodDSP /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/sarod.dsp -o /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustSarodDSP.hpp
 
 /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustSeawaveDSP.hpp: /home/shashankkhare/AndroidStudioProjects/faust_min/assets/dsp/seawave.dsp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_49) "Auto-compiling Faust DSP: seawave -> FaustSeawaveDSP.hpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_50) "Auto-compiling Faust DSP: seawave -> FaustSeawaveDSP.hpp"
 	faust -lang cpp -es 1 -single -ftz 1 -I /home/shashankkhare/AndroidStudioProjects/faust_min/src/faust_arch -cn FaustSeawaveDSP /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/seawave.dsp -o /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustSeawaveDSP.hpp
 
 /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustShakerDSP.hpp: /home/shashankkhare/AndroidStudioProjects/faust_min/assets/dsp/shaker.dsp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_50) "Auto-compiling Faust DSP: shaker -> FaustShakerDSP.hpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_51) "Auto-compiling Faust DSP: shaker -> FaustShakerDSP.hpp"
 	faust -lang cpp -es 1 -single -ftz 1 -I /home/shashankkhare/AndroidStudioProjects/faust_min/src/faust_arch -cn FaustShakerDSP /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/shaker.dsp -o /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustShakerDSP.hpp
 
 /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustSinging_bowlDSP.hpp: /home/shashankkhare/AndroidStudioProjects/faust_min/assets/dsp/singing_bowl.dsp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_51) "Auto-compiling Faust DSP: singing_bowl -> FaustSinging_bowlDSP.hpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_52) "Auto-compiling Faust DSP: singing_bowl -> FaustSinging_bowlDSP.hpp"
 	faust -lang cpp -es 1 -single -ftz 1 -I /home/shashankkhare/AndroidStudioProjects/faust_min/src/faust_arch -cn FaustSinging_bowlDSP /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/singing_bowl.dsp -o /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustSinging_bowlDSP.hpp
 
 /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustThunderDSP.hpp: /home/shashankkhare/AndroidStudioProjects/faust_min/assets/dsp/thunder.dsp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_52) "Auto-compiling Faust DSP: thunder -> FaustThunderDSP.hpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_53) "Auto-compiling Faust DSP: thunder -> FaustThunderDSP.hpp"
 	faust -lang cpp -es 1 -single -ftz 1 -I /home/shashankkhare/AndroidStudioProjects/faust_min/src/faust_arch -cn FaustThunderDSP /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/thunder.dsp -o /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustThunderDSP.hpp
 
 /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustTumbiDSP.hpp: /home/shashankkhare/AndroidStudioProjects/faust_min/assets/dsp/tumbi.dsp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_53) "Auto-compiling Faust DSP: tumbi -> FaustTumbiDSP.hpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_54) "Auto-compiling Faust DSP: tumbi -> FaustTumbiDSP.hpp"
 	faust -lang cpp -es 1 -single -ftz 1 -I /home/shashankkhare/AndroidStudioProjects/faust_min/src/faust_arch -cn FaustTumbiDSP /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/tumbi.dsp -o /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustTumbiDSP.hpp
 
 /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustVoiceDSP.hpp: /home/shashankkhare/AndroidStudioProjects/faust_min/assets/dsp/voice.dsp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_54) "Auto-compiling Faust DSP: voice -> FaustVoiceDSP.hpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_55) "Auto-compiling Faust DSP: voice -> FaustVoiceDSP.hpp"
 	faust -lang cpp -es 1 -single -ftz 1 -I /home/shashankkhare/AndroidStudioProjects/faust_min/src/faust_arch -cn FaustVoiceDSP /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/voice.dsp -o /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustVoiceDSP.hpp
 
 /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustWaterfallDSP.hpp: /home/shashankkhare/AndroidStudioProjects/faust_min/assets/dsp/waterfall.dsp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_55) "Auto-compiling Faust DSP: waterfall -> FaustWaterfallDSP.hpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_56) "Auto-compiling Faust DSP: waterfall -> FaustWaterfallDSP.hpp"
 	faust -lang cpp -es 1 -single -ftz 1 -I /home/shashankkhare/AndroidStudioProjects/faust_min/src/faust_arch -cn FaustWaterfallDSP /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/waterfall.dsp -o /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustWaterfallDSP.hpp
 
 /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustWindDSP.hpp: /home/shashankkhare/AndroidStudioProjects/faust_min/assets/dsp/wind.dsp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_56) "Auto-compiling Faust DSP: wind -> FaustWindDSP.hpp"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_57) "Auto-compiling Faust DSP: wind -> FaustWindDSP.hpp"
 	faust -lang cpp -es 1 -single -ftz 1 -I /home/shashankkhare/AndroidStudioProjects/faust_min/src/faust_arch -cn FaustWindDSP /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/wind.dsp -o /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustWindDSP.hpp
 
 CMakeFiles/faust_min.dir/faust_min.cpp.o: CMakeFiles/faust_min.dir/flags.make
 CMakeFiles/faust_min.dir/faust_min.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/faust_min.cpp
 CMakeFiles/faust_min.dir/faust_min.cpp.o: CMakeFiles/faust_min.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_57) "Building CXX object CMakeFiles/faust_min.dir/faust_min.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_58) "Building CXX object CMakeFiles/faust_min.dir/faust_min.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/faust_min.dir/faust_min.cpp.o -MF CMakeFiles/faust_min.dir/faust_min.cpp.o.d -o CMakeFiles/faust_min.dir/faust_min.cpp.o -c /home/shashankkhare/AndroidStudioProjects/faust_min/src/faust_min.cpp
 
 CMakeFiles/faust_min.dir/faust_min.cpp.i: cmake_force
@@ -310,7 +314,7 @@ CMakeFiles/faust_min.dir/faust_min.cpp.s: cmake_force
 CMakeFiles/faust_min.dir/FaustInstrument.cpp.o: CMakeFiles/faust_min.dir/flags.make
 CMakeFiles/faust_min.dir/FaustInstrument.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustInstrument.cpp
 CMakeFiles/faust_min.dir/FaustInstrument.cpp.o: CMakeFiles/faust_min.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_58) "Building CXX object CMakeFiles/faust_min.dir/FaustInstrument.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_59) "Building CXX object CMakeFiles/faust_min.dir/FaustInstrument.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/faust_min.dir/FaustInstrument.cpp.o -MF CMakeFiles/faust_min.dir/FaustInstrument.cpp.o.d -o CMakeFiles/faust_min.dir/FaustInstrument.cpp.o -c /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustInstrument.cpp
 
 CMakeFiles/faust_min.dir/FaustInstrument.cpp.i: cmake_force
@@ -325,7 +329,7 @@ CMakeFiles/faust_min.dir/FaustFlute.cpp.o: CMakeFiles/faust_min.dir/flags.make
 CMakeFiles/faust_min.dir/FaustFlute.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustFlute.cpp
 CMakeFiles/faust_min.dir/FaustFlute.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustFluteDSP.hpp
 CMakeFiles/faust_min.dir/FaustFlute.cpp.o: CMakeFiles/faust_min.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_59) "Building CXX object CMakeFiles/faust_min.dir/FaustFlute.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_60) "Building CXX object CMakeFiles/faust_min.dir/FaustFlute.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/faust_min.dir/FaustFlute.cpp.o -MF CMakeFiles/faust_min.dir/FaustFlute.cpp.o.d -o CMakeFiles/faust_min.dir/FaustFlute.cpp.o -c /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustFlute.cpp
 
 CMakeFiles/faust_min.dir/FaustFlute.cpp.i: cmake_force
@@ -340,7 +344,7 @@ CMakeFiles/faust_min.dir/FaustBowl.cpp.o: CMakeFiles/faust_min.dir/flags.make
 CMakeFiles/faust_min.dir/FaustBowl.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustBowl.cpp
 CMakeFiles/faust_min.dir/FaustBowl.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustBowlDSP.hpp
 CMakeFiles/faust_min.dir/FaustBowl.cpp.o: CMakeFiles/faust_min.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_60) "Building CXX object CMakeFiles/faust_min.dir/FaustBowl.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_61) "Building CXX object CMakeFiles/faust_min.dir/FaustBowl.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/faust_min.dir/FaustBowl.cpp.o -MF CMakeFiles/faust_min.dir/FaustBowl.cpp.o.d -o CMakeFiles/faust_min.dir/FaustBowl.cpp.o -c /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustBowl.cpp
 
 CMakeFiles/faust_min.dir/FaustBowl.cpp.i: cmake_force
@@ -355,7 +359,7 @@ CMakeFiles/faust_min.dir/FaustDayan.cpp.o: CMakeFiles/faust_min.dir/flags.make
 CMakeFiles/faust_min.dir/FaustDayan.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustDayan.cpp
 CMakeFiles/faust_min.dir/FaustDayan.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustDayanDSP.hpp
 CMakeFiles/faust_min.dir/FaustDayan.cpp.o: CMakeFiles/faust_min.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_61) "Building CXX object CMakeFiles/faust_min.dir/FaustDayan.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_62) "Building CXX object CMakeFiles/faust_min.dir/FaustDayan.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/faust_min.dir/FaustDayan.cpp.o -MF CMakeFiles/faust_min.dir/FaustDayan.cpp.o.d -o CMakeFiles/faust_min.dir/FaustDayan.cpp.o -c /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustDayan.cpp
 
 CMakeFiles/faust_min.dir/FaustDayan.cpp.i: cmake_force
@@ -370,7 +374,7 @@ CMakeFiles/faust_min.dir/FaustBayan.cpp.o: CMakeFiles/faust_min.dir/flags.make
 CMakeFiles/faust_min.dir/FaustBayan.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustBayan.cpp
 CMakeFiles/faust_min.dir/FaustBayan.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustBayanDSP.hpp
 CMakeFiles/faust_min.dir/FaustBayan.cpp.o: CMakeFiles/faust_min.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_62) "Building CXX object CMakeFiles/faust_min.dir/FaustBayan.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_63) "Building CXX object CMakeFiles/faust_min.dir/FaustBayan.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/faust_min.dir/FaustBayan.cpp.o -MF CMakeFiles/faust_min.dir/FaustBayan.cpp.o.d -o CMakeFiles/faust_min.dir/FaustBayan.cpp.o -c /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustBayan.cpp
 
 CMakeFiles/faust_min.dir/FaustBayan.cpp.i: cmake_force
@@ -385,7 +389,7 @@ CMakeFiles/faust_min.dir/FaustSitar.cpp.o: CMakeFiles/faust_min.dir/flags.make
 CMakeFiles/faust_min.dir/FaustSitar.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustSitar.cpp
 CMakeFiles/faust_min.dir/FaustSitar.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustSitarDSP.hpp
 CMakeFiles/faust_min.dir/FaustSitar.cpp.o: CMakeFiles/faust_min.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_63) "Building CXX object CMakeFiles/faust_min.dir/FaustSitar.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_64) "Building CXX object CMakeFiles/faust_min.dir/FaustSitar.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/faust_min.dir/FaustSitar.cpp.o -MF CMakeFiles/faust_min.dir/FaustSitar.cpp.o.d -o CMakeFiles/faust_min.dir/FaustSitar.cpp.o -c /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustSitar.cpp
 
 CMakeFiles/faust_min.dir/FaustSitar.cpp.i: cmake_force
@@ -400,7 +404,7 @@ CMakeFiles/faust_min.dir/FaustKick.cpp.o: CMakeFiles/faust_min.dir/flags.make
 CMakeFiles/faust_min.dir/FaustKick.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustKick.cpp
 CMakeFiles/faust_min.dir/FaustKick.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustKickDSP.hpp
 CMakeFiles/faust_min.dir/FaustKick.cpp.o: CMakeFiles/faust_min.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_64) "Building CXX object CMakeFiles/faust_min.dir/FaustKick.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_65) "Building CXX object CMakeFiles/faust_min.dir/FaustKick.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/faust_min.dir/FaustKick.cpp.o -MF CMakeFiles/faust_min.dir/FaustKick.cpp.o.d -o CMakeFiles/faust_min.dir/FaustKick.cpp.o -c /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustKick.cpp
 
 CMakeFiles/faust_min.dir/FaustKick.cpp.i: cmake_force
@@ -415,7 +419,7 @@ CMakeFiles/faust_min.dir/FaustSnare.cpp.o: CMakeFiles/faust_min.dir/flags.make
 CMakeFiles/faust_min.dir/FaustSnare.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustSnare.cpp
 CMakeFiles/faust_min.dir/FaustSnare.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustSnareDSP.hpp
 CMakeFiles/faust_min.dir/FaustSnare.cpp.o: CMakeFiles/faust_min.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_65) "Building CXX object CMakeFiles/faust_min.dir/FaustSnare.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_66) "Building CXX object CMakeFiles/faust_min.dir/FaustSnare.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/faust_min.dir/FaustSnare.cpp.o -MF CMakeFiles/faust_min.dir/FaustSnare.cpp.o.d -o CMakeFiles/faust_min.dir/FaustSnare.cpp.o -c /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustSnare.cpp
 
 CMakeFiles/faust_min.dir/FaustSnare.cpp.i: cmake_force
@@ -430,7 +434,7 @@ CMakeFiles/faust_min.dir/FaustTom.cpp.o: CMakeFiles/faust_min.dir/flags.make
 CMakeFiles/faust_min.dir/FaustTom.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustTom.cpp
 CMakeFiles/faust_min.dir/FaustTom.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustTomDSP.hpp
 CMakeFiles/faust_min.dir/FaustTom.cpp.o: CMakeFiles/faust_min.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_66) "Building CXX object CMakeFiles/faust_min.dir/FaustTom.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_67) "Building CXX object CMakeFiles/faust_min.dir/FaustTom.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/faust_min.dir/FaustTom.cpp.o -MF CMakeFiles/faust_min.dir/FaustTom.cpp.o.d -o CMakeFiles/faust_min.dir/FaustTom.cpp.o -c /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustTom.cpp
 
 CMakeFiles/faust_min.dir/FaustTom.cpp.i: cmake_force
@@ -444,7 +448,7 @@ CMakeFiles/faust_min.dir/FaustTom.cpp.s: cmake_force
 CMakeFiles/faust_min.dir/FaustHiHat.cpp.o: CMakeFiles/faust_min.dir/flags.make
 CMakeFiles/faust_min.dir/FaustHiHat.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustHiHat.cpp
 CMakeFiles/faust_min.dir/FaustHiHat.cpp.o: CMakeFiles/faust_min.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_67) "Building CXX object CMakeFiles/faust_min.dir/FaustHiHat.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_68) "Building CXX object CMakeFiles/faust_min.dir/FaustHiHat.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/faust_min.dir/FaustHiHat.cpp.o -MF CMakeFiles/faust_min.dir/FaustHiHat.cpp.o.d -o CMakeFiles/faust_min.dir/FaustHiHat.cpp.o -c /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustHiHat.cpp
 
 CMakeFiles/faust_min.dir/FaustHiHat.cpp.i: cmake_force
@@ -459,7 +463,7 @@ CMakeFiles/faust_min.dir/FaustRide.cpp.o: CMakeFiles/faust_min.dir/flags.make
 CMakeFiles/faust_min.dir/FaustRide.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustRide.cpp
 CMakeFiles/faust_min.dir/FaustRide.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustRideDSP.hpp
 CMakeFiles/faust_min.dir/FaustRide.cpp.o: CMakeFiles/faust_min.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_68) "Building CXX object CMakeFiles/faust_min.dir/FaustRide.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_69) "Building CXX object CMakeFiles/faust_min.dir/FaustRide.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/faust_min.dir/FaustRide.cpp.o -MF CMakeFiles/faust_min.dir/FaustRide.cpp.o.d -o CMakeFiles/faust_min.dir/FaustRide.cpp.o -c /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustRide.cpp
 
 CMakeFiles/faust_min.dir/FaustRide.cpp.i: cmake_force
@@ -474,7 +478,7 @@ CMakeFiles/faust_min.dir/FaustCowbell.cpp.o: CMakeFiles/faust_min.dir/flags.make
 CMakeFiles/faust_min.dir/FaustCowbell.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustCowbell.cpp
 CMakeFiles/faust_min.dir/FaustCowbell.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustCowbellDSP.hpp
 CMakeFiles/faust_min.dir/FaustCowbell.cpp.o: CMakeFiles/faust_min.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_69) "Building CXX object CMakeFiles/faust_min.dir/FaustCowbell.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_70) "Building CXX object CMakeFiles/faust_min.dir/FaustCowbell.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/faust_min.dir/FaustCowbell.cpp.o -MF CMakeFiles/faust_min.dir/FaustCowbell.cpp.o.d -o CMakeFiles/faust_min.dir/FaustCowbell.cpp.o -c /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustCowbell.cpp
 
 CMakeFiles/faust_min.dir/FaustCowbell.cpp.i: cmake_force
@@ -489,7 +493,7 @@ CMakeFiles/faust_min.dir/FaustBell.cpp.o: CMakeFiles/faust_min.dir/flags.make
 CMakeFiles/faust_min.dir/FaustBell.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustBell.cpp
 CMakeFiles/faust_min.dir/FaustBell.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustBellDSP.hpp
 CMakeFiles/faust_min.dir/FaustBell.cpp.o: CMakeFiles/faust_min.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_70) "Building CXX object CMakeFiles/faust_min.dir/FaustBell.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_71) "Building CXX object CMakeFiles/faust_min.dir/FaustBell.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/faust_min.dir/FaustBell.cpp.o -MF CMakeFiles/faust_min.dir/FaustBell.cpp.o.d -o CMakeFiles/faust_min.dir/FaustBell.cpp.o -c /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustBell.cpp
 
 CMakeFiles/faust_min.dir/FaustBell.cpp.i: cmake_force
@@ -504,7 +508,7 @@ CMakeFiles/faust_min.dir/FaustTanpura.cpp.o: CMakeFiles/faust_min.dir/flags.make
 CMakeFiles/faust_min.dir/FaustTanpura.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustTanpura.cpp
 CMakeFiles/faust_min.dir/FaustTanpura.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustTanpuraDSP.hpp
 CMakeFiles/faust_min.dir/FaustTanpura.cpp.o: CMakeFiles/faust_min.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_71) "Building CXX object CMakeFiles/faust_min.dir/FaustTanpura.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_72) "Building CXX object CMakeFiles/faust_min.dir/FaustTanpura.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/faust_min.dir/FaustTanpura.cpp.o -MF CMakeFiles/faust_min.dir/FaustTanpura.cpp.o.d -o CMakeFiles/faust_min.dir/FaustTanpura.cpp.o -c /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustTanpura.cpp
 
 CMakeFiles/faust_min.dir/FaustTanpura.cpp.i: cmake_force
@@ -519,7 +523,7 @@ CMakeFiles/faust_min.dir/FaustPiano.cpp.o: CMakeFiles/faust_min.dir/flags.make
 CMakeFiles/faust_min.dir/FaustPiano.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustPiano.cpp
 CMakeFiles/faust_min.dir/FaustPiano.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustPianoDSP.hpp
 CMakeFiles/faust_min.dir/FaustPiano.cpp.o: CMakeFiles/faust_min.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_72) "Building CXX object CMakeFiles/faust_min.dir/FaustPiano.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_73) "Building CXX object CMakeFiles/faust_min.dir/FaustPiano.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/faust_min.dir/FaustPiano.cpp.o -MF CMakeFiles/faust_min.dir/FaustPiano.cpp.o.d -o CMakeFiles/faust_min.dir/FaustPiano.cpp.o -c /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustPiano.cpp
 
 CMakeFiles/faust_min.dir/FaustPiano.cpp.i: cmake_force
@@ -534,7 +538,7 @@ CMakeFiles/faust_min.dir/FaustSax.cpp.o: CMakeFiles/faust_min.dir/flags.make
 CMakeFiles/faust_min.dir/FaustSax.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustSax.cpp
 CMakeFiles/faust_min.dir/FaustSax.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustSaxDSP.hpp
 CMakeFiles/faust_min.dir/FaustSax.cpp.o: CMakeFiles/faust_min.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_73) "Building CXX object CMakeFiles/faust_min.dir/FaustSax.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_74) "Building CXX object CMakeFiles/faust_min.dir/FaustSax.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/faust_min.dir/FaustSax.cpp.o -MF CMakeFiles/faust_min.dir/FaustSax.cpp.o.d -o CMakeFiles/faust_min.dir/FaustSax.cpp.o -c /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustSax.cpp
 
 CMakeFiles/faust_min.dir/FaustSax.cpp.i: cmake_force
@@ -549,7 +553,7 @@ CMakeFiles/faust_min.dir/FaustTrumpet.cpp.o: CMakeFiles/faust_min.dir/flags.make
 CMakeFiles/faust_min.dir/FaustTrumpet.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustTrumpet.cpp
 CMakeFiles/faust_min.dir/FaustTrumpet.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustTrumpetDSP.hpp
 CMakeFiles/faust_min.dir/FaustTrumpet.cpp.o: CMakeFiles/faust_min.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_74) "Building CXX object CMakeFiles/faust_min.dir/FaustTrumpet.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_75) "Building CXX object CMakeFiles/faust_min.dir/FaustTrumpet.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/faust_min.dir/FaustTrumpet.cpp.o -MF CMakeFiles/faust_min.dir/FaustTrumpet.cpp.o.d -o CMakeFiles/faust_min.dir/FaustTrumpet.cpp.o -c /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustTrumpet.cpp
 
 CMakeFiles/faust_min.dir/FaustTrumpet.cpp.i: cmake_force
@@ -564,7 +568,7 @@ CMakeFiles/faust_min.dir/FaustShakuhachi.cpp.o: CMakeFiles/faust_min.dir/flags.m
 CMakeFiles/faust_min.dir/FaustShakuhachi.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustShakuhachi.cpp
 CMakeFiles/faust_min.dir/FaustShakuhachi.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustShakuhachiDSP.hpp
 CMakeFiles/faust_min.dir/FaustShakuhachi.cpp.o: CMakeFiles/faust_min.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_75) "Building CXX object CMakeFiles/faust_min.dir/FaustShakuhachi.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_76) "Building CXX object CMakeFiles/faust_min.dir/FaustShakuhachi.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/faust_min.dir/FaustShakuhachi.cpp.o -MF CMakeFiles/faust_min.dir/FaustShakuhachi.cpp.o.d -o CMakeFiles/faust_min.dir/FaustShakuhachi.cpp.o -c /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustShakuhachi.cpp
 
 CMakeFiles/faust_min.dir/FaustShakuhachi.cpp.i: cmake_force
@@ -579,7 +583,7 @@ CMakeFiles/faust_min.dir/FaustBansuri.cpp.o: CMakeFiles/faust_min.dir/flags.make
 CMakeFiles/faust_min.dir/FaustBansuri.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustBansuri.cpp
 CMakeFiles/faust_min.dir/FaustBansuri.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustBansuriDSP.hpp
 CMakeFiles/faust_min.dir/FaustBansuri.cpp.o: CMakeFiles/faust_min.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_76) "Building CXX object CMakeFiles/faust_min.dir/FaustBansuri.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_77) "Building CXX object CMakeFiles/faust_min.dir/FaustBansuri.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/faust_min.dir/FaustBansuri.cpp.o -MF CMakeFiles/faust_min.dir/FaustBansuri.cpp.o.d -o CMakeFiles/faust_min.dir/FaustBansuri.cpp.o -c /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustBansuri.cpp
 
 CMakeFiles/faust_min.dir/FaustBansuri.cpp.i: cmake_force
@@ -594,7 +598,7 @@ CMakeFiles/faust_min.dir/FaustViolin.cpp.o: CMakeFiles/faust_min.dir/flags.make
 CMakeFiles/faust_min.dir/FaustViolin.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustViolin.cpp
 CMakeFiles/faust_min.dir/FaustViolin.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustViolinDSP.hpp
 CMakeFiles/faust_min.dir/FaustViolin.cpp.o: CMakeFiles/faust_min.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_77) "Building CXX object CMakeFiles/faust_min.dir/FaustViolin.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_78) "Building CXX object CMakeFiles/faust_min.dir/FaustViolin.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/faust_min.dir/FaustViolin.cpp.o -MF CMakeFiles/faust_min.dir/FaustViolin.cpp.o.d -o CMakeFiles/faust_min.dir/FaustViolin.cpp.o -c /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustViolin.cpp
 
 CMakeFiles/faust_min.dir/FaustViolin.cpp.i: cmake_force
@@ -609,7 +613,7 @@ CMakeFiles/faust_min.dir/FaustTibetanbowl.cpp.o: CMakeFiles/faust_min.dir/flags.
 CMakeFiles/faust_min.dir/FaustTibetanbowl.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustTibetanbowl.cpp
 CMakeFiles/faust_min.dir/FaustTibetanbowl.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustTibetanbowlDSP.hpp
 CMakeFiles/faust_min.dir/FaustTibetanbowl.cpp.o: CMakeFiles/faust_min.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_78) "Building CXX object CMakeFiles/faust_min.dir/FaustTibetanbowl.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_79) "Building CXX object CMakeFiles/faust_min.dir/FaustTibetanbowl.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/faust_min.dir/FaustTibetanbowl.cpp.o -MF CMakeFiles/faust_min.dir/FaustTibetanbowl.cpp.o.d -o CMakeFiles/faust_min.dir/FaustTibetanbowl.cpp.o -c /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustTibetanbowl.cpp
 
 CMakeFiles/faust_min.dir/FaustTibetanbowl.cpp.i: cmake_force
@@ -623,7 +627,7 @@ CMakeFiles/faust_min.dir/FaustTibetanbowl.cpp.s: cmake_force
 CMakeFiles/faust_min.dir/UMLParser.cpp.o: CMakeFiles/faust_min.dir/flags.make
 CMakeFiles/faust_min.dir/UMLParser.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/UMLParser.cpp
 CMakeFiles/faust_min.dir/UMLParser.cpp.o: CMakeFiles/faust_min.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_79) "Building CXX object CMakeFiles/faust_min.dir/UMLParser.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_80) "Building CXX object CMakeFiles/faust_min.dir/UMLParser.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/faust_min.dir/UMLParser.cpp.o -MF CMakeFiles/faust_min.dir/UMLParser.cpp.o.d -o CMakeFiles/faust_min.dir/UMLParser.cpp.o -c /home/shashankkhare/AndroidStudioProjects/faust_min/src/UMLParser.cpp
 
 CMakeFiles/faust_min.dir/UMLParser.cpp.i: cmake_force
@@ -637,7 +641,7 @@ CMakeFiles/faust_min.dir/UMLParser.cpp.s: cmake_force
 CMakeFiles/faust_min.dir/UMLSequence.cpp.o: CMakeFiles/faust_min.dir/flags.make
 CMakeFiles/faust_min.dir/UMLSequence.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/UMLSequence.cpp
 CMakeFiles/faust_min.dir/UMLSequence.cpp.o: CMakeFiles/faust_min.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_80) "Building CXX object CMakeFiles/faust_min.dir/UMLSequence.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_81) "Building CXX object CMakeFiles/faust_min.dir/UMLSequence.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/faust_min.dir/UMLSequence.cpp.o -MF CMakeFiles/faust_min.dir/UMLSequence.cpp.o.d -o CMakeFiles/faust_min.dir/UMLSequence.cpp.o -c /home/shashankkhare/AndroidStudioProjects/faust_min/src/UMLSequence.cpp
 
 CMakeFiles/faust_min.dir/UMLSequence.cpp.i: cmake_force
@@ -651,7 +655,7 @@ CMakeFiles/faust_min.dir/UMLSequence.cpp.s: cmake_force
 CMakeFiles/faust_min.dir/SequenceOrchestrator.cpp.o: CMakeFiles/faust_min.dir/flags.make
 CMakeFiles/faust_min.dir/SequenceOrchestrator.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/SequenceOrchestrator.cpp
 CMakeFiles/faust_min.dir/SequenceOrchestrator.cpp.o: CMakeFiles/faust_min.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_81) "Building CXX object CMakeFiles/faust_min.dir/SequenceOrchestrator.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_82) "Building CXX object CMakeFiles/faust_min.dir/SequenceOrchestrator.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/faust_min.dir/SequenceOrchestrator.cpp.o -MF CMakeFiles/faust_min.dir/SequenceOrchestrator.cpp.o.d -o CMakeFiles/faust_min.dir/SequenceOrchestrator.cpp.o -c /home/shashankkhare/AndroidStudioProjects/faust_min/src/SequenceOrchestrator.cpp
 
 CMakeFiles/faust_min.dir/SequenceOrchestrator.cpp.i: cmake_force
@@ -665,7 +669,7 @@ CMakeFiles/faust_min.dir/SequenceOrchestrator.cpp.s: cmake_force
 CMakeFiles/faust_min.dir/FaustMixer.cpp.o: CMakeFiles/faust_min.dir/flags.make
 CMakeFiles/faust_min.dir/FaustMixer.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustMixer.cpp
 CMakeFiles/faust_min.dir/FaustMixer.cpp.o: CMakeFiles/faust_min.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_82) "Building CXX object CMakeFiles/faust_min.dir/FaustMixer.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_83) "Building CXX object CMakeFiles/faust_min.dir/FaustMixer.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/faust_min.dir/FaustMixer.cpp.o -MF CMakeFiles/faust_min.dir/FaustMixer.cpp.o.d -o CMakeFiles/faust_min.dir/FaustMixer.cpp.o -c /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustMixer.cpp
 
 CMakeFiles/faust_min.dir/FaustMixer.cpp.i: cmake_force
@@ -679,7 +683,7 @@ CMakeFiles/faust_min.dir/FaustMixer.cpp.s: cmake_force
 CMakeFiles/faust_min.dir/InstrumentMapper.cpp.o: CMakeFiles/faust_min.dir/flags.make
 CMakeFiles/faust_min.dir/InstrumentMapper.cpp.o: /home/shashankkhare/AndroidStudioProjects/faust_min/src/InstrumentMapper.cpp
 CMakeFiles/faust_min.dir/InstrumentMapper.cpp.o: CMakeFiles/faust_min.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_83) "Building CXX object CMakeFiles/faust_min.dir/InstrumentMapper.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_84) "Building CXX object CMakeFiles/faust_min.dir/InstrumentMapper.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/faust_min.dir/InstrumentMapper.cpp.o -MF CMakeFiles/faust_min.dir/InstrumentMapper.cpp.o.d -o CMakeFiles/faust_min.dir/InstrumentMapper.cpp.o -c /home/shashankkhare/AndroidStudioProjects/faust_min/src/InstrumentMapper.cpp
 
 CMakeFiles/faust_min.dir/InstrumentMapper.cpp.i: cmake_force
@@ -753,8 +757,50 @@ libfaust_min.so: CMakeFiles/faust_min.dir/InstrumentMapper.cpp.o
 libfaust_min.so: CMakeFiles/faust_min.dir/build.make
 libfaust_min.so: /usr/lib/x86_64-linux-gnu/libfaust.so
 libfaust_min.so: CMakeFiles/faust_min.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_84) "Linking CXX shared library libfaust_min.so"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/shashankkhare/AndroidStudioProjects/faust_min/build-host/CMakeFiles --progress-num=$(CMAKE_PROGRESS_85) "Linking CXX shared library libfaust_min.so"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/faust_min.dir/link.txt --verbose=$(VERBOSE)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Syncing CSV lookup table to main assets: bansuri.csv"
+	/usr/bin/cmake -E copy_if_different /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/bansuri.csv /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/bansuri.csv
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Syncing CSV lookup table to main assets: bayan.csv"
+	/usr/bin/cmake -E copy_if_different /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/bayan.csv /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/bayan.csv
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Syncing CSV lookup table to main assets: bowl.csv"
+	/usr/bin/cmake -E copy_if_different /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/bowl.csv /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/bowl.csv
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Syncing CSV lookup table to main assets: conga.csv"
+	/usr/bin/cmake -E copy_if_different /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/conga.csv /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/conga.csv
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Syncing CSV lookup table to main assets: dayan.csv"
+	/usr/bin/cmake -E copy_if_different /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/dayan.csv /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/dayan.csv
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Syncing CSV lookup table to main assets: dhol.csv"
+	/usr/bin/cmake -E copy_if_different /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/dhol.csv /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/dhol.csv
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Syncing CSV lookup table to main assets: dholak.csv"
+	/usr/bin/cmake -E copy_if_different /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/dholak.csv /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/dholak.csv
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Syncing CSV lookup table to main assets: dizi.csv"
+	/usr/bin/cmake -E copy_if_different /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/dizi.csv /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/dizi.csv
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Syncing CSV lookup table to main assets: erhu.csv"
+	/usr/bin/cmake -E copy_if_different /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/erhu.csv /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/erhu.csv
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Syncing CSV lookup table to main assets: flute.csv"
+	/usr/bin/cmake -E copy_if_different /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/flute.csv /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/flute.csv
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Syncing CSV lookup table to main assets: ghatam.csv"
+	/usr/bin/cmake -E copy_if_different /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/ghatam.csv /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/ghatam.csv
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Syncing CSV lookup table to main assets: guzheng.csv"
+	/usr/bin/cmake -E copy_if_different /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/guzheng.csv /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/guzheng.csv
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Syncing CSV lookup table to main assets: lagnga.csv"
+	/usr/bin/cmake -E copy_if_different /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/lagnga.csv /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/lagnga.csv
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Syncing CSV lookup table to main assets: nativeamericanflute.csv"
+	/usr/bin/cmake -E copy_if_different /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/nativeamericanflute.csv /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/nativeamericanflute.csv
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Syncing CSV lookup table to main assets: panflute.csv"
+	/usr/bin/cmake -E copy_if_different /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/panflute.csv /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/panflute.csv
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Syncing CSV lookup table to main assets: sarod.csv"
+	/usr/bin/cmake -E copy_if_different /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/sarod.csv /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/sarod.csv
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Syncing CSV lookup table to main assets: shakuhachi.csv"
+	/usr/bin/cmake -E copy_if_different /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/shakuhachi.csv /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/shakuhachi.csv
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Syncing CSV lookup table to main assets: sitar.csv"
+	/usr/bin/cmake -E copy_if_different /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/sitar.csv /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/sitar.csv
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Syncing CSV lookup table to main assets: tanpura.csv"
+	/usr/bin/cmake -E copy_if_different /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/tanpura.csv /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/tanpura.csv
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Syncing CSV lookup table to main assets: violin.csv"
+	/usr/bin/cmake -E copy_if_different /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/violin.csv /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/violin.csv
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Syncing CSV lookup table to main assets: voice.csv"
+	/usr/bin/cmake -E copy_if_different /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/voice.csv /home/shashankkhare/AndroidStudioProjects/faust_min/src/../assets/dsp/voice.csv
 
 # Rule to build all files generated by this target.
 CMakeFiles/faust_min.dir/build: libfaust_min.so
@@ -783,6 +829,7 @@ CMakeFiles/faust_min.dir/depend: /home/shashankkhare/AndroidStudioProjects/faust
 CMakeFiles/faust_min.dir/depend: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustDayanDSP.hpp
 CMakeFiles/faust_min.dir/depend: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustDholDSP.hpp
 CMakeFiles/faust_min.dir/depend: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustDholakDSP.hpp
+CMakeFiles/faust_min.dir/depend: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustDiziDSP.hpp
 CMakeFiles/faust_min.dir/depend: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustDjembeDSP.hpp
 CMakeFiles/faust_min.dir/depend: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustElectric_guitarDSP.hpp
 CMakeFiles/faust_min.dir/depend: /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustErhuDSP.hpp

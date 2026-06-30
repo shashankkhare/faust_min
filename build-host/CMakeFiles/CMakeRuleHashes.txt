@@ -18,6 +18,7 @@ cbf2927a185eefb2154cfb064f1cf099 /home/shashankkhare/AndroidStudioProjects/faust
 96566b894f1ad9d52b549af4107b197e /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustDayanDSP.hpp
 2c39e988ea6b1d5392158420e1c3b8e2 /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustDholDSP.hpp
 175fb7b0caa7cb9b85a903f871b991e5 /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustDholakDSP.hpp
+5c127224206d15377bca14d0a5c7c8e3 /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustDiziDSP.hpp
 03ffd72ab2027233b329d963b9684e1a /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustDjembeDSP.hpp
 d253e82bb6812f84160a583eb3855444 /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustElectric_guitarDSP.hpp
 526a1994044ac68cca0ee1da865cc0bd /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustErhuDSP.hpp

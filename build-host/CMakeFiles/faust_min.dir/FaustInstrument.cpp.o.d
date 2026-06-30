@@ -279,6 +279,7 @@ CMakeFiles/faust_min.dir/FaustInstrument.cpp.o: \
  /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustThunderDSP.hpp \
  /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustDaguDSP.hpp \
  /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustSarodDSP.hpp \
+ /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustDiziDSP.hpp \
  /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustSantoorDSP.hpp \
  /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustTumbiDSP.hpp \
  /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustNgachenDSP.hpp \

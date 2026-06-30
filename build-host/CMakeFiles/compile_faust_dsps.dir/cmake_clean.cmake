@@ -18,6 +18,7 @@ file(REMOVE_RECURSE
   "/home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustDayanDSP.hpp"
   "/home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustDholDSP.hpp"
   "/home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustDholakDSP.hpp"
+  "/home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustDiziDSP.hpp"
   "/home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustDjembeDSP.hpp"
   "/home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustElectric_guitarDSP.hpp"
   "/home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustErhuDSP.hpp"
