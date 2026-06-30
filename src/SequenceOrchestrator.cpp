@@ -30,6 +30,12 @@
 #include "SequenceOrchestrator.hpp"
 #include "UMLParser.hpp"
 #include "InstrumentMapper.hpp"
+#include <chrono>
+#define TLOG(msg) do { \
+    auto __now = std::chrono::steady_clock::now(); \
+    auto __us = std::chrono::duration_cast<std::chrono::microseconds>(__now.time_since_epoch()).count(); \
+    printf("[TIMESTAMP %ld] %s\n", __us, msg); fflush(stdout); \
+} while(0)
 
 #include <faust/dsp/dsp.h>
 #ifndef FAUST_DISABLE_INTERPRETER
@@ -264,6 +270,7 @@ void SequenceOrchestrator::linkExtensions() {
 }
 
 void SequenceOrchestrator::play(const std::string& name) {
+    mIsPaused = false;
     std::lock_guard<std::mutex> lock(mStateMutex);
     if (mActiveSequences.count(name)) {
         printf("[Native] Starting Playback: %s\n", name.c_str());
@@ -293,6 +300,37 @@ void SequenceOrchestrator::play(const std::string& name) {
     }
 }
 
+void SequenceOrchestrator::playSequences(const std::vector<std::string>& names) {
+    mIsPaused = false;
+    std::lock_guard<std::mutex> lock(mStateMutex);
+    for (const auto& name : names) {
+        if (mActiveSequences.count(name)) {
+            printf("[Native] Starting Playback (Batch): %s\n", name.c_str());
+            fflush(stdout);
+            
+            auto seqWrapper = mActiveSequences[name];
+            if (seqWrapper && seqWrapper->sequenceObj) {
+                seqWrapper->sequenceObj->prepare();
+                auto inst = seqWrapper->sequenceObj->getFaustInstrument();
+                if (inst) {
+                    for (const auto& ev : seqWrapper->sequenceObj->events) {
+                        if (ev.type == UMLEventType::NoteOn && ev.frequency > 0.0f) {
+                            inst->setFrequencyImmediate(ev.frequency);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            mPendingPlay.push_back(name);
+        } else {
+            printf("[Native] ERROR: Sequence not found: %s\n", name.c_str());
+            fflush(stdout);
+        }
+    }
+    rebuildSnapshot();
+}
+
 void SequenceOrchestrator::clearSequences() {
     stop();
     {
@@ -305,21 +343,78 @@ void SequenceOrchestrator::clearSequences() {
 }
 
 void SequenceOrchestrator::stop() {
+    mIsPaused = false;
     std::lock_guard<std::mutex> lock(mStateMutex);
     for (auto& pair : mActiveSequences) {
-        pair.second->isPlaying = false;
+        if (pair.second) {
+            pair.second->isPlaying = false;
+            if (pair.second->sequenceObj) {
+                auto inst = pair.second->sequenceObj->getFaustInstrument();
+                if (inst) inst->noteOff();
+            }
+        }
     }
 }
 
-void SequenceOrchestrator::pause() { mIsPaused = true; }
+void SequenceOrchestrator::pause() { 
+    mIsPaused = true; 
+    std::lock_guard<std::mutex> lock(mStateMutex);
+    for (auto& pair : mActiveSequences) {
+        if (pair.second && pair.second->sequenceObj) {
+            auto inst = pair.second->sequenceObj->getFaustInstrument();
+            if (inst) inst->noteOff();
+        }
+    }
+}
 void SequenceOrchestrator::resume() { mIsPaused = false; }
 
-void SequenceOrchestrator::muteTrack(const std::string& name, bool mute) {
+void SequenceOrchestrator::seek(long sampleOffset) {
+    std::lock_guard<std::mutex> lock(mStateMutex);
+    mMasterSampleCount = sampleOffset;
+    if (mMasterSampleCount < 0) mMasterSampleCount = 0;
+    
+    for (auto& pair : mActiveSequences) {
+        auto seqWrapper = pair.second;
+        if (seqWrapper && seqWrapper->sequenceObj) {
+            long totalDur = seqWrapper->sequenceObj->totalDurationSamples;
+            if (totalDur > 0) {
+                seqWrapper->currentSample = mMasterSampleCount % totalDur;
+                seqWrapper->nextEventIndex = 0;
+                auto& events = seqWrapper->sequenceObj->events;
+                while (seqWrapper->nextEventIndex < events.size() && 
+                       events[seqWrapper->nextEventIndex].sampleOffset <= seqWrapper->currentSample) {
+                    seqWrapper->nextEventIndex++;
+                }
+            }
+        }
+    }
+}
+
+void SequenceOrchestrator::muteSequence(const std::string& name, bool mute) {
     std::lock_guard<std::mutex> lock(mStateMutex);
     if (mActiveSequences.count(name)) {
         mActiveSequences[name]->isMuted.store(mute);
+        auto* seq = mActiveSequences[name]->sequenceObj;
+        if (seq) {
+            auto* inst = seq->getFaustInstrument();
+            if (inst) {
+                inst->setMuted(mute);
+            }
+        }
         rebuildSnapshot();
-        printf("[Native] Track '%s' mute state set to: %s\n", name.c_str(), mute ? "true" : "false");
+        printf("[Native] Sequence '%s' mute state set to: %s\n", name.c_str(), mute ? "true" : "false");
+        // Dump all mute states for debugging
+        printf("[Native] --- All mute states ---\n");
+        for (auto& pair : mActiveSequences) {
+            auto* seq = pair.second->sequenceObj;
+            bool muted = false;
+            if (seq) {
+                auto* inst = seq->getFaustInstrument();
+                if (inst) muted = inst->isMuted();
+            }
+            printf("[Native]   %s: %s\n", pair.first.c_str(), muted ? "MUTED" : "unmuted");
+        }
+        printf("[Native] ------------------------\n");
         fflush(stdout);
     }
 }
@@ -370,6 +465,7 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
     {
         std::lock_guard<std::mutex> lock(mStateMutex);
         if (!mPendingPlay.empty()) {
+            TLOG("updateTimeline: processing pending play requests");
             for (const auto& name : mPendingPlay) {
                 if (mActiveSequences.count(name)) {
                     toStart.push_back(mActiveSequences[name]);
@@ -381,6 +477,7 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
     }
 
     for (auto& seqWrapper : toStart) {
+        TLOG("updateTimeline: starting sequence, isPlaying=true");
         seqWrapper->isPlaying.store(true, std::memory_order_release);
         if (mMasterSampleCount == 0) {
             seqWrapper->currentSample = 0;
@@ -400,6 +497,51 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
     snapshot = getRenderSnapshot();
     if (!snapshot || snapshot->empty()) return;
 
+    long maxSongSamples = 0;
+    if (snapshot) {
+        for (auto& seqWrapper : *snapshot) {
+            if (seqWrapper->sequenceObj && seqWrapper->sequenceObj->totalDurationSamples > maxSongSamples) {
+                maxSongSamples = seqWrapper->sequenceObj->totalDurationSamples;
+            }
+        }
+    }
+
+    if (maxSongSamples > 0 && mMasterSampleCount + numFrames >= maxSongSamples) {
+        if (!mSongLooping.load(std::memory_order_relaxed)) {
+            // Reached the end of the song and not looping. Stop playback.
+            mMasterSampleCount = maxSongSamples;
+            
+            // Note off everything
+            for (auto& seqWrapper : *snapshot) {
+                if (seqWrapper->isPlaying.load(std::memory_order_acquire)) {
+                    if (seqWrapper->sequenceObj) {
+                        auto inst = seqWrapper->sequenceObj->getFaustInstrument();
+                        if (inst) inst->noteOff();
+                    }
+                    seqWrapper->isPlaying.store(false, std::memory_order_release);
+                }
+            }
+            // Signal a special name to indicate global song stop
+            notifyFinished("GLOBAL_SONG_END");
+            if (mTickCallback) {
+                mTickCallback(maxSongSamples, -1, "GLOBAL_SONG_END", mTickUserData);
+            }
+            return;
+        } else {
+            // Wrap the master sample count to seamlessly loop the song
+            mMasterSampleCount = (mMasterSampleCount + numFrames) % maxSongSamples;
+            for (auto& seqWrapper : *snapshot) {
+                if (seqWrapper->sequenceObj) {
+                    seqWrapper->currentSample = mMasterSampleCount;
+                    seqWrapper->nextEventIndex = 0;
+                }
+            }
+            // Continue processing from 0
+            numFrames = 0; // The logic below would need to handle split buffers, but for now we just reset and let the next frame pick it up properly.
+            // Actually, to avoid audio clicks, we should process up to the boundary. For now, this is a coarse loop.
+        }
+    }
+
     for (auto& seqWrapper : *snapshot) {
         if (!seqWrapper->isPlaying.load(std::memory_order_acquire)) {
             continue;
@@ -409,47 +551,13 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
         if (!seq || seq->totalDurationSamples <= 0) continue;
 
         long framesRemaining = numFrames;
-
-        if (seqWrapper->isMuted.load(std::memory_order_relaxed)) {
-            while (framesRemaining > 0) {
-                long samplesToNextWrap = seq->totalDurationSamples - seqWrapper->currentSample;
-                if (samplesToNextWrap <= 0) {
-                    seqWrapper->currentSample = 0;
-                    seqWrapper->nextEventIndex = 0;
-                    samplesToNextWrap = seq->totalDurationSamples;
-                }
-                long framesToProcess = std::min(framesRemaining, samplesToNextWrap);
-                seqWrapper->currentSample += framesToProcess;
-                framesRemaining -= framesToProcess;
-
-                if (seqWrapper->currentSample >= seq->totalDurationSamples) {
-                    if (seq->loop) {
-                        seqWrapper->currentSample = 0;
-                        seqWrapper->nextEventIndex = 0;
-                    } else {
-                        if (auto* mutedInst = seq->getFaustInstrument()) mutedInst->noteOff();
-                        seqWrapper->isPlaying.store(false, std::memory_order_release);
-                        notifyFinished(seq->name);
-                        break;
-                    }
-                }
-            }
-            continue;
-        }
-        
         FaustInstrument* inst = seq->getFaustInstrument();
         if (!inst) continue;
 
         auto& events = seq->events;
 
         while (framesRemaining > 0) {
-            long samplesToNextWrap = seq->totalDurationSamples - seqWrapper->currentSample;
-            if (samplesToNextWrap <= 0) {
-                seqWrapper->currentSample = 0;
-                seqWrapper->nextEventIndex = 0;
-                samplesToNextWrap = seq->totalDurationSamples;
-            }
-            long framesToProcess = std::min(framesRemaining, samplesToNextWrap);
+            long framesToProcess = framesRemaining;
 
             // Evaluate all events that fall within this sub-block's sample range
             while (seqWrapper->isPlaying && seqWrapper->nextEventIndex < events.size()) {
@@ -603,26 +711,19 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
 
             seqWrapper->currentSample += framesToProcess;
             framesRemaining -= framesToProcess;
-
-            if (seqWrapper->currentSample >= seq->totalDurationSamples) {
-                if (seq->loop) {
-                    seqWrapper->currentSample = 0;
-                    seqWrapper->nextEventIndex = 0;
-                } else {
-                    if (inst) inst->noteOff();
-                    seqWrapper->isPlaying.store(false, std::memory_order_release);
-                    notifyFinished(seq->name);
-                    break;
-                }
-            }
         }
     }
     // Fire tick callback with playhead position + active raw note index
     if (mTickCallback) {
         snapshot = getRenderSnapshot();
         if (snapshot) {
+            static bool firstTick = true;
             for (auto& seqWrapper : *snapshot) {
                 if (seqWrapper->isPlaying.load(std::memory_order_acquire)) {
+                    if (firstTick) {
+                        TLOG("FIRST TICK fired - cursor starts moving");
+                        firstTick = false;
+                    }
                     UMLSequence* seq = seqWrapper->sequenceObj;
                     int activeNote = -1;
                     if (seq && seq->bpm > 0.0) {
@@ -645,7 +746,6 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
                         seq ? seq->name.c_str() : "",
                         mTickUserData
                     );
-                    break;
                 }
             }
         }

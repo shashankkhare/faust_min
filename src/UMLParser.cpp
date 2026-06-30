@@ -377,7 +377,7 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
                 handleXSampaToken(ti, sampleOffset, durationSamples, j, tokenItems, seq.events, sampleRate);
             } else if (ti.hasCompositeNotes) {
                 handleCompositeNote(ti, sampleOffset, durationSamples, seq.notation, seq.baseFreq, seq.instrument, j, tokenItems, samplesPerGrid, sampleRate, seq.events);
-            } else if (InstrumentMapper::isPercussionID(seq.instrumentID)) {
+            } else if (InstrumentMapper::isPercussionID(seq.instrumentID) || InstrumentMapper::getInstrumentClass(seq.instrumentID) == "Ambience") {
                 handlePercussionToken(ti.noteName, velocityScalar, sampleOffset, durationSamples, seq.notation, seq.baseFreq, seq.instrument, seq.events, ti.strikeVal);
             } else {
                 handlePitchedToken(ti, velocityScalar, sampleOffset, durationSamples, seq.notation, seq.baseFreq, seq.instrument, samplesPerGrid, sampleRate, j, tokenItems, triggers, seq.events);
@@ -419,10 +419,32 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
             lastVelocity = vel;
             lastStrikeVal = ti.strikeVal;
 
-            seq.rawNotes.push_back({midiPitch, vel, start, dur, ti.strikeVal, ti.hasStop});
+            UMLRawNote note = {};
+            note.pitch = midiPitch;
+            note.velocity = vel;
+            note.startBeat = start;
+            note.durationBeats = dur;
+            note.strikeVal = ti.strikeVal;
+            note.hasStop = ti.hasStop;
+            note.hasGlide = ti.hasGlideOp;
+            note.hasVibrato = ti.hasVibratoOp;
+            note.hasVelGlide = ti.hasVelGlideOp;
+            seq.rawNotes.push_back(note);
+            
             seq.noteNames.push_back(ti.noteName);
         } else if (ti.type == TokenType::ContinuityDot) {
-            seq.rawNotes.push_back({lastPitch, lastVelocity, start, dur, lastStrikeVal, ti.hasStop});
+            UMLRawNote note = {};
+            note.pitch = lastPitch;
+            note.velocity = lastVelocity;
+            note.startBeat = start;
+            note.durationBeats = dur;
+            note.strikeVal = lastStrikeVal;
+            note.hasStop = ti.hasStop;
+            note.hasGlide = ti.hasGlideOp;
+            note.hasVibrato = ti.hasVibratoOp;
+            note.hasVelGlide = ti.hasVelGlideOp;
+            seq.rawNotes.push_back(note);
+            
             seq.noteNames.push_back(".");
         }
     }
@@ -450,7 +472,7 @@ void UMLParser::handlePercussionToken(const std::string& tokenNoteName, float ve
     ev.velocity = -1.0f;
     ev.velocity = velocityScalar;
     ev.type = UMLEventType::NoteOn;
-    ev.note = tokenNoteName;
+    ev.note = "X"; // Ignore note values and map all of them to X for percussion/ambience
     ev.durationSamples = durationSamples;
 
     int instID = InstrumentMapper::getIDFromName(instrument);

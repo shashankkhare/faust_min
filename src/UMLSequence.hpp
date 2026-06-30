@@ -101,7 +101,7 @@ public:
     void setBpm(double bpm);
     long getTotalDurationSamples() const { return totalDurationSamples; }
 
-    void addNote(float pitch, float velocity, float startBeat, float durationBeats, float strikeVal = 0.0f);
+    void addNote(float pitch, float velocity, float startBeat, float durationBeats, const std::string& noteName = ".", float strikeVal = 0.0f);
     void removeNote(float pitch, float startBeat);
     void clearNotes();
     int getNotes(float fromBeat, float toBeat, float* outBuffer, int maxNotes, char* outNames = nullptr);

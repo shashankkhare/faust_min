@@ -131,6 +131,7 @@ public:
      * @brief Trigger playback for a registered sequence.
      */
     void play(const std::string& name);
+    void playSequences(const std::vector<std::string>& names);
 
     /**
      * @brief Dump memory-based diagnostic logs from all active instruments.
@@ -160,15 +161,26 @@ public:
     void resume();
 
     /**
+     * @brief Seek to a specific global sample time.
+     */
+    void seek(long sampleOffset);
+
+    /**
+     * @brief Toggle global song looping
+     */
+    void setSongLooping(bool loop) { mSongLooping.store(loop, std::memory_order_relaxed); }
+    bool isSongLooping() const { return mSongLooping.load(std::memory_order_relaxed); }
+
+    /**
      * @brief Toggle the global Humanize property (adds random micro-timing jitter).
      */
     void setHumanize(bool state) { mHumanize.store(state, std::memory_order_relaxed); }
     bool isHumanized() const { return mHumanize.load(std::memory_order_relaxed); }
 
     /**
-     * @brief Mute or unmute a specific track.
+     * @brief Mute or unmute a specific sequence.
      */
-    void muteTrack(const std::string& name, bool mute = true);
+    void muteSequence(const std::string& name, bool mute = true);
 
     /**
      * @brief Set the mixer weight (volume) for a specific track.
@@ -264,6 +276,7 @@ private:
     std::mutex mStateMutex;
     long mMasterSampleCount = 0;
     std::atomic<bool> mIsPaused{false};
+    std::atomic<bool> mSongLooping{false};
     std::atomic<bool> mHumanize{true};
 
     std::atomic<bool> mDiagEnabled{false};

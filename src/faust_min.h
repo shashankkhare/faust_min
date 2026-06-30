@@ -284,6 +284,8 @@ DART_EXPORT void orchestrator_play(SequenceOrchestrator* orch, const char* name)
 DART_EXPORT void orchestrator_stop(SequenceOrchestrator* orch);
 DART_EXPORT void orchestrator_pause(SequenceOrchestrator* orch);
 DART_EXPORT void orchestrator_resume(SequenceOrchestrator* orch);
+DART_EXPORT void orchestrator_seek(SequenceOrchestrator* orch, long sampleOffset);
+DART_EXPORT void orchestrator_set_song_looping(SequenceOrchestrator* orch, int loop);
 DART_EXPORT void orchestrator_set_weight(SequenceOrchestrator* orch, const char* name, float weight);
 DART_EXPORT void orchestrator_set_parameter(SequenceOrchestrator* orch, const char* name, const char* param, float value);
 DART_EXPORT const char* orchestrator_poll_finished(SequenceOrchestrator* orch);
@@ -338,7 +340,7 @@ DART_EXPORT int sequence_get_grid(UMLSequence* seq);
 DART_EXPORT double sequence_get_basefreq(UMLSequence* seq);
 DART_EXPORT void sequence_set_basefreq(UMLSequence* seq, double freq);
 
-DART_EXPORT void sequence_add_note(UMLSequence* seq, float pitch, float velocity, float startBeat, float durationBeats, float strikeVal = 0.0f);
+DART_EXPORT void sequence_add_note(UMLSequence* seq, float pitch, float velocity, float startBeat, float durationBeats, const char* noteName, float strikeVal = 0.0f);
 DART_EXPORT void sequence_remove_note(UMLSequence* seq, float pitch, float startBeat);
 DART_EXPORT void sequence_clear_notes(UMLSequence* seq);
 DART_EXPORT int sequence_get_notes(UMLSequence* seq, float fromBeat, float toBeat, float* outBuffer, int maxNotes, char* outNames);

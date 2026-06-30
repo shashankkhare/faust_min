@@ -132,7 +132,7 @@ class FaustFluteDSP : public dsp {
 	virtual void instanceResetUserInterface() {
 		fHslider0 = FAUSTFLOAT(0.80000000000000004f);
 		fButton0 = FAUSTFLOAT(0.0f);
-		fHslider1 = FAUSTFLOAT(0.80000000000000004f);
+		fHslider1 = FAUSTFLOAT(0.55000000000000004f);
 		fHslider2 = FAUSTFLOAT(440.0f);
 		fHslider3 = FAUSTFLOAT(0.5f);
 	}
@@ -221,7 +221,7 @@ class FaustFluteDSP : public dsp {
 		ui_interface->addHorizontalSlider("freq", &fHslider2, FAUSTFLOAT(440.0f), FAUSTFLOAT(50.0f), FAUSTFLOAT(2000.0f), FAUSTFLOAT(0.100000001f));
 		ui_interface->addButton("gate", &fButton0);
 		ui_interface->addHorizontalSlider("mouthPosition", &fHslider3, FAUSTFLOAT(0.5f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00100000005f));
-		ui_interface->addHorizontalSlider("pressure", &fHslider1, FAUSTFLOAT(0.800000012f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00100000005f));
+		ui_interface->addHorizontalSlider("pressure", &fHslider1, FAUSTFLOAT(0.550000012f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00100000005f));
 		ui_interface->addHorizontalSlider("velocity", &fHslider0, FAUSTFLOAT(0.800000012f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->closeBox();
 	}

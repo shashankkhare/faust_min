@@ -31,6 +31,7 @@ gain = hslider("gain", 1.0, 0.0, 3.0, 0.01) : si.smoo;
 pressureTarget = hslider("pressure", 0.8, 0.0, 1.0, 0.001) : si.smoo;
 mouthPosition  = hslider("mouthPosition", 0.5, 0.0, 1.0, 0.001) : si.smoo;
 buzzIntensity  = hslider("buzzIntensity", 0.4, 0.0, 1.0, 0.001) : si.smoo;
+buzzFrequency  = hslider("buzzFrequency", 2200.0, 800.0, 4000.0, 10.0) : si.smoo;
 
 glide = hslider("glide", 0.08, 0.0, 1.0, 0.001);
 
@@ -105,7 +106,6 @@ with {
 //   3. Bandpass filtering centered on the dimo resonance (~2.2 kHz)
 //   4. Mixing the buzz back with the clean tube output
 //
-dimoResonance = 2200.0; // Hz — typical dimo resonant peak
 dimoQ = 4.0;            // resonance Q factor
 
 // Asymmetric waveshaper — models the membrane flapping against the hole rim
@@ -119,8 +119,8 @@ waveshaper(x) = (x * (1.0 + buzzIntensity * 1.5)) +
 // We drive the dimo model from the main audio signal
 dimoDrive = _ : fi.dcblocker;
 
-// Bandpass filter at dimo resonance
-dimoBP = fi.bandpass(dimoResonance, dimoQ, 1.0);
+// Bandpass filter at dimo resonance (controlled by buzzFrequency slider)
+dimoBP = fi.bandpass(buzzFrequency, dimoQ, 1.0);
 
 // Complete dimo processing chain
 dimoProcessor = dimoDrive : waveshaper : dimoBP : *(2.0);

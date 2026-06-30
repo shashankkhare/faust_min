@@ -76,6 +76,19 @@ add_library(faust_min SHARED
 )
  
 add_dependencies(faust_min compile_faust_dsps)
+
+# Sync CSV lookup tables from plugin assets to main application assets post-build
+file(GLOB CSV_FILES "${CMAKE_CURRENT_SOURCE_DIR}/../assets/dsp/*.csv")
+foreach(CSV_FILE ${CSV_FILES})
+    get_filename_component(CSV_NAME ${CSV_FILE} NAME)
+    add_custom_command(
+        TARGET faust_min POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CSV_FILE}
+        "${CMAKE_SOURCE_DIR}/../assets/dsp/${CSV_NAME}"
+        COMMENT "Syncing CSV lookup table to main assets: ${CSV_NAME}"
+    )
+endforeach()
  
 target_compile_options(faust_min PRIVATE -O3 -ffast-math)
  

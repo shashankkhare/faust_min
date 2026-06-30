@@ -99,6 +99,10 @@ public:
     virtual void noteOffTargetFreq(float targetFreq, float decayTailMs = 0.0f);
     void render(int numFrames, float* buffer);
 
+    // Mute support
+    void setMuted(bool mute) { mIsMuted.store(mute, std::memory_order_release); }
+    bool isMuted() const { return mIsMuted.load(std::memory_order_acquire); }
+
     // Diagnostics
     void enableDiagnostics(bool enable) { mEnableDiagLogging = enable; }
     void enableDiagnosticLogging(bool enable) { mEnableDiagLogging = enable; }
@@ -205,6 +209,7 @@ protected:
     float mDuration;
     float mReverbSend;
     bool mGateOpen;
+    std::atomic<bool> mIsMuted{false};
 
     // Internal sample-accurate timeline counters
     long mTargetFrames;

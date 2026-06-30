@@ -105,15 +105,20 @@ UMLSequence::~UMLSequence() {
     // to strictly preserve zero-coupling architecture.
 }
 
-void UMLSequence::addNote(float pitch, float velocity, float startBeat, float durationBeats, float strikeVal) {
+void UMLSequence::addNote(float pitch, float velocity, float startBeat, float durationBeats, const std::string& noteName, float strikeVal) {
     rawNotes.push_back({pitch, velocity, startBeat, durationBeats, strikeVal});
+    noteNames.push_back(noteName);
     isDirty = true;
 }
 
 void UMLSequence::removeNote(float pitch, float startBeat) {
     for (auto it = rawNotes.begin(); it != rawNotes.end(); ++it) {
         if (std::abs(it->pitch - pitch) < 0.01f && std::abs(it->startBeat - startBeat) < 0.01f) {
+            size_t idx = std::distance(rawNotes.begin(), it);
             rawNotes.erase(it);
+            if (idx < noteNames.size()) {
+                noteNames.erase(noteNames.begin() + idx);
+            }
             isDirty = true;
             break;
         }
@@ -131,13 +136,16 @@ int UMLSequence::getNotes(float fromBeat, float toBeat, float* outBuffer, int ma
     for (size_t i = 0; i < rawNotes.size() && count < maxNotes; ++i) {
         const auto& note = rawNotes[i];
         if (note.startBeat >= fromBeat && note.startBeat <= toBeat) {
-            int idx = count * 6;
+            int idx = count * 9;
             outBuffer[idx] = note.pitch;
             outBuffer[idx+1] = note.velocity;
             outBuffer[idx+2] = note.startBeat;
             outBuffer[idx+3] = note.durationBeats;
             outBuffer[idx+4] = note.strikeVal;
             outBuffer[idx+5] = note.hasStop ? 1.0f : 0.0f;
+            outBuffer[idx+6] = note.hasGlide ? 1.0f : 0.0f;
+            outBuffer[idx+7] = note.hasVibrato ? 1.0f : 0.0f;
+            outBuffer[idx+8] = note.hasVelGlide ? 1.0f : 0.0f;
             if (outNames && i < noteNames.size()) {
                 const char* name = noteNames[i].c_str();
                 int len = static_cast<int>(strlen(name)) + 1;
@@ -167,6 +175,8 @@ void UMLSequence::prepare() {
     serialized += "loop: " + std::string(loop ? "true" : "false") + "\n";
     serialized += "gain: " + std::to_string(gain) + "\n";
     serialized += "delay: " + std::to_string(delaySec) + "\n";
+    serialized += "bpm: " + std::to_string(bpm) + "\n";
+    serialized += "basefreq: " + std::to_string(baseFreq) + "\n";
     
     if (!initialParams.empty()) {
         serialized += "parameters: ";
@@ -202,14 +212,18 @@ void UMLSequence::prepare() {
             const auto& raw = rawNotes[idx];
             std::string token = "";
             
-            int controlParam = static_cast<int>(std::round(raw.velocity * 9.0f));
-            if (raw.strikeVal > 0.0f) {
-                token += std::to_string(controlParam) + std::to_string(static_cast<int>(raw.strikeVal));
-            } else if (controlParam != 5) {
-                token += std::to_string(controlParam);
+            bool isDot = (idx >= noteNames.size() || noteNames[idx] == ".");
+            if (isDot) {
+                token += ".";
+            } else {
+                int controlParam = static_cast<int>(std::round(raw.velocity * 9.0f));
+                if (raw.strikeVal > 0.0f) {
+                    token += std::to_string(controlParam) + std::to_string(static_cast<int>(raw.strikeVal));
+                } else if (controlParam != 5) {
+                    token += std::to_string(controlParam);
+                }
+                token += noteNames[idx];
             }
-            
-            token += (idx < noteNames.size()) ? noteNames[idx] : ".";
             
             if (raw.hasGlide) token += "^";
             if (raw.hasVibrato) token += "~";
@@ -226,6 +240,7 @@ void UMLSequence::prepare() {
     
     this->events = parsed.events;
     this->totalDurationSamples = parsed.totalDurationSamples;
+    this->umlData = serialized;
     
     isDirty = false;
 }

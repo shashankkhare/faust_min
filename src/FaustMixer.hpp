@@ -240,6 +240,8 @@ private:
 
     WaveformCallback mWaveformCallback = nullptr;
     void* mWaveformUserData = nullptr;
+
+    std::atomic<bool> mFirstCallbackFired{false};
 };
 
 #endif // FAUST_MIXER_HPP

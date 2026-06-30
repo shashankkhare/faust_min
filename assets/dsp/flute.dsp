@@ -20,7 +20,7 @@ t = button("gate");
 
 // Multi-Column Dynamic Parameters controlled by Companion CSV Lookup Table
 // Mapped directly via Inverse Distance Weighting from (freq, velocity) vectors
-pressureTarget = hslider("pressure", 0.8, 0.0, 1.0, 0.001) : si.smoo;
+pressureTarget = hslider("pressure", 0.55, 0.0, 1.0, 0.001) : si.smoo;
 mouthPosition  = hslider("mouthPosition", 0.5, 0.0, 1.0, 0.001) : si.smoo;
 
 // Attack time mapped from velocity (high velocity = 5ms fast attack, low velocity = up to 105ms slow attack)

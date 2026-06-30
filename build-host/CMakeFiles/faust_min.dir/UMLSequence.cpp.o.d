@@ -214,4 +214,7 @@ CMakeFiles/faust_min.dir/UMLSequence.cpp.o: \
  /usr/include/c++/9/tr1/modified_bessel_func.tcc \
  /usr/include/c++/9/tr1/poly_hermite.tcc \
  /usr/include/c++/9/tr1/poly_laguerre.tcc \
- /usr/include/c++/9/tr1/riemann_zeta.tcc
+ /usr/include/c++/9/tr1/riemann_zeta.tcc /usr/include/c++/9/cstring \
+ /usr/include/string.h /usr/include/strings.h \
+ /usr/include/x86_64-linux-gnu/bits/strings_fortified.h \
+ /usr/include/x86_64-linux-gnu/bits/string_fortified.h

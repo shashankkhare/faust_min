@@ -29,6 +29,12 @@
 
 #include "FaustMixer.hpp"
 #include <iostream>
+#include <chrono>
+#define TLOG(msg) do { \
+    auto __now = std::chrono::steady_clock::now(); \
+    auto __us = std::chrono::duration_cast<std::chrono::microseconds>(__now.time_since_epoch()).count(); \
+    printf("[TIMESTAMP %ld] %s\n", __us, msg); fflush(stdout); \
+} while(0)
 
 // --- Cross-platform audio worker thread priority elevation ---
 // Called once at the start of each worker thread before entering the loop.
@@ -134,6 +140,7 @@ FaustMixer::~FaustMixer() {
 
 void FaustMixer::init(float sampleRate) {
     std::lock_guard<std::mutex> lock(mRegistryMutex);
+    if (mIsHardwareStarted) return;
     mSampleRate = sampleRate;
 
     // Pre-allocate thread pool intermediate buffers (Interleaved Stereo)
@@ -155,20 +162,6 @@ void FaustMixer::init(float sampleRate) {
         printf("[Native] FaustMixer persistent thread pool fully armed: %d workers\n", mWorkerCount);
         fflush(stdout);
     }
-}
-
-bool FaustMixer::start() {
-    std::unique_lock<std::mutex> lock(mRegistryMutex);
-    
-    // Ensure internal buffers are allocated (lazy init)
-    if (!mInstrumentBuffers[0]) {
-        float rate = mSampleRate;
-        lock.unlock(); // Release lock to call init which takes it
-        init(rate);
-        lock.lock();
-    }
-
-    if (mIsHardwareStarted) return true;
 
 #ifdef __ANDROID__
     oboe::AudioStreamBuilder builder;
@@ -184,9 +177,7 @@ bool FaustMixer::start() {
      ->setDataCallback(&cb);
     oboe::AudioStream* stream = nullptr;
     if (builder.openStream(&stream) == oboe::Result::OK) {
-        stream->requestStart();
         mStreamDevice = stream;
-        mIsStreamActive = true;
         mIsHardwareStarted = true;
     }
 #else
@@ -194,7 +185,9 @@ bool FaustMixer::start() {
     config.playback.format = ma_format_f32;
     config.playback.channels = 2;
     config.sampleRate = (ma_uint32)mSampleRate;
-    config.periodSizeInFrames = 1024;
+    config.periodSizeInFrames = 512;
+    config.periods = 3;
+    config.performanceProfile = ma_performance_profile_low_latency;
     config.dataCallback = mixerMaCallback;
     config.pUserData = this;
 
@@ -202,45 +195,59 @@ bool FaustMixer::start() {
     ma_result res = ma_device_init(NULL, &config, device);
     if (res == MA_SUCCESS) {
         mStreamDevice = device;
-        mIsStreamActive = true;
         mIsHardwareStarted = true;
-        
-        // Release lock before starting hardware to avoid deadlock with the first callback
-        lock.unlock(); 
-        
-        if (ma_device_start(device) == MA_SUCCESS) {
-            printf("[Native Trace] miniaudio hardware device started successfully. SR=%d\n", config.sampleRate);
-        } else {
-            printf("[Native Trace] ERROR: Failed to start miniaudio device.\n");
-            // Hardware failed to start, but we marked it as started—cleanup would be needed here in production
-        }
+        printf("[Native Trace] miniaudio hardware device initialized successfully. SR=%d\n", config.sampleRate);
     } else {
         delete device;
         printf("[Native Trace] ERROR: Failed to init miniaudio (ma_result=%d). Entering Headless Mode.\n", res);
-        mIsHardwareStarted = true; // Fallback to headless for testing
+        mIsHardwareStarted = true; // Fallback to headless
     }
 #endif
     fflush(stdout);
-    return mIsHardwareStarted;
+}
+
+bool FaustMixer::start() {
+    std::unique_lock<std::mutex> lock(mRegistryMutex);
+    
+    // Fallback lazy initialization if not already done
+    if (!mIsHardwareStarted) {
+        float rate = mSampleRate;
+        lock.unlock();
+        init(rate);
+        lock.lock();
+    }
+
+    if (!mStreamDevice) {
+        return false;
+    }
+
+    if (!mIsStreamActive) {
+        mIsStreamActive = true;
+        lock.unlock(); // Unlock before starting hardware to avoid deadlock with the callback thread!
+#ifdef __ANDROID__
+        oboe::AudioStream* stream = static_cast<oboe::AudioStream*>(mStreamDevice);
+        stream->requestStart();
+#else
+        ma_device* device = static_cast<ma_device*>(mStreamDevice);
+        ma_device_start(device);
+#endif
+    }
+    return true;
 }
 
 void FaustMixer::stop() {
     std::lock_guard<std::mutex> lock(mRegistryMutex);
-    if (!mIsHardwareStarted || !mStreamDevice) return;
+    if (!mIsHardwareStarted || !mStreamDevice || !mIsStreamActive) return;
 
 #ifdef __ANDROID__
     oboe::AudioStream* stream = static_cast<oboe::AudioStream*>(mStreamDevice);
-    stream->requestStop();
-    stream->close();
+    stream->requestPause();
 #else
     ma_device* device = static_cast<ma_device*>(mStreamDevice);
+    // Pause the audio thread. DO NOT uninitialize the device here!
     ma_device_stop(device);
-    ma_device_uninit(device);
-    delete device;
 #endif
-    mStreamDevice = nullptr;
     mIsStreamActive = false;
-    mIsHardwareStarted = false;
 }
 
 void FaustMixer::setPreRenderCallback(PreRenderCallback callback, void* userData) {
@@ -257,7 +264,22 @@ void FaustMixer::setWaveformCallback(WaveformCallback callback, void* userData) 
 }
 
 void FaustMixer::close() {
+    stop();
     stopWorkers();
+    
+    std::lock_guard<std::mutex> lock(mRegistryMutex);
+    if (mStreamDevice) {
+#ifdef __ANDROID__
+        oboe::AudioStream* stream = static_cast<oboe::AudioStream*>(mStreamDevice);
+        stream->close();
+#else
+        ma_device* device = static_cast<ma_device*>(mStreamDevice);
+        ma_device_uninit(device);
+        delete device;
+#endif
+        mStreamDevice = nullptr;
+    }
+    mIsHardwareStarted = false;
 }
 
 void FaustMixer::startWorkers() {
@@ -742,6 +764,10 @@ inline void FaustMixer::applyMasterGainAndLimiter(float* stereoOutput, int numFr
 void FaustMixer::onAudioReady(float* stereoOutput, int numFrames) {
     if (!stereoOutput || numFrames <= 0) return;
 
+    if (!mFirstCallbackFired.exchange(true)) {
+        TLOG("FIRST onAudioReady() CALLBACK FIRED - audio pipeline is live");
+    }
+
     std::memset(stereoOutput, 0, sizeof(float) * numFrames * 2);
 
     int framesProcessed = 0;
@@ -779,6 +805,20 @@ void FaustMixer::onAudioReady(float* stereoOutput, int numFrames) {
     }
 
     applyMasterGainAndLimiter(stereoOutput, numFrames);
+
+    // Log peak level of every callback to verify audio is in the buffer
+    {
+        float peakOut = 0.0f;
+        for (int i = 0; i < numFrames * 2; i++) {
+            float absS = fabsf(stereoOutput[i]);
+            if (absS > peakOut) peakOut = absS;
+        }
+        static int cbCounter = 0;
+        if (cbCounter < 3000) {
+            printf("[AUDIO PEAK %d] peak=%.6f\n", cbCounter++, peakOut);
+            fflush(stdout);
+        }
+    }
 
     // Fire waveform callback with RMS and peak of final output
     if (mWaveformCallback) {
