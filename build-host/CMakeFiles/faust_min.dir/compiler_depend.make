@@ -2457,6 +2457,7 @@ CMakeFiles/faust_min.dir/FaustInstrument.cpp.o: /home/shashankkhare/AndroidStudi
   /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustThunderDSP.hpp \
   /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustDaguDSP.hpp \
   /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustSarodDSP.hpp \
+  /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustDiziDSP.hpp \
   /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustSantoorDSP.hpp \
   /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustTumbiDSP.hpp \
   /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustNgachenDSP.hpp \
@@ -7316,6 +7317,10 @@ CMakeFiles/faust_min.dir/faust_min.cpp.o: /home/shashankkhare/AndroidStudioProje
   /usr/include/c++/9/bits/stl_bvector.h \
   /usr/include/c++/9/bits/vector.tcc \
   /usr/include/c++/9/pstl/execution_defs.h \
+  /usr/include/c++/9/chrono \
+  /usr/include/c++/9/ratio \
+  /usr/include/c++/9/ctime \
+  /usr/include/c++/9/bits/parse_numbers.h \
   /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustFlute.hpp \
   /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustInstrument.hpp \
   /home/shashankkhare/AndroidStudioProjects/faust_min/src/InstrumentMapper.hpp \
@@ -7352,10 +7357,6 @@ CMakeFiles/faust_min.dir/faust_min.cpp.o: /home/shashankkhare/AndroidStudioProje
   /home/shashankkhare/AndroidStudioProjects/faust_min/src/faust_arch/faust/gui/meta.h \
   /usr/include/c++/9/atomic \
   /usr/include/c++/9/mutex \
-  /usr/include/c++/9/chrono \
-  /usr/include/c++/9/ratio \
-  /usr/include/c++/9/ctime \
-  /usr/include/c++/9/bits/parse_numbers.h \
   /usr/include/c++/9/system_error \
   /usr/include/x86_64-linux-gnu/c++/9/bits/error_constants.h \
   /usr/include/c++/9/bits/std_mutex.h \
@@ -7569,6 +7570,8 @@ CMakeFiles/faust_min.dir/faust_min.cpp.o: /home/shashankkhare/AndroidStudioProje
 /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustTumbiDSP.hpp:
 
 /home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustSantoorDSP.hpp:
+
+/home/shashankkhare/AndroidStudioProjects/faust_min/src/FaustDiziDSP.hpp:
 
 /usr/include/x86_64-linux-gnu/bits/poll2.h:
 

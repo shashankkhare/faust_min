@@ -47,7 +47,7 @@ attackTime = 0.005 + (1.0 - velocity) * 0.1;
 
 pressure = t * pressureTarget : min(1.0) : si.smooth(ba.tau2pole(attackTime));
 
-breathIntensity = hslider("breathiness", 0.2, 0.0, 1.0, 0.01) : si.smoo;
+breathIntensity = hslider("breathiness", 0.08, 0.0, 1.0, 0.01) : si.smoo;
 
 // Breath attack: decaying noise burst
 burstRelease = 0.08;
@@ -60,7 +60,7 @@ gateBurst = risingEdge * burstScale : si.smooth(poleRel);
 filteredNoise = no.noise;
 
 actualBreath = breathIntensity + gateBurst;
-jetTurbulence = filteredNoise * actualBreath * 1.0;
+jetTurbulence = filteredNoise * actualBreath * 0.4;
 noisyPressure = pressure + (jetTurbulence * pressure);
 
 // =============================================================================
@@ -137,4 +137,4 @@ buzzMix = buzzIntensity;
 output = (cleanSignal * (1.0 - buzzMix)) + (buzzSignal * buzzMix);
 
 // Add breath burst
-process = (output + no.pink_noise * gateBurst * 0.2) : *(gain * 1.0);
+process = (output + no.pink_noise * gateBurst * 0.06) : *(gain * 1.0);

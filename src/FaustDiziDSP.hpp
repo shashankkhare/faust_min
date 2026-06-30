@@ -218,7 +218,7 @@ class FaustDiziDSP : public dsp {
 		fHslider1 = FAUSTFLOAT(0.80000000000000004f);
 		fButton0 = FAUSTFLOAT(0.0f);
 		fHslider2 = FAUSTFLOAT(0.80000000000000004f);
-		fHslider3 = FAUSTFLOAT(0.20000000000000001f);
+		fHslider3 = FAUSTFLOAT(0.080000000000000002f);
 		fHslider4 = FAUSTFLOAT(0.080000000000000002f);
 		fHslider5 = FAUSTFLOAT(440.0f);
 		fHslider6 = FAUSTFLOAT(0.29999999999999999f);
@@ -344,7 +344,7 @@ class FaustDiziDSP : public dsp {
 	
 	virtual void buildUserInterface(UI* ui_interface) {
 		ui_interface->openVerticalBox("dizi");
-		ui_interface->addHorizontalSlider("breathiness", &fHslider3, FAUSTFLOAT(0.200000003f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("breathiness", &fHslider3, FAUSTFLOAT(0.0799999982f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addHorizontalSlider("buzzFrequency", &fHslider9, FAUSTFLOAT(2200.0f), FAUSTFLOAT(800.0f), FAUSTFLOAT(4000.0f), FAUSTFLOAT(10.0f));
 		ui_interface->addHorizontalSlider("buzzIntensity", &fHslider8, FAUSTFLOAT(0.400000006f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00100000005f));
 		ui_interface->addHorizontalSlider("freq", &fHslider5, FAUSTFLOAT(440.0f), FAUSTFLOAT(293.0f), FAUSTFLOAT(1865.0f), FAUSTFLOAT(0.100000001f));
@@ -440,7 +440,7 @@ class FaustDiziDSP : public dsp {
 			float fTemp27 = (fTemp24 * fTemp12);
 			int iTemp28 = (int(std::min<float>(fConst5, float(std::max<int>(0, (iTemp5 + 4))))) + 1);
 			fVec2[0] = (((((fRec30[((IOTA - iTemp6) & 2047)] * fTemp9) * fTemp11) * fTemp13) * fTemp15) + (fTemp16 * ((((((fRec30[((IOTA - iTemp17) & 2047)] * fTemp18) * fTemp19) * fTemp20) + (0.5f * (((fTemp8 * fRec30[((IOTA - iTemp21) & 2047)]) * fTemp22) * fTemp23))) + (0.166666672f * ((fTemp24 * fRec30[((IOTA - iTemp25) & 2047)]) * fTemp26))) + (0.0416666679f * (fTemp27 * fRec30[((IOTA - iTemp28) & 2047)])))));
-			float fTemp29 = ((fRec24[0] * ((4.65661287e-10f * ((fRec26[0] + fRec27[0]) * fTemp0)) + 1.0f)) - (0.5f * fVec2[1]));
+			float fTemp29 = ((fRec24[0] * ((1.86264518e-10f * ((fRec26[0] + fRec27[0]) * fTemp0)) + 1.0f)) - (0.5f * fVec2[1]));
 			float fTemp30 = ((0.5f * fRec8[1]) + std::max<float>(-1.0f, std::min<float>(1.0f, (fTemp29 * (FaustDiziDSP_faustpower2_f(fTemp29) + -1.0f)))));
 			fVec3[(IOTA & 2047)] = fTemp30;
 			float fTemp31 = (fConst6 * (fTemp1 * (0.730000019f - fTemp2)));
@@ -522,7 +522,7 @@ class FaustDiziDSP : public dsp {
 			float fTemp61 = (fTemp58 * fTemp60);
 			float fTempFTZ36 = (((0.522189379f * fRec40[3]) + ((4.65661287e-10f * fTemp0) + (2.49495602f * fRec40[1]))) - (2.0172658f * fRec40[2]));
 			fRec40[0] = ((std::fabs(fTempFTZ36) > 1.17549435e-38f) ? fTempFTZ36 : 0.0f);
-			output0[i0] = FAUSTFLOAT((fRec0[0] * (((fRec1[0] * (1.0f - fRec36[0])) + (2.0f * (fRec36[0] * ((fRec37[0] / fTemp61) + (fRec37[2] * (0.0f - (1.0f / fTemp61))))))) + (0.200000003f * (fRec27[0] * (((0.0499220341f * fRec40[0]) + (0.0506126992f * fRec40[2])) - ((0.0959935337f * fRec40[1]) + (0.00440878607f * fRec40[3]))))))));
+			output0[i0] = FAUSTFLOAT((fRec0[0] * (((fRec1[0] * (1.0f - fRec36[0])) + (2.0f * (fRec36[0] * ((fRec37[0] / fTemp61) + (fRec37[2] * (0.0f - (1.0f / fTemp61))))))) + (0.0599999987f * (fRec27[0] * (((0.0499220341f * fRec40[0]) + (0.0506126992f * fRec40[2])) - ((0.0959935337f * fRec40[1]) + (0.00440878607f * fRec40[3]))))))));
 			fRec0[1] = fRec0[0];
 			iRec16[1] = iRec16[0];
 			fRec23[1] = fRec23[0];
