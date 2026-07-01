@@ -257,6 +257,7 @@ std::string InstrumentMapper::getDSPPathForID(int id, const std::string& assetBa
         case 36: return base + "lagnga.dsp";
         case 37: return base + "dholak.dsp";
         case 38: return base + "dhol.dsp";
+        case 43: return base + "dagu.dsp";
         case 44: return base + "sarod.dsp";
         case 47: return base + "tibetanbowl.dsp";
         case 48: return base + "ngachen.dsp";

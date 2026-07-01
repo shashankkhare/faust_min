@@ -286,6 +286,16 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
                 rem.erase(std::remove(rem.begin(), rem.end(), '_'), rem.end());
             }
 
+            // Left-associative operator attachment: if the token is pure operators,
+            // attach them to the preceding token and do not advance the grid.
+            if (rem.empty() && !tokenItems.empty()) {
+                tokenItems.back().hasGlideOp |= ti.hasGlideOp;
+                tokenItems.back().hasVelGlideOp |= ti.hasVelGlideOp;
+                tokenItems.back().hasVibratoOp |= ti.hasVibratoOp;
+                tokenItems.back().hasStop |= ti.hasStop;
+                continue;
+            }
+
             // Composite note — comma-separated sub-notes, each with its own prefix
             if (rem.find(',') != std::string::npos) {
                 ti.hasCompositeNotes = true;

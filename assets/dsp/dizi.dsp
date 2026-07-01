@@ -39,7 +39,7 @@ fSmoothed = fTarget : si.smooth(ba.tau2pole(glide));
 
 vibrato = hslider("vibrato", 0.3, 0.0, 1.0, 0.01) : si.smoo;
 vibratoRate = 5.5;
-vibratoDepth = vibrato * 0.02;
+vibratoDepth = vibrato * 0.06;
 vibratoLFO = os.osc(vibratoRate) * vibratoDepth * fSmoothed;
 actualFreq = fSmoothed + vibratoLFO;
 

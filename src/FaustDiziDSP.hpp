@@ -409,7 +409,7 @@ class FaustDiziDSP : public dsp {
 			fRec32[0] = ((std::fabs(fTempFTZ11) > 1.17549435e-38f) ? fTempFTZ11 : 0.0f);
 			float fTempFTZ12 = (fConst7 + (fRec34[1] - std::floor((fConst7 + fRec34[1]))));
 			fRec34[0] = ((std::fabs(fTempFTZ12) > 1.17549435e-38f) ? fTempFTZ12 : 0.0f);
-			float fTemp1 = ((340.0f / (fRec31[0] * ((0.0199999996f * (fRec32[0] * ftbl0FaustDiziDSPSIG0[int((65536.0f * fRec34[0]))])) + 1.0f))) + 0.270000011f);
+			float fTemp1 = ((340.0f / (fRec31[0] * ((0.0599999987f * (fRec32[0] * ftbl0FaustDiziDSPSIG0[int((65536.0f * fRec34[0]))])) + 1.0f))) + 0.270000011f);
 			float fTempFTZ13 = (fSlow13 + (fConst2 * fRec35[1]));
 			fRec35[0] = ((std::fabs(fTempFTZ13) > 1.17549435e-38f) ? fTempFTZ13 : 0.0f);
 			float fTemp2 = (0.400000006f * (fRec35[0] + -0.5f));
