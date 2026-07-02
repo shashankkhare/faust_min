@@ -393,7 +393,7 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
                 handlePitchedToken(ti, velocityScalar, sampleOffset, durationSamples, seq.notation, seq.baseFreq, seq.instrument, samplesPerGrid, sampleRate, j, tokenItems, triggers, seq.events);
             }
 
-            if (hasStopStop) {
+            if (hasStopStop && !InstrumentMapper::isPolyphonic(seq.instrumentID)) {
                 UMLEvent restEv;
                 restEv.sampleOffset = sampleOffset + durationSamples;
                 restEv.type = UMLEventType::NoteOff;
@@ -706,10 +706,10 @@ void UMLParser::handlePitchedToken(const TokenItem& ti, float velocityScalar, lo
     bool shouldBypassNoteOff = false;
     if (notes.size() > 1) {
         shouldBypassNoteOff = true; // Polyphonic chords act as fire-and-forget
+    } else if (InstrumentMapper::isPolyphonic(InstrumentMapper::getIDFromName(instrument))) {
+        shouldBypassNoteOff = true; // Polyphonic/drone instruments: never schedule NoteOff between strikes
     } else if (ti.rawStr.find('%') != std::string::npos || nextIsNoop) {
         shouldBypassNoteOff = true; // Always bypass for NOOP/Chikari
-    } else if (InstrumentMapper::isPolyphonic(InstrumentMapper::getIDFromName(instrument)) && nextIsNote) {
-        shouldBypassNoteOff = true; // Polyphonic/drone instruments ring into the next pluck
     }
 
     // If no glide is present, schedule a NoteOff event.
