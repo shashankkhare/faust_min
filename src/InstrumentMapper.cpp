@@ -189,6 +189,15 @@ int InstrumentMapper::getPolyphonyVoices(int id) {
     }
 }
 
+bool InstrumentMapper::isPolyphonic(int id) {
+    // Polyphonic/drone instruments suppress note-off between consecutive strikes
+    switch (id) {
+        case 11: return true; // Tanpura — drone, 4 voices
+        case 44: return true; // Sarod — drone, let strings ring into next pluck
+        default: return false;
+    }
+}
+
 std::string InstrumentMapper::getInstrumentClass(int id) {
     if (isPercussionID(id)) return "Percussion";
     if (id == 19 || id == 25 || id == 27 || id == 34 || id == 41 || id == 42) return "Ambience";

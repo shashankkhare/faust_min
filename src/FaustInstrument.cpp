@@ -714,12 +714,14 @@ void FaustInstrument::noteOn(float freq, float vel, float strikeVal) {
     mGainGlideActive = false;
 
     int v = -1;
+    bool voiceMatched = false;
 
     // Check if we can reuse a voice already playing this exact frequency
     if (mIsPolyphonic && freq > 0.0f && mNumVoices > 0) {
         for (int i = 0; i < mNumVoices; ++i) {
             if (std::abs(mVoiceFreqs[i] - freq) < 0.1f) {
                 v = i;
+                voiceMatched = true;
                 break;
             }
         }
@@ -734,10 +736,12 @@ void FaustInstrument::noteOn(float freq, float vel, float strikeVal) {
             v = 0;
     }
 
-    // Stop the voice completely before re-triggering
-    noteOff(v);
-    // Explicitly zero the immediate gate value as well to clear smoothers instantly
-    setParamImmediate("gate", 0.0f, v);
+    // For matched polyphonic voices, skip the gate cycle to avoid audible gaps.
+    // The voice is already ringing at the target frequency.
+    if (!voiceMatched) {
+        noteOff(v);
+        setParamImmediate("gate", 0.0f, v);
+    }
 
     if (freq > 0.0f) {
         mFrequency = freq;

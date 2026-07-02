@@ -806,6 +806,7 @@ void FaustMixer::onAudioReady(float* stereoOutput, int numFrames) {
 
     applyMasterGainAndLimiter(stereoOutput, numFrames);
 
+#ifdef DEBUG_MIXER
     // Log peak level of every callback to verify audio is in the buffer
     {
         float peakOut = 0.0f;
@@ -819,6 +820,7 @@ void FaustMixer::onAudioReady(float* stereoOutput, int numFrames) {
             fflush(stdout);
         }
     }
+#endif
 
     // Fire waveform callback with RMS and peak of final output
     if (mWaveformCallback) {

@@ -708,8 +708,8 @@ void UMLParser::handlePitchedToken(const TokenItem& ti, float velocityScalar, lo
         shouldBypassNoteOff = true; // Polyphonic chords act as fire-and-forget
     } else if (ti.rawStr.find('%') != std::string::npos || nextIsNoop) {
         shouldBypassNoteOff = true; // Always bypass for NOOP/Chikari
-    } else if (InstrumentMapper::getIDFromName(instrument) == 44 && nextIsNote) {
-        shouldBypassNoteOff = true; // Sarod: let strings ring continuously into the next pluck
+    } else if (InstrumentMapper::isPolyphonic(InstrumentMapper::getIDFromName(instrument)) && nextIsNote) {
+        shouldBypassNoteOff = true; // Polyphonic/drone instruments ring into the next pluck
     }
 
     // If no glide is present, schedule a NoteOff event.

@@ -71,6 +71,10 @@ public:
     // Resolves absolute/relative target source file URI based on numeric ID
     static std::string getDSPPathForID(int id, const std::string& assetBasePath = "");
 
+    // Returns true for instruments where note-off should be suppressed between
+    // consecutive strikes (drone/polyphonic instruments like tanpura, sarod)
+    static bool isPolyphonic(int id);
+
 };
 
 #endif // INSTRUMENT_MAPPER_HPP

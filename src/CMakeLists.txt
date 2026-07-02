@@ -29,7 +29,7 @@ foreach(DSP_FILE ${DSP_FILES})
         OUTPUT ${HPP_FILE}
         COMMAND faust -lang cpp -es 1 -single -ftz 1 -I ${CMAKE_CURRENT_SOURCE_DIR}/faust_arch -cn Faust${CAP_NAME}DSP ${DSP_FILE} -o ${HPP_FILE}
         DEPENDS ${DSP_FILE}
-        COMMENT "Auto-compiling Faust DSP: ${DSP_NAME} -> Faust${CAP_NAME}DSP.hpp"
+        COMMENT "Auto-compiling Faust DSP: ${DSP_NAME} (-single) -> Faust${CAP_NAME}DSP.hpp"
     )
     list(APPEND FAUST_GENERATED_HEADERS ${HPP_FILE})
     

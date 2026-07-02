@@ -209,6 +209,7 @@ int main(int argc, char* argv[]) {
     mixer.setPreRenderCallback(SequenceOrchestrator::staticPreRender, &orch);
     mixer.start(); 
 
+#ifdef DEBUG_MIXER
     // --- Tick callback demo: rate-limited console output ---
     static int gTickCounter = 0;
     orch.setTickCallback([](long tick, int noteIndex, const char* seqName, void*) {
@@ -232,6 +233,7 @@ int main(int argc, char* argv[]) {
         }
     }, nullptr);
     std::cout << "[WaveformCallback] Registered waveform callback with rate-limited (~256-block) console output\n";
+#endif
 
     // Command-line or interactive selection
     int selection = -1;
@@ -834,12 +836,12 @@ int main(int argc, char* argv[]) {
             
             std::string umlTanpura = 
                 "grid: 2\n"
-                "basefreq: 55.0\n"
+                "basefreq: 111.0\n"
                 "instrument: tanpura\n"
                 "notation: Hindustani\n"
                 "loop: true\n\n"
-                "5Pa. 5Sa. 5Sa. 5Sa/2. "
-                "5Pa. 5Sa. 5Sa. 5Sa/2. "; // Short sequence that loops independently
+                "5Pa. 5Sa. 5Sa. 5Sa*2. "
+                "_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ";
                 
             std::string umlSitar = 
                 "grid: 4\n"
@@ -915,7 +917,7 @@ int main(int argc, char* argv[]) {
             group.sequences.push_back({"Dayan", new UMLSequence("Dayan", 0, umlDayan)});
             group.sequences.push_back({"Bayan", new UMLSequence("Bayan", 1, umlBayan)});
             
-            group.backgroundTrackWeight = 0.15f;
+            group.backgroundTrackWeight = 0.8f;
             duration = 60;
         } else if (selection == 7) {
             group.name = "Indian Folk (Dholak Percussion)";
