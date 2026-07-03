@@ -1,0 +1,84 @@
+declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
+
+// =============================================================================
+// fm.lib — Sitar String Jawari Waveguide Engine
+//
+// Defines `sitar_string`, a digital waveguide string with an asymmetric
+// tanh jawari waveshaper in the feedback loop. Shared by sitar.dsp and
+// sarod.dsp.
+//
+// =============================================================================
+// DESIGN
+// =============================================================================
+//
+// Modified Karplus-Strong waveguide with 5 stages:
+//
+//   1. DELAY LINE          → integer + fractional (fine tuning via fdelay1a)
+//   2. WIRE LOSS FILTER    → one-pole lowpass (high-freq decay)
+//   3. JAWARI NONLINEARITY → asymmetric tanh with pre-gain (harmonic generation)
+//   4. FEEDBACK GAIN       → exponential decay from sustain time
+//   5. TIME-VARYING MOD    → fdelayltv with envelope-following depth
+//
+// ── 3. Jawari ──────────────────────────────────────────────────────────────
+//    ba.if(x > 0.0,
+//        tanh(x * (1 + jv*2)) / (1 + jv*2),     // upward: near-linear
+//        tanh(x * (1 + jv*20)) / (1 + jv*20)    // downward: hard clip
+//    );
+//    Pre-gain drives the downward wave into tanh hard-clipping, generating
+//    rich odd harmonics. The clean upward wave mixes with the distorted
+//    downward wave to produce even harmonics → characteristic sitar buzz.
+//    Bounded by tanh, stable in feedback loop. Normalized denominator
+//    keeps net gain near unity.
+//
+// =============================================================================
+// PARAMETERS
+// =============================================================================
+//   f           — fundamental frequency in Hz
+//   sus_time    — target sustain in seconds (jawari shortens it)
+//   jivari_val  — jawari intensity [0..1]
+//   exc_gain    — gain on the injected excitation
+//   trigger     — gate (0/1); enables excitation injection
+//   exc_signal  — noise/impulse driving the string
+//
+// =============================================================================
+// DEPENDENCIES
+// =============================================================================
+//   stdfaust.lib — ma.SR, de.delay, de.fdelay1a, de.fdelayltv,
+//                  an.amp_follower, os.osc, ma.tanh
+//
+// =============================================================================
+
+// ===================================================================
+// sitar_string — waveguide string with asymmetric tanh jawari
+// ===================================================================
+sitar_string(f, sus_time, jivari_val, exc_gain, trigger, exc_signal) = melody_output
+with {
+    // 1. Delay: integer + fractional for pitch accuracy
+    del = ma.SR / max(40.0, f);
+    int_del = int(del);
+    frac_del = del - int_del;
+
+    // 2. Wire loss + sustain
+    effective_sustain = max(0.4, sus_time * (1.0 - jivari_val * 0.35));
+    feedback_gain = pow(0.001, del / (effective_sustain * ma.SR));
+    wire_loss_filter(x) = x * 0.002 + x' * 0.998;
+
+    // 3. Asymmetric tanh jawari — downward wave gets pre-gain into hard clip
+    jawariInLoop(x) = ba.if(x > 0.0,
+        ma.tanh(x * (1.0 + jivari_val * 2.0)) / (1.0 + jivari_val * 2.0),
+        ma.tanh(x * (1.0 + jivari_val * 20.0)) / (1.0 + jivari_val * 20.0)
+    );
+
+    // 4. Feedback loop
+    raw_wave = (exc_signal * exc_gain * trigger) : (+ : de.delay(16384, int_del)) ~ loop_processor
+    with {
+        loop_processor(x) = x : de.fdelay1a(1024, frac_del) : wire_loss_filter : jawariInLoop : * (feedback_gain);
+    };
+
+    // 5. Envelope-following time-varying modulation
+    string_envelope = raw_wave : an.amp_follower(0.030);
+    mod_depth = (300.0 / max(40.0, f)) * jivari_val * 4.5 * string_envelope;
+    external_modulator = os.osc(f) * mod_depth;
+
+    melody_output = de.fdelayltv(1, 1024, max(1.0, 4.0 + external_modulator), raw_wave);
+};

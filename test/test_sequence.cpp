@@ -301,7 +301,7 @@ int main(int argc, char* argv[]) {
             std::string umlSarod = 
                 "grid: 4\n"
                 "bpm: 70\n"
-                "basefreq: 222.0\n"
+                "basefreq: 444.0\n"
                 "instrument: sarod\n"
                 "notation: Hindustani\n"
                 "glide: 0.03\n"
@@ -309,52 +309,53 @@ int main(int argc, char* argv[]) {
                 "vibrato_rate: 5.5\n"
                 "chikari_freq1: 222.0\n"
                 "chikari_freq2: 333.0\n"
-                // --- Alaap (64 cells) — slow, spacious, meend between notes, natural decay ---
-                "5Sa.. . . . . . \n"                      // Sa rings 3 cells, 5 cells natural decay
-                "5Sa.^ 8re.. . . . \n"                    // Sa→meend, re rings, 3 cells natural decay
-                "8re.^ 8ga.. . . . \n"                    // re→meend, ga rings, 3 cells natural decay
-                "8ga.. . . . . . \n"                      // ga rings 3 cells (andolan), 5 natural decay
-                "3Ma . 8ga.^ 8re . . . \n"                // Ma, natural decay, ga→re meend, re, natural decay
-                "8re.^ 5Sa.. . . . \n"                    // re→Sa meend, Sa rings, 3 natural decay
-                "8ni . 6dha . . . . . \n"                 // ni, natural decay, dha, 5 cells natural decay
-                "6dha.^ 5Sa.. . . . \n"                   // dha→Sa meend, Sa rings, 3 natural decay
-                // --- Jod (128 cells) — medium pulse, rhythmic Darbari patterns ---
-                "8re . 8ga . 8re . 5Sa . \n"
-                "8re . 8ga . 3Ma . 6Pa . \n"
-                "6dha . 8ni . 6dha . 6Pa . \n"
-                "3Ma . 8ga . 8re . 5Sa . \n"
-                "8ni . 6dha . 6Pa . 3Ma . \n"
-                "8ga . 3Ma . 6dha . 8ni . \n"
-                "8re . 8ga . 8re . 5Sa . \n"
-                "6Pa . 3Ma . 8ga . 8re . \n"
-                "8re . 8ga . 6dha . 8ni . \n"
-                "6dha . 6Pa . 3Ma . 8ga . \n"
-                "8re . 8ga . 8re . 5Sa . \n"
-                "8ni . 6dha . 6Pa . 3Ma . \n"
-                "8ga . 3Ma . 6Pa . 3Ma . \n"
-                "8ga . 8re . 5Sa . 8re . \n"
-                "8ga . 3Ma . 6dha . 6Pa . \n"
-                "8re . 8ga . 8re . 5Sa . \n"
-                // --- Jhala (144 cells) — fast chikari patterns ---
-                "61% 8ga~ 61% 8ga~ 61% 8re~ 61% 8ga~ \n"
-                "61% 8re~ 61% 8re~ 61% 8Sa~ 61% 8re~ \n"
-                "61% 8Sa~ 61% 8Sa~ 61% 8ni~ 61% 8Sa~ \n"
-                "61% 8ni~ 61% 8ni~ 61% 8dha~ 61% 8ni~ \n"
-                "81re 8ga~ 81re 8ga~ 81ni 8dha~ 81ni 6Pa~ \n"
-                "81re 8ga~ 81re 5Sa~ 81re 8ga~ 81re 3Ma~ \n"
-                "81ga 8re~ 81ga 8re~ 81ga 5Sa~ 81ga 8re~ \n"
-                "61Sa 8ga~ 61Sa 8ni~ 61Sa 8dha~ 61Sa 6Pa~ \n"
-                "81re 8ga~ 81ni 8dha~ 81re 8ga~ 81ni 6Pa~ \n"
-                "61Sa 8ga~ 61Sa 8re~ 61Sa 8ga~ 61Sa 5Sa~ \n"
-                "81ni 8dha~ 81ni 6Pa~ 81ni 3Ma~ 81ni 8ga~ \n"
-                "81re 8ga~ 81re 8ni~ 81re 8dha~ 81re 6Pa~ \n"
-                "61Sa 8ga~ 61Sa 5Sa~ 61Sa 8ga~ 61Sa 5Sa~ \n"
-                "81re 8ga~ 81re 8ni~ 81ni 8dha~ 81ni 6Pa~ \n"
-                "61Sa 8ga~ 61Sa 8re~ 61Sa 8ga~ 61Sa 8re~ \n"
-                "81ga 8re~ 81ga 5Sa~ 81ga 8re~ 81ga 5Sa~ \n"
-                "61Sa 8ga~ 61Sa 8re~ 61Sa 8ga~ 61Sa 8re~ \n"
-                "61Sa 8ga~ 61Sa 8re~ 61Sa 5Sa~ 61Sa 5Sa~ \n"
-                "5Sa . . . . . . . \n";
+                "jawari: 0.7\n"
+                // --- Alaap (64 cells) — slow, spacious, meend between notes, vibrato on ending ---
+                "5Sa..~ . . . . . \n"                     // Sa rings 3 cells with vibrato, 5 cells decay
+                "5Sa.^ 8re..~ . . . \n"                   // Sa→meend, re rings with vibrato, decay
+                "8re.^ 8ga..~ . . . \n"                   // re→meend, ga rings with vibrato, decay
+                "8ga..~ . . . . . \n"                     // ga rings with vibrato, then decay
+                "3Ma . 8ga.^ 8re.~ . . \n"                // Ma, meend, re rings with vibrato, decay
+                "8re.^ 5Sa..~ . . . \n"                   // re→Sa meend, Sa rings with vibrato, decay
+                "8ni . 6dha~ . . . . . \n"                // ni, dha rings with vibrato, then decay
+                "6dha.^ 5Sa..~ . . . \n"                   // dha→Sa meend, Sa rings, 3 natural decay
+                // --- Jod (128 cells) — medium pulse, vibrato only on ending note ---
+                "8re . 8ga . 8re . 5Sa~ . \n"
+                "8re . 8ga . 3Ma . 6Pa~ . \n"
+                "6dha . 8ni . 6dha . 6Pa~ . \n"
+                "3Ma . 8ga . 8re . 5Sa~ . \n"
+                "8ni . 6dha . 6Pa . 3Ma~ . \n"
+                "8ga . 3Ma . 6dha . 8ni~ . \n"
+                "8re . 8ga . 8re . 5Sa~ . \n"
+                "6Pa . 3Ma . 8ga . 8re~ . \n"
+                "8re . 8ga . 6dha . 8ni~ . \n"
+                "6dha . 6Pa . 3Ma . 8ga~ . \n"
+                "8re . 8ga . 8re . 5Sa~ . \n"
+                "8ni . 6dha . 6Pa . 3Ma~ . \n"
+                "8ga . 3Ma . 6Pa . 3Ma~ . \n"
+                "8ga . 8re . 5Sa . 8re~ . \n"
+                "8ga . 3Ma . 6dha . 6Pa~ . \n"
+                "8re . 8ga . 8re . 5Sa~ . \n"
+                // --- Jhala (144 cells) — fast chikari, vibrato only on last melody of each line ---
+                "61% 8ga 61% 8ga 61% 8re 61% 8ga~ \n"
+                "61% 8re 61% 8re 61% 8Sa 61% 8re~ \n"
+                "61% 8Sa 61% 8Sa 61% 8ni 61% 8Sa~ \n"
+                "61% 8ni 61% 8ni 61% 8dha 61% 8ni~ \n"
+                "81re 8ga 81re 8ga 81ni 8dha 81ni 6Pa~ \n"
+                "81re 8ga 81re 5Sa 81re 8ga 81re 3Ma~ \n"
+                "81ga 8re 81ga 8re 81ga 5Sa 81ga 8re~ \n"
+                "61Sa 8ga 61Sa 8ni 61Sa 8dha 61Sa 6Pa~ \n"
+                "81re 8ga 81ni 8dha 81re 8ga 81ni 6Pa~ \n"
+                "61Sa 8ga 61Sa 8re 61Sa 8ga 61Sa 5Sa~ \n"
+                "81ni 8dha 81ni 6Pa 81ni 3Ma 81ni 8ga~ \n"
+                "81re 8ga 81re 8ni 81re 8dha 81re 6Pa~ \n"
+                "61Sa 8ga 61Sa 5Sa 61Sa 8ga 61Sa 5Sa~ \n"
+                "81re 8ga 81re 8ni 81ni 8dha 81ni 6Pa~ \n"
+                "61Sa 8ga 61Sa 8re 61Sa 8ga 61Sa 8re~ \n"
+                "81ga 8re 81ga 5Sa 81ga 8re 81ga 5Sa~ \n"
+                "61Sa 8ga 61Sa 8re 61Sa 8ga 61Sa 8re~ \n"
+                "61Sa 8ga 61Sa 8re 61Sa 5Sa 61Sa 5Sa~ \n"
+                "5Sa~ . . . . . . . \n";
             
             // Total sarod cells: 64 + 128 + 144 = 336
             // All instruments at BPM=70, same grid=4, same total cells
@@ -832,7 +833,7 @@ int main(int argc, char* argv[]) {
             duration = 64;
 
         } else if (selection == 6) {
-            group.name = "Sitar — Raag Yaman + Tabla Jawab-Talab";
+            group.name = "Sitar — Raag Yaman (Fast Drut)";
             
             std::string umlTanpura = 
                 "grid: 2\n"
@@ -845,71 +846,93 @@ int main(int argc, char* argv[]) {
                 
             std::string umlSitar = 
                 "grid: 4\n"
+                "bpm: 130\n"
                 "basefreq: 222.0\n"
                 "instrument: sitar\n"
-                "notation: Hindustani\n\n";
-            // Alap (256 cells of slow, meditative phrases)
-            umlSitar += "6Ni...^ 6Re...^ 6Ga... _... 6ma...^ 6Pa...^ 6Dha... _... ";
-            umlSitar += "6Ni...^ 6Sa*2... _... _... 6Sa*2...^ 6Ni...^ 6Dha...^ 6Pa... ";
-            umlSitar += "6ma...^ 6Ga...^ 6Re...^ 6Sa... 6Ni/2...^ 6Re...^ 6Ga...^ 6Sa... ";
-            umlSitar += "6ma...^ 6Ga...^ 6Re...^ 6Sa... _... _... _... _... ";
-            umlSitar += "6Ni...^ 6Re...^ 6Ga... _... 6ma...^ 6Pa...^ 6Dha... _... ";
-            umlSitar += "6Ni...^ 6Sa*2... _... _... 6Sa*2...^ 6Ni...^ 6Dha...^ 6Pa... ";
-            umlSitar += "6ma...^ 6Ga...^ 6Re...^ 6Sa... 6Ni/2...^ 6Re...^ 6Ga...^ 6Sa... ";
-            umlSitar += "6ma...^ 6Ga...^ 6Re...^ 6Sa... _... _... _... _... ";
-            // Jod (128 cells of medium-paced rhythmic movement)
+                "notation: Hindustani\n"
+                "vibrato: 0.5\n"
+                "vibrato_depth: 0.008\n"
+                "vibrato_rate: 5.0\n\n";
+            // Intro (32 cells) — quick raag statement
+            umlSitar += "6Ni . 6Re . 6Ga . 6ma . 6Pa . 6Dha . 6Ni . 6Sa*2 . ";
+            umlSitar += "6Sa*2 . 6Ni . 6Dha . 6Pa . 6ma . 6Ga . 6Re . 6Sa . ";
+            // Jod 1 (128 cells) — medium-fast sargam runs
             for (int i = 0; i < 2; ++i) {
-                umlSitar += "6Ni/2 . 6Re . 6Ga . 6ma . 6Pa . 6ma . 6Ga . 6Re . ";
-                umlSitar += "6Ga . 6ma . 6Dha . 6Ni . 6Sa*2 . 6Ni . 6Dha . 6Pa . ";
-                umlSitar += "6ma . 6Dha . 6Ni . 6Sa*2 . 6Re*2 . 6Sa*2 . 6Ni . 6Dha . ";
-                umlSitar += "6Pa . 6ma . 6Ga . 6Re . 6Sa . . . _ . . . ";
+                umlSitar += "6Ni 6Re 6Ga 6ma 6Pa 6Dha 6Ni 6Sa*2 ";
+                umlSitar += "6Sa*2 6Ni 6Dha 6Pa 6ma 6Ga 6Re 6Sa ";
+                umlSitar += "6Ga 6ma 6Dha 6Ni 6Sa*2 6Ni 6Dha 6Pa ";
+                umlSitar += "6ma 6Ga 6Re 6Sa 6Ni/2 6Sa 6Re 6Sa ";
             }
-            // Jhala (256 cells: 128 cells of rapid triads + 128 cells of Tihai and trailing rests)
-            for (int i = 0; i < 2; ++i) {
-                umlSitar += "6Ga 6Sa*2 6Re 6Sa*2 6Ga 6Sa*2 6ma 6Sa*2 6Pa 6Sa*2 6ma 6Sa*2 6Ga 6Sa*2 6Re 6Sa*2 ";
-                umlSitar += "6ma 6Sa*2 6Pa 6Sa*2 6Dha 6Sa*2 6Ni 6Sa*2 6Sa*2 6Sa*2 6Ni 6Sa*2 6Dha 6Sa*2 6Pa 6Sa*2 ";
-                umlSitar += "6Ni 6Sa*2 6Sa*2 6Sa*2 6Re*2 6Sa*2 6Sa*2 6Sa*2 6Ga*2 6Sa*2 6Re*2 6Sa*2 6Sa*2 6Sa*2 6Ni 6Sa*2 ";
-                umlSitar += "6Sa*2 6Sa*2 6Ni 6Sa*2 6Dha 6Sa*2 6Pa 6Sa*2 6ma 6Sa*2 6Ga 6Sa*2 6Re 6Sa*2 6Sa 6Sa*2 ";
+            // Jod 2 (128 cells) — faster, denser
+            for (int i = 0; i < 4; ++i) {
+                umlSitar += "6Ga 6Re 6Sa 6Ni 6Dha 6Pa 6ma 6Ga ";
+                umlSitar += "6Re 6Ga 6ma 6Pa 6Dha 6Ni 6Sa*2 6Re*2 ";
+                umlSitar += "6Sa*2 6Ni 6Dha 6Pa 6ma 6Ga 6Re 6Sa ";
+                umlSitar += "6Dha 6Ni 6Sa*2 6Ni 6Dha 6Pa 6ma 6Ga ";
             }
-            // Tihai
-            umlSitar += "6Pa 6Sa*2 6Dha 6Sa*2 6Sa*2 . . . 6Pa 6Sa*2 6Dha 6Sa*2 6Sa*2 . . . ";
-            umlSitar += "6Pa 6Sa*2 6Dha 6Sa*2 6Sa*2 . . . _ . . . _ . . . ";
-            for (int i = 0; i < 6; ++i) {
-                umlSitar += "_ . . . _ . . . _ . . . _ . . . ";
+            // Jhala (128 cells) — chikari strikes with melody
+            for (int i = 0; i < 4; ++i) {
+                umlSitar += "6Ga 61Sa*2 6Re 61Sa*2 6Ga 61Sa*2 6ma 61Sa*2 ";
+                umlSitar += "6Pa 61Sa*2 6Dha 61Sa*2 6Ni 61Sa*2 6Sa*2 61Sa*2 ";
+                umlSitar += "6Sa*2 61Sa*2 6Ni 61Sa*2 6Dha 61Sa*2 6Pa 61Sa*2 ";
+                umlSitar += "6ma 61Sa*2 6Ga 61Sa*2 6Re 61Sa*2 6Sa 61Sa*2 ";
             }
+            // Tihai + rest (32 cells)
+            umlSitar += "6Sa*2 61Sa*2 6Dha 61Sa*2 6Ni 61Sa*2 . . . ";
+            umlSitar += "6Sa*2 61Sa*2 6Dha 61Sa*2 6Ni 61Sa*2 . . . ";
+            umlSitar += "6Sa*2 61Sa*2 6Dha 61Sa*2 6Ni 61Sa*2 . . . ";
+            umlSitar += "_ . . . _ . . . ";
                 
             std::string umlDayan = 
                 "grid: 4\n"
+                "bpm: 130\n"
                 "basefreq: 222.0\n"
                 "instrument: dayan\n\n";
-            // Alap: Silent (256 cells)
-            for (int i = 0; i < 32; ++i) {
+            // Intro: Silent (32 cells)
+            for (int i = 0; i < 4; ++i) {
                 umlDayan += "_ . . . _ . . . ";
             }
-            // Jod: Vilambit Teental (128 cells)
+            // Jod 1: Teen Taal medium (128 cells)
             for (int i = 0; i < 8; ++i) {
                 umlDayan += "Na . . . Tin . . . Tun . . . tk . . . ";
             }
-            // Jhala: Drut Teental (256 cells)
-            for (int i = 0; i < 32; ++i) {
+            // Jod 2: faster (128 cells)
+            for (int i = 0; i < 16; ++i) {
+                umlDayan += "Na . Tin . Tun . tk . ";
+            }
+            // Jhala: Drut (128 cells)
+            for (int i = 0; i < 16; ++i) {
                 umlDayan += "Na tk Tin tk Tun tk Na tk ";
+            }
+            // Tihai + rest (32 cells)
+            for (int i = 0; i < 4; ++i) {
+                umlDayan += "Na . . . _ . . . ";
             }
                 
             std::string umlBayan = 
                 "grid: 4\n"
-                "basefreq: 55.0\n"
+                "bpm: 130\n"
+                "basefreq: 111.0\n"
                 "instrument: bayan\n\n";
-            // Alap: Silent (256 cells)
-            for (int i = 0; i < 32; ++i) {
+            // Intro: Silent (32 cells)
+            for (int i = 0; i < 4; ++i) {
                 umlBayan += "_ . . . _ . . . ";
             }
-            // Jod: Vilambit Teental (128 cells)
+            // Jod 1: slow (128 cells)
             for (int i = 0; i < 8; ++i) {
                 umlBayan += "Ghe . . . Ka . . . Ghe . . . Ka . . . ";
             }
-            // Jhala: Drut Teental (256 cells)
-            for (int i = 0; i < 32; ++i) {
+            // Jod 2: faster (128 cells)
+            for (int i = 0; i < 16; ++i) {
+                umlBayan += "Ghe . Ka . Ghe . Ka . ";
+            }
+            // Jhala: Drut (128 cells)
+            for (int i = 0; i < 16; ++i) {
                 umlBayan += "Ghe Ghe Ka Ka Ghe Ghe Ka Ka ";
+            }
+            // Tihai + rest (32 cells)
+            for (int i = 0; i < 4; ++i) {
+                umlBayan += "Ghe . . . _ . . . ";
             }
             
             group.sequences.push_back({"Tanpura", new UMLSequence("Tanpura", 11, umlTanpura)});
@@ -918,7 +941,7 @@ int main(int argc, char* argv[]) {
             group.sequences.push_back({"Bayan", new UMLSequence("Bayan", 1, umlBayan)});
             
             group.backgroundTrackWeight = 0.8f;
-            duration = 60;
+            duration = 45;
         } else if (selection == 7) {
             group.name = "Indian Folk (Dholak Percussion)";
             
@@ -990,7 +1013,7 @@ int main(int argc, char* argv[]) {
             std::string umlSarod = 
                 "grid: 4\n"
                 "bpm: 80\n"
-                "basefreq: 222.0\n"
+                "basefreq: 444.0\n"
                 "instrument: sarod\n"
                 "notation: Hindustani\n"
                 "glide: 0.06\n"
@@ -998,35 +1021,35 @@ int main(int argc, char* argv[]) {
                 "vibrato_rate: 5.5\n"
                 "chikari_freq1: 222.0\n"
                 "chikari_freq2: 333.0\n"
-                // Alaap — slow with long meend glides (^)
-                "5Sa..^ 5Sa..^ 8Ni..^ 5Sa..^ \n"
+                // Alaap — slow with long meend glides, vibrato only on ending notes
+                "5Sa..^ 5Sa..^ 8Ni..^ 5Sa..~ \n"
                 "8Ni..^ 8Ga..^ 8Re..^ 8Ni..~ \n"
                 "8Ga..^ 6Dha..^ 8Ni..^ 6Dha..~ \n"
-                "8Re..^ 8Ga..^ 8Re..^ 6Dha..^ \n"
-                "9Ni..^ 6Sa*2..^ 9Ni..~ 6Dha..~ \n"
-                "8Re..^ 9Ni..^ 6Sa*2..^ 8Ga..^ \n"
-                "9Ni..^ 8Re..^ 6Dha..^ 8Ni..^ \n"
+                "8Re..^ 8Ga..^ 8Re..^ 6Dha..~ \n"
+                "9Ni..^ 6Sa*2..^ 9Ni..^ 6Dha..~ \n"
+                "8Re..^ 9Ni..^ 6Sa*2..^ 8Ga..~ \n"
+                "9Ni..^ 8Re..^ 6Dha..^ 8Ni..~ \n"
                 "5Sa..^ 8Re..^ 8Ga..^ 8Re..~ \n"
-                // Jod — medium pulse
-                "8Ga. 8Re. 5Sa. 8Ni. 9Ni. 5Sa. 8Re. 8Ga. \n"
-                "8Re. 8Ga. 6Dha. 8Ni. 6Dha. 8Ni. 8Re. 8Ga. \n"
-                "8Ni. 5Sa. 8Re. 8Ga. 9Ni. 6Sa*2. 9Ni. 5Sa. \n"
-                "8Ga. 8Re. 6Dha. 8Ni. 8Re. 8Ga. 8Re. 5Sa. \n"
-                "6Dha. 8Ni. 8Re. 8Ga. 8Re. 6Dha. 8Ni. 5Sa. \n"
-                "8Ni. 5Sa. 8Re. 8Ga. 6Dha. 8Ni. 8Re. 8Ga. \n"
-                "9Ni. 6Sa*2. 9Ni. 8Re. 8Ga. 8Re. 5Sa. 8Ni. \n"
-                "5Sa. 8Re. 8Ga. 8Re. 6Dha. 8Ni. 5Sa. 8Ga. \n"
-                // Jhala — fast with chikari (strike=1 prefix)
-                "61Sa 8Ga~ 61Sa 8Ga~ 81Ni 8Ga~ 61Sa 8Ga~ \n"
-                "81Re 8Ga~ 81Re 8Ga~ 81Ga 8Re~ 81Ga 8Re~ \n"
-                "81Ga 8Ni~ 81Ga 8Ni~ 81Ni 8Re~ 81Ni 8Re~ \n"
-                "61Sa 8Ga~ 61Sa 8Ga~ 81Dha 8Ga~ 81Dha 8Re~ \n"
-                "81Re 8Ga~ 81Re 8Ga~ 81Ni 8Re~ 81Ni 8Ga~ \n"
-                "61Sa 8Ga~ 61Sa 8Ga~ 81Ga 8Re~ 81Ga 8Re~ \n"
-                "81Ni 8Dha~ 81Ni 8Dha~ 81Re 8Ga~ 81Re 8Ga~ \n"
-                "81Ga 8Ni~ 81Ga 8Ni~ 81Re 8Ga~ 81Re 8Ga~ \n"
-                "61Sa 8Ga~ 61Sa 8Ga~ 61Sa 8Ga~ 61Sa 8Ga~ \n"
-                "5Sa . . . . . . . \n";
+                // Jod — medium pulse, vibrato only on ending note
+                "8Ga. 8Re. 5Sa. 8Ni. 9Ni. 5Sa. 8Re. 8Ga~. \n"
+                "8Re. 8Ga. 6Dha. 8Ni. 6Dha. 8Ni. 8Re. 8Ga~. \n"
+                "8Ni. 5Sa. 8Re. 8Ga. 9Ni. 6Sa*2. 9Ni. 5Sa~. \n"
+                "8Ga. 8Re. 6Dha. 8Ni. 8Re. 8Ga. 8Re. 5Sa~. \n"
+                "6Dha. 8Ni. 8Re. 8Ga. 8Re. 6Dha. 8Ni. 5Sa~. \n"
+                "8Ni. 5Sa. 8Re. 8Ga. 6Dha. 8Ni. 8Re. 8Ga~. \n"
+                "9Ni. 6Sa*2. 9Ni. 8Re. 8Ga. 8Re. 5Sa. 8Ni~. \n"
+                "5Sa. 8Re. 8Ga. 8Re. 6Dha. 8Ni. 5Sa. 8Ga~. \n"
+                // Jhala — fast with chikari, vibrato only on last melody of each line
+                "61Sa 8Ga 61Sa 8Ga 81Ni 8Ga 61Sa 8Ga~ \n"
+                "81Re 8Ga 81Re 8Ga 81Ga 8Re 81Ga 8Re~ \n"
+                "81Ga 8Ni 81Ga 8Ni 81Ni 8Re 81Ni 8Re~ \n"
+                "61Sa 8Ga 61Sa 8Ga 81Dha 8Ga 81Dha 8Re~ \n"
+                "81Re 8Ga 81Re 8Ga 81Ni 8Re 81Ni 8Ga~ \n"
+                "61Sa 8Ga 61Sa 8Ga 81Ga 8Re 81Ga 8Re~ \n"
+                "81Ni 8Dha 81Ni 8Dha 81Re 8Ga 81Re 8Ga~ \n"
+                "81Ga 8Ni 81Ga 8Ni 81Re 8Ga 81Re 8Ga~ \n"
+                "61Sa 8Ga 61Sa 8Ga 61Sa 8Ga 61Sa 8Ga~ \n"
+                "5Sa~ . . . . . . . \n";
             
             auto buildDayan = [bpm = 80]() -> std::string {
                 std::string s = "grid: 4\nbpm: ";

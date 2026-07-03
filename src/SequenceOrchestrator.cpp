@@ -617,6 +617,9 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
                             }
                             if (seqWrapper->sequenceObj->initialParams.count("freq_right")) {
                                 inst->setParamImmediate("freq_right", seqWrapper->sequenceObj->initialParams["freq_right"], -1);
+                            }
+                            if (seqWrapper->sequenceObj->initialParams.count("jawari")) {
+                                inst->setParamImmediate("jawari", seqWrapper->sequenceObj->initialParams["jawari"], -1);
                             } else if (seqWrapper->sequenceObj->baseFreq > 0) {
                                 inst->setParamImmediate("freq_right", seqWrapper->sequenceObj->baseFreq * 1.5f, -1);
                             }

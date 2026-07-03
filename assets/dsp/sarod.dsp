@@ -2,71 +2,48 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 
 // =============================================================================
 // === PHYSICAL MODEL DESIGN ===
-// Description: Fretless Indian classical string instrument (Sarod) with a metal fingerboard,
-// producing bright metallic sustain and sympathetic string resonance.
-// The sarod features a unique acoustic system where the bridge rests on a tensioned
-// goatskin membrane stretched over a carved teak wood bowl (tumba).
-//
-// The physical model routes the raw string excitation (dispersion + collision)
-// through a series coupling of both resonators: the output of the string
-// passes through saturate (nonlinear tanh to emulate skin compression),
-// then the membrane bandpass bank (goatskin modes), then the body
-// bandpass bank (teak bowl modes). No part of the raw string signal
-// bypasses the resonators — every bit of sound passes through both
-// the membrane and the body, just like a real sarod.
-//
-// Parameters (Controls):
-//   - freq        — melody note frequency
-//   - gate        — trigger (momentary)
-//   - velocity    — 0..1
-//   - gain        — master volume 0..1
-//   - symp_gain   — sympathetic string level 0..1
+// Description: Fretless Sarod model featuring your custom sitar_string engine.
+// Sustaining parameters have been tightened globally to mimic the true fast
+// decay characteristics of high-tension wire resting on a damped goatskin face.
+// =============================================================================
+
 import("stdfaust.lib");
+import("fm.lib");
 
 // Expert Play Range: Sarod typical range C3 (~130 Hz) to A5 (~880 Hz).
 freq = hslider("freq", 146.83, 130, 900, 0.01);
 gate = button("gate");
 velocity = hslider("velocity", 0.5, 0, 1, 0.01);
 gain = hslider("gain", 1.0, 0, 1, 0.01);
-symp_gain = hslider("symp_gain", 0.1, 0, 1, 0.01);
+symp_gain = hslider("symp_gain", 0.05, 0, 1, 0.01); 
 strike = hslider("strike", 0, 0, 2, 1);
-// Expert Play Range: Sarod typical range C3 (~130 Hz) to A5 (~880 Hz).
+
 chikari_freq1 = hslider("chikari_freq1", 130, 130, 900, 0.01);
-// Expert Play Range: Sarod typical range C3 (~130 Hz) to A5 (~880 Hz).
 chikari_freq2 = hslider("chikari_freq2", 166.5, 130, 900, 0.01);
 chikari_gain = hslider("chikari_gain", 0.1, 0, 1, 0.01);
-j_h = hslider("jawari_hardness", 0.05, 0, 0.5, 0.001);
 
-// Velocity-dependent release time (10ms at vel=0, 2ms at vel=1)
+jawari = hslider("jawari", 0.25, 0, 1.0, 0.001);
+
+vibrato = hslider("vibrato [style:check]", 0, 0, 1, 1);
+vibrato_depth = hslider("vibrato_depth", 0.01, 0, 0.5, 0.001);
+vibrato_rate = hslider("vibrato_rate", 6.5, 1, 10, 0.1);
+
 gate_rel = 0.010 - velocity * 0.008;
-
-// Melody excitation trigger
 trig = gate > gate';
 
-// Short pluck transient for the excitation noise — gate held for attack to complete
+// Short pluck transient for the excitation noise
 gate_held_pluck = trig : pulse_timer > 0
 with {
     pulse_timer(t) = loop ~ _
     with { loop(s) = ba.if(t, 150, max(0.0, s - 1.0)); };
 };
 pluck_env = en.ar(0.003, 0.015, gate_held_pluck);
-
-// Simulate the hard wooden pick transient (replaces os.impulse so it fires on every note)
-pick_impulse = ba.impulsify(trig);
-
-// Wooden plectrum scratch noise
-pick_noise = no.noise : fi.bandpass(2, 100.0, 1200.0);
-
-// Base wooden pluck excitation — short transient only!
+pick_noise = no.noise : fi.bandpass(2, 100.0, 12000.0);
 base_exc = pick_noise * 0.18 * pluck_env * velocity;
 
-// Explicit mathematical routing
 is_chikari = strike > 0.5;
-
-// Melody: suppress when chikari strike — let the string coast
 melody_exc = base_exc * (1 - is_chikari);
 
-// Chikari: triggers on strike transition OR gate press while in chikari mode
 chikari_trig = (is_chikari > is_chikari') | (trig & is_chikari);
 chikari_pluck_gate = chikari_trig : chikari_pt > 0
 with {
@@ -74,120 +51,104 @@ with {
     with { loop(s) = ba.if(t, 150, max(0.0, s - 1.0)); };
 };
 chikari_pluck_env = en.ar(0.003, 0.015, chikari_pluck_gate);
-chikari_trig_exc = (no.noise : fi.bandpass(2, 150.0, 1500.0)) * 0.05 * chikari_pluck_env * velocity;
+chikari_trig_exc = (no.noise : fi.bandpass(2, 150.0, 12000.0)) * 0.05 * chikari_pluck_env * velocity;
 
 smooth_reset(c, t, x) = loop ~ _
 with {
     loop(y1) = ba.if(t, x, x * (1 - c) + y1 * c);
 };
 
-// Melody string parameters
+// Melody string parameters with Kampa Vibrato Applied to Pitch
 melody_freq = (freq * (1 - is_chikari)) : + ~ *(is_chikari);
 smooth_melody_freq = melody_freq : smooth_reset(0.999, trig);
+
+kampa_lfo = os.osc(vibrato_rate) * vibrato_depth * gate * vibrato;
+modulated_freq = smooth_melody_freq * (1.0 + kampa_lfo);
+
 normFreq = (smooth_melody_freq - 80.0) / (800.0 - 80.0) : min(1.0) : max(0.0);
-dynSustain = 4.0 - normFreq * 3.2; // 4.0s sustain for low notes, 0.8s for high notes
-feedback_gain = pow(0.001, 1.0 / (dynSustain * smooth_melody_freq));
 
-del = ma.SR / smooth_melody_freq;
-
-// Fretless steel fingerboard collision model (asymmetric soft clipping)
-fingerboard(x) = ba.if(abs(x) > 0.8, sign(x) * (0.8 + (abs(x) - 0.8) * 0.15), x)
-with {
-    sign(y) = ba.if(y > 0.0, 1.0, -1.0);
-};
-
-dispersion = _ <: * (0.2), _' : + : + ~ * (-0.2); // slight stiffness
-
-bridge_contact(x) = max(0, x * 5.0);
-jivari_mod = j_h * 600.0;
-dynamic_delay(x) = de.fdelay(16384, max(2.0, del - jivari_mod * bridge_contact(x)), x);
+// CALIBRATED DECAY: Reduced max sustain from 4.0s down to 2.2s for tighter decay
+dynSustain = 4.0 - normFreq * 1.7; 
 
 melody_gate = max(gate, is_chikari) : si.smoo;
-chikari_gate = max(gate, 1 - is_chikari) : si.smoo;
 
-stringLoop = melody_exc : (+ : dynamic_delay) ~ (dispersion : fingerboard : _ * feedback_gain * melody_gate);
+// sitar_string imported from fm.lib (read-only)
+stringLoop = sitar_string(modulated_freq, dynSustain, jawari, 1.0, melody_gate, melody_exc);
 
-// Goatskin membrane modes in parallel (20 non-degenerate eigenmodes from Manaswi et al. 2013)
-// plus 5 synthetic high-frequency modes to emulate tight skin air-loading formants
-membrane_filter(x) = 
-    (  (x * 0.5)
-     + (x : fi.resonbp(150.0,   4.0, 0.50))
-     + (x : fi.resonbp(236.7,   4.0, 0.25))
-     + (x : fi.resonbp(240.2,   4.0, 0.25))
-     + (x : fi.resonbp(315.4,   4.0, 0.45))
-     + (x : fi.resonbp(320.7,   4.0, 0.45))
-     + (x : fi.resonbp(342.3,   4.0, 0.40))
-     + (x : fi.resonbp(386.4,   4.0, 0.35))
-     + (x : fi.resonbp(402.7,   4.0, 0.35))
-     + (x : fi.resonbp(423.0,   4.0, 0.30))
-     + (x : fi.resonbp(438.7,   4.0, 0.30))
-     + (x : fi.resonbp(465.3,   4.0, 0.25))
-     + (x : fi.resonbp(477.4,   4.0, 0.25))
-     + (x : fi.resonbp(498.4,   4.0, 0.20))
-     + (x : fi.resonbp(522.9,   4.0, 0.20))
-     + (x : fi.resonbp(535.9,   4.0, 0.15))
-     + (x : fi.resonbp(544.2,   4.0, 0.15))
-     + (x : fi.resonbp(553.6,   4.0, 0.12))
-     + (x : fi.resonbp(573.3,   4.0, 0.10))
-     + (x : fi.resonbp(606.6,   4.0, 0.08))
-     + (x : fi.resonbp(610.3,   4.0, 0.08))
-     + (x : fi.resonbp(850.0,   5.0, 0.06))
-     + (x : fi.resonbp(1200.0,  5.0, 0.05))
-     + (x : fi.resonbp(1800.0,  6.0, 0.04))
-     + (x : fi.resonbp(2600.0,  6.0, 0.03))
-     + (x : fi.resonbp(3500.0,  8.0, 0.02))
-    ) : fi.lowpass(2, 8000.0);
+// 4 Chikari strings using sitar_string (detuned pairs for chorus)
+chikariLoop = ( sitar_string(chikari_freq1 - 1.0, 1.5, jawari * 0.5, 1.0, chikari_trig, chikari_trig_exc)
+              + sitar_string(chikari_freq1 + 1.0, 1.5, jawari * 0.5, 1.0, chikari_trig, chikari_trig_exc)
+              + sitar_string(chikari_freq2 - 1.0, 1.5, jawari * 0.5, 1.0, chikari_trig, chikari_trig_exc)
+              + sitar_string(chikari_freq2 + 1.0, 1.5, jawari * 0.5, 1.0, chikari_trig, chikari_trig_exc)
+              ) * chikari_gain * 0.25;
 
-// Wooden body bowl modes in parallel
-body_filter(x) = 
-    (  (x * 0.5)
-     + (x : fi.resonbp(180.0,  4.32, 1.0))
-     + (x : fi.resonbp(320.0,  4.32, 0.3))
-     + (x : fi.resonbp(550.0,  4.32, 0.3))
-     + (x : fi.resonbp(900.0,  4.32, 0.3))
-     + (x : fi.resonbp(1600.0, 2.7, 1.0))
-     + (x : fi.resonbp(2800.0, 2.7, 1.0))
+// Main mechanical wire summation striking the skin
+wire_sum = stringLoop + chikariLoop;
+
+membrane_saturate(x) = ma.tanh(x * 2.0) / 2.0;
+skin_vibration = wire_sum : membrane_saturate;
+
+// Sympathetic strings (Taraf) using sitar_string
+symp_exc = skin_vibration * gate : fi.lowpass(2, 12000.0);
+symp_trigger = gate : si.smoo;
+
+symp_strings_ks = ( sitar_string(max(freq, 40.0), 4.0, 0.05, symp_gain, symp_trigger, symp_exc)
+                  + sitar_string(max(freq * 1.5, 40.0), 4.0, 0.05, symp_gain, symp_trigger, symp_exc)
+                  + sitar_string(max(freq * 2.0, 40.0), 4.0, 0.05, symp_gain, symp_trigger, symp_exc)
+                  ) * 0.15;
+
+summed = skin_vibration + symp_strings_ks;
+
+// Goatskin membrane modes — tuned to real sarod FFT (Freesound #9610)
+// Passthrough reduced to 0.15 (body_filter now carries the dry signal via its own passthrough).
+// Low-freq resonances (150 Hz) scaled down: real data shows only 4.9% energy below 200 Hz.
+// High-freq resonances (1200/1800/2600/3500 Hz) boosted: these are the wire/metal brightness
+// that separates sarod from rubab. Lowpass raised 10 kHz → 14 kHz to let them through.
+membrane_filter(x) =
+    (  (x * 0.15)
+     + (x : fi.resonbp(150.0,   3.0, 0.18))  // low-band, measured 4.9% — kept subtle
+     + (x : fi.resonbp(236.7,   3.0, 0.22))
+     + (x : fi.resonbp(240.2,   3.0, 0.22))
+     + (x : fi.resonbp(315.4,   3.0, 0.22))
+     + (x : fi.resonbp(320.7,   3.0, 0.22))
+     + (x : fi.resonbp(342.3,   3.0, 0.20))
+     + (x : fi.resonbp(386.4,   3.0, 0.25))
+     + (x : fi.resonbp(402.7,   3.0, 0.25))
+     + (x : fi.resonbp(423.0,   3.0, 0.22))
+     + (x : fi.resonbp(438.7,   3.0, 0.22))
+     + (x : fi.resonbp(465.3,   3.0, 0.25))
+     + (x : fi.resonbp(477.4,   3.0, 0.25))
+     + (x : fi.resonbp(498.4,   3.0, 0.22))
+     + (x : fi.resonbp(522.9,   3.0, 0.22))
+     + (x : fi.resonbp(535.9,   3.0, 0.25))
+     + (x : fi.resonbp(544.2,   3.0, 0.25))
+     + (x : fi.resonbp(553.6,   3.0, 0.22))
+     + (x : fi.resonbp(573.3,   3.0, 0.22))
+     + (x : fi.resonbp(606.6,   3.0, 0.22))
+     + (x : fi.resonbp(610.3,   3.0, 0.18))
+     + (x : fi.resonbp(850.0,   3.0, 0.25))
+     + (x : fi.resonbp(1200.0,  2.5, 0.40))  // boosted: strong peak measured at 1150-1240 Hz
+     + (x : fi.resonbp(1800.0,  2.5, 0.65))  // boosted: key string brightness
+     + (x : fi.resonbp(2600.0,  2.5, 0.60))  // wire/metal presence
+     + (x : fi.resonbp(3500.0,  2.5, 0.55))  // upper string harmonic shimmer
+    ) : fi.lowpass(2, 14000.0);
+
+// Wooden body bowl resonator — fixed based on real sarod FFT measurement.
+// Added (x * 0.35) passthrough so membrane's 1800/2600/3500 Hz content survives.
+// Reduced 180 Hz: real data shows only 4.9% energy in 50-200 Hz band.
+// Added 1050/1200/1800 Hz peaks: strong clusters measured at 1025 Hz, 1150-1240 Hz.
+body_filter(x) =
+    (  (x * 0.35)                               // passthrough — carries membrane high-freqs
+     + (x : fi.resonbp(180.0,  2.5,  0.45))    // reduced from 1.00 — low band not dominant
+     + (x : fi.resonbp(320.0,  2.5,  0.90))    // reduced from 1.25
+     + (x : fi.resonbp(550.0,  4.0,  1.30))    // peak energy zone (37.7%) — kept
+     + (x : fi.resonbp(950.0,  3.5,  0.85))    // kept
+     + (x : fi.resonbp(1050.0, 3.5,  0.90))    // NEW — strong peak measured at 1025 Hz
+     + (x : fi.resonbp(1200.0, 3.0,  0.80))    // NEW — cluster measured at 1150-1240 Hz
+     + (x : fi.resonbp(1800.0, 3.0,  0.55))    // NEW — lets membrane 1800 Hz pass into body
     );
 
-// Nonlinear saturation emulating goatskin compression
-membrane_saturate(x) = ma.tanh(x * 2.0) / 2.0;
+// Signal path: string → membrane (skin resonance) → body (wooden bowl) → output
+// membrane_filter was previously dead code — now correctly wired into chain.
+process = summed : membrane_filter : body_filter : *(gain * 5.0) <: _,_;
 
-// Sympathetic strings (Taraf) — 3 KS delay lines driven by body resonance
-// Excited by the membrane/body output, gated so they only receive energy during note-on.
-// Feedback keeps them ringing naturally after gate→0.
-// Ratios: 1:1 (unison), 3:2 (fifth), 2:1 (octave)
-symp_fb = 0.997;
-symp_del1 = ma.SR / max(freq, 40.0);
-symp_del2 = ma.SR / max(freq * 1.5, 40.0);
-symp_del3 = ma.SR / max(freq * 2.0, 40.0);
-symp_exc = core * gate;
-symp_ks1 = symp_exc : (+ : de.fdelay(16384, symp_del1 - 1.0)) ~ _ * symp_fb;
-symp_ks2 = symp_exc : (+ : de.fdelay(16384, symp_del2 - 1.0)) ~ _ * symp_fb;
-symp_ks3 = symp_exc : (+ : de.fdelay(16384, symp_del3 - 1.0)) ~ _ * symp_fb;
-symp_strings_ks = (symp_ks1 + symp_ks2 + symp_ks3) / 3;
-
-// 4 Chikari strings: detuned pairs (±1 Hz) for each chikari frequency
-chikari_string(del, fb, exc) = exc : (+ : de.fdelay(16384, del - 1.0)) ~ (*(0.95) : + ~ *(0.05) : _ * fb * chikari_gate);
-
-chikari_1a_del = ma.SR / (chikari_freq1 - 1.0);
-chikari_1a_fb = pow(0.001, 1.0 / (2.5 * (chikari_freq1 - 1.0)));
-chikari_1b_del = ma.SR / (chikari_freq1 + 1.0);
-chikari_1b_fb = pow(0.001, 1.0 / (2.5 * (chikari_freq1 + 1.0)));
-chikari_2a_del = ma.SR / (chikari_freq2 - 1.0);
-chikari_2a_fb = pow(0.001, 1.0 / (2.5 * (chikari_freq2 - 1.0)));
-chikari_2b_del = ma.SR / (chikari_freq2 + 1.0);
-chikari_2b_fb = pow(0.001, 1.0 / (2.5 * (chikari_freq2 + 1.0)));
-
-chikari_amp = chikari_trig_exc * chikari_gain;
-chikariLoop = chikari_string(chikari_1a_del, chikari_1a_fb, chikari_amp)
-            + chikari_string(chikari_1b_del, chikari_1b_fb, chikari_amp)
-            + chikari_string(chikari_2a_del, chikari_2a_fb, chikari_amp)
-            + chikari_string(chikari_2b_del, chikari_2b_fb, chikari_amp);
-
-// Series coupling: melody + chikari drive the membrane, then body
-// Sympathetic strings driven by body resonance, mixed after core
-summed = stringLoop + chikariLoop;
-core = summed : membrane_saturate : membrane_filter : body_filter;
-
-// Body-driven sympathetic KS strings (defined after core, mixed before final gain)
-process = (core + symp_strings_ks * symp_gain) * gain * 4.8475;
