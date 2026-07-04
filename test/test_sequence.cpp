@@ -833,75 +833,66 @@ int main(int argc, char* argv[]) {
             duration = 64;
 
         } else if (selection == 6) {
-            group.name = "Sitar — Raag Yaman (Fast Drut)";
+            group.name = "Sitar — Raag Yaman (Madhya Laya)";
             
             std::string umlTanpura = 
-                "grid: 2\n"
+                "grid: 4\n"
+                "bpm: 60\n"
                 "basefreq: 111.0\n"
                 "instrument: tanpura\n"
                 "notation: Hindustani\n"
                 "loop: true\n\n"
-                "5Pa. 5Sa. 5Sa. 5Sa*2. "
-                "_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ";
+                "5Pa . . . 5Sa . . . | 5Sa . . . 5Sa*2 . . . | 5Pa . . . 5Sa . . . | 5Sa . . . 5Sa*2 . . .";
                 
             std::string umlSitar = 
                 "grid: 4\n"
-                "bpm: 130\n"
+                "bpm: 60\n"
                 "basefreq: 222.0\n"
                 "instrument: sitar\n"
                 "notation: Hindustani\n"
                 "vibrato: 0.5\n"
                 "vibrato_depth: 0.008\n"
-                "vibrato_rate: 5.0\n\n";
-            // Intro (32 cells) — quick raag statement
-            umlSitar += "6Ni . 6Re . 6Ga . 6ma . 6Pa . 6Dha . 6Ni . 6Sa*2 . ";
-            umlSitar += "6Sa*2 . 6Ni . 6Dha . 6Pa . 6ma . 6Ga . 6Re . 6Sa . ";
-            // Jod 1 (128 cells) — medium-fast sargam runs
-            for (int i = 0; i < 2; ++i) {
+                "vibrato_rate: 5.0\n"
+                "chikari_freq: 222.0\n\n";
+            // Sthayi (32 cells) — Yaman arohana in lower octave, vadi Ga, samvadi Ni
+            umlSitar += "6Ni . 6Re . 6Ga . 6Re . 6Ga . 6ma . 6Ga . 6Re . ";
+            umlSitar += "6Ni . 6Re . 6Ga . 6ma . 6Dha . 6Ni . 6Sa*2 . 6Re*2 . ";
+            // Antara (96 cells) — upper octave with teevra ma, proper Yaman chalan
+            for (int i = 0; i < 3; ++i) {
+                umlSitar += "6Sa*2 6Ni 6Dha 6Pa 6ma 6Ga 6Re 6Sa ";
                 umlSitar += "6Ni 6Re 6Ga 6ma 6Pa 6Dha 6Ni 6Sa*2 ";
                 umlSitar += "6Sa*2 6Ni 6Dha 6Pa 6ma 6Ga 6Re 6Sa ";
-                umlSitar += "6Ga 6ma 6Dha 6Ni 6Sa*2 6Ni 6Dha 6Pa ";
-                umlSitar += "6ma 6Ga 6Re 6Sa 6Ni/2 6Sa 6Re 6Sa ";
-            }
-            // Jod 2 (128 cells) — faster, denser
-            for (int i = 0; i < 4; ++i) {
                 umlSitar += "6Ga 6Re 6Sa 6Ni 6Dha 6Pa 6ma 6Ga ";
-                umlSitar += "6Re 6Ga 6ma 6Pa 6Dha 6Ni 6Sa*2 6Re*2 ";
-                umlSitar += "6Sa*2 6Ni 6Dha 6Pa 6ma 6Ga 6Re 6Sa ";
-                umlSitar += "6Dha 6Ni 6Sa*2 6Ni 6Dha 6Pa 6ma 6Ga ";
             }
-            // Jhala (128 cells) — chikari strikes with melody
-            for (int i = 0; i < 4; ++i) {
+            // Jhala (96 cells) — chikari with Yaman melody
+            for (int i = 0; i < 3; ++i) {
                 umlSitar += "6Ga 61Sa*2 6Re 61Sa*2 6Ga 61Sa*2 6ma 61Sa*2 ";
                 umlSitar += "6Pa 61Sa*2 6Dha 61Sa*2 6Ni 61Sa*2 6Sa*2 61Sa*2 ";
                 umlSitar += "6Sa*2 61Sa*2 6Ni 61Sa*2 6Dha 61Sa*2 6Pa 61Sa*2 ";
                 umlSitar += "6ma 61Sa*2 6Ga 61Sa*2 6Re 61Sa*2 6Sa 61Sa*2 ";
             }
-            // Tihai + rest (32 cells)
+            // Tihai (24 cells)
             umlSitar += "6Sa*2 61Sa*2 6Dha 61Sa*2 6Ni 61Sa*2 . . . ";
             umlSitar += "6Sa*2 61Sa*2 6Dha 61Sa*2 6Ni 61Sa*2 . . . ";
             umlSitar += "6Sa*2 61Sa*2 6Dha 61Sa*2 6Ni 61Sa*2 . . . ";
+            // Rest (8 cells)
             umlSitar += "_ . . . _ . . . ";
                 
             std::string umlDayan = 
                 "grid: 4\n"
-                "bpm: 130\n"
+                "bpm: 60\n"
                 "basefreq: 222.0\n"
                 "instrument: dayan\n\n";
-            // Intro: Silent (32 cells)
+            // Sthayi: Silent (32 cells)
             for (int i = 0; i < 4; ++i) {
                 umlDayan += "_ . . . _ . . . ";
             }
-            // Jod 1: Teen Taal medium (128 cells)
-            for (int i = 0; i < 8; ++i) {
+            // Antara: Teen Taal (96 cells = 1.5 cycles)
+            for (int i = 0; i < 6; ++i) {
                 umlDayan += "Na . . . Tin . . . Tun . . . tk . . . ";
             }
-            // Jod 2: faster (128 cells)
-            for (int i = 0; i < 16; ++i) {
-                umlDayan += "Na . Tin . Tun . tk . ";
-            }
-            // Jhala: Drut (128 cells)
-            for (int i = 0; i < 16; ++i) {
+            // Jhala: Drut Teen Taal (96 cells)
+            for (int i = 0; i < 12; ++i) {
                 umlDayan += "Na tk Tin tk Tun tk Na tk ";
             }
             // Tihai + rest (32 cells)
@@ -911,23 +902,19 @@ int main(int argc, char* argv[]) {
                 
             std::string umlBayan = 
                 "grid: 4\n"
-                "bpm: 130\n"
+                "bpm: 60\n"
                 "basefreq: 111.0\n"
                 "instrument: bayan\n\n";
-            // Intro: Silent (32 cells)
+            // Sthayi: Silent (32 cells)
             for (int i = 0; i < 4; ++i) {
                 umlBayan += "_ . . . _ . . . ";
             }
-            // Jod 1: slow (128 cells)
-            for (int i = 0; i < 8; ++i) {
+            // Antara: slow (96 cells)
+            for (int i = 0; i < 6; ++i) {
                 umlBayan += "Ghe . . . Ka . . . Ghe . . . Ka . . . ";
             }
-            // Jod 2: faster (128 cells)
-            for (int i = 0; i < 16; ++i) {
-                umlBayan += "Ghe . Ka . Ghe . Ka . ";
-            }
-            // Jhala: Drut (128 cells)
-            for (int i = 0; i < 16; ++i) {
+            // Jhala: Drut (96 cells)
+            for (int i = 0; i < 12; ++i) {
                 umlBayan += "Ghe Ghe Ka Ka Ghe Ghe Ka Ka ";
             }
             // Tihai + rest (32 cells)
@@ -941,7 +928,7 @@ int main(int argc, char* argv[]) {
             group.sequences.push_back({"Bayan", new UMLSequence("Bayan", 1, umlBayan)});
             
             group.backgroundTrackWeight = 0.8f;
-            duration = 45;
+            duration = 60;
         } else if (selection == 7) {
             group.name = "Indian Folk (Dholak Percussion)";
             
