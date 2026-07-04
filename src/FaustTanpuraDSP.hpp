@@ -272,8 +272,8 @@ class FaustTanpuraDSP : public dsp {
 	virtual void instanceResetUserInterface() {
 		fHslider0 = FAUSTFLOAT(0.5f);
 		fHslider1 = FAUSTFLOAT(130.81f);
-		fHslider2 = FAUSTFLOAT(0.5f);
-		fHslider3 = FAUSTFLOAT(25.0f);
+		fHslider2 = FAUSTFLOAT(0.75f);
+		fHslider3 = FAUSTFLOAT(14.0f);
 		fButton0 = FAUSTFLOAT(0.0f);
 		fHslider4 = FAUSTFLOAT(1.0f);
 		fHslider5 = FAUSTFLOAT(0.40000000000000002f);
@@ -364,9 +364,9 @@ class FaustTanpuraDSP : public dsp {
 		ui_interface->addHorizontalSlider("freq", &fHslider1, FAUSTFLOAT(130.809998f), FAUSTFLOAT(130.0f), FAUSTFLOAT(300.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addHorizontalSlider("gain", &fHslider0, FAUSTFLOAT(0.5f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addButton("gate", &fButton0);
-		ui_interface->addHorizontalSlider("jivari", &fHslider2, FAUSTFLOAT(0.5f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("jivari", &fHslider2, FAUSTFLOAT(0.75f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addHorizontalSlider("stringGainVal", &fHslider4, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(2.0f), FAUSTFLOAT(0.00999999978f));
-		ui_interface->addHorizontalSlider("sustain", &fHslider3, FAUSTFLOAT(25.0f), FAUSTFLOAT(0.100000001f), FAUSTFLOAT(45.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("sustain", &fHslider3, FAUSTFLOAT(14.0f), FAUSTFLOAT(4.0f), FAUSTFLOAT(24.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addHorizontalSlider("velocity", &fHslider6, FAUSTFLOAT(0.800000012f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->closeBox();
 	}

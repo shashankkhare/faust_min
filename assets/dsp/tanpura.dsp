@@ -16,8 +16,8 @@ gain = hslider("gain", 0.5, 0, 1.0, 0.01);
 velocity = hslider("velocity", 0.8, 0, 1, 0.01);
 gate = button("gate");
 
-sustain = hslider("sustain", 25.0, 0.1, 45.0, 0.01);
-jivari = hslider("jivari", 0.5, 0.0, 1.0, 0.01);
+sustain = hslider("sustain", 14.0, 4.0, 24.0, 0.01);
+jivari = hslider("jivari", 0.75, 0.0, 1.0, 0.01);
 
 excDur = hslider("excDur", 0.0115, 0.0001, 0.1, 0.0001);
 excGain = hslider("excGain", 0.40, 0.0, 1.0, 0.01);
