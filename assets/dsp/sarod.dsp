@@ -2,9 +2,24 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 
 // =============================================================================
 // === PHYSICAL MODEL DESIGN ===
-// Description: Fretless Sarod model featuring your custom sitar_string engine.
-// Sustaining parameters have been tightened globally to mimic the true fast
-// decay characteristics of high-tension wire resting on a damped goatskin face.
+// Description: Fretless sarod with goatskin membrane, teak wood bowl, chikari
+//              drone strings, sympathetic taraf, and asymmetric tanh jawari.
+//              All strings use the unified sitar_string waveguide from fm.lib.
+//
+// Parameters (Controls):
+//   - freq [unit:Hz]
+//   - gate
+//   - velocity
+//   - gain
+//   - symp_gain
+//   - strike
+//   - chikari_freq1
+//   - chikari_freq2
+//   - chikari_gain
+//   - jawari
+//   - vibrato [style:check]
+//   - vibrato_depth
+//   - vibrato_rate
 // =============================================================================
 
 import("stdfaust.lib");
@@ -106,12 +121,12 @@ summed = skin_vibration + symp_strings_ks;
 // that separates sarod from rubab. Lowpass raised 10 kHz → 14 kHz to let them through.
 membrane_filter(x) =
     (  (x * 0.15)
-     + (x : fi.resonbp(150.0,   3.0, 0.18))  // low-band, measured 4.9% — kept subtle
-     + (x : fi.resonbp(236.7,   3.0, 0.22))
-     + (x : fi.resonbp(240.2,   3.0, 0.22))
-     + (x : fi.resonbp(315.4,   3.0, 0.22))
-     + (x : fi.resonbp(320.7,   3.0, 0.22))
-     + (x : fi.resonbp(342.3,   3.0, 0.20))
+     + (x : fi.resonbp(150.0,   3.0, 0.25))  // low-band, measured 4.9% — kept subtle
+     + (x : fi.resonbp(236.7,   3.0, 0.25))
+     + (x : fi.resonbp(240.2,   3.0, 0.25))
+     + (x : fi.resonbp(315.4,   3.0, 0.25))
+     + (x : fi.resonbp(320.7,   3.0, 0.25))
+     + (x : fi.resonbp(342.3,   3.0, 0.25))
      + (x : fi.resonbp(386.4,   3.0, 0.25))
      + (x : fi.resonbp(402.7,   3.0, 0.25))
      + (x : fi.resonbp(423.0,   3.0, 0.22))
@@ -139,8 +154,8 @@ membrane_filter(x) =
 // Added 1050/1200/1800 Hz peaks: strong clusters measured at 1025 Hz, 1150-1240 Hz.
 body_filter(x) =
     (  (x * 0.35)                               // passthrough — carries membrane high-freqs
-     + (x : fi.resonbp(180.0,  2.5,  0.45))    // reduced from 1.00 — low band not dominant
-     + (x : fi.resonbp(320.0,  2.5,  0.90))    // reduced from 1.25
+     + (x : fi.resonbp(180.0,  2.5,  1.45))    // reduced from 1.00 — low band not dominant
+     + (x : fi.resonbp(320.0,  2.5,  1.90))    // reduced from 1.25
      + (x : fi.resonbp(550.0,  4.0,  1.30))    // peak energy zone (37.7%) — kept
      + (x : fi.resonbp(950.0,  3.5,  0.85))    // kept
      + (x : fi.resonbp(1050.0, 3.5,  0.90))    // NEW — strong peak measured at 1025 Hz
