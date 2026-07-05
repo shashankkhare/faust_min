@@ -90,6 +90,7 @@ std::string InstrumentMapper::getNameFromID(int id) {
         case 51: return "panflute";
         case 52: return "nativeamericanflute";
         case 53: return "dizi";
+        case 54: return "harmonium";
         default: return "dayan";
     }
 }
@@ -159,6 +160,7 @@ int InstrumentMapper::getIDFromName(const std::string& name) {
     if (lowerName == "pf" || lowerName == "panflute" || lowerName == "pan_flute") return 51;
     if (lowerName == "nf" || lowerName == "naf" || lowerName == "nativeamericanflute" || lowerName == "native_american_flute") return 52;
     if (lowerName == "dz" || lowerName == "dizi") return 53;
+    if (lowerName == "hm" || lowerName == "harmonium") return 54;
 
     return -1;
 }
@@ -185,6 +187,7 @@ int InstrumentMapper::getPolyphonyVoices(int id) {
         case 21: return 6; // Acoustic Guitar
         case 22: return 6; // Electric Guitar
         case 23: return 4; // Bass
+        case 54: return 6; // Harmonium
         default: return 1; // Monophonic by default
     }
 }
@@ -194,6 +197,7 @@ bool InstrumentMapper::isPolyphonic(int id) {
     switch (id) {
         case 11: return true; // Tanpura — drone, 4 voices
         case 44: return true; // Sarod — drone, let strings ring into next pluck
+        case 54: return true; // Harmonium — polyphonic/drone behaviour
         default: return false;
     }
 }
@@ -206,7 +210,7 @@ std::string InstrumentMapper::getInstrumentClass(int id) {
 
 std::string InstrumentMapper::getInstrumentOrigin(int id) {
     // Indian
-    if (id == 0 || id == 1 || id == 9 || id == 10 || id == 11 || id == 17 || id == 36 || id == 37 || id == 38 || id == 44 || id == 45 || id == 46 || id == 49 || id == 50) return "Indian";
+    if (id == 0 || id == 1 || id == 9 || id == 10 || id == 11 || id == 17 || id == 36 || id == 37 || id == 38 || id == 44 || id == 45 || id == 46 || id == 49 || id == 50 || id == 54) return "Indian";
     // Chinese / East Asian
     if (id == 35 || id == 39 || id == 40 || id == 43 || id == 53) return "Chinese";
     // Japanese
@@ -275,6 +279,7 @@ std::string InstrumentMapper::getDSPPathForID(int id, const std::string& assetBa
         case 51: return base + "panflute.dsp";
         case 52: return base + "nativeamericanflute.dsp";
         case 53: return base + "dizi.dsp";
+        case 54: return base + "harmonium.dsp";
         default: return base + "dayan.dsp";
     }
 }
