@@ -1602,6 +1602,70 @@ void testNativeAmericanFlute(FaustMixer& mixer, DSPExecutionType execType) {
     mixer.removeTrack(track);
 }
 
+void testDizi(FaustMixer& mixer, DSPExecutionType execType) {
+    std::cout << "\n=== [Test] Dizi ===" << std::endl;
+    auto inst = std::make_shared<FaustInstrument>(53, execType, InstrumentMapper::DEFAULT_SAMPLE_RATE);
+    int track = mixer.addTrack(gTestAmplitude);
+    mixer.addInstrumentToTrack(track, inst.get());
+    inst->enableDiagnosticLogging(true);
+    std::vector<double> freqs;
+    if (gTestFrequency > 0.0) {
+        freqs = { gTestFrequency };
+    } else {
+        for (int midi = 57; midi <= 84; ++midi) {
+            freqs.push_back(440.0 * pow(2.0, (midi - 69.0) / 12.0));
+        }
+    }
+    for (size_t i = 0; i < freqs.size(); ++i) {
+        double freq = freqs[i];
+        inst->clearDiagnosticLogs();
+        inst->noteOn(freq, gTestVelocity, gTestAmplitude);
+        usleep(1500000);
+        inst->noteOff();
+        if (i < freqs.size() - 1) usleep(200000);
+        printEnergy(inst.get(), freq);
+        if (i < freqs.size() - 1) std::cout << " , ";
+        std::cout << std::flush;
+    }
+    std::cout << std::endl;
+    usleep(1000000);
+    mixer.removeTrack(track);
+}
+
+void testHarmonium(FaustMixer& mixer, DSPExecutionType execType) {
+    std::cout << "\n=== [Test] Harmonium ===" << std::endl;
+    auto inst = std::make_shared<FaustInstrument>(54, execType, InstrumentMapper::DEFAULT_SAMPLE_RATE);
+    int track = mixer.addTrack(gTestAmplitude);
+    mixer.addInstrumentToTrack(track, inst.get());
+    inst->enableDiagnosticLogging(true);
+    
+    // Set custom settings
+    inst->setParameter("pressure", gTestPressure >= 0.0f ? gTestPressure : 0.8f);
+    inst->setParameter("reed_octaves", 1.0f);
+
+    std::vector<double> freqs;
+    if (gTestFrequency > 0.0) {
+        freqs = { gTestFrequency };
+    } else {
+        // Yaman chords or chromatic runs (Sa, Ga, Pa, Ni)
+        freqs = { 222.0, 277.5, 333.0, 416.25, 444.0 };
+    }
+    for (size_t i = 0; i < freqs.size(); ++i) {
+        double freq = freqs[i];
+        inst->clearDiagnosticLogs();
+        inst->noteOn(freq, gTestVelocity, gTestAmplitude);
+        usleep(2000000);
+        inst->noteOff();
+        if (i < freqs.size() - 1) usleep(300000);
+        printEnergy(inst.get(), freq);
+        if (i < freqs.size() - 1) std::cout << " , ";
+        std::cout << std::flush;
+    }
+    std::cout << std::endl;
+    usleep(1000000);
+    mixer.removeTrack(track);
+}
+
 int main(int argc, char* argv[]) {
     std::cout << "--- Standalone Instrument Validation (Bypassing Orchestrator) ---" << std::endl;
 
@@ -1705,7 +1769,9 @@ int main(int argc, char* argv[]) {
         {49, "Mridangam"},
         {50, "Ghatam"},
         {51, "Panflute"},
-        {52, "NativeAmericanFlute"}
+        {52, "NativeAmericanFlute"},
+        {53, "Dizi"},
+        {54, "Harmonium"}
     };
 
     std::cout << "\n--- Available Instruments ---" << std::endl;
@@ -1778,6 +1844,8 @@ int main(int argc, char* argv[]) {
                 case 50: testGhatam(mixer, execType); break;
                 case 51: testPanflute(mixer, execType); break;
                 case 52: testNativeAmericanFlute(mixer, execType); break;
+                case 53: testDizi(mixer, execType); break;
+                case 54: testHarmonium(mixer, execType); break;
                 default: break;
             }
         } else {
@@ -1879,6 +1947,8 @@ int main(int argc, char* argv[]) {
                     case 50: testGhatam(mixer, execType); break;
                     case 51: testPanflute(mixer, execType); break;
                     case 52: testNativeAmericanFlute(mixer, execType); break;
+                    case 53: testDizi(mixer, execType); break;
+                    case 54: testHarmonium(mixer, execType); break;
                     default: break;
                 }
             } else {
