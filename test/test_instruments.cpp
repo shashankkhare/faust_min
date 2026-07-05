@@ -495,38 +495,39 @@ void testFlute(FaustMixer& mixer, DSPExecutionType execType) {
 }
 
 void testTanpura(FaustMixer& mixer, DSPExecutionType execType) {
-    std::cout << "\n=== [Test] Tanpura ===" << std::endl;
+    std::cout << "\n=== [Test] Tanpura Polyphony ===" << std::endl;
     auto inst = std::make_shared<FaustInstrument>(11, execType, InstrumentMapper::DEFAULT_SAMPLE_RATE);
     int track = mixer.addTrack(0.8f);
     mixer.addInstrumentToTrack(track, inst.get());
     inst->enableDiagnosticLogging(true);
     
-    std::vector<double> freqs = getTestFreqsDouble(inst.get(), { 130.00, 180.50, 231.00 });
-    for (size_t i = 0; i < freqs.size(); ++i) {
-        double freq = freqs[i];
-        inst->clearDiagnosticLogs();
-        
-        // Trigger 4 voices rapidly within 100ms with the SAME frequency
-        inst->noteOn(freq, gTestAmplitude, -1.0f);
-        usleep(25000); // 25ms delay
-        
-        inst->noteOn(freq, gTestAmplitude, -1.0f);
-        usleep(25000); // 25ms delay
-        
-        inst->noteOn(freq, gTestAmplitude, -1.0f);
-        usleep(25000); // 25ms delay
-        
-        inst->noteOn(freq, gTestAmplitude, -1.0f);
-        usleep(3925000); // Wait for remaining 3.925s of the 4-second measurement
-        
-        inst->noteOff();
-        if (i < freqs.size() - 1) usleep(500000);
-        printEnergy(inst.get(), freq);
-        if (i < freqs.size() - 1) std::cout << " , ";
-        std::cout << std::flush;
-    }
+    // Add all three frequencies as diagnostic targets to measure their energies simultaneously
+    inst->clearDiagnosticFreqs();
+    inst->addDiagnosticFreq(130.00);
+    inst->addDiagnosticFreq(180.50);
+    inst->addDiagnosticFreq(231.00);
+
+    inst->clearDiagnosticLogs();
+
+    // Fire all three notes sequentially with overlapping sustains (no noteOff)
+    inst->noteOn(130.00, gTestAmplitude, -1.0f);
+    usleep(500000); // 500ms between plucks
+    
+    inst->noteOn(180.50, gTestAmplitude, -1.0f);
+    usleep(500000); // 500ms between plucks
+    
+    inst->noteOn(231.00, gTestAmplitude, -1.0f);
+    usleep(500000); 
+
+    inst->noteOn(260.00, gTestAmplitude, -1.0f);
+    usleep(2000000); // Let them ring out together for 2.0s, capturing logs
+    
+    auto now = std::chrono::system_clock::now();
+    auto ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now).time_since_epoch().count();
+    std::cout << "[TIMESTAMP " << ms << "] Polyphony Verification { Base, RMS, E_130, E_180_5, E_231 }: ";
+    printEnergy(inst.get(), 0.0);
     std::cout << std::endl;
-    usleep(500000);
+
     mixer.removeTrack(track);
 }
 

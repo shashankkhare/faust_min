@@ -144,6 +144,7 @@ void FaustInstrument::addVoice(dsp* newDSP) {
     mVoiceUIs.emplace_back(new MapUI());
     mVoices.back()->buildUserInterface(mVoiceUIs.back().get());
     mVoiceFreqs.push_back(0.0f);
+    mVoiceEnergies.push_back(0.0f);
 }
 
 void FaustInstrument::initializeVoices() {
@@ -237,6 +238,8 @@ void FaustInstrument::loadTargetDSP() {
 
     mNumVoices = InstrumentMapper::getPolyphonyVoices(mInstrumentID);
     mIsPolyphonic = (mNumVoices > 1);
+    mVoiceEnergies.assign(mNumVoices, 0.0f);
+    mRunningPeakEnvelope = 0.0f;
     if (mIsPolyphonic && mVoiceScratchBuffer == nullptr) {
         mVoiceScratchBuffer = new float[InstrumentMapper::MAX_FRAMES_PER_BUFFER * 2];
     }
@@ -717,32 +720,33 @@ void FaustInstrument::noteOn(float freq, float vel, float strikeVal) {
 
     int v = -1;
 
-    // Try to reuse a voice already playing this exact frequency
-    if (mIsPolyphonic && freq > 0.0f && mNumVoices > 0) {
-        for (int i = 0; i < mNumVoices; ++i) {
-            if (std::abs(mVoiceFreqs[i] - freq) < 0.1f) {
-                v = i;
-                break;
-            }
-        }
+    // 1. Universal Voice Allocator
+    if (!mIsPolyphonic || mNumVoices <= 1) {
+        v = 0; // Monophonic instruments always use voice 0
+    } else {
+        // Pure Round-Robin for ALL polyphonic instruments.
+        // Prevents premature voice-stealing and allows notes to ring naturally.
+        v = mNextVoice;
+        mNextVoice = (mNextVoice + 1) % mNumVoices;
     }
 
-    // Fall back to round-robin if no match found
-    if (v == -1) {
-        v = mNextVoice;
-        if (mNumVoices > 0)
-            mNextVoice = (mNextVoice + 1) % mNumVoices;
-        else
-            v = 0;
+    // 2. Set the frequency immediately before note-on
+    bool freqChanged = false;
+    if (freq > 0.0f) {
+        freqChanged = (std::abs(mVoiceFreqs[v] - freq) > 0.1f);
+        mFrequency = freq;
+        mVoiceFreqs[v] = freq;
+        setParamImmediate("freq", freq, v); // Force jump immediately
     }
 
     noteOff(v);
     setParamImmediate("gate", 0.0f, v);
-
-    if (freq > 0.0f) {
-        mFrequency = freq;
-        mVoiceFreqs[v] = freq; // Track frequency in O(1) array
-        setParamImmediate("freq", freq, v);
+    
+    // 3. Reset stolen voice to prevent pitch sweeps/pops.
+    // UNIVERSAL FIX: Only clear the DSP if the frequency actually changed!
+    // If it's a repeated note or drone, let the delay lines ring out seamlessly.
+    if (mIsPolyphonic && v < mVoices.size() && mVoices[v] && freqChanged) {
+        mVoices[v]->instanceClear(); 
     }
 
     if (vel >= 0.0f) {
@@ -757,6 +761,7 @@ void FaustInstrument::noteOn(float freq, float vel, float strikeVal) {
     if (strikeVal >= 0.0f)
         setParamImmediate("strike", strikeVal, v);
 
+    // 4. Finally trigger note on
     setParam("gate", 1.0f, v);
 }
 
@@ -848,24 +853,70 @@ void FaustInstrument::processInternalGlides(int numFrames) {
         applyDynamicLUTParams(mFrequency, mAmplitude, -1);
 }
 
+void FaustInstrument::normalizeBuffer(float* buffer, int numFrames) {
+    const float attackCoef = 0.999f;
+    const float releaseCoef = 0.99995f; // ~100-200ms decay
+
+    for (int i = 0; i < numFrames * 2; ++i) {
+        float sample = std::abs(buffer[i]);
+
+        if (sample > mRunningPeakEnvelope) {
+            mRunningPeakEnvelope = sample; // Fast attack
+        } else {
+            mRunningPeakEnvelope = mRunningPeakEnvelope * releaseCoef + sample * (1.0f - releaseCoef);
+        }
+
+        if (mRunningPeakEnvelope > 0.95f) {
+            float scale = 0.95f / mRunningPeakEnvelope;
+            buffer[i] *= scale;
+        }
+    }
+}
+
 void FaustInstrument::render(int numFrames, float* buffer) {
     if (mVoices.empty()) return;
     processInternalGlides(numFrames);
     
     for (int i = 0; i < numFrames * 2; ++i) buffer[i] = 0.0f;
 
+    // --- MONOPHONIC PATH (Preserved Existing Logic) ---
+    if (!mIsPolyphonic) {
+        int nOuts = mVoices[0]->getNumOutputs();
+        FAUSTFLOAT* outputs[2] = { mRenderBuffer, mRenderBuffer + numFrames };
+        mVoices[0]->compute(numFrames, nullptr, outputs);
+        
+        if (nOuts == 1) {
+            for (int i = 0; i < numFrames; ++i) {
+                float val = mRenderBuffer[i];
+                if (mGain != 1.0f) val *= mGain;
+                buffer[i * 2] = val;
+                buffer[i * 2 + 1] = val;
+            }
+        } else if (nOuts == 2) {
+            for (int i = 0; i < numFrames; ++i) {
+                float valL = outputs[0][i];
+                float valR = outputs[1][i];
+                if (mGain != 1.0f) { valL *= mGain; valR *= mGain; }
+                buffer[i * 2] = valL;
+                buffer[i * 2 + 1] = valR;
+            }
+        }
+        return;
+    }
+
+    // --- POLYPHONIC PATH ---
     int nOuts = mVoices[0]->getNumOutputs();
-    float scale = mIsPolyphonic ? (1.0f / (float)mNumVoices) : 1.0f;
-    
+    float scale = 1.0f; // Mix at full scale; we will normalize at the end of the chunk.
     int framesProcessed = 0;
+    
     while (framesProcessed < numFrames) {
         int chunkSize = std::min(numFrames - framesProcessed, InstrumentMapper::MAX_FRAMES_PER_BUFFER);
+        float* chunkDest = buffer + (framesProcessed * 2);
         
         for (int v = 0; v < mNumVoices; ++v) {
             FAUSTFLOAT* outputs[2] = { mRenderBuffer, mRenderBuffer + chunkSize };
             mVoices[v]->compute(chunkSize, nullptr, outputs);
             
-            float* chunkDest = buffer + (framesProcessed * 2);
             if (nOuts == 1) {
                 for (int i = 0; i < chunkSize; ++i) {
                     float val = mRenderBuffer[i] * scale;
@@ -873,6 +924,7 @@ void FaustInstrument::render(int numFrames, float* buffer) {
                     chunkDest[i * 2] += val;
                     chunkDest[i * 2 + 1] += val;
                 }
+                updateVoiceEnergyInline(v, mRenderBuffer, nullptr, chunkSize);
             } else if (nOuts == 2) {
                 for (int i = 0; i < chunkSize; ++i) {
                     float valL = outputs[0][i] * scale;
@@ -881,8 +933,11 @@ void FaustInstrument::render(int numFrames, float* buffer) {
                     chunkDest[i * 2] += valL;
                     chunkDest[i * 2 + 1] += valR;
                 }
+                updateVoiceEnergyInline(v, outputs[0], outputs[1], chunkSize);
             }
         }
+        
+        normalizeBuffer(chunkDest, chunkSize);
         framesProcessed += chunkSize;
     }
 }
@@ -899,16 +954,126 @@ void FaustInstrument::processRealtimeStream(float* buffer, int numFrames) {
     }
 
     std::memset(buffer, 0, sizeof(float) * numFrames * 2);
+
+    // --- MONOPHONIC PATH (Preserved Existing Logic) ---
+    if (!mIsPolyphonic) {
+        int framesPerSubBlock = 1;
+        int framesProcessed = 0;
+        int nOuts = mVoices[0]->getNumOutputs();
+
+        for (const auto& ev : mEventQueue) {
+            if (framesPerSubBlock > 0 && (framesProcessed + framesPerSubBlock <= numFrames)) {
+                processInternalGlides(framesPerSubBlock);
+                
+                float* chunkBuffer = buffer + (framesProcessed * 2);
+                FAUSTFLOAT* outputs[2] = { mRenderBuffer, mRenderBuffer + framesPerSubBlock };
+                mVoices[0]->compute(framesPerSubBlock, nullptr, outputs);
+
+                if (nOuts == 1) {
+                    for (int i = 0; i < framesPerSubBlock; ++i) {
+                        float val = mRenderBuffer[i];
+                        if (mGain != 1.0f) val *= mGain;
+                        chunkBuffer[i * 2] += val;
+                        chunkBuffer[i * 2 + 1] += val;
+                    }
+                } else if (nOuts == 2) {
+                    for (int i = 0; i < framesPerSubBlock; ++i) {
+                        float valL = outputs[0][i];
+                        float valR = outputs[1][i];
+                        if (mGain != 1.0f) { valL *= mGain; valR *= mGain; }
+                        chunkBuffer[i * 2] += valL;
+                        chunkBuffer[i * 2 + 1] += valR;
+                    }
+                }
+
+                if (mGateOpen) {
+                    long prevElapsed = mElapsedFrames;
+                    mElapsedFrames += framesPerSubBlock;
+                    if (mTargetFrames > 0 && mElapsedFrames >= mTargetFrames && prevElapsed < mTargetFrames) {
+                        onNoteFinish();
+                    }
+                }
+                framesProcessed += framesPerSubBlock;
+            }
+            setParamImmediate(ev.paramName.c_str(), ev.value, ev.voiceIndex);
+        }
+
+        int remaining = numFrames - framesProcessed;
+        if (remaining > 0) {
+            processInternalGlides(remaining);
+            float* chunkBuffer = buffer + (framesProcessed * 2);
+            FAUSTFLOAT* outputs[2] = { mRenderBuffer, mRenderBuffer + remaining };
+            mVoices[0]->compute(remaining, nullptr, outputs);
+
+            if (nOuts == 1) {
+                for (int i = 0; i < remaining; ++i) {
+                    float val = mRenderBuffer[i];
+                    if (mGain != 1.0f) val *= mGain;
+                    chunkBuffer[i * 2] += val;
+                    chunkBuffer[i * 2 + 1] += val;
+                }
+            } else if (nOuts == 2) {
+                for (int i = 0; i < remaining; ++i) {
+                    float valL = outputs[0][i];
+                    float valR = outputs[1][i];
+                    if (mGain != 1.0f) { valL *= mGain; valR *= mGain; }
+                    chunkBuffer[i * 2] += valL;
+                    chunkBuffer[i * 2 + 1] += valR;
+                }
+            }
+
+            if (mGateOpen) {
+                long prevElapsed = mElapsedFrames;
+                mElapsedFrames += remaining;
+                
+                if (mEnableDiagLogging) {
+                    for (float t : mDiagSamplingTimes) {
+                        long targetFrame = static_cast<long>(t * mSampleRate);
+                        if (prevElapsed < targetFrame && mElapsedFrames >= targetFrame) {
+                            float sumSq = 0.0f;
+                            for (int i = 0; i < remaining; ++i) {
+                                float valL = chunkBuffer[i * 2];
+                                float valR = chunkBuffer[i * 2 + 1];
+                                sumSq += (valL * valL + valR * valR) * 0.5f;
+                            }
+                            float energy = sumSq / remaining;
+                            DiagLog log = {mElapsedFrames, mFrequency, 0.0f, energy, {}};
+
+                            {
+                                std::lock_guard<std::recursive_mutex> lock(mDSPLock);
+                                if (!mGoertzelFreqs.empty()) {
+                                    log.rawAudio.assign(chunkBuffer, chunkBuffer + (remaining * 2));
+                                }
+                                mDiagLogs.push_back(log);
+                            }
+                        }
+                    }
+                }
+
+                if (mTargetFrames > 0 && mElapsedFrames >= mTargetFrames && prevElapsed < mTargetFrames) {
+                    onNoteFinish();
+                }
+            }
+        }
+        
+        mEventQueue.clear();
+        if (mIsMuted.load(std::memory_order_acquire)) {
+            std::memset(buffer, 0, sizeof(float) * numFrames * 2);
+        }
+        return;
+    }
+
+    // --- POLYPHONIC PATH ---
     int framesPerSubBlock = 1;
     int framesProcessed = 0;
     int nOuts = mVoices[0]->getNumOutputs();
-    float scale = mIsPolyphonic ? (1.0f / (float)mNumVoices) : 1.0f;
+    float scale = 1.0f;
 
     for (const auto& ev : mEventQueue) {
         if (framesPerSubBlock > 0 && (framesProcessed + framesPerSubBlock <= numFrames)) {
             processInternalGlides(framesPerSubBlock);
-            
             float* chunkBuffer = buffer + (framesProcessed * 2);
+
             for (int v = 0; v < mNumVoices; ++v) {
                 FAUSTFLOAT* outputs[2] = { mRenderBuffer, mRenderBuffer + framesPerSubBlock };
                 mVoices[v]->compute(framesPerSubBlock, nullptr, outputs);
@@ -920,6 +1085,7 @@ void FaustInstrument::processRealtimeStream(float* buffer, int numFrames) {
                         chunkBuffer[i * 2] += val;
                         chunkBuffer[i * 2 + 1] += val;
                     }
+                    updateVoiceEnergyInline(v, mRenderBuffer, nullptr, framesPerSubBlock);
                 } else if (nOuts == 2) {
                     for (int i = 0; i < framesPerSubBlock; ++i) {
                         float valL = outputs[0][i] * scale;
@@ -928,8 +1094,11 @@ void FaustInstrument::processRealtimeStream(float* buffer, int numFrames) {
                         chunkBuffer[i * 2] += valL;
                         chunkBuffer[i * 2 + 1] += valR;
                     }
+                    updateVoiceEnergyInline(v, outputs[0], outputs[1], framesPerSubBlock);
                 }
             }
+
+            normalizeBuffer(chunkBuffer, framesPerSubBlock);
 
             if (mGateOpen) {
                 long prevElapsed = mElapsedFrames;
@@ -946,8 +1115,8 @@ void FaustInstrument::processRealtimeStream(float* buffer, int numFrames) {
     int remaining = numFrames - framesProcessed;
     if (remaining > 0) {
         processInternalGlides(remaining);
-        
         float* chunkBuffer = buffer + (framesProcessed * 2);
+
         for (int v = 0; v < mNumVoices; ++v) {
             FAUSTFLOAT* outputs[2] = { mRenderBuffer, mRenderBuffer + remaining };
             mVoices[v]->compute(remaining, nullptr, outputs);
@@ -959,6 +1128,7 @@ void FaustInstrument::processRealtimeStream(float* buffer, int numFrames) {
                     chunkBuffer[i * 2] += val;
                     chunkBuffer[i * 2 + 1] += val;
                 }
+                updateVoiceEnergyInline(v, mRenderBuffer, nullptr, remaining);
             } else if (nOuts == 2) {
                 for (int i = 0; i < remaining; ++i) {
                     float valL = outputs[0][i] * scale;
@@ -967,8 +1137,11 @@ void FaustInstrument::processRealtimeStream(float* buffer, int numFrames) {
                     chunkBuffer[i * 2] += valL;
                     chunkBuffer[i * 2 + 1] += valR;
                 }
+                updateVoiceEnergyInline(v, outputs[0], outputs[1], remaining);
             }
         }
+
+        normalizeBuffer(chunkBuffer, remaining);
 
         if (mGateOpen) {
             long prevElapsed = mElapsedFrames;
@@ -1004,8 +1177,26 @@ void FaustInstrument::processRealtimeStream(float* buffer, int numFrames) {
         }
     }
 
-    mEventQueue.clear();
+#ifdef DEBUG_INSTRUMENT
+    if (mInstrumentID == 11) {
+        static long absoluteFrames = 0;
+        absoluteFrames += numFrames;
+        
+        static int printCounter = 0;
+        printCounter += numFrames;
+        if (printCounter >= 4800) { // Roughly every 100ms
+            printf("CHART_DATA: %ld, %f, %f, %f, %f\n", 
+                (long)(absoluteFrames * 1000.0 / mSampleRate),
+                mVoiceEnergies.size() > 0 ? mVoiceEnergies[0] : 0.0f,
+                mVoiceEnergies.size() > 1 ? mVoiceEnergies[1] : 0.0f,
+                mVoiceEnergies.size() > 2 ? mVoiceEnergies[2] : 0.0f,
+                mVoiceEnergies.size() > 3 ? mVoiceEnergies[3] : 0.0f);
+            printCounter = 0;
+        }
+    }
+#endif
 
+    mEventQueue.clear();
     if (mIsMuted.load(std::memory_order_acquire)) {
         std::memset(buffer, 0, sizeof(float) * numFrames * 2);
     }
