@@ -1067,7 +1067,12 @@ void FaustInstrument::processRealtimeStream(float* buffer, int numFrames) {
     int framesPerSubBlock = 1;
     int framesProcessed = 0;
     int nOuts = mVoices[0]->getNumOutputs();
+    
+    // Equal-power polyphonic scaling to prevent master limiter ducking (jerks)
     float scale = 1.0f;
+    if (mNumVoices > 1) {
+        scale = 1.0f / std::sqrt((float)mNumVoices);
+    }
 
     for (const auto& ev : mEventQueue) {
         if (framesPerSubBlock > 0 && (framesProcessed + framesPerSubBlock <= numFrames)) {
