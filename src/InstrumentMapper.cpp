@@ -196,6 +196,8 @@ bool InstrumentMapper::isPolyphonic(int id) {
     // Polyphonic/drone instruments suppress note-off between consecutive strikes
     switch (id) {
         case 11: return true; // Tanpura — drone, 4 voices
+        case 21: return true; // Acoustic Guitar
+        case 22: return true; // Electric Guitar
         case 44: return true; // Sarod — drone, let strings ring into next pluck
         case 54: return true; // Harmonium — polyphonic/drone behaviour
         default: return false;
