@@ -284,15 +284,19 @@ int main(int argc, char* argv[]) {
             std::string umlTanpura = 
                 "grid: 4\n"
                 "bpm: 70\n"
-                "basefreq: 222.0\n"
+                "basefreq: 111.0\n"
                 "instrument: tanpura\n"
                 "notation: Hindustani\n"
                 "loop: true\n"
                 "\n"
-                "5Pa... 5Sa... 5Sa... 5Sa/2... "
-                "5Pa... 5Sa... 5Sa... 5Sa/2... "
-                "5Pa... 5Sa... 5Sa... 5Sa/2... "
-                "5Pa... 5Sa... 5Sa... 5Sa/2... ";
+                "5Pa. 5Sa. 5Sa. 5Sa*2. "
+                "5Pa. 5Sa. 5Sa. 5Sa*2. "
+                "5Pa. 5Sa. 5Sa. 5Sa*2. "
+                "5Pa. 5Sa. 5Sa. 5Sa*2. "
+                "5Pa. 5Sa. 5Sa. 5Sa*2. "
+                "5Pa. 5Sa. 5Sa. 5Sa*2. "
+                "5Pa. 5Sa. 5Sa. 5Sa*2. "
+                "5Pa. 5Sa. 5Sa. 5Sa*2. ";
             
             // Raag Darbari Kanada — late-night, majestic, deep
             // Arohana: Sa Re ga ma Pa dha ni Sa*
@@ -392,9 +396,9 @@ int main(int argc, char* argv[]) {
             group.sequences.push_back({"Dayan", new UMLSequence("Dayan", 0, umlDayan)});
             group.sequences.push_back({"Bayan", new UMLSequence("Bayan", 1, umlBayan)});
             
-            group.percussionTrackWeight = 1.3f;
-            group.backgroundTrackWeight = 0.3f;
+            group.percussionTrackWeight = 1.0f;
             group.melodyTrackWeight = 1.0f;
+            group.backgroundTrackWeight = 0.3f;
             duration = 30;
         } else if (selection == 2) {
             group.name = "Jazz Ensemble";
@@ -623,9 +627,9 @@ int main(int argc, char* argv[]) {
                 "\n"
                 "........80X............";
 
-            group.percussionTrackWeight = 1.3f;
-            group.backgroundTrackWeight = 1.5f;
-            group.melodyTrackWeight = 3.0f;
+            group.percussionTrackWeight = 1.0f;
+            group.backgroundTrackWeight = 0.3f;
+            group.melodyTrackWeight = 1.0f;
 
             group.sequences.push_back({"AmbientRain", new UMLSequence("AmbientRain", 19, umlRainmaker)});
             group.sequences.push_back({"AmbientBowl", new UMLSequence("AmbientBowl", 8, umlBowl)});
@@ -985,15 +989,15 @@ int main(int argc, char* argv[]) {
             std::string umlTanpura = 
                 "grid: 4\n"
                 "bpm: 90\n"
-                "basefreq: 222.0\n"
+                "basefreq: 111.0\n"
                 "instrument: tanpura\n"
                 "notation: Hindustani\n"
                 "loop: true\n"
                 "\n"
-                "5Pa... 5Sa... 5Sa... 5Sa/2... "
-                "5Pa... 5Sa... 5Sa... 5Sa/2... "
-                "5Pa... 5Sa... 5Sa... 5Sa/2... "
-                "5Pa... 5Sa... 5Sa... 5Sa/2... ";
+                "5Pa... 5Sa... 5Sa... 5Sa*2... "
+                "5Pa... 5Sa... 5Sa... 5Sa*2... "
+                "5Pa... 5Sa... 5Sa... 5Sa*2... "
+                "5Pa... 5Sa... 5Sa... 5Sa*2... ";
             
             // Fast Harmonium sequence in Raag Yaman playing chords and swift runs
             std::string umlHarmonium = 
@@ -1047,9 +1051,9 @@ int main(int argc, char* argv[]) {
             group.sequences.push_back({"Dayan", new UMLSequence("Dayan", 0, buildDayan())});
             group.sequences.push_back({"Bayan", new UMLSequence("Bayan", 1, buildBayan())});
             
-            group.percussionTrackWeight = 1.3f;
-            group.backgroundTrackWeight = 0.3f;
-            group.melodyTrackWeight = 1.0f;
+            group.percussionTrackWeight = 0.1f;
+            group.backgroundTrackWeight = 1.5f;
+            group.melodyTrackWeight = 0.1f;
             duration = 48;
         } else if (selection == 11) {
             group.name = "Carnatic Classical — Raag Hamsadhwani";
