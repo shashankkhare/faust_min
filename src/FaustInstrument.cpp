@@ -854,22 +854,11 @@ void FaustInstrument::processInternalGlides(int numFrames) {
 }
 
 void FaustInstrument::normalizeBuffer(float* buffer, int numFrames) {
-    const float attackCoef = 0.999f;
-    const float releaseCoef = 0.99995f; // ~100-200ms decay
-
+    // Replaced slow AGC envelope with instantaneous soft-saturation (tanh).
+    // This entirely eliminates volume "jerks" and "pumping" when strings sum,
+    // providing natural, fast saturation for polyphonic mixing.
     for (int i = 0; i < numFrames * 2; ++i) {
-        float sample = std::abs(buffer[i]);
-
-        if (sample > mRunningPeakEnvelope) {
-            mRunningPeakEnvelope = sample; // Fast attack
-        } else {
-            mRunningPeakEnvelope = mRunningPeakEnvelope * releaseCoef + sample * (1.0f - releaseCoef);
-        }
-
-        if (mRunningPeakEnvelope > 0.95f) {
-            float scale = 0.95f / mRunningPeakEnvelope;
-            buffer[i] *= scale;
-        }
+        buffer[i] = std::tanh(buffer[i]);
     }
 }
 
