@@ -289,14 +289,10 @@ int main(int argc, char* argv[]) {
                 "notation: Hindustani\n"
                 "loop: true\n"
                 "\n"
-                "5Pa. 5Sa. 5Sa. 5Sa*2. "
-                "5Pa. 5Sa. 5Sa. 5Sa*2. "
-                "5Pa. 5Sa. 5Sa. 5Sa*2. "
-                "5Pa. 5Sa. 5Sa. 5Sa*2. "
-                "5Pa. 5Sa. 5Sa. 5Sa*2. "
-                "5Pa. 5Sa. 5Sa. 5Sa*2. "
-                "5Pa. 5Sa. 5Sa. 5Sa*2. "
-                "5Pa. 5Sa. 5Sa. 5Sa*2. ";
+                "5Pa....... 5Sa....... 5Sa....... 5Sa*2....... \n"
+                "5Pa....... 5Sa....... 5Sa....... 5Sa*2....... \n"
+                "5Pa....... 5Sa....... 5Sa....... 5Sa*2....... \n"
+                "5Pa....... 5Sa....... 5Sa....... 5Sa*2....... \n";
             
             // Raag Darbari Kanada — late-night, majestic, deep
             // Arohana: Sa Re ga ma Pa dha ni Sa*
@@ -396,10 +392,10 @@ int main(int argc, char* argv[]) {
             group.sequences.push_back({"Dayan", new UMLSequence("Dayan", 0, umlDayan)});
             group.sequences.push_back({"Bayan", new UMLSequence("Bayan", 1, umlBayan)});
             
-            group.percussionTrackWeight = 1.0f;
-            group.melodyTrackWeight = 1.0f;
-            group.backgroundTrackWeight = 0.3f;
-            duration = 30;
+            group.percussionTrackWeight = 1.6f;
+            group.melodyTrackWeight = 0.55f;
+            group.backgroundTrackWeight = 0.8f;
+            duration = 80;
         } else if (selection == 2) {
             group.name = "Jazz Ensemble";
 
@@ -846,7 +842,10 @@ int main(int argc, char* argv[]) {
                 "instrument: tanpura\n"
                 "notation: Hindustani\n"
                 "loop: true\n\n"
-                "5Pa . . . 5Sa . . . | 5Sa . . . 5Sa*2 . . . | 5Pa . . . 5Sa . . . | 5Sa . . . 5Sa*2 . . .";
+                "5Pa....... 5Sa....... 5Sa....... 5Sa*2....... \n"
+                "5Pa....... 5Sa....... 5Sa....... 5Sa*2....... \n"
+                "5Pa....... 5Sa....... 5Sa....... 5Sa*2....... \n"
+                "5Pa....... 5Sa....... 5Sa....... 5Sa*2....... ";
                 
             std::string umlSitar = 
                 "grid: 4\n"
@@ -994,10 +993,10 @@ int main(int argc, char* argv[]) {
                 "notation: Hindustani\n"
                 "loop: true\n"
                 "\n"
-                "5Pa... 5Sa... 5Sa... 5Sa*2... "
-                "5Pa... 5Sa... 5Sa... 5Sa*2... "
-                "5Pa... 5Sa... 5Sa... 5Sa*2... "
-                "5Pa... 5Sa... 5Sa... 5Sa*2... ";
+                "5Pa....... 5Sa....... 5Sa....... 5Sa*2....... \n"
+                "5Pa....... 5Sa....... 5Sa....... 5Sa*2....... \n"
+                "5Pa....... 5Sa....... 5Sa....... 5Sa*2....... \n"
+                "5Pa....... 5Sa....... 5Sa....... 5Sa*2....... ";
             
             // Fast Harmonium sequence in Raag Yaman playing chords and swift runs
             std::string umlHarmonium = 

@@ -27,16 +27,33 @@ reed_octaves = hslider("reed_octaves", 1.0, 0.0, 2.0, 0.1); // Blend between: 0 
 pump_lfo = (os.osc(0.6) + 1.0) * 0.5; // slow bellows squeeze cycle (0.6 Hz)
 target_inflow = pressure * pump_lfo;
 
-// Valve drainage: More open keys = faster pressure drop
-valve_aperture = gate * velocity;
+// --- Key Valve Modulation ---
+// Harmonium keys return slowly when released because of mechanical valve pad drag and spring returns.
+// We model this by smoothing the gate with asymmetric attack (fast ramp-up) and release (slow ramp-down) times.
+key_envelope = gate : envelope_follower(attack_sec, release_sec)
+with {
+    attack_sec = 0.02; // fast attack (20ms) when pushing key down
+    release_sec = 0.20; // slow mechanical release (200ms) when key rises back up
+    
+    envelope_follower(a, r) = loop ~ _
+    with {
+        c_att = exp(-1.0 / (a * ma.SR));
+        c_rel = exp(-1.0 / (r * ma.SR));
+        loop(feed, in) = in * (1.0 - c) + feed * c
+        with {
+            c = ba.if(in > feed, c_att, c_rel);
+        };
+    };
+};
+
+valve_aperture = key_envelope * velocity;
 active_drainage = valve_aperture * 0.08;
 
 // Leaky integrator reservoir model (accumulates pump inflow, leaks naturally, and drains quickly when playing keys)
 reservoir_pressure = target_inflow : + ~ (*(0.9997 - active_drainage) : max(0.0) : min(1.0));
 
-// --- Key Valve Modulation ---
 // Air reaching the reed depends on key aperture (velocity) and current windchest pressure
-effective_pressure = reservoir_pressure * valve_aperture : si.smoo;
+effective_pressure = reservoir_pressure * valve_aperture;
 
 // --- Free Reed Excitation Engine ---
 // Modulate reed frequencies with slight pressure-induced GROWL instability

@@ -104,6 +104,21 @@ static std::vector<double> getTestFreqsDouble(const std::vector<double>& default
     return defaultFreqs;
 }
 
+
+static void testPolyphonicChord(FaustInstrument* inst) {
+    if (!inst) return;
+    std::cout << "\n  [Polyphony Test] C4 aug7 Chord (C4, E4, G#4, Bb4) ..." << std::endl;
+    std::vector<double> chord = { 261.63, 329.63, 415.30, 466.16 };
+    inst->clearDiagnosticLogs();
+    for (double f : chord) inst->noteOn(f, gTestVelocity, gTestAmplitude);
+    usleep(2000000);
+    for (double f : chord) inst->noteOff();
+    usleep(500000);
+    std::cout << "  Polyphony Energy: ";
+    printEnergy(inst, 261.63);
+    std::cout << std::endl;
+}
+
 static std::vector<float> getTestFreqsFloat(const std::vector<float>& defaultFreqs) {
     if (gTestFrequency > 0.0) {
         return { static_cast<float>(gTestFrequency) };
@@ -503,30 +518,50 @@ void testTanpura(FaustMixer& mixer, DSPExecutionType execType) {
     
     // Add all three frequencies as diagnostic targets to measure their energies simultaneously
     inst->clearDiagnosticFreqs();
-    inst->addDiagnosticFreq(130.00);
-    inst->addDiagnosticFreq(180.50);
-    inst->addDiagnosticFreq(231.00);
+    std::vector<double> freqs;
+    if (gTestFrequency > 0.0) {
+        freqs = { gTestFrequency };
+        inst->addDiagnosticFreq(gTestFrequency);
+    } else {
+        freqs = { 130.00, 180.50, 231.00 };
+        inst->addDiagnosticFreq(130.00);
+        inst->addDiagnosticFreq(180.50);
+        inst->addDiagnosticFreq(231.00);
+    }
 
-    inst->clearDiagnosticLogs();
-
-    // Fire all three notes sequentially with overlapping sustains (no noteOff)
-    inst->noteOn(130.00, gTestAmplitude, -1.0f);
-    usleep(500000); // 500ms between plucks
-    
-    inst->noteOn(180.50, gTestAmplitude, -1.0f);
-    usleep(500000); // 500ms between plucks
-    
-    inst->noteOn(231.00, gTestAmplitude, -1.0f);
-    usleep(500000); 
-
-    inst->noteOn(260.00, gTestAmplitude, -1.0f);
-    usleep(2000000); // Let them ring out together for 2.0s, capturing logs
-    
-    auto now = std::chrono::system_clock::now();
-    auto ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now).time_since_epoch().count();
-    std::cout << "[TIMESTAMP " << ms << "] Polyphony Verification { Base, RMS, E_130, E_180_5, E_231 }: ";
-    printEnergy(inst.get(), 0.0);
+    for (double freq : freqs) {
+        inst->clearDiagnosticLogs();
+        inst->noteOn(freq, gTestVelocity, gTestAmplitude);
+        usleep(2000000);
+        inst->noteOff();
+        usleep(300000);
+        printEnergy(inst.get(), freq);
+        std::cout << "\n";
+    }
     std::cout << std::endl;
+
+    if (gTestFrequency <= 0.0) {
+        // Fire all three notes sequentially with overlapping sustains (no noteOff)
+        inst->noteOn(130.00, gTestAmplitude, -1.0f);
+        usleep(500000); // 500ms between plucks
+        
+        inst->noteOn(180.50, gTestAmplitude, -1.0f);
+        usleep(500000); // 500ms between plucks
+        
+        inst->noteOn(231.00, gTestAmplitude, -1.0f);
+        usleep(500000); 
+
+        inst->noteOn(260.00, gTestAmplitude, -1.0f);
+        usleep(2000000); // Let them ring out together for 2.0s, capturing logs
+        
+        auto now = std::chrono::system_clock::now();
+        auto ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now).time_since_epoch().count();
+        std::cout << "[TIMESTAMP " << ms << "] Polyphony Verification { Base, RMS, E_130, E_180_5, E_231 }: ";
+        printEnergy(inst.get(), 0.0);
+        std::cout << std::endl;
+
+        testPolyphonicChord(inst.get());
+    }
 
     mixer.removeTrack(track);
 }
@@ -559,6 +594,7 @@ void testPiano(FaustMixer& mixer, DSPExecutionType execType) {
     }
     std::cout << std::endl;
     usleep(1500000);
+    testPolyphonicChord(inst.get());
     mixer.removeTrack(track);
 }
 
@@ -871,6 +907,7 @@ void testAcousticGuitar(FaustMixer& mixer, DSPExecutionType execType) {
     }
     std::cout << std::endl;
     usleep(1000000);
+    testPolyphonicChord(inst.get());
     mixer.removeTrack(track);
 }
 
@@ -897,6 +934,7 @@ void testElectricGuitar(FaustMixer& mixer, DSPExecutionType execType) {
     }
     std::cout << std::endl;
     usleep(1000000);
+    testPolyphonicChord(inst.get());
     mixer.removeTrack(track);
 }
 
@@ -932,6 +970,7 @@ void testBassGuitar(FaustMixer& mixer, DSPExecutionType execType) {
     }
     std::cout << std::endl;
     usleep(1000000);
+    testPolyphonicChord(inst.get());
     mixer.removeTrack(track);
 }
 
@@ -1065,6 +1104,7 @@ void testMarimba(FaustMixer& mixer, DSPExecutionType execType) {
         std::cout << std::flush;
     }
     std::cout << std::endl;
+    testPolyphonicChord(inst.get());
     mixer.removeTrack(track);
 }
 
@@ -1348,6 +1388,7 @@ void testGuzheng(FaustMixer& mixer, DSPExecutionType execType) {
         std::cout << std::flush;
     }
     std::cout << std::endl;
+    testPolyphonicChord(inst.get());
     mixer.removeTrack(track);
 }
 
@@ -1483,6 +1524,7 @@ void testSantoor(FaustMixer& mixer, DSPExecutionType execType) {
         std::cout << std::flush;
     }
     std::cout << std::endl;
+    testPolyphonicChord(inst.get());
     mixer.removeTrack(track);
 }
 
@@ -1664,6 +1706,7 @@ void testHarmonium(FaustMixer& mixer, DSPExecutionType execType) {
     }
     std::cout << std::endl;
     usleep(1000000);
+    testPolyphonicChord(inst.get());
     mixer.removeTrack(track);
 }
 

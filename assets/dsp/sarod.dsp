@@ -165,5 +165,5 @@ body_filter(x) =
 
 // Signal path: string → membrane (skin resonance) → body (wooden bowl) → output
 // membrane_filter was previously dead code — now correctly wired into chain.
-process = summed : membrane_filter : body_filter : *(gain * 5.0) <: _,_;
+process = summed : membrane_filter : body_filter : *(gain * (5.0 * 1.7667)) <: _,_;
 

@@ -558,6 +558,12 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
 
         while (framesRemaining > 0) {
             long framesToProcess = framesRemaining;
+            if (seq->loop && seq->totalDurationSamples > 0) {
+                long samplesToEnd = seq->totalDurationSamples - seqWrapper->currentSample;
+                if (samplesToEnd > 0 && samplesToEnd < framesToProcess) {
+                    framesToProcess = samplesToEnd;
+                }
+            }
 
             // Evaluate all events that fall within this sub-block's sample range
             while (seqWrapper->isPlaying && seqWrapper->nextEventIndex < events.size()) {
@@ -719,6 +725,10 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
             }
 
             seqWrapper->currentSample += framesToProcess;
+            if (seq->loop && seq->totalDurationSamples > 0 && seqWrapper->currentSample >= seq->totalDurationSamples) {
+                seqWrapper->currentSample = 0;
+                seqWrapper->nextEventIndex = 0;
+            }
             framesRemaining -= framesToProcess;
         }
     }
