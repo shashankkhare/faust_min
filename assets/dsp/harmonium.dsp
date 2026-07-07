@@ -62,7 +62,7 @@ detuned_freq = freq * (1.0 + pressure_freq_detune);
 
 // Free reeds generate rich odd and even harmonics due to asymmetric airflow.
 // We model this using a bandlimited pulse train waveshaped with tanh.
-reed_osc(f, pres) = os.pulsetrain(f, duty_width) : ma.tanh( * (1.5 + pres * 3.5))
+reed_osc(f, pres) = os.pulsetrain(f, duty_width) * (1.5 + pres * 3.5) : ma.tanh
 with {
     duty_width = 0.35 + pres * 0.15; // Duty width widens under pressure
 };
