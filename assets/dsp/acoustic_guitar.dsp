@@ -34,23 +34,25 @@ with {
 
 // --- ROUTING ENGINE ---
 stringLength  = freq : pm.f2l;
-strikeTrigger = gate : ba.impulsify; 
+strikeTrigger = gate : ba.impulsify;
 
-// CRITICAL FIX: Explicitly alter the frequency profile of each model stream
-steelModel = pm.guitar(stringLength, pluckPosition, velocity, strikeTrigger) 
-             : fi.highshelf(1, 3.0, 3000.0); // Boost metallic "ping" attack
+// pm.pluckString outputs ~0.1 peak; waveguide chain absorbs most of it.
+// Boost velocity into the model so the waveguide operates at a healthy level.
+excBoost = 50;
 
-nylonModel = pm.nylonGuitar(stringLength, pluckPosition, velocity, strikeTrigger) 
-             : fi.lowpass(1, 2200.0); // Strip away bright frequencies for warm nylon thud
+steelModel = pm.guitar(stringLength, pluckPosition, velocity * excBoost, strikeTrigger)
+             : fi.highshelf(1, 3.0, 3000.0);
 
-bassModel  = pm.guitar(stringLength, pluckPosition, velocity, strikeTrigger) 
-             : fi.lowpass(2, 750.0); // Extreme high cut for sub-focused thick copper wrap
+nylonModel = pm.nylonGuitar(stringLength, pluckPosition, velocity * excBoost, strikeTrigger)
+             : fi.lowpass(1, 2200.0);
 
-// Using the verified, corrected logical routing statement
+bassModel  = pm.guitar(stringLength, pluckPosition, velocity * excBoost, strikeTrigger)
+             : fi.lowpass(2, 750.0);
+
 stringSelector = select2(stringType == 0, select2(stringType == 1, bassModel, nylonModel), steelModel);
 
 process = stringSelector
         : guitarBody(stringType)
-        : ma.tanh 
-        : *(gain * 10000.0);
+        : ma.tanh
+        : *(gain * 3.0);
 
