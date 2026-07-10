@@ -24,19 +24,11 @@ reed_octaves = hslider("reed_octaves", 1.0, 0.0, 2.0, 0.1); // Blend between: 0 
 
 // --- Bellows Reservoir Dynamic Simulation ---
 // Inflow from hand pumping (LFO-driven bellows strokes to simulate time-varying reservoir replenishment)
-// Player pumps continuously. Map LFO so it doesn't dip to zero, preventing reservoir starvation.
-min_inflow = 0.4;
-pump_lfo = (os.osc(0.6) * 0.5 + 0.5); // Maps to 0.0 to 1.0
-target_inflow = pressure * (min_inflow + pump_lfo * (1.0 - min_inflow));
-
-// --- Key Valve Modulation ---
-// Harmonium keys return slowly when released because of mechanical valve pad drag and spring returns.
-attack_sec = 0.02; // fast attack (20ms) when pushing key down
-release_sec = 0.20; // slow mechanical release (200ms) when key rises back up
-key_envelope = en.asr(attack_sec, 1.0, release_sec, gate);
+pump_lfo = (os.osc(0.6) + 1.0) * 0.5; // slow bellows squeeze cycle (0.6 Hz)
+target_inflow = pressure * pump_lfo;
 
 // Valve drainage: More open keys = faster pressure drop
-valve_aperture = key_envelope * velocity;
+valve_aperture = gate * velocity;
 active_drainage = valve_aperture * 0.08;
 
 // Leaky integrator reservoir model (accumulates pump inflow, leaks naturally, and drains quickly when playing keys)
@@ -53,9 +45,9 @@ detuned_freq = freq * (1.0 + pressure_freq_detune);
 
 // Free reeds generate rich odd and even harmonics due to asymmetric airflow.
 // We model this using a bandlimited pulse train waveshaped with tanh.
-reed_osc(f, pres) = os.pulsetrain(f, duty_width) * (1.5 + pres * 3.5)
+reed_osc(f, pres) = os.pulsetrain(f, duty_width) : ma.tanh( * (1.5 + pres * 3.5))
 with {
-    duty_width = 0.30 + pres * 0.15; // Duty width widens under pressure but stays below 0.5 to retain even harmonics
+    duty_width = 0.35 + pres * 0.15; // Duty width widens under pressure
 };
 
 // Stops (Octave Coupling):
