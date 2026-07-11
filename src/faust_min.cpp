@@ -296,6 +296,40 @@ DART_EXPORT void mixer_unregister_instrument(FaustMixer* mixer, FaustInstrument*
     // For now, removing an instrument from all tracks isn't explicitly supported in this single call.
 }
 
+// --- FaustMixer Track & Fade Automation ---
+
+DART_EXPORT int mixer_add_track(FaustMixer* mixer, float initialWeight) {
+    return mixer ? mixer->addTrack(initialWeight) : 0;
+}
+
+DART_EXPORT void mixer_remove_track(FaustMixer* mixer, int trackID) {
+    if (mixer) mixer->removeTrack(trackID);
+}
+
+DART_EXPORT void mixer_fade_in_track(FaustMixer* mixer, int trackID, float durationSeconds) {
+    if (mixer) mixer->fadeInTrack(trackID, durationSeconds);
+}
+
+DART_EXPORT void mixer_fade_out_track(FaustMixer* mixer, int trackID, float durationSeconds) {
+    if (mixer) mixer->fadeOutTrack(trackID, durationSeconds);
+}
+
+DART_EXPORT void mixer_set_track_weight(FaustMixer* mixer, int trackID, float weight) {
+    if (mixer) mixer->setTrackWeight(trackID, weight);
+}
+
+DART_EXPORT float mixer_get_track_weight(FaustMixer* mixer, int trackID) {
+    return mixer ? mixer->getTrackWeight(trackID) : 0.0f;
+}
+
+DART_EXPORT void mixer_master_fade_in(FaustMixer* mixer, float durationSeconds) {
+    if (mixer) mixer->masterFadeIn(durationSeconds);
+}
+
+DART_EXPORT void mixer_master_fade_out(FaustMixer* mixer, float durationSeconds) {
+    if (mixer) mixer->masterFadeOut(durationSeconds);
+}
+
 // --- UMLSequence Flat Endpoints ---
 
 DART_EXPORT UMLSequence* sequence_create(const char* name, int instID, const char* umlDataString) {

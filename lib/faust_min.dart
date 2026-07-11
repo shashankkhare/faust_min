@@ -84,6 +84,30 @@ typedef _dart_mixer_register_inst = int Function(Pointer<NativeMixerOpaque> mixe
 typedef _c_mixer_unregister_inst = Void Function(Pointer<NativeMixerOpaque> mixer, Pointer<NativeInstrumentOpaque> inst);
 typedef _dart_mixer_unregister_inst = void Function(Pointer<NativeMixerOpaque> mixer, Pointer<NativeInstrumentOpaque> inst);
 
+typedef _c_mixer_add_track = Int32 Function(Pointer<NativeMixerOpaque> mixer, Float initialWeight);
+typedef _dart_mixer_add_track = int Function(Pointer<NativeMixerOpaque> mixer, double initialWeight);
+
+typedef _c_mixer_remove_track = Void Function(Pointer<NativeMixerOpaque> mixer, Int32 trackID);
+typedef _dart_mixer_remove_track = void Function(Pointer<NativeMixerOpaque> mixer, int trackID);
+
+typedef _c_mixer_fade_in_track = Void Function(Pointer<NativeMixerOpaque> mixer, Int32 trackID, Float durationSeconds);
+typedef _dart_mixer_fade_in_track = void Function(Pointer<NativeMixerOpaque> mixer, int trackID, double durationSeconds);
+
+typedef _c_mixer_fade_out_track = Void Function(Pointer<NativeMixerOpaque> mixer, Int32 trackID, Float durationSeconds);
+typedef _dart_mixer_fade_out_track = void Function(Pointer<NativeMixerOpaque> mixer, int trackID, double durationSeconds);
+
+typedef _c_mixer_set_track_weight = Void Function(Pointer<NativeMixerOpaque> mixer, Int32 trackID, Float weight);
+typedef _dart_mixer_set_track_weight = void Function(Pointer<NativeMixerOpaque> mixer, int trackID, double weight);
+
+typedef _c_mixer_get_track_weight = Float Function(Pointer<NativeMixerOpaque> mixer, Int32 trackID);
+typedef _dart_mixer_get_track_weight = double Function(Pointer<NativeMixerOpaque> mixer, int trackID);
+
+typedef _c_mixer_master_fade_in = Void Function(Pointer<NativeMixerOpaque> mixer, Float durationSeconds);
+typedef _dart_mixer_master_fade_in = void Function(Pointer<NativeMixerOpaque> mixer, double durationSeconds);
+
+typedef _c_mixer_master_fade_out = Void Function(Pointer<NativeMixerOpaque> mixer, Float durationSeconds);
+typedef _dart_mixer_master_fade_out = void Function(Pointer<NativeMixerOpaque> mixer, double durationSeconds);
+
 
 // --- Flat API Bindings Signatures ---
 typedef _c_sequence_create = Pointer<NativeSequenceOpaque> Function(Pointer<Utf8>, Int32, Pointer<Utf8>);
@@ -919,6 +943,14 @@ class FaustMixer {
   static late final _funcRegisterWaveformCb = _dylib.lookupFunction<_c_mixer_register_waveform_callback, _dart_mixer_register_waveform_callback>('mixer_register_waveform_callback');
   static late final _funcRegisterInst = _dylib.lookupFunction<_c_mixer_register_inst, _dart_mixer_register_inst>('mixer_register_instrument');
   static late final _funcUnregisterInst = _dylib.lookupFunction<_c_mixer_unregister_inst, _dart_mixer_unregister_inst>('mixer_unregister_instrument');
+  static late final _funcAddTrack = _dylib.lookupFunction<_c_mixer_add_track, _dart_mixer_add_track>('mixer_add_track');
+  static late final _funcRemoveTrack = _dylib.lookupFunction<_c_mixer_remove_track, _dart_mixer_remove_track>('mixer_remove_track');
+  static late final _funcFadeInTrack = _dylib.lookupFunction<_c_mixer_fade_in_track, _dart_mixer_fade_in_track>('mixer_fade_in_track');
+  static late final _funcFadeOutTrack = _dylib.lookupFunction<_c_mixer_fade_out_track, _dart_mixer_fade_out_track>('mixer_fade_out_track');
+  static late final _funcSetTrackWeight = _dylib.lookupFunction<_c_mixer_set_track_weight, _dart_mixer_set_track_weight>('mixer_set_track_weight');
+  static late final _funcGetTrackWeight = _dylib.lookupFunction<_c_mixer_get_track_weight, _dart_mixer_get_track_weight>('mixer_get_track_weight');
+  static late final _funcMasterFadeIn = _dylib.lookupFunction<_c_mixer_master_fade_in, _dart_mixer_master_fade_in>('mixer_master_fade_in');
+  static late final _funcMasterFadeOut = _dylib.lookupFunction<_c_mixer_master_fade_out, _dart_mixer_master_fade_out>('mixer_master_fade_out');
 
   FaustMixer._internal() {
     _handle = _funcGetInstance();
@@ -984,4 +1016,34 @@ class FaustMixer {
   void unregisterInstrument(FaustInstrument inst) {
     _funcUnregisterInst(_handle, inst.nativePointer);
   }
+
+  /// Add a new track to the mixer with the given initial weight. Returns the track ID.
+  int addTrack(double initialWeight) => _funcAddTrack(_handle, initialWeight);
+
+  /// Remove a track from the mixer.
+  void removeTrack(int trackID) => _funcRemoveTrack(_handle, trackID);
+
+  /// Fade in a track from silence to its assigned weight over [durationSeconds].
+  void fadeInTrack(int trackID, double durationSeconds) =>
+      _funcFadeInTrack(_handle, trackID, durationSeconds);
+
+  /// Fade out a track from its current weight to silence over [durationSeconds].
+  void fadeOutTrack(int trackID, double durationSeconds) =>
+      _funcFadeOutTrack(_handle, trackID, durationSeconds);
+
+  /// Immediately set a track's dynamic weight (clamped to its assigned cap).
+  void setTrackWeight(int trackID, double weight) =>
+      _funcSetTrackWeight(_handle, trackID, weight);
+
+  /// Get the current dynamic weight of a track.
+  double getTrackWeight(int trackID) =>
+      _funcGetTrackWeight(_handle, trackID);
+
+  /// Fade the master bus from 0 to 1.0 over [durationSeconds].
+  void masterFadeIn(double durationSeconds) =>
+      _funcMasterFadeIn(_handle, durationSeconds);
+
+  /// Fade the master bus from its current gain to 0 over [durationSeconds].
+  void masterFadeOut(double durationSeconds) =>
+      _funcMasterFadeOut(_handle, durationSeconds);
 }
