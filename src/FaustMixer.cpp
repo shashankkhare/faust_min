@@ -36,6 +36,8 @@
     printf("[TIMESTAMP %ld] %s\n", __us, msg); fflush(stdout); \
 } while(0)
 
+#define DEBUG_MIXER 0
+
 // --- Cross-platform audio worker thread priority elevation ---
 // Called once at the start of each worker thread before entering the loop.
 //
@@ -105,6 +107,11 @@ void mixerMaCallback(ma_device* pDevice, void* pOutput, const void* pInput, ma_u
         printed = true;
     }
     FaustMixer::hardwareCallback(pOutput, (int)frameCount, pDevice->pUserData);
+}
+
+void mixerMaStopCallback(ma_device* pDevice) {
+    printf("[ERROR] miniaudio DEVICE STOPPED!\n");
+    fflush(stdout);
 }
 #endif
 
@@ -189,6 +196,7 @@ void FaustMixer::init(float sampleRate) {
     config.periods = 3;
     config.performanceProfile = ma_performance_profile_low_latency;
     config.dataCallback = mixerMaCallback;
+    config.stopCallback = mixerMaStopCallback;
     config.pUserData = this;
 
     ma_device* device = new ma_device();
@@ -317,6 +325,7 @@ void FaustMixer::workerLoop(int workerID) {
     elevateWorkerThreadPriority();
 
     uint64_t myEpoch = 0;
+    static std::atomic<int> workDispatchCount{0};
     while (true) {
         // --- Sleep until a new dispatch epoch arrives or shutdown ---
         {
@@ -326,6 +335,13 @@ void FaustMixer::workerLoop(int workerID) {
             });
             if (!mWorkerRunning.load(std::memory_order_relaxed)) break;
             myEpoch = mDispatchEpoch;
+#if DEBUG_MIXER
+            int d = workDispatchCount.fetch_add(1, std::memory_order_relaxed);
+            if (d % 100 == 0) {
+                printf("[DEBUG_MIXER] worker[%d] dispatch #%d alive\n", workerID, d);
+                fflush(stdout);
+            }
+#endif
         }
 
         // --- Steal and process work items ---
@@ -345,8 +361,11 @@ void FaustMixer::workerLoop(int workerID) {
         }
 
         // --- If we finished the last task, wake the main audio thread ---
-        if (mPendingTasks.load(std::memory_order_acquire) <= 0) {
-            mMainCV.notify_one();
+        {
+            std::lock_guard<std::mutex> lk(mWorkMutex);
+            if (mPendingTasks.load(std::memory_order_acquire) <= 0) {
+                mMainCV.notify_one();
+            }
         }
     }
 }
@@ -560,6 +579,15 @@ void FaustMixer::mixRawSignals(
     if (finalScale != 1.0f) {
         for (int i = 0; i < totalStereoSamples; i++) outputBuffer[i] *= finalScale;
     }
+
+    static float testPhase = 0.0f;
+    for (int i = 0; i < totalStereoSamples; i += 2) {
+        testPhase += 2.0f * 3.14159265f * 1000.0f / 48000.0f;
+        if (testPhase > 2.0f * 3.14159265f) testPhase -= 2.0f * 3.14159265f;
+        float tone = sinf(testPhase) * 0.001f;
+        outputBuffer[i] += tone;
+        outputBuffer[i+1] += tone;
+    }
 }
 
 inline void FaustMixer::processMasterSweep(long currentS) {
@@ -672,12 +700,13 @@ inline void FaustMixer::accumulateInstrumentChannels(float* stereoOutput, int nu
         int idx;
         while ((idx = mWorkHead.fetch_add(1, std::memory_order_acq_rel)) < total) {
             WorkItem& item = mWorkQueue[idx];
-            if (item.valid && item.inst) {
+            if (!item.valid) { mPendingTasks.fetch_sub(1, std::memory_order_release); continue; }
+            if (item.inst) {
                 float* buf = mInstrumentBuffers[item.bufferSlot];
                 std::fill(buf, buf + (numFrames * 2), 0.0f);
                 item.inst->processRealtimeStream(buf, numFrames);
-                mPendingTasks.fetch_sub(1, std::memory_order_release);
             }
+            mPendingTasks.fetch_sub(1, std::memory_order_release);
         }
 
         // --- Sleep until all workers are done (0% CPU idle vs old spin-barrier) ---
@@ -768,6 +797,14 @@ void FaustMixer::onAudioReady(float* stereoOutput, int numFrames) {
         TLOG("FIRST onAudioReady() CALLBACK FIRED - audio pipeline is live");
     }
 
+#if DEBUG_MIXER
+    static int audioCbCount = 0;
+    if (++audioCbCount % 1000 == 0) {
+        printf("[DEBUG_MIXER] onAudioReady #%d alive\n", audioCbCount);
+        fflush(stdout);
+    }
+#endif
+
     std::memset(stereoOutput, 0, sizeof(float) * numFrames * 2);
 
     int framesProcessed = 0;
@@ -806,7 +843,7 @@ void FaustMixer::onAudioReady(float* stereoOutput, int numFrames) {
 
     applyMasterGainAndLimiter(stereoOutput, numFrames);
 
-#ifdef DEBUG_MIXER
+#if DEBUG_MIXER
     // Log peak level of every callback to verify audio is in the buffer
     {
         float peakOut = 0.0f;

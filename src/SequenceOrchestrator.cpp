@@ -442,7 +442,21 @@ void SequenceOrchestrator::setParameter(const std::string& name, const std::stri
 }
 
 void SequenceOrchestrator::updateTimeline(int numFrames) {
+#if DEBUG_ORCHESTRATOR
+    if (mIsPaused.load(std::memory_order_relaxed)) {
+        static bool pausedWarned = false;
+        if (!pausedWarned) { printf("[DEBUG_ORCHESTRATOR] updateTimeline: PAUSED\n"); fflush(stdout); pausedWarned = true; }
+        return;
+    }
+
+    static int timelineCount = 0;
+    if (++timelineCount % 500 == 0) {
+        printf("[DEBUG_ORCHESTRATOR] updateTimeline #%d alive, masterSample=%ld\n", timelineCount, (long)mMasterSampleCount);
+        fflush(stdout);
+    }
+#else
     if (mIsPaused.load(std::memory_order_relaxed)) return;
+#endif
 
     // Check if any sequence is currently playing before adding new ones
     bool anyPlaying = false;
@@ -498,17 +512,35 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
     if (!snapshot || snapshot->empty()) return;
 
     long maxSongSamples = 0;
+    bool allLooping = true;
     if (snapshot) {
         for (auto& seqWrapper : *snapshot) {
-            if (seqWrapper->sequenceObj && seqWrapper->sequenceObj->totalDurationSamples > maxSongSamples) {
-                maxSongSamples = seqWrapper->sequenceObj->totalDurationSamples;
+            if (seqWrapper->sequenceObj) {
+                if (seqWrapper->sequenceObj->totalDurationSamples > maxSongSamples) {
+                    maxSongSamples = seqWrapper->sequenceObj->totalDurationSamples;
+                }
+                if (!seqWrapper->sequenceObj->loop) {
+                    allLooping = false;
+                }
             }
         }
     }
 
+    if (mMasterSampleCount == 0 && anyPlaying) {
+        notifyFinished("PLAY_START");
+        if (mTickCallback) {
+            mTickCallback(0, -1, "PLAY_START", mTickUserData);
+        }
+    }
+
     if (maxSongSamples > 0 && mMasterSampleCount + numFrames >= maxSongSamples) {
-        if (!mSongLooping.load(std::memory_order_relaxed)) {
-            // Reached the end of the song and not looping. Stop playback.
+        if (!allLooping) {
+#if DEBUG_ORCHESTRATOR
+            printf("[DEBUG_ORCHESTRATOR] END OF SONG (non-looping). masterSample=%ld maxSamples=%ld\n",
+                   (long)mMasterSampleCount, (long)maxSongSamples);
+            fflush(stdout);
+#endif
+            // Reached the end of the song and not all sequences are looping. Stop playback.
             mMasterSampleCount = maxSongSamples;
             
             // Note off everything
@@ -521,24 +553,40 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
                     seqWrapper->isPlaying.store(false, std::memory_order_release);
                 }
             }
-            // Signal a special name to indicate global song stop
-            notifyFinished("GLOBAL_SONG_END");
+            // Signal play end
+            notifyFinished("PLAY_END");
             if (mTickCallback) {
-                mTickCallback(maxSongSamples, -1, "GLOBAL_SONG_END", mTickUserData);
+                mTickCallback(maxSongSamples, -1, "PLAY_END", mTickUserData);
             }
             return;
         } else {
-            // Wrap the master sample count to seamlessly loop the song
-            mMasterSampleCount = (mMasterSampleCount + numFrames) % maxSongSamples;
+            // All sequences are looping! Synchronize reset to 0.
+            mMasterSampleCount = 0;
             for (auto& seqWrapper : *snapshot) {
                 if (seqWrapper->sequenceObj) {
-                    seqWrapper->currentSample = mMasterSampleCount;
+                    seqWrapper->currentSample = 0;
                     seqWrapper->nextEventIndex = 0;
+                    // Fire noteOffs to clear any lingering hung notes from the previous loop run
+                    auto inst = seqWrapper->sequenceObj->getFaustInstrument();
+                    if (inst) inst->noteOff();
                 }
             }
-            // Continue processing from 0
-            numFrames = 0; // The logic below would need to handle split buffers, but for now we just reset and let the next frame pick it up properly.
-            // Actually, to avoid audio clicks, we should process up to the boundary. For now, this is a coarse loop.
+            // Signal play end BEFORE play start!
+            notifyFinished("PLAY_END");
+            if (mTickCallback) {
+                mTickCallback(maxSongSamples, -1, "PLAY_END", mTickUserData);
+            }
+#if DEBUG_ORCHESTRATOR
+            printf("[DEBUG_ORCHESTRATOR] LOOP BOUNDARY. Resetting masterSample=0\n");
+            fflush(stdout);
+#endif
+            TLOG("updateTimeline: Loop boundary reached. Fired PLAY_END and PLAY_START.");
+            // Signal global loop restart
+            notifyFinished("PLAY_START");
+            if (mTickCallback) {
+                mTickCallback(0, -1, "PLAY_START", mTickUserData);
+            }
+            // Continue processing from 0; we do not zero numFrames so time continues flowing
         }
     }
 
@@ -558,12 +606,7 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
 
         while (framesRemaining > 0) {
             long framesToProcess = framesRemaining;
-            if (seq->loop && seq->totalDurationSamples > 0) {
-                long samplesToEnd = seq->totalDurationSamples - seqWrapper->currentSample;
-                if (samplesToEnd > 0 && samplesToEnd < framesToProcess) {
-                    framesToProcess = samplesToEnd;
-                }
-            }
+            // No local looping: just process up to the requested frames
 
             // Evaluate all events that fall within this sub-block's sample range
             while (seqWrapper->isPlaying && seqWrapper->nextEventIndex < events.size()) {
@@ -637,14 +680,27 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
                             }
                             if (ev.frequency > 0.0f) {
                                 inst->noteOn(ev.frequency, dynamicVelocity, ev.strikeVal);
+#if DEBUG_ORCHESTRATOR
+                                printf("[DEBUG_ORCHESTRATOR] noteOn freq=%.2f vel=%.2f strike=%.1f seq=%s\n",
+                                       ev.frequency, dynamicVelocity, ev.strikeVal, seqWrapper->sequenceObj->name.c_str());
+                                fflush(stdout);
+#endif
                             }
                         }
                     } else if (ev.type == UMLEventType::NoteOff) {
                         if (inst) {
                             if (ev.frequency > 0.0f) {
                                 inst->noteOffTargetFreq(ev.frequency);
+#if DEBUG_ORCHESTRATOR
+                                printf("[DEBUG_ORCHESTRATOR] noteOff freq=%.2f seq=%s\n", ev.frequency, seqWrapper->sequenceObj->name.c_str());
+                                fflush(stdout);
+#endif
                             } else {
                                 inst->noteOff();
+#if DEBUG_ORCHESTRATOR
+                                printf("[DEBUG_ORCHESTRATOR] noteOff (all) seq=%s\n", seqWrapper->sequenceObj->name.c_str());
+                                fflush(stdout);
+#endif
                             }
                         }
                     } else if (ev.type == UMLEventType::FreqGlide) {
@@ -725,10 +781,7 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
             }
 
             seqWrapper->currentSample += framesToProcess;
-            if (seq->loop && seq->totalDurationSamples > 0 && seqWrapper->currentSample >= seq->totalDurationSamples) {
-                seqWrapper->currentSample = 0;
-                seqWrapper->nextEventIndex = 0;
-            }
+            // No local looping: currentSample just keeps increasing until global master loop resets it
             framesRemaining -= framesToProcess;
         }
     }

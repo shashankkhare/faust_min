@@ -888,26 +888,44 @@ void testChurchBell(FaustMixer& mixer, DSPExecutionType execType) {
 }
 
 void testAcousticGuitar(FaustMixer& mixer, DSPExecutionType execType) {
-    std::cout << "\n=== [Test] Acoustic Guitar (C3 Major Chords / Notes) ===" << std::endl;
     auto inst = std::make_shared<FaustInstrument>(21, execType, InstrumentMapper::DEFAULT_SAMPLE_RATE);
     int track = mixer.addTrack(0.8f);
     mixer.addInstrumentToTrack(track, inst.get());
     inst->enableDiagnosticLogging(true);
-    
-    std::vector<double> notes = getTestFreqsDouble(inst.get(), { 130.81, 164.81, 196.00, 261.63 });
+
+    std::vector<double> notes;
+    std::vector<float> amps;
+    if (gTestFrequency > 0.0) {
+        notes = { gTestFrequency };
+        amps = { gTestAmplitude > 0.0f ? gTestAmplitude : 0.8f };
+        std::cout << "\n=== [Test] Acoustic Guitar (single: " << notes[0] << " Hz @ " << amps[0] << ") ===" << std::endl;
+    } else {
+        std::cout << "\n=== [Test] Acoustic Guitar (C3 Major Chords / Notes) ===" << std::endl;
+        notes = getTestFreqsDouble(inst.get(), { 130.81, 164.81, 196.00, 261.63 });
+        amps = { 0.8f };
+    }
     for (double freq : notes) {
-        inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestVelocity, gTestAmplitude);
-        usleep(1500000);
-        inst->noteOff();
-        usleep(300000);
-        printEnergy(inst.get(), freq);
-        if (&freq != &notes.back()) std::cout << " , ";
-        std::cout << std::flush;
+        for (float amp : amps) {
+            inst->clearDiagnosticFreqs();
+            inst->addDiagnosticFreq(freq * 1.0f);
+            inst->addDiagnosticFreq(freq * 2.0f);
+            inst->addDiagnosticFreq(freq * 3.0f);
+            inst->addDiagnosticFreq(freq * 4.0f);
+            inst->addDiagnosticFreq(freq * 5.0f);
+            inst->clearDiagnosticLogs();
+            inst->setDiagnosticSamplingTimes({0.10f, 0.50f, 1.00f});
+            inst->noteOn(freq, amp, gTestStrike);
+            usleep(1500000);
+            inst->noteOff();
+            usleep(300000);
+            printEnergy(inst.get(), freq);
+            if (&freq != &notes.back() || &amp != &amps.back()) std::cout << " , ";
+            std::cout << std::flush;
+        }
     }
     std::cout << std::endl;
     usleep(1000000);
-    testPolyphonicChord(inst.get());
+    if (gTestFrequency <= 0.0) testPolyphonicChord(inst.get());
     mixer.removeTrack(track);
 }
 
@@ -924,7 +942,7 @@ void testElectricGuitar(FaustMixer& mixer, DSPExecutionType execType) {
     std::vector<double> notes = getTestFreqsDouble(inst.get(), { 110.00, 165.00, 220.00 });
     for (double freq : notes) {
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestVelocity, gTestAmplitude);
+        inst->noteOn(freq, gTestAmplitude, gTestStrike);
         usleep(1500000);
         inst->noteOff();
         usleep(300000);
@@ -1689,6 +1707,7 @@ void testHarmonium(FaustMixer& mixer, DSPExecutionType execType) {
     std::vector<double> freqs;
     if (gTestFrequency > 0.0) {
         freqs = { gTestFrequency };
+        inst->addDiagnosticFreq(gTestFrequency);
     } else {
         // Yaman chords or chromatic runs (Sa, Ga, Pa, Ni)
         freqs = { 222.0, 277.5, 333.0, 416.25, 444.0 };
@@ -1696,7 +1715,7 @@ void testHarmonium(FaustMixer& mixer, DSPExecutionType execType) {
     for (size_t i = 0; i < freqs.size(); ++i) {
         double freq = freqs[i];
         inst->clearDiagnosticLogs();
-        inst->noteOn(freq, gTestVelocity, gTestAmplitude);
+        inst->noteOn(freq, gTestAmplitude, gTestStrike >= 0.0f ? gTestStrike : 0.0f);
         usleep(2000000);
         inst->noteOff();
         if (i < freqs.size() - 1) usleep(300000);

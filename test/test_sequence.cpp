@@ -123,8 +123,9 @@ void playSequenceGroup(FaustMixer& mixer, SequenceOrchestrator& orch, SequenceGr
         
         int id = seqPair.second->instrumentID;
         int targetTrack = melodyTrack;
-        // Background (ambient/drone)
-        if (id == 11 || id == 19 || id == 27 || id == 34 || id == 41 || id == 42) {
+        // Background (ambient/drone/accompaniment)
+        if (id == 11 || id == 19 || id == 27 || id == 34 || id == 41 || id == 42 ||
+            (id == 54 && group.name == "Sarod & Harmonium — Raag Yaman")) {
             targetTrack = backgroundTrack;
         // Membrane percussion → percussion bus
         } else if (InstrumentMapper::isMembraneophone(id)) {
@@ -262,7 +263,7 @@ int main(int argc, char* argv[]) {
             std::cout << "  7. North Indian Folk (Dholak Percussion)" << std::endl;
             std::cout << "  8. Punjabi Folk (Bhangra beats)" << std::endl;
             std::cout << "  9. Exit" << std::endl;
-            std::cout << " 10. Sarod — Raag Yaman (Fast, with Meend Glides) [12 semitone]" << std::endl;
+            std::cout << " 10. Sarod & Harmonium — Raag Yaman" << std::endl;
             std::cout << " 11. Carnatic Classical — Raag Hamsadhwani (Violin, Mridangam, Ghatam)" << std::endl;
             std::cout << " 12. Last of the Mohicans — Promontory & Elk Hunt (Panflute, NAF, Rainmaker, Dhol)" << std::endl;
             std::cout << ">>> Enter selection (1-12): ";
@@ -276,7 +277,7 @@ int main(int argc, char* argv[]) {
         }
 
         SequenceGroup group;
-        int duration = 15; // default duration 15s
+        int duration = -1; // default duration 15s
 
         if (selection == 1) {
             group.name = "Indian Classical — Raag Darbari Kanada (Sarod, Tanpura, Tabla) [12 semitone]";
@@ -395,7 +396,7 @@ int main(int argc, char* argv[]) {
             group.percussionTrackWeight = 1.6f;
             group.melodyTrackWeight = 0.55f;
             group.backgroundTrackWeight = 0.8f;
-            duration = 80;
+            duration = -1;
         } else if (selection == 2) {
             group.name = "Jazz Ensemble";
 
@@ -465,7 +466,7 @@ int main(int argc, char* argv[]) {
             group.sequences.push_back({"JazzSnare", new UMLSequence("JazzSnare", 3, umlSnare)});
             group.sequences.push_back({"JazzRide", new UMLSequence("JazzRide", 6, umlRide)});
             
-            duration = 20;
+            duration = -1;
 
         } else if (selection == 3) {
             group.name = "Rock Band (Hotel California)";
@@ -563,7 +564,7 @@ int main(int argc, char* argv[]) {
             group.sequences.push_back({"RockSnare", new UMLSequence("RockSnare", 3, umlSnare)});
             group.sequences.push_back({"RockHihat", new UMLSequence("RockHihat", 4, umlHihat)});
 
-            duration = 24;
+            duration = -1;
 
         } else if (selection == 4) {
             duration = -1;
@@ -598,7 +599,7 @@ int main(int argc, char* argv[]) {
             std::string umlLagngaLow =  
                 "grid: 2\n"
                 "bpm: 60\n"
-                "basefreq: 55.0\n"
+                "basefreq: 111.0\n"
                 "instrument: lagnga\n"
                 "mallet_softness: 0.6\n"
                 "loop: true\n"
@@ -830,7 +831,7 @@ int main(int argc, char* argv[]) {
             group.sequences.push_back({"AcousticSnare", new UMLSequence("AcousticSnare", 3, umlSnare)});
             group.sequences.push_back({"Shaker", new UMLSequence("Shaker", 33, umlShaker)});
 
-            duration = 64;
+            duration = -1;
 
         } else if (selection == 6) {
             group.name = "Sitar — Raag Yaman (Madhya Laya)";
@@ -931,7 +932,7 @@ int main(int argc, char* argv[]) {
             group.sequences.push_back({"Bayan", new UMLSequence("Bayan", 1, umlBayan)});
             
             group.backgroundTrackWeight = 0.8f;
-            duration = 60;
+            duration = -1;
         } else if (selection == 7) {
             group.name = "Indian Folk (Dholak Percussion)";
             
@@ -956,7 +957,7 @@ int main(int argc, char* argv[]) {
                 "Dha Na Ge Na Dha Na Ti _ Na Ti Ke Ti Na Ti Dha _";
                 
             group.sequences.push_back({"Dholak", new UMLSequence("Dholak", 37, umlDholak)});
-            duration = 48;
+            duration = -1;
         } else if (selection == 8) {
             group.name = "Punjabi Folk (Dhol Percussion)";
             
@@ -981,14 +982,14 @@ int main(int argc, char* argv[]) {
                 "Dha _ _ Na Dha Dha _ Tin Dha _ _ Na Dha Dha _ Tin";
 
             group.sequences.push_back({"Dhol", new UMLSequence("Dhol", 38, umlDhol)});
-            duration = 48;
+            duration = -1;
         } else if (selection == 10) {
-            group.name = "Harmonium — Raag Yaman (Fast Chords)";
+            group.name = "Sarod & Harmonium — Raag Yaman";
             
             std::string umlTanpura = 
                 "grid: 4\n"
-                "bpm: 90\n"
-                "basefreq: 111.0\n"
+                "bpm: 80\n"
+                "basefreq: 222.0\n"
                 "instrument: tanpura\n"
                 "notation: Hindustani\n"
                 "loop: true\n"
@@ -998,27 +999,54 @@ int main(int argc, char* argv[]) {
                 "5Pa....... 5Sa....... 5Sa....... 5Sa*2....... \n"
                 "5Pa....... 5Sa....... 5Sa....... 5Sa*2....... ";
             
-            // Fast Harmonium sequence in Raag Yaman playing chords and swift runs
+            std::string umlSarod = 
+                "grid: 4\n"
+                "bpm: 80\n"
+                "basefreq: 222.0\n"
+                "instrument: sarod\n"
+                "notation: Hindustani\n"
+                "glide: 0.06\n"
+                "vibrato_depth: 0.02\n"
+                "vibrato_rate: 5.5\n"
+                "chikari_freq: 222.0\n"
+                "\n"
+                "5Sa..^ 5Sa..^ 8Ni..^ 5Sa..^ \n"
+                "8Ni..^ 8Ga..^ 8Re..^ 8Ni..~ \n"
+                "8Ga..^ 6Dha..^ 8Ni..^ 6Dha..~ \n"
+                "8Re..^ 8Ga..^ 8Re..^ 6Dha..^ \n"
+                "9Ni..^ 6Sa*2..^ 9Ni..~ 6Dha..~ \n"
+                "8Re..^ 9Ni..^ 6Sa*2..^ 8Ga..^ \n"
+                "9Ni..^ 8Re..^ 6Dha..^ 8Ni..^ \n"
+                "5Sa..^ 8Re..^ 8Ga..^ 8Re..~ \n"
+                "\n"
+                "8Ga. 8Re. 5Sa. 8Ni. 9Ni. 5Sa. 8Re. 8Ga. \n"
+                "8Re. 8Ga. 6Dha. 8Ni. 6Dha. 8Ni. 8Re. 8Ga. \n"
+                "8Ni. 5Sa. 8Re. 8Ga. 9Ni. 6Sa*2. 9Ni. 5Sa. \n"
+                "8Ga. 8Re. 6Dha. 8Ni. 8Re. 8Ga. 8Re. 5Sa. \n"
+                "6Dha. 8Ni. 8Re. 8Ga. 8Re. 6Dha. 8Ni. 5Sa. \n"
+                "\n"
+                "61Sa 8Ga~ 61Sa 8Ga~ 81Ni 8Ga~ 61Sa 8Ga~ \n"
+                "81Ni 8Ga~ 81Ga 8Re~ 81Re 8Ga~ 81Ni 8Ga~ \n"
+                "81Ga 8Re~ 61Dha 8Ni~ 81Ni 8Ga~ 61Dha 8Ni~ \n"
+                "81Re 8Ga~ 81Ga 8Re~ 81Re 8Ga~ 61Dha 8Ni~ \n"
+                "91Ni 6Sa*2~ 61Sa*2 9Ni~ 91Ni 6Sa*2~ 61Dha 8Ni~ \n"
+                "81Re 8Ga~ 91Ni 6Sa*2~ 61Sa*2 9Ni~ 81Ga 8Re~ \n"
+                "91Ni 6Sa*2~ 81Re 8Ga~ 61Dha 8Ni~ 81Ni 8Ga~ \n"
+                "51Sa 8Re~ 81Re 8Ga~ 81Ga 8Re~ 81Re 8Ga~ \n"
+                "5Sa . . . . . . . \n";
+                
             std::string umlHarmonium = 
                 "grid: 4\n"
                 "bpm: 80\n"
-                "basefreq: 444.0\n"
+                "basefreq: 222.0\n"
                 "instrument: harmonium\n"
                 "notation: Hindustani\n"
-                "pressure: 0.75\n"
-                "reed_octaves: 1.0\n\n"
-                // Alaap-style chord holds
-                "[5Ni,5Re,5Ga]... [5Re,5Ga,5ma]... [5Ga,5ma,5Pa]... [5ma,5Pa,5Dha]... \n"
-                "[5Pa,5Dha,5Ni]... [5Dha,5Ni,6Sa*2]... [5Ni,6Sa*2,6Re*2]... [5Ni,6Sa*2]... \n"
-                // Swift single voice runs
-                "5Sa 5Re 5Ga 5ma 5Pa 5Dha 5Ni 6Sa*2 | 6Sa*2 5Ni 5Dha 5Pa 5ma 5Ga 5Re 5Sa \n"
-                "5Ni 5Re 5Ga 5Re 5Ga 5ma 5Pa 5ma | 5Pa 5Dha 5Ni 5Dha 5Ni 6Sa*2 6Re*2 6Sa*2 \n"
-                // Fast chord pulses
-                "[5Sa,5Ga,5Pa] . [5Sa,5Ga,5Pa] . [5Re,5ma,5Dha] . [5Re,5ma,5Dha] . \n"
-                "[5Ga,5Pa,5Ni] . [5Ga,5Pa,5Ni] . [5ma,5Dha,6Sa*2] . [5ma,5Dha,6Sa*2] . \n"
-                "[5Pa,5Ni,6Re*2] . [5Pa,5Ni,6Re*2] . [5Ni,6Re*2,6Ga*2] . [5Ni,6Re*2,6Ga*2] . \n"
-                "[5Sa,5Ga,5Pa]... . . . . . . . \n";
-            
+                "\n"
+                "5Sa,5Ga,5Pa..._ 5Re,5M2,5Dha..._ 5Ga,5Pa,5Ni..._ 5Re,5M2,5Dha..._\n"
+                "5Sa,5Ga,5Pa..._ 5Re,5M2,5Dha..._ 5Ga,5Pa,5Ni..._ 5Re,5M2,5Dha..._\n"
+                "5Sa,5Ga,5Pa..._ 5Re,5M2,5Dha..._ 5Ga,5Pa,5Ni..._ 5Re,5M2,5Dha..._\n"
+                "5Sa,5Ga,5Pa..._ 5Re,5M2,5Dha..._ 5Ga,5Pa,5Ni..._ 5Re,5M2,5Dha..._\n";
+
             auto buildDayan = [bpm = 80]() -> std::string {
                 std::string s = "grid: 4\nbpm: ";
                 s += std::to_string(bpm) + "\nbasefreq: 222.0\ninstrument: dayan\n\n";
@@ -1044,16 +1072,17 @@ int main(int argc, char* argv[]) {
                 for (int i = 0; i < 18; i++) s += jhala;
                 return s;
             };
-            
+
             group.sequences.push_back({"Tanpura", new UMLSequence("Tanpura", 11, umlTanpura)});
+            group.sequences.push_back({"Sarod", new UMLSequence("Sarod", 44, umlSarod)});
             group.sequences.push_back({"Harmonium", new UMLSequence("Harmonium", 54, umlHarmonium)});
             group.sequences.push_back({"Dayan", new UMLSequence("Dayan", 0, buildDayan())});
             group.sequences.push_back({"Bayan", new UMLSequence("Bayan", 1, buildBayan())});
             
-            group.percussionTrackWeight = 0.1f;
-            group.backgroundTrackWeight = 1.5f;
-            group.melodyTrackWeight = 0.1f;
-            duration = 48;
+            group.percussionTrackWeight = 0.7f;
+            group.melodyTrackWeight = 1.0f;
+            group.backgroundTrackWeight = 0.7f;
+            duration = -1;
         } else if (selection == 11) {
             group.name = "Carnatic Classical — Raag Hamsadhwani";
 
@@ -1113,7 +1142,7 @@ int main(int argc, char* argv[]) {
 
             group.percussionTrackWeight = 1.2f;
             group.melodyTrackWeight = 1.0f;
-            duration = 32;
+            duration = -1;
         } else if (selection == 12) {
             group.name = "Last of the Mohicans";
             
@@ -1189,11 +1218,11 @@ int main(int argc, char* argv[]) {
             group.percussionTrackWeight = 1.5f;
             group.melodyTrackWeight = 1.8f;
             group.backgroundTrackWeight = 0.5f;
-            duration = 68;
+            duration = -1;
         }
 
         if (!group.sequences.empty()) {
-            if (timeoutSec > 0) duration = timeoutSec;
+            if (timeoutSec > 0 && duration != -1) duration = timeoutSec;
             playSequenceGroup(mixer, orch, group, duration);
         } else {
             std::cout << "Invalid selection. Please try again." << std::endl;

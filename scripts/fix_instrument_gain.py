@@ -47,7 +47,23 @@ def resolve_id(name_or_id):
         sys.exit(1)
 
 def csv_path(instrument_name):
-    return os.path.join(CSV_DIR, f"{instrument_name.lower()}.csv")
+    name_lower = instrument_name.lower()
+    # Try flat name (electricguitar.csv)
+    direct = os.path.join(CSV_DIR, f"{name_lower}.csv")
+    if os.path.exists(direct):
+        return direct
+    # Try scanning DSP directory: the DSP filename (e.g. electric_guitar.dsp) determines the CSV name.
+    # InstrumentMapper maps ID -> electric_guitar.dsp, and LUT derives electric_guitar.csv from that.
+    # If a matching underscored file exists, use it.
+    import glob as gglob
+    for f in gglob.glob(os.path.join(CSV_DIR, "*.csv")):
+        # Match name_lower case-insensitively, ignoring underscores & hyphens
+        base = os.path.splitext(os.path.basename(f))[0]
+        name_clean = name_lower.replace('_', '').replace('-', '')
+        base_clean = base.replace('_', '').replace('-', '')
+        if name_clean == base_clean:
+            return f
+    return direct
 
 def read_csv(path):
     with open(path) as f:
@@ -93,6 +109,97 @@ def measure(instrument_id, freq, amp):
     except subprocess.TimeoutExpired:
         return None
 
+def set_gain(row, gain_col, value, path, header, rows, columns):
+    row[gain_col] = value
+    write_csv(path, header, rows, columns)
+
+def binary_search_gain(instrument_id, freq, amp, target_energy, initial_gain,
+                       path, header, rows, columns, gain_col, row):
+    GAIN_MIN, GAIN_MAX = 0.01, 50.0
+    PROBE_LIMIT = 15
+    BS_ITERS = 4
+
+    lo = target_energy * (1.0 - TARGET_TOLERANCE)
+    hi = target_energy * (1.0 + TARGET_TOLERANCE)
+
+    g = max(GAIN_MIN, min(GAIN_MAX, initial_gain))
+    set_gain(row, gain_col, g, path, header, rows, columns)
+    e = measure(instrument_id, freq, amp)
+    if e is None:
+        print(f"    amp={amp:.1f}: FAILED measurement at gain={g:.4f}")
+        return g, False
+
+    if lo <= e <= hi:
+        print(f"    amp={amp:.1f}: gain={g:.4f} E={e:.6f}  OK (initial)")
+        return g, True
+
+    if e < lo:
+        print(f"    amp={amp:.1f}: gain={g:.4f} E={e:.6f} < target, probing up...")
+        g_lo, e_lo = g, e
+        g_hi, e_hi = g, e
+        for step in range(PROBE_LIMIT):
+            g_hi = min(g_hi * 2, GAIN_MAX)
+            set_gain(row, gain_col, g_hi, path, header, rows, columns)
+            e_hi = measure(instrument_id, freq, amp)
+            if e_hi is None:
+                print(f"    amp={amp:.1f}: FAILED at probe step {step}")
+                return g_hi, False
+            print(f"    amp={amp:.1f}: probe gain={g_hi:.4f} E={e_hi:.6f}")
+            if e_hi >= lo:
+                break
+        else:
+            if e_hi < lo:
+                print(f"    amp={amp:.1f}: ERROR cannot reach target even at max gain")
+                return g_hi, False
+    else:
+        print(f"    amp={amp:.1f}: gain={g:.4f} E={e:.6f} > target, probing down...")
+        g_hi, e_hi = g, e
+        g_lo, e_lo = g, e
+        for step in range(PROBE_LIMIT):
+            g_lo = max(g_lo / 2, GAIN_MIN)
+            set_gain(row, gain_col, g_lo, path, header, rows, columns)
+            e_lo = measure(instrument_id, freq, amp)
+            if e_lo is None:
+                print(f"    amp={amp:.1f}: FAILED at probe step {step}")
+                return g_lo, False
+            print(f"    amp={amp:.1f}: probe gain={g_lo:.4f} E={e_lo:.6f}")
+            if e_lo <= hi:
+                break
+        else:
+            if e_lo > hi:
+                print(f"    amp={amp:.1f}: ERROR cannot reach target even at min gain")
+                return g_lo, False
+
+    print(f"    amp={amp:.1f}: binary search [{g_lo:.4f}, {g_hi:.4f}]")
+    for step in range(BS_ITERS):
+        g_mid = (g_lo + g_hi) / 2.0
+        set_gain(row, gain_col, g_mid, path, header, rows, columns)
+        e_mid = measure(instrument_id, freq, amp)
+        if e_mid is None:
+            print(f"    amp={amp:.1f}: FAILED at BS step {step}")
+            return g_mid, False
+
+        print(f"    amp={amp:.1f}: BS[{step}] gain={g_mid:.4f} E={e_mid:.6f}")
+
+        if lo <= e_mid <= hi:
+            return g_mid, True
+
+        if e_mid < lo:
+            g_lo = g_mid
+        else:
+            g_hi = g_mid
+
+    g_final = (g_lo + g_hi) / 2.0
+    set_gain(row, gain_col, g_final, path, header, rows, columns)
+    e_final = measure(instrument_id, freq, amp)
+    if e_final is None:
+        print(f"    amp={amp:.1f}: FAILED final verification")
+        return g_final, False
+    print(f"    amp={amp:.1f}: final gain={g_final:.4f} E={e_final:.6f}")
+    if lo <= e_final <= hi:
+        return g_final, True
+    return g_final, False
+
 def main():
     global TARGET_E_AT_AMP1, STRIKE
     
@@ -126,7 +233,7 @@ def main():
         return candidates[0]
 
     freq_col = col_name(['frequency', 'freq'])
-    amp_col = col_name(['amplitude', 'amp'])
+    amp_col = col_name(['velocity', 'vel'])
     gain_col = col_name(['gain'])
 
     print(f"Using columns: freq='{freq_col}', amp='{amp_col}', gain='{gain_col}'")
@@ -135,6 +242,7 @@ def main():
     print(f"Unique frequencies: {len(freqs)}")
 
     total_changes = 0
+    skipped_freqs = []
 
     for freq in freqs:
         freq_rows = [r for r in rows if abs(r[freq_col] - freq) < 0.01]
@@ -158,69 +266,51 @@ def main():
 
         print(f"\n  --- {freq:.2f} Hz ---")
 
-        for iteration in range(3):
-            e = measure(instrument_id, freq, 1.0)
-            if e is None:
-                print(f"    FAILED measurement at amp=1.0, skipping freq")
-                break
-
-            low = TARGET_E_AT_AMP1 * (1.0 - TARGET_TOLERANCE)
-            high = TARGET_E_AT_AMP1 * (1.0 + TARGET_TOLERANCE)
-            print(f"    amp=1.0: E={e:.6f}  target=[{low:.6f}, {high:.6f}]", end="")
-
-            if low <= e <= high:
-                print("  OK")
-                break
-            else:
-                new_g = round(ref_row[gain_col] * math.sqrt(TARGET_E_AT_AMP1 / e) if e > 0 else ref_row[gain_col], 4)
-                new_g = max(0.01, min(50.0, new_g))
-                print(f"  adjust gain {ref_row[gain_col]:.4f} -> {new_g:.4f}")
-                ref_row[gain_col] = new_g
-                write_csv(path, header, rows, columns)
-                total_changes += 1
-        else:
-            print(f"    amp=1.0 still out of range after 3 iterations, continuing anyway")
+        old_g = ref_row[gain_col]
+        g_found, ok = binary_search_gain(
+            instrument_id, freq, 1.0, TARGET_E_AT_AMP1,
+            old_g, path, header, rows, columns, gain_col, ref_row)
+        e_check = measure(instrument_id, freq, 1.0)
+        low = TARGET_E_AT_AMP1 * (1.0 - TARGET_TOLERANCE)
+        high = TARGET_E_AT_AMP1 * (1.0 + TARGET_TOLERANCE)
+        if e_check is not None:
+            print(f"    amp=1.0: gain {old_g:.4f} -> {g_found:.4f}  E={e_check:.6f}  target=[{low:.6f}, {high:.6f}]", end="")
+        if not ok:
+            print(f"  WARNING: amp=1.0 could not reach target, skipping freq")
+            skipped_freqs.append(freq)
+            continue
+        print("  OK")
+        if abs(g_found - old_g) > 0.0001:
+            total_changes += 1
 
         e_ref = measure(instrument_id, freq, 1.0)
         if e_ref is None:
             continue
         sqrt_e_ref = math.sqrt(e_ref)
 
-        print(f"    {amp_col:>5} {'OldGain':>8} {'Energy':>12} {'Sqrt(E)':>12} {'TargetSqrt':>12} {'NewGain':>8}")
+        print(f"    {amp_col:>5} {'OldGain':>8} {'NewGain':>8} {'Energy':>12} {'Sqrt(E)':>12} {'TargetSqrt':>12}")
         for r in freq_rows:
             a = r[amp_col]
             if abs(a - 1.0) < 0.01:
                 continue
 
-            for iteration in range(3):
-                e = measure(instrument_id, freq, a)
-                if e is None:
-                    break
-
-                sqrt_e = math.sqrt(e)
-                target_sqrt = sqrt_e_ref * a
-                
-                target_e = target_sqrt ** 2
-                low = target_e * (1.0 - TARGET_TOLERANCE)
-                high = target_e * (1.0 + TARGET_TOLERANCE)
-                
-                old_g = r[gain_col]
-                
-                if low <= e <= high:
-                    print(f"    {a:5.1f} {old_g:8.4f} {e:12.6f} {sqrt_e:12.6f} {target_sqrt:12.6f} {'OK':>8}")
-                    break
-                
-                new_g = round(old_g * target_sqrt / sqrt_e, 4) if sqrt_e > 0 else old_g
-                new_g = max(0.01, min(50.0, new_g))
-                
-                print(f"    {a:5.1f} {old_g:8.4f} {e:12.6f} {sqrt_e:12.6f} {target_sqrt:12.6f} {new_g:8.4f}")
-                
-                if abs(new_g - r[gain_col]) > 0.0001:
-                    r[gain_col] = new_g
-                    write_csv(path, header, rows, columns)
-                    total_changes += 1
-                else:
-                    break
+            target_sqrt = sqrt_e_ref * a
+            target_e = target_sqrt ** 2
+            old_g = r[gain_col]
+            g_found, ok = binary_search_gain(
+                instrument_id, freq, a, target_e,
+                old_g, path, header, rows, columns, gain_col, r)
+            e_check = measure(instrument_id, freq, a)
+            sqrt_e = math.sqrt(e_check) if e_check else 0
+            if e_check is not None:
+                print(f"    {a:5.1f} {old_g:8.4f} {g_found:8.4f} {e_check:12.6f} {sqrt_e:12.6f} {target_sqrt:12.6f}", end="")
+            if not ok:
+                print(f"  WARNING: amp={a} could not reach target, skipping")
+                skipped_freqs.append(freq)
+                break
+            print("  OK")
+            if abs(g_found - old_g) > 0.0001:
+                total_changes += 1
 
     if total_changes > 0:
         write_csv(path, header, rows, columns)

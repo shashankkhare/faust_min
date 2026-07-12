@@ -14,21 +14,24 @@ gain          = hslider("gain", 1.0, 0, 1, 0.01) : si.smoo;
 stringType    = hslider("stringType [style:knob]", 0, 0, 2, 1) : int;
 
 // --- ACOUSTIC CHAMBER / CABINET ACCENTS ---
+// Body resonances that track the fundamental for harmonic enhancement
 guitarBody(sel) = _ <: (airResonance, woodPlates) :> fi.dcblocker
 with {
-    airFreq = select2(sel > 0, 100.0, select2(sel > 1, 85.0, 52.0));   
-    airQ    = select2(sel > 0, 25.0, select2(sel > 1, 12.0, 38.0));    
-    airGain = select2(sel > 0, 0.4, select2(sel > 1, 0.8, 1.4));       
+    // Air resonance at fundamental (body air cavity)
+    airFreq = freq;
+    airQ    = select2(sel > 0, 15.0, select2(sel > 1, 10.0, 20.0));    
+    airGain = select2(sel > 0, 1.2, select2(sel > 1, 1.5, 2.0));       
     airResonance = fi.resonbp(airFreq, airQ, airGain);
 
+    // Wood plate modes at harmonic frequencies
     woodPlates = _ <: (mode1, mode2, mode3) :> /(3.0)
     with {
-        f1 = select2(sel > 0, 190.0, select2(sel > 1, 160.0, 105.0));
-        f2 = select2(sel > 0, 220.0, select2(sel > 1, 195.0, 138.0));
-        f3 = select2(sel > 0, 410.0, select2(sel > 1, 320.0, 210.0));
-        mode1 = fi.resonbp(f1, 15.0, 0.5); 
-        mode2 = fi.resonbp(f2, 18.0, 0.4); 
-        mode3 = fi.resonbp(f3, 12.0, 0.3); 
+        f1 = freq * 2.0;
+        f2 = freq * 3.0;
+        f3 = freq * 4.0;
+        mode1 = fi.resonbp(f1, 12.0, 1.0); 
+        mode2 = fi.resonbp(f2, 10.0, 0.8); 
+        mode3 = fi.resonbp(f3, 8.0, 0.6); 
     };
 };
 
@@ -54,5 +57,5 @@ stringSelector = select2(stringType == 0, select2(stringType == 1, bassModel, ny
 process = stringSelector
         : guitarBody(stringType)
         : ma.tanh
-        : *(gain * 3.0);
+        : *(gain * 3.125);
 

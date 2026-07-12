@@ -22,7 +22,7 @@ mypm = library("physmodels.lib") with { maxLength = 20; };
 freq = hslider("freq", 196.0, 82, 1046, 0.01);
 velocity = hslider("velocity", 0.5, 0, 1, 0.01);
 gate = button("gate");
-gain = hslider("gain", 0.5, 0, 1, 0.01) : si.smoo;
+gain = hslider("gain", 0.5, 0, 100, 0.01) : si.smoo;
 
 pluckPosition = hslider("pluckPosition", 0.8, 0.01, 0.99, 0.01) : si.smoo;
 mute = hslider("mute", 1.0, 0.0, 1.0, 0.01) : si.smoo; // 1 for no mute, 0 for instant mute

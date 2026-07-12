@@ -5,8 +5,8 @@ Code generated with Faust 2.37.3 (https://faust.grame.fr)
 Compilation options: -lang cpp -es 1 -single -ftz 1
 ------------------------------------------------------------ */
 
-#ifndef  __mydsp_H__
-#define  __mydsp_H__
+#ifndef  __FaustHihatDSP_H__
+#define  __FaustHihatDSP_H__
 
 #ifndef FAUSTFLOAT
 #define FAUSTFLOAT float
@@ -18,12 +18,12 @@ Compilation options: -lang cpp -es 1 -single -ftz 1
 #include <float.h>
 #include <math.h>
 
-static float mydsp_faustpower2_f(float value) {
+static float FaustHihatDSP_faustpower2_f(float value) {
 	return (value * value);
 }
 
 #ifndef FAUSTCLASS 
-#define FAUSTCLASS mydsp
+#define FAUSTCLASS FaustHihatDSP
 #endif
 
 #ifdef __APPLE__ 
@@ -31,7 +31,7 @@ static float mydsp_faustpower2_f(float value) {
 #define exp10 __exp10
 #endif
 
-class mydsp : public dsp {
+class FaustHihatDSP : public dsp {
 	
  private:
 	
@@ -151,7 +151,7 @@ class mydsp : public dsp {
 		float fConst12 = std::tan((9424.77832f / fConst0));
 		float fConst13 = (1.0f / fConst12);
 		fConst14 = (1.0f / (((fConst13 + 1.41421354f) / fConst12) + 1.0f));
-		float fConst15 = mydsp_faustpower2_f(fConst12);
+		float fConst15 = FaustHihatDSP_faustpower2_f(fConst12);
 		fConst16 = (1.0f / fConst15);
 		fConst17 = (((fConst13 + -1.41421354f) / fConst12) + 1.0f);
 		fConst18 = (2.0f * (1.0f - fConst16));
@@ -224,8 +224,8 @@ class mydsp : public dsp {
 		instanceClear();
 	}
 	
-	virtual mydsp* clone() {
-		return new mydsp();
+	virtual FaustHihatDSP* clone() {
+		return new FaustHihatDSP();
 	}
 	
 	virtual int getSampleRate() {
@@ -263,19 +263,19 @@ class mydsp : public dsp {
 		float fSlow14 = std::tan((fConst2 * (iSlow10 ? 50.0f : fThen4)));
 		float fSlow15 = (1.0f / fSlow14);
 		float fSlow16 = (((fSlow15 + -1.41421354f) / fSlow14) + 1.0f);
-		float fSlow17 = mydsp_faustpower2_f(fSlow14);
+		float fSlow17 = FaustHihatDSP_faustpower2_f(fSlow14);
 		float fSlow18 = (1.0f - (1.0f / fSlow17));
 		float fSlow19 = (((fSlow15 + 1.41421354f) / fSlow14) + 1.0f);
 		float fSlow20 = (0.0f - (2.0f / fSlow17));
 		float fSlow21 = std::tan((fConst2 * (iSlow10 ? 400.0f : 20000.0f)));
 		float fSlow22 = (1.0f / fSlow21);
 		float fSlow23 = (((fSlow22 + -1.41421354f) / fSlow21) + 1.0f);
-		float fSlow24 = (1.0f - (1.0f / mydsp_faustpower2_f(fSlow21)));
+		float fSlow24 = (1.0f - (1.0f / FaustHihatDSP_faustpower2_f(fSlow21)));
 		float fSlow25 = (((fSlow22 + 1.41421354f) / fSlow21) + 1.0f);
 		int iSlow26 = (fSlow8 == 0.0f);
 		float fSlow27 = (1.0f / fSlow5);
 		float fSlow28 = (((fSlow4 - fSlow3) / fSlow2) + 1.0f);
-		float fSlow29 = (2.0f * (1.0f - (1.0f / mydsp_faustpower2_f(fSlow2))));
+		float fSlow29 = (2.0f * (1.0f - (1.0f / FaustHihatDSP_faustpower2_f(fSlow2))));
 		float fSlow30 = std::tan((fConst5 / fSlow1));
 		float fSlow31 = (0.00119047624f * fSlow1);
 		float fSlow32 = (1.0f / fSlow30);
@@ -284,7 +284,7 @@ class mydsp : public dsp {
 		float fSlow35 = (0.0f - fSlow34);
 		float fSlow36 = (1.0f / fSlow33);
 		float fSlow37 = (((fSlow32 - fSlow31) / fSlow30) + 1.0f);
-		float fSlow38 = (2.0f * (1.0f - (1.0f / mydsp_faustpower2_f(fSlow30))));
+		float fSlow38 = (2.0f * (1.0f - (1.0f / FaustHihatDSP_faustpower2_f(fSlow30))));
 		float fSlow39 = std::tan((fConst6 / fSlow1));
 		float fSlow40 = (0.0021978023f * fSlow1);
 		float fSlow41 = (1.0f / fSlow39);
@@ -293,7 +293,7 @@ class mydsp : public dsp {
 		float fSlow44 = (0.0f - fSlow43);
 		float fSlow45 = (1.0f / fSlow42);
 		float fSlow46 = (((fSlow41 - fSlow40) / fSlow39) + 1.0f);
-		float fSlow47 = (2.0f * (1.0f - (1.0f / mydsp_faustpower2_f(fSlow39))));
+		float fSlow47 = (2.0f * (1.0f - (1.0f / FaustHihatDSP_faustpower2_f(fSlow39))));
 		float fSlow48 = std::tan((fConst7 / fSlow1));
 		float fSlow49 = (0.0039682542f * fSlow1);
 		float fSlow50 = (1.0f / fSlow48);
@@ -302,7 +302,7 @@ class mydsp : public dsp {
 		float fSlow53 = (0.0f - fSlow52);
 		float fSlow54 = (1.0f / fSlow51);
 		float fSlow55 = (((fSlow50 - fSlow49) / fSlow48) + 1.0f);
-		float fSlow56 = (2.0f * (1.0f - (1.0f / mydsp_faustpower2_f(fSlow48))));
+		float fSlow56 = (2.0f * (1.0f - (1.0f / FaustHihatDSP_faustpower2_f(fSlow48))));
 		float fSlow57 = std::tan((fConst8 / fSlow1));
 		float fSlow58 = (0.00714285718f * fSlow1);
 		float fSlow59 = (1.0f / fSlow57);
@@ -311,7 +311,7 @@ class mydsp : public dsp {
 		float fSlow62 = (0.0f - fSlow61);
 		float fSlow63 = (1.0f / fSlow60);
 		float fSlow64 = (((fSlow59 - fSlow58) / fSlow57) + 1.0f);
-		float fSlow65 = (2.0f * (1.0f - (1.0f / mydsp_faustpower2_f(fSlow57))));
+		float fSlow65 = (2.0f * (1.0f - (1.0f / FaustHihatDSP_faustpower2_f(fSlow57))));
 		float fSlow66 = std::tan((fConst9 / fSlow1));
 		float fSlow67 = (0.0122448979f * fSlow1);
 		float fSlow68 = (1.0f / fSlow66);
@@ -320,7 +320,7 @@ class mydsp : public dsp {
 		float fSlow71 = (0.0f - fSlow70);
 		float fSlow72 = (1.0f / fSlow69);
 		float fSlow73 = (((fSlow68 - fSlow67) / fSlow66) + 1.0f);
-		float fSlow74 = (2.0f * (1.0f - (1.0f / mydsp_faustpower2_f(fSlow66))));
+		float fSlow74 = (2.0f * (1.0f - (1.0f / FaustHihatDSP_faustpower2_f(fSlow66))));
 		float fSlow75 = std::tan((fConst10 / fSlow1));
 		float fSlow76 = (0.0198412705f * fSlow1);
 		float fSlow77 = (1.0f / fSlow75);
@@ -329,7 +329,7 @@ class mydsp : public dsp {
 		float fSlow80 = (0.0f - fSlow79);
 		float fSlow81 = (1.0f / fSlow78);
 		float fSlow82 = (((fSlow77 - fSlow76) / fSlow75) + 1.0f);
-		float fSlow83 = (2.0f * (1.0f - (1.0f / mydsp_faustpower2_f(fSlow75))));
+		float fSlow83 = (2.0f * (1.0f - (1.0f / FaustHihatDSP_faustpower2_f(fSlow75))));
 		float fSlow84 = std::tan((fConst11 / fSlow1));
 		float fSlow85 = (0.0357142873f * fSlow1);
 		float fSlow86 = (1.0f / fSlow84);
@@ -337,7 +337,7 @@ class mydsp : public dsp {
 		float fSlow88 = (0.800000012f / (fSlow84 * fSlow87));
 		float fSlow89 = (1.0f / fSlow87);
 		float fSlow90 = (((fSlow86 - fSlow85) / fSlow84) + 1.0f);
-		float fSlow91 = (2.0f * (1.0f - (1.0f / mydsp_faustpower2_f(fSlow84))));
+		float fSlow91 = (2.0f * (1.0f - (1.0f / FaustHihatDSP_faustpower2_f(fSlow84))));
 		float fSlow92 = (0.0f - fSlow88);
 		float fThen7 = (iSlow12 ? 0.300000012f : 0.0799999982f);
 		float fSlow93 = (iSlow10 ? 0.0f : fThen7);

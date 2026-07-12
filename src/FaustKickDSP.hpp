@@ -5,8 +5,8 @@ Code generated with Faust 2.37.3 (https://faust.grame.fr)
 Compilation options: -lang cpp -es 1 -single -ftz 1
 ------------------------------------------------------------ */
 
-#ifndef  __mydsp_H__
-#define  __mydsp_H__
+#ifndef  __FaustKickDSP_H__
+#define  __FaustKickDSP_H__
 
 #ifndef FAUSTFLOAT
 #define FAUSTFLOAT float
@@ -18,7 +18,7 @@ Compilation options: -lang cpp -es 1 -single -ftz 1
 #include <float.h>
 #include <math.h>
 
-class mydspSIG0 {
+class FaustKickDSPSIG0 {
 	
   private:
 	
@@ -27,14 +27,14 @@ class mydspSIG0 {
 	
   public:
 	
-	int getNumInputsmydspSIG0() {
+	int getNumInputsFaustKickDSPSIG0() {
 		return 0;
 	}
-	int getNumOutputsmydspSIG0() {
+	int getNumOutputsFaustKickDSPSIG0() {
 		return 1;
 	}
 	
-	void instanceInitmydspSIG0(int sample_rate) {
+	void instanceInitFaustKickDSPSIG0(int sample_rate) {
 		for (int l0 = 0; (l0 < 2); l0 = (l0 + 1)) {
 			iVec0[l0] = 0;
 		}
@@ -43,7 +43,7 @@ class mydspSIG0 {
 		}
 	}
 	
-	void fillmydspSIG0(int count, float* table) {
+	void fillFaustKickDSPSIG0(int count, float* table) {
 		for (int i1 = 0; (i1 < count); i1 = (i1 + 1)) {
 			iVec0[0] = 1;
 			iRec0[0] = ((iVec0[1] + iRec0[1]) % 65536);
@@ -55,13 +55,13 @@ class mydspSIG0 {
 
 };
 
-static mydspSIG0* newmydspSIG0() { return (mydspSIG0*)new mydspSIG0(); }
-static void deletemydspSIG0(mydspSIG0* dsp) { delete dsp; }
+static FaustKickDSPSIG0* newFaustKickDSPSIG0() { return (FaustKickDSPSIG0*)new FaustKickDSPSIG0(); }
+static void deleteFaustKickDSPSIG0(FaustKickDSPSIG0* dsp) { delete dsp; }
 
-static float ftbl0mydspSIG0[65536];
+static float ftbl0FaustKickDSPSIG0[65536];
 
 #ifndef FAUSTCLASS 
-#define FAUSTCLASS mydsp
+#define FAUSTCLASS FaustKickDSP
 #endif
 
 #ifdef __APPLE__ 
@@ -69,7 +69,7 @@ static float ftbl0mydspSIG0[65536];
 #define exp10 __exp10
 #endif
 
-class mydsp : public dsp {
+class FaustKickDSP : public dsp {
 	
  private:
 	
@@ -132,10 +132,10 @@ class mydsp : public dsp {
 	}
 	
 	static void classInit(int sample_rate) {
-		mydspSIG0* sig0 = newmydspSIG0();
-		sig0->instanceInitmydspSIG0(sample_rate);
-		sig0->fillmydspSIG0(65536, ftbl0mydspSIG0);
-		deletemydspSIG0(sig0);
+		FaustKickDSPSIG0* sig0 = newFaustKickDSPSIG0();
+		sig0->instanceInitFaustKickDSPSIG0(sample_rate);
+		sig0->fillFaustKickDSPSIG0(65536, ftbl0FaustKickDSPSIG0);
+		deleteFaustKickDSPSIG0(sig0);
 	}
 	
 	virtual void instanceConstants(int sample_rate) {
@@ -192,8 +192,8 @@ class mydsp : public dsp {
 		instanceClear();
 	}
 	
-	virtual mydsp* clone() {
-		return new mydsp();
+	virtual FaustKickDSP* clone() {
+		return new FaustKickDSP();
 	}
 	
 	virtual int getSampleRate() {
@@ -238,7 +238,7 @@ class mydsp : public dsp {
 			iRec4[0] = ((1103515245 * iRec4[1]) + 12345);
 			float fTempFTZ2 = (fSlow8 + (fRec5[1] - std::floor((fSlow8 + fRec5[1]))));
 			fRec5[0] = ((std::fabs(fTempFTZ2) > 1.17549435e-38f) ? fTempFTZ2 : 0.0f);
-			output0[i0] = FAUSTFLOAT((fSlow1 * (((ftbl0mydspSIG0[int((65536.0f * fRec1[0]))] * std::max<float>(0.0f, (fTemp5 * (1.0f - (fConst7 * fTemp1))))) + (fSlow6 * (float(iRec4[0]) * std::max<float>(0.0f, (fTemp2 * std::min<float>(fTemp0, std::max<float>(((fConst8 * fTemp4) + 1.0f), 0.0f))))))) + (fSlow7 * (ftbl0mydspSIG0[int((65536.0f * fRec5[0]))] * std::max<float>(0.0f, (fTemp5 * (1.0f - (fConst10 * fTemp1)))))))));
+			output0[i0] = FAUSTFLOAT((fSlow1 * (((ftbl0FaustKickDSPSIG0[int((65536.0f * fRec1[0]))] * std::max<float>(0.0f, (fTemp5 * (1.0f - (fConst7 * fTemp1))))) + (fSlow6 * (float(iRec4[0]) * std::max<float>(0.0f, (fTemp2 * std::min<float>(fTemp0, std::max<float>(((fConst8 * fTemp4) + 1.0f), 0.0f))))))) + (fSlow7 * (ftbl0FaustKickDSPSIG0[int((65536.0f * fRec5[0]))] * std::max<float>(0.0f, (fTemp5 * (1.0f - (fConst10 * fTemp1)))))))));
 			fVec1[1] = fVec1[0];
 			fRec2[1] = fRec2[0];
 			iRec3[1] = iRec3[0];

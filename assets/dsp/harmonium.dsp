@@ -15,7 +15,7 @@ import("stdfaust.lib");
 freq = hslider("freq", 440.0, 50, 2000, 0.01);
 gate = button("gate");
 velocity = hslider("velocity", 0.7, 0, 1, 0.01);
-gain = hslider("gain", 0.6, 0, 1, 0.01);
+gain = hslider("gain", 1.0, 0, 1, 0.01);
 
 // Global Bellows pressure parameters
 pressure = hslider("pressure", 0.8, 0, 1.0, 0.01); // Global hand-pumping target pressure
@@ -23,9 +23,10 @@ bellows_growl = hslider("bellows_growl", 0.25, 0, 1.0, 0.01);
 reed_octaves = hslider("reed_octaves", 1.0, 0.0, 2.0, 0.1); // Blend between: 0 = Male, 1 = Male+Female, 2 = Bass+Male+Female
 
 // --- Bellows Reservoir Dynamic Simulation ---
-// Inflow from hand pumping (LFO-driven bellows strokes to simulate time-varying reservoir replenishment)
-pump_lfo = (os.osc(0.6) + 1.0) * 0.5; // slow bellows squeeze cycle (0.6 Hz)
-target_inflow = pressure * pump_lfo;
+// Ensure the base inflow is high enough that reservoir pressure never drops to zero!
+min_inflow = 0.5; 
+pump_lfo = (os.osc(0.6) * 0.5 + 0.5); // Maps to 0.0 to 1.0
+target_inflow = pressure * (min_inflow + pump_lfo * (1.0 - min_inflow));
 
 // Valve drainage: More open keys = faster pressure drop
 valve_aperture = gate * velocity;
@@ -35,8 +36,13 @@ active_drainage = valve_aperture * 0.08;
 reservoir_pressure = target_inflow : + ~ (*(0.9997 - active_drainage) : max(0.0) : min(1.0));
 
 // --- Key Valve Modulation ---
-// Air reaching the reed depends on key aperture (velocity) and current windchest pressure
-effective_pressure = reservoir_pressure * valve_aperture : si.smoo;
+// We use ASR for the 200ms acoustic release so the note rings out smoothly.
+attack_sec = 0.02; 
+release_sec = 0.20; 
+key_envelope = en.asr(attack_sec, 1.0, release_sec, gate);
+
+// Air reaching the reed uses the smooth envelope, but doesn't drain the reservoir!
+effective_pressure = reservoir_pressure * key_envelope * velocity;
 
 // --- Free Reed Excitation Engine ---
 // Modulate reed frequencies with slight pressure-induced GROWL instability
@@ -70,4 +76,4 @@ wooden_box_filter(x) =
      + (x : fi.resonbp(1250.0, 2.5, 0.35))      // Key grid resonance
     );
 
-process = raw_reeds_mix : wooden_box_filter : * (gain * 1.5) : ma.tanh;
+process = raw_reeds_mix : wooden_box_filter : * (gain * 4.0156);

@@ -1170,7 +1170,7 @@ class FaustSarodDSP : public dsp {
 	virtual void compute(int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs) {
 		FAUSTFLOAT* output0 = outputs[0];
 		FAUSTFLOAT* output1 = outputs[1];
-		float fSlow0 = (5.0f * float(fHslider0));
+		float fSlow0 = (8.83349991f * float(fHslider0));
 		float fSlow1 = float(fButton0);
 		float fSlow2 = float(fHslider1);
 		int iSlow3 = (float(fHslider2) > 0.5f);

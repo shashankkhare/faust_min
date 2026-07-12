@@ -115,8 +115,10 @@ The notes component handles discrete triggers and melodic movement for the seque
     - `SaLow` — one octave below Sa (ratio 0.5)
   - **Western Notation**: `C4`, `C#`, `Db`, `D4`, etc.
   - **Direct Hz**: Any numeric token (e.g. `440.0`) is used as a literal frequency.
-  - **Chords (Polyphony)**: Use `|` (Pipe) to join multiple notes to be played simultaneously.
-    - Example: `C4|E4|G4` (Plays C major chord).
+  - **Chords (Polyphony)**: 
+    - Use `,` (Comma) to join multiple notes with individual amplitudes/modifiers. Example: `5Sa,7Ga,9Pa` (Plays Sa at 5, Ga at 7, Pa at 9 simultaneously).
+    - Use `|` (Pipe) to join multiple notes that share the same amplitude. Example: `5C4|E4|G4` (Plays C major chord all at amplitude 5).
+  - **Octave Multipliers/Dividers**: Use `*` or `/` at the end of a note to shift its octave. Example: `Sa*2` (one octave up), `n2/2` (Komal Ni one octave down). If no number is provided, it defaults to `2` (e.g. `Sa*` is one octave up, `Sa/` is one octave down).
 - `ArticToken`:
   - `.` (Dot): Continuity. Extends the previous state (note or silence) by 1 grid unit.
 

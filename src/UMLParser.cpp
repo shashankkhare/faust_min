@@ -615,7 +615,7 @@ void UMLParser::handlePitchedToken(const TokenItem& ti, float velocityScalar, lo
     std::vector<std::string> notes;
     std::stringstream ss(ti.noteName);
     std::string item;
-    while (std::getline(ss, item, '|')) {
+    while (std::getline(ss, item, ',')) {
         notes.push_back(item);
     }
 
@@ -799,16 +799,26 @@ double UMLParser::getFrequency(const std::string& token, const std::string& nota
     size_t slashPos = token.rfind('/');
     if (starPos != std::string::npos && starPos > 0) {
         std::string scalePart = token.substr(starPos + 1);
-        try {
-            double s = std::stod(scalePart);
-            if (s > 0.0) { octaveScale = s; baseToken = token.substr(0, starPos); }
-        } catch (...) {}
+        if (scalePart.empty()) {
+            octaveScale = 2.0;
+            baseToken = token.substr(0, starPos);
+        } else {
+            try {
+                double s = std::stod(scalePart);
+                if (s > 0.0) { octaveScale = s; baseToken = token.substr(0, starPos); }
+            } catch (...) {}
+        }
     } else if (slashPos != std::string::npos && slashPos > 0) {
         std::string scalePart = token.substr(slashPos + 1);
-        try {
-            double s = std::stod(scalePart);
-            if (s > 0.0) { octaveScale = 1.0 / s; baseToken = token.substr(0, slashPos); }
-        } catch (...) {}
+        if (scalePart.empty()) {
+            octaveScale = 0.5;
+            baseToken = token.substr(0, slashPos);
+        } else {
+            try {
+                double s = std::stod(scalePart);
+                if (s > 0.0) { octaveScale = 1.0 / s; baseToken = token.substr(0, slashPos); }
+            } catch (...) {}
+        }
     }
 
     // 3. Melodic Check on base token

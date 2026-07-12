@@ -240,7 +240,36 @@ protected:
 
     float mDSPGlideParam = 0.05f; // Store original portamento
     
+    // Tracks the current peak amplitude energy of each active voice
+    std::vector<float> mVoiceEnergies;
+
+    // Running peak envelope tracker for smooth look-ahead normalization
+    float mRunningPeakEnvelope = 0.0f;
+
+    // Fast inline helper to calculate peak block amplitude for voice energy tracking
+    inline void updateVoiceEnergyInline(int voiceIndex, const float* sourceBufferL, const float* sourceBufferR, int chunkSize) {
+        float peak = 0.0f;
+        if (sourceBufferR == nullptr) { // Mono
+            for (int i = 0; i < chunkSize; ++i) {
+                float val = std::abs(sourceBufferL[i]);
+                if (val > peak) peak = val;
+            }
+        } else { // Stereo
+            for (int i = 0; i < chunkSize; ++i) {
+                float val = std::max(std::abs(sourceBufferL[i]), std::abs(sourceBufferR[i]));
+                if (val > peak) peak = val;
+            }
+        }
+        if (voiceIndex >= 0 && voiceIndex < mVoiceEnergies.size()) {
+            mVoiceEnergies[voiceIndex] = peak;
+        }
+    }
+
+    // Dynamic smoothing peak normalization to prevent digital clipping in polyphony
+    void normalizeBuffer(float* buffer, int numFrames);
+
     std::vector<DiagLog> mDiagLogs;
+    std::vector<std::string> mDiagLogsFull;
     bool mEnableDiagLogging = false;
 
     void* mStreamDevice;
