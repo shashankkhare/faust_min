@@ -419,7 +419,9 @@ void FaustMixer::clearAll() {
 void FaustMixer::setTrackEnvelope(int trackID, const float* times, const float* values, const uint8_t* interpTypes, int numPoints) {
     std::lock_guard<std::mutex> lock(mRegistryMutex);
     if (!mTracks.count(trackID)) return;
-    auto& env = mTracks[trackID].envelope;
+    auto& track = mTracks[trackID];
+    track.envelopeStartSample = mMasterSampleTime;
+    auto& env = track.envelope;
     env.clear();
     env.reserve(numPoints);
     for (int i = 0; i < numPoints; i++) {
@@ -429,11 +431,12 @@ void FaustMixer::setTrackEnvelope(int trackID, const float* times, const float* 
 }
 
 void FaustMixer::processEnvelopes(long currentS) {
-    float timeSec = (float)currentS / mSampleRate;
     for (auto& pair : mTracks) {
         auto& track = pair.second;
         auto& env = track.envelope;
         if (env.empty()) { track.fadeGain = 1.0f; continue; }
+
+        float timeSec = (float)(currentS - track.envelopeStartSample) / mSampleRate;
 
         if ((int)env.size() == 1) { track.fadeGain = env[0].value; continue; }
 

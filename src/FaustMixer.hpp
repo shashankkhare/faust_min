@@ -156,6 +156,7 @@ private:
         std::vector<TrackInstrument> instruments;
         std::vector<EnvelopePoint> envelope;
         float fadeGain = 1.0f;
+        long envelopeStartSample = 0;
     };
 
     // Real-Time Audio Interrupt Accumulator Endpoint
