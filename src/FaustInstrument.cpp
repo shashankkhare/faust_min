@@ -604,13 +604,13 @@ std::string FaustInstrument::getParametersJSON() {
 void FaustInstrument::setFrequency(float freq) {
     mFrequency = freq;
     setParam("freq", freq, -1);
-    applyDynamicLUTParams(freq, mAmplitude, -1);
+    applyDynamicLUTParams(freq, mVelocity, -1);
 }
 
 void FaustInstrument::setFrequencyImmediate(float freq) {
     mFrequency = freq;
     setParamImmediate("freq", freq, -1);
-    applyDynamicLUTParams(freq, mAmplitude, -1);
+    applyDynamicLUTParams(freq, mVelocity, -1);
 }
 
 void FaustInstrument::setGain(float gain) {
@@ -636,13 +636,13 @@ void FaustInstrument::setVelocityImmediate(float velocity) {
 void FaustInstrument::setAmplitude(float amplitude) {
     mAmplitude = amplitude;
     if (!mLUTActive) setParam("gain", amplitude, -1);
-    applyDynamicLUTParams(mFrequency, mAmplitude, -1);
+    applyDynamicLUTParams(mFrequency, mVelocity, -1);
 }
 
 void FaustInstrument::setAmplitudeImmediate(float amplitude) {
     mAmplitude = amplitude;
     if (!mLUTActive) setParamImmediate("gain", amplitude, -1);
-    applyDynamicLUTParams(mFrequency, mAmplitude, -1);
+    applyDynamicLUTParams(mFrequency, mVelocity, -1);
 }
 
 void FaustInstrument::setDuration(float seconds) {
@@ -850,7 +850,7 @@ void FaustInstrument::processInternalGlides(int numFrames) {
     }
 
     if (mLUTActive)
-        applyDynamicLUTParams(mFrequency, mAmplitude, -1);
+        applyDynamicLUTParams(mFrequency, mVelocity, -1);
 }
 
 void FaustInstrument::normalizeBuffer(float* buffer, int numFrames) {
@@ -864,8 +864,16 @@ void FaustInstrument::normalizeBuffer(float* buffer, int numFrames) {
 
 void FaustInstrument::render(int numFrames, float* buffer) {
     if (mVoices.empty()) return;
+
+    // Drain the event queue so that gate-on, velocity, freq, etc.
+    // queued by noteOn() are applied before compute().
+    for (const auto& ev : mEventQueue) {
+        setParamImmediate(ev.paramName.c_str(), ev.value, ev.voiceIndex);
+    }
+    mEventQueue.clear();
+
     processInternalGlides(numFrames);
-    
+
     for (int i = 0; i < numFrames * 2; ++i) buffer[i] = 0.0f;
 
     // --- MONOPHONIC PATH (Preserved Existing Logic) ---
@@ -1227,7 +1235,7 @@ void FaustInstrument::applyDynamicLUTParams(float freq, float velocity, int voic
         
         float distSq = fNorm * fNorm + aNorm * aNorm;
 
-            if (distSq < 1e-10f) {
+            if (distSq < 1e-10f) { printf("Setting %s to %f\n", rec.targetParams.begin()->first.c_str(), rec.targetParams.begin()->second); printf("Found exact match in LUT\n");
             for (const auto& pair : rec.targetParams)
                 setParamImmediate(pair.first.c_str(), pair.second, voiceIndex);
             return;

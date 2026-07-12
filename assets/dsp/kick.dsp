@@ -24,8 +24,9 @@ gate = button("gate");
 sub_boost = hslider("sub_boost", 0.5, 0, 1, 0.01);
 
 pitch_env = en.adsr(0.001, 0.03, 0.0, 0.01, gate);
-click = no.noise * en.adsr(0.001, 0.005, 0.0, 0.01, gate) * 0.1 * (0.5 + 0.5 * velocity);
+click = no.noise * en.adsr(0.001, 0.005, 0.0, 0.01, gate) * 0.15 * (0.5 + 0.5 * velocity);
 
 kick_body = os.osc(freq * (1 + 0.5 * pitch_env)) * en.adsr(0.001, 0.5, 0.0, 0.1, gate);
+sub = os.osc(freq * 0.5) * en.adsr(0.001, 0.5, 0.0, 0.15, gate) * sub_boost * 0.8;
 
-process = (kick_body + click) * gain * velocity * (1.0 + 0.2 * velocity);
+process = (kick_body + click + sub) * gain * (0.6 + 0.4 * velocity) * 2.0;

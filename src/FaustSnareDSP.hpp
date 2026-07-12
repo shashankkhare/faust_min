@@ -5,8 +5,8 @@ Code generated with Faust 2.37.3 (https://faust.grame.fr)
 Compilation options: -lang cpp -es 1 -single -ftz 1
 ------------------------------------------------------------ */
 
-#ifndef  __FaustSnareDSP_H__
-#define  __FaustSnareDSP_H__
+#ifndef  __mydsp_H__
+#define  __mydsp_H__
 
 #ifndef FAUSTFLOAT
 #define FAUSTFLOAT float
@@ -18,7 +18,7 @@ Compilation options: -lang cpp -es 1 -single -ftz 1
 #include <float.h>
 #include <math.h>
 
-class FaustSnareDSPSIG0 {
+class mydspSIG0 {
 	
   private:
 	
@@ -27,14 +27,14 @@ class FaustSnareDSPSIG0 {
 	
   public:
 	
-	int getNumInputsFaustSnareDSPSIG0() {
+	int getNumInputsmydspSIG0() {
 		return 0;
 	}
-	int getNumOutputsFaustSnareDSPSIG0() {
+	int getNumOutputsmydspSIG0() {
 		return 1;
 	}
 	
-	void instanceInitFaustSnareDSPSIG0(int sample_rate) {
+	void instanceInitmydspSIG0(int sample_rate) {
 		for (int l0 = 0; (l0 < 2); l0 = (l0 + 1)) {
 			iVec0[l0] = 0;
 		}
@@ -43,7 +43,7 @@ class FaustSnareDSPSIG0 {
 		}
 	}
 	
-	void fillFaustSnareDSPSIG0(int count, float* table) {
+	void fillmydspSIG0(int count, float* table) {
 		for (int i1 = 0; (i1 < count); i1 = (i1 + 1)) {
 			iVec0[0] = 1;
 			iRec0[0] = ((iVec0[1] + iRec0[1]) % 65536);
@@ -55,16 +55,16 @@ class FaustSnareDSPSIG0 {
 
 };
 
-static FaustSnareDSPSIG0* newFaustSnareDSPSIG0() { return (FaustSnareDSPSIG0*)new FaustSnareDSPSIG0(); }
-static void deleteFaustSnareDSPSIG0(FaustSnareDSPSIG0* dsp) { delete dsp; }
+static mydspSIG0* newmydspSIG0() { return (mydspSIG0*)new mydspSIG0(); }
+static void deletemydspSIG0(mydspSIG0* dsp) { delete dsp; }
 
-static float ftbl0FaustSnareDSPSIG0[65536];
-static float FaustSnareDSP_faustpower2_f(float value) {
+static float ftbl0mydspSIG0[65536];
+static float mydsp_faustpower2_f(float value) {
 	return (value * value);
 }
 
 #ifndef FAUSTCLASS 
-#define FAUSTCLASS FaustSnareDSP
+#define FAUSTCLASS mydsp
 #endif
 
 #ifdef __APPLE__ 
@@ -72,7 +72,7 @@ static float FaustSnareDSP_faustpower2_f(float value) {
 #define exp10 __exp10
 #endif
 
-class FaustSnareDSP : public dsp {
+class mydsp : public dsp {
 	
  private:
 	
@@ -155,10 +155,10 @@ class FaustSnareDSP : public dsp {
 	}
 	
 	static void classInit(int sample_rate) {
-		FaustSnareDSPSIG0* sig0 = newFaustSnareDSPSIG0();
-		sig0->instanceInitFaustSnareDSPSIG0(sample_rate);
-		sig0->fillFaustSnareDSPSIG0(65536, ftbl0FaustSnareDSPSIG0);
-		deleteFaustSnareDSPSIG0(sig0);
+		mydspSIG0* sig0 = newmydspSIG0();
+		sig0->instanceInitmydspSIG0(sample_rate);
+		sig0->fillmydspSIG0(65536, ftbl0mydspSIG0);
+		deletemydspSIG0(sig0);
 	}
 	
 	virtual void instanceConstants(int sample_rate) {
@@ -170,9 +170,9 @@ class FaustSnareDSP : public dsp {
 		fConst4 = (1.0f / std::max<float>(1.0f, (0.100000001f * fConst0)));
 		float fConst5 = std::tan((18849.5566f / fConst0));
 		float fConst6 = (fConst0 * fConst5);
-		float fConst7 = FaustSnareDSP_faustpower2_f(std::sqrt((4.0f * ((FaustSnareDSP_faustpower2_f(fConst0) * fConst5) * std::tan((6283.18555f / fConst0))))));
+		float fConst7 = mydsp_faustpower2_f(std::sqrt((4.0f * ((mydsp_faustpower2_f(fConst0) * fConst5) * std::tan((6283.18555f / fConst0))))));
 		float fConst8 = ((2.0f * fConst6) - (0.5f * (fConst7 / fConst6)));
-		float fConst9 = (FaustSnareDSP_faustpower2_f(fConst1) * fConst7);
+		float fConst9 = (mydsp_faustpower2_f(fConst1) * fConst7);
 		float fConst10 = (2.0f * (fConst8 / fConst0));
 		float fConst11 = ((fConst9 + fConst10) + 4.0f);
 		fConst12 = (2.0f * (fConst8 / (fConst0 * fConst11)));
@@ -184,8 +184,8 @@ class FaustSnareDSP : public dsp {
 	}
 	
 	virtual void instanceResetUserInterface() {
-		fHslider0 = FAUSTFLOAT(1.0f);
-		fHslider1 = FAUSTFLOAT(0.59999999999999998f);
+		fHslider0 = FAUSTFLOAT(0.59999999999999998f);
+		fHslider1 = FAUSTFLOAT(1.0f);
 		fHslider2 = FAUSTFLOAT(180.0f);
 		fButton0 = FAUSTFLOAT(0.0f);
 		fHslider3 = FAUSTFLOAT(0.5f);
@@ -219,8 +219,8 @@ class FaustSnareDSP : public dsp {
 		instanceClear();
 	}
 	
-	virtual FaustSnareDSP* clone() {
-		return new FaustSnareDSP();
+	virtual mydsp* clone() {
+		return new mydsp();
 	}
 	
 	virtual int getSampleRate() {
@@ -231,17 +231,17 @@ class FaustSnareDSP : public dsp {
 		ui_interface->openVerticalBox("snare");
 		ui_interface->declare(&fHslider2, "unit", "Hz");
 		ui_interface->addHorizontalSlider("freq", &fHslider2, FAUSTFLOAT(180.0f), FAUSTFLOAT(90.0f), FAUSTFLOAT(260.0f), FAUSTFLOAT(1.0f));
-		ui_interface->addHorizontalSlider("gain", &fHslider1, FAUSTFLOAT(0.600000024f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("gain", &fHslider0, FAUSTFLOAT(0.600000024f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addButton("gate", &fButton0);
-		ui_interface->addHorizontalSlider("velocity", &fHslider0, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("velocity", &fHslider1, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addHorizontalSlider("wire_rattle", &fHslider3, FAUSTFLOAT(0.5f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->closeBox();
 	}
 	
 	virtual void compute(int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs) {
 		FAUSTFLOAT* output0 = outputs[0];
-		float fSlow0 = float(fHslider0);
-		float fSlow1 = ((fSlow0 * float(fHslider1)) * ((0.200000003f * fSlow0) + 1.0f));
+		float fSlow0 = float(fHslider1);
+		float fSlow1 = (2.0f * (float(fHslider0) * ((0.400000006f * fSlow0) + 0.600000024f)));
 		float fSlow2 = (fConst1 * float(fHslider2));
 		float fSlow3 = float(fButton0);
 		float fSlow4 = ((0.699999988f * fSlow0) + 0.300000012f);
@@ -257,7 +257,7 @@ class FaustSnareDSP : public dsp {
 			iRec4[0] = ((1103515245 * iRec4[1]) + 12345);
 			float fTempFTZ1 = ((4.65661287e-10f * float(iRec4[0])) - (fConst13 * ((fConst14 * fRec3[1]) + (fConst15 * fRec3[2]))));
 			fRec3[0] = ((std::fabs(fTempFTZ1) > 1.17549435e-38f) ? fTempFTZ1 : 0.0f);
-			output0[i0] = FAUSTFLOAT((fSlow1 * ((ftbl0FaustSnareDSPSIG0[int((65536.0f * fRec1[0]))] * std::max<float>(0.0f, std::min<float>(fTemp1, ((fConst4 * fTemp2) + 1.0f)))) + (fSlow4 * (((fConst12 * fRec3[0]) + (fConst16 * fRec3[2])) * std::max<float>(0.0f, std::min<float>(fTemp1, ((fSlow5 * fTemp2) + 1.0f))))))));
+			output0[i0] = FAUSTFLOAT((fSlow1 * ((ftbl0mydspSIG0[int((65536.0f * fRec1[0]))] * std::max<float>(0.0f, std::min<float>(fTemp1, ((fConst4 * fTemp2) + 1.0f)))) + (fSlow4 * (((fConst12 * fRec3[0]) + (fConst16 * fRec3[2])) * std::max<float>(0.0f, std::min<float>(fTemp1, ((fSlow5 * fTemp2) + 1.0f))))))));
 			fRec1[1] = fRec1[0];
 			fVec1[1] = fVec1[0];
 			iRec2[1] = iRec2[0];
