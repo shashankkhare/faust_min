@@ -322,6 +322,14 @@ DART_EXPORT float mixer_get_track_weight(FaustMixer* mixer, int trackID) {
     return mixer ? mixer->getTrackWeight(trackID) : 0.0f;
 }
 
+DART_EXPORT void mixer_add_instrument_to_track(FaustMixer* mixer, int trackID, FaustInstrument* inst, float instWeight) {
+    if (mixer && inst) mixer->addInstrumentToTrack(trackID, inst, instWeight);
+}
+
+DART_EXPORT void mixer_remove_instrument_from_track(FaustMixer* mixer, int trackID, FaustInstrument* inst) {
+    if (mixer && inst) mixer->removeInstrumentFromTrack(trackID, inst);
+}
+
 DART_EXPORT void mixer_master_fade_in(FaustMixer* mixer, float durationSeconds) {
     if (mixer) mixer->masterFadeIn(durationSeconds);
 }

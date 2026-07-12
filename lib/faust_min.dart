@@ -90,6 +90,12 @@ typedef _dart_mixer_add_track = int Function(Pointer<NativeMixerOpaque> mixer, d
 typedef _c_mixer_remove_track = Void Function(Pointer<NativeMixerOpaque> mixer, Int32 trackID);
 typedef _dart_mixer_remove_track = void Function(Pointer<NativeMixerOpaque> mixer, int trackID);
 
+typedef _c_mixer_add_inst_to_track = Void Function(Pointer<NativeMixerOpaque> mixer, Int32 trackID, Pointer<NativeInstrumentOpaque> inst, Float instWeight);
+typedef _dart_mixer_add_inst_to_track = void Function(Pointer<NativeMixerOpaque> mixer, int trackID, Pointer<NativeInstrumentOpaque> inst, double instWeight);
+
+typedef _c_mixer_remove_inst_from_track = Void Function(Pointer<NativeMixerOpaque> mixer, Int32 trackID, Pointer<NativeInstrumentOpaque> inst);
+typedef _dart_mixer_remove_inst_from_track = void Function(Pointer<NativeMixerOpaque> mixer, int trackID, Pointer<NativeInstrumentOpaque> inst);
+
 typedef _c_mixer_fade_in_track = Void Function(Pointer<NativeMixerOpaque> mixer, Int32 trackID, Float durationSeconds);
 typedef _dart_mixer_fade_in_track = void Function(Pointer<NativeMixerOpaque> mixer, int trackID, double durationSeconds);
 
@@ -945,6 +951,8 @@ class FaustMixer {
   static late final _funcUnregisterInst = _dylib.lookupFunction<_c_mixer_unregister_inst, _dart_mixer_unregister_inst>('mixer_unregister_instrument');
   static late final _funcAddTrack = _dylib.lookupFunction<_c_mixer_add_track, _dart_mixer_add_track>('mixer_add_track');
   static late final _funcRemoveTrack = _dylib.lookupFunction<_c_mixer_remove_track, _dart_mixer_remove_track>('mixer_remove_track');
+  static late final _funcAddInstToTrack = _dylib.lookupFunction<_c_mixer_add_inst_to_track, _dart_mixer_add_inst_to_track>('mixer_add_instrument_to_track');
+  static late final _funcRemoveInstFromTrack = _dylib.lookupFunction<_c_mixer_remove_inst_from_track, _dart_mixer_remove_inst_from_track>('mixer_remove_instrument_from_track');
   static late final _funcFadeInTrack = _dylib.lookupFunction<_c_mixer_fade_in_track, _dart_mixer_fade_in_track>('mixer_fade_in_track');
   static late final _funcFadeOutTrack = _dylib.lookupFunction<_c_mixer_fade_out_track, _dart_mixer_fade_out_track>('mixer_fade_out_track');
   static late final _funcSetTrackWeight = _dylib.lookupFunction<_c_mixer_set_track_weight, _dart_mixer_set_track_weight>('mixer_set_track_weight');
@@ -1022,6 +1030,14 @@ class FaustMixer {
 
   /// Remove a track from the mixer.
   void removeTrack(int trackID) => _funcRemoveTrack(_handle, trackID);
+
+  /// Add an instrument to an existing track.
+  void addInstrumentToTrack(int trackID, FaustInstrument inst, double instWeight) =>
+      _funcAddInstToTrack(_handle, trackID, inst.nativePointer, instWeight);
+
+  /// Remove an instrument from a track.
+  void removeInstrumentFromTrack(int trackID, FaustInstrument inst) =>
+      _funcRemoveInstFromTrack(_handle, trackID, inst.nativePointer);
 
   /// Fade in a track from silence to its assigned weight over [durationSeconds].
   void fadeInTrack(int trackID, double durationSeconds) =>

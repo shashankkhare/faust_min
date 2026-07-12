@@ -311,6 +311,8 @@ DART_EXPORT void mixer_fade_out_track(FaustMixer* mixer, int trackID, float dura
 DART_EXPORT void mixer_set_track_weight(FaustMixer* mixer, int trackID, float weight);
 DART_EXPORT float mixer_get_track_weight(FaustMixer* mixer, int trackID);
 DART_EXPORT void mixer_master_fade_in(FaustMixer* mixer, float durationSeconds);
+DART_EXPORT void mixer_add_instrument_to_track(FaustMixer* mixer, int trackID, FaustInstrument* inst, float instWeight);
+DART_EXPORT void mixer_remove_instrument_from_track(FaustMixer* mixer, int trackID, FaustInstrument* inst);
 DART_EXPORT void mixer_master_fade_out(FaustMixer* mixer, float durationSeconds);
 
 
