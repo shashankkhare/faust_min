@@ -383,7 +383,6 @@ int FaustMixer::addTrack(float initialWeight) {
 void FaustMixer::removeTrack(int trackID) {
     std::lock_guard<std::mutex> lock(mRegistryMutex);
     mTracks.erase(trackID);
-    mWeightSweeps.erase(trackID);
     recalculateWeights();
     printf("[Mixer Registry] Removed Track ID: %d\n", trackID);
     fflush(stdout);
@@ -415,7 +414,57 @@ void FaustMixer::clearAll() {
     std::lock_guard<std::mutex> lock(mRegistryMutex);
     mTracks.clear();
     mNextTrackID = 1;
-    mWeightSweeps.clear();
+}
+
+void FaustMixer::setTrackEnvelope(int trackID, const float* times, const float* values, const uint8_t* interpTypes, int numPoints) {
+    std::lock_guard<std::mutex> lock(mRegistryMutex);
+    if (!mTracks.count(trackID)) return;
+    auto& env = mTracks[trackID].envelope;
+    env.clear();
+    env.reserve(numPoints);
+    for (int i = 0; i < numPoints; i++) {
+        env.push_back({ times[i], values[i], interpTypes[i] });
+    }
+    mTracks[trackID].fadeGain = env.empty() ? 1.0f : env[0].value;
+}
+
+void FaustMixer::processEnvelopes(long currentS) {
+    float timeSec = (float)currentS / mSampleRate;
+    for (auto& pair : mTracks) {
+        auto& track = pair.second;
+        auto& env = track.envelope;
+        if (env.empty()) { track.fadeGain = 1.0f; continue; }
+
+        if ((int)env.size() == 1) { track.fadeGain = env[0].value; continue; }
+
+        if (timeSec <= env[0].timeSec) {
+            track.fadeGain = env[0].value;
+            continue;
+        }
+
+        if (timeSec >= env.back().timeSec) {
+            track.fadeGain = env.back().value;
+            continue;
+        }
+
+        for (int j = 0; j < (int)env.size() - 1; j++) {
+            const auto& p0 = env[j];
+            const auto& p1 = env[j + 1];
+            if (timeSec >= p0.timeSec && timeSec < p1.timeSec) {
+                float span = p1.timeSec - p0.timeSec;
+                float t = (span > 0.0f) ? (timeSec - p0.timeSec) / span : 0.0f;
+                float v0 = p0.value;
+                float v1 = p1.value;
+                switch (p0.interpType) {
+                    case INTERP_EXPONENTIAL: t = t * t; break;
+                    case INTERP_S_CURVE: t = t * t * (3.0f - 2.0f * t); break;
+                    default: break; // LINEAR
+                }
+                track.fadeGain = v0 + (v1 - v0) * t;
+                break;
+            }
+        }
+    }
 }
 
 void FaustMixer::setInstrumentWeight(FaustInstrument* inst, float weight) {
@@ -431,39 +480,11 @@ void FaustMixer::setInstrumentWeight(FaustInstrument* inst, float weight) {
     recalculateWeights();
 }
 
-void FaustMixer::fadeInTrack(int trackID, float durationSeconds) {
-    std::lock_guard<std::mutex> lock(mRegistryMutex);
-    if (mTracks.count(trackID)) {
-        mTracks[trackID].dynamicWeight = 0.0f;
-        float assignedCap = mTracks[trackID].assignedWeight;
-        auto& sweep = mWeightSweeps[trackID];
-        sweep.isActive = true;
-        sweep.startWeight = 0.0f;
-        sweep.targetWeight = assignedCap;
-        sweep.startSample = mMasterSampleTime;
-        sweep.durationSamples = static_cast<long>(durationSeconds * mSampleRate);
-    }
-}
-
-void FaustMixer::fadeOutTrack(int trackID, float durationSeconds) {
-    std::lock_guard<std::mutex> lock(mRegistryMutex);
-    if (mTracks.count(trackID)) {
-        float curW = mTracks[trackID].dynamicWeight;
-        auto& sweep = mWeightSweeps[trackID];
-        sweep.isActive = true;
-        sweep.startWeight = curW;
-        sweep.targetWeight = 0.0f;
-        sweep.startSample = mMasterSampleTime;
-        sweep.durationSamples = static_cast<long>(durationSeconds * mSampleRate);
-    }
-}
-
 void FaustMixer::setTrackWeight(int trackID, float dynamicWeight) {
     std::lock_guard<std::mutex> lock(mRegistryMutex);
     if (mTracks.count(trackID)) {
         float assignedCap = mTracks[trackID].assignedWeight;
         mTracks[trackID].dynamicWeight = std::min(dynamicWeight, assignedCap);
-        mWeightSweeps[trackID].isActive = false;
         recalculateWeights();
     }
 }
@@ -598,25 +619,6 @@ inline void FaustMixer::processMasterSweep(long currentS) {
     }
 }
 
-inline void FaustMixer::processChannelSweeps(long currentS) {
-    bool sweepChanged = false;
-    for (auto& pair : mWeightSweeps) {
-        int trackID = pair.first;
-        auto& sweep = pair.second;
-        if (sweep.isActive && mTracks.count(trackID)) {
-            float progress = (float)(currentS - sweep.startSample) / sweep.durationSamples;
-            if (progress >= 1.0f) { progress = 1.0f; sweep.isActive = false; }
-            float curW = sweep.startWeight + (sweep.targetWeight - sweep.startWeight) * progress;
-            float assignedCap = mTracks[trackID].assignedWeight;
-            mTracks[trackID].dynamicWeight = std::min(curW, assignedCap);
-            sweepChanged = true;
-        }
-    }
-    if (sweepChanged) {
-        recalculateWeights();
-    }
-}
-
 void FaustMixer::recalculateWeights() {
     float totalTrackWeight = 0.0f;
     for (auto& pair : mTracks) {
@@ -672,6 +674,7 @@ inline void FaustMixer::accumulateInstrumentChannels(float* stereoOutput, int nu
     std::vector<FaustInstrument*> activeList;
     std::vector<int> instrumentToTrackMap;
     std::vector<float> activeWeights;
+    std::vector<float> activeFadeGains;
 
     for (auto& pair : mTracks) {
         for (auto& tInst : pair.second.instruments) {
@@ -679,6 +682,7 @@ inline void FaustMixer::accumulateInstrumentChannels(float* stereoOutput, int nu
             activeList.push_back(tInst.instrument);
             instrumentToTrackMap.push_back(pair.first);
             activeWeights.push_back(tInst.effectiveWeight);
+            activeFadeGains.push_back(pair.second.fadeGain);
             mWorkQueue[workCount] = WorkItem(tInst.instrument, workCount, numFrames, true);
             workCount++;
         }
@@ -728,6 +732,7 @@ inline void FaustMixer::accumulateInstrumentChannels(float* stereoOutput, int nu
     for (int slot = 0; slot < workCount; slot++) {
         FaustInstrument* inst = activeList[slot];
         float effectiveWeight = activeWeights[slot];
+        float trackFade = activeFadeGains[slot];
         
         float* sourceBuffer = mInstrumentBuffers[slot];
         float revSend = inst->getReverbSend();
@@ -735,8 +740,8 @@ inline void FaustMixer::accumulateInstrumentChannels(float* stereoOutput, int nu
 
         float instPeak = 0.0f;
         for (int i = 0; i < numFrames; ++i) {
-            float scaledSampleL = sourceBuffer[i * 2] * effectiveWeight;
-            float scaledSampleR = sourceBuffer[i * 2 + 1] * effectiveWeight;
+            float scaledSampleL = sourceBuffer[i * 2] * effectiveWeight * trackFade;
+            float scaledSampleR = sourceBuffer[i * 2 + 1] * effectiveWeight * trackFade;
             
             float peak = std::max(std::abs(scaledSampleL), std::abs(scaledSampleR));
             if (peak > instPeak) instPeak = peak;
@@ -830,9 +835,8 @@ void FaustMixer::onAudioReady(float* stereoOutput, int numFrames) {
             mPreRenderCallback(framesThisSubBlock, mPreRenderUserData);
         }
 
-        long currentS = mMasterSampleTime;
-        processMasterSweep(currentS);
-        processChannelSweeps(currentS);
+        processMasterSweep(mMasterSampleTime);
+        processEnvelopes(mMasterSampleTime);
 
         float balanceMultiplier = computeAutoRecalibrationMultiplier();
         accumulateInstrumentChannels(subOutput, framesThisSubBlock, balanceMultiplier);

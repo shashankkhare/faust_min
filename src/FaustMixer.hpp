@@ -37,6 +37,18 @@
 #include "FaustMasterReverbDSP.hpp"
 #include "PlatformCompat.hpp"
 
+enum InterpType : uint8_t {
+    INTERP_LINEAR = 0,
+    INTERP_EXPONENTIAL = 1,
+    INTERP_S_CURVE = 2
+};
+
+struct EnvelopePoint {
+    float timeSec;
+    float value;
+    uint8_t interpType;
+};
+
 /**
  * @class FaustMixer
  * @brief Centralized audio engine dispatcher and mixer.
@@ -71,9 +83,9 @@ public:
     // Update an instrument's weight across all tracks it belongs to.
     void setInstrumentWeight(FaustInstrument* inst, float weight);
 
-    // Explicit DJ Fader Automation API (Real-time Sweeps)
-    void fadeInTrack(int trackID, float durationSeconds);
-    void fadeOutTrack(int trackID, float durationSeconds);
+    // Per-track breakpoint envelope (post-weight gain multiplier)
+    void setTrackEnvelope(int trackID, const float* times, const float* values, const uint8_t* interpTypes, int numPoints);
+
     void setTrackWeight(int trackID, float dynamicWeight);
     float getTrackWeight(int trackID);
 
@@ -142,6 +154,8 @@ private:
         float assignedWeight;
         float dynamicWeight;
         std::vector<TrackInstrument> instruments;
+        std::vector<EnvelopePoint> envelope;
+        float fadeGain = 1.0f;
     };
 
     // Real-Time Audio Interrupt Accumulator Endpoint
@@ -158,15 +172,6 @@ private:
     MixerWeightMode mWeightMode = MixerWeightMode::DYNAMIC_WEIGHTS;
     std::map<int, MixerTrack> mTracks;
     int mNextTrackID = 1;
-
-    struct WeightSweep {
-        bool isActive = false;
-        float startWeight = 1.0f;
-        float targetWeight = 1.0f;
-        long startSample = 0;
-        long durationSamples = 0;
-    };
-    std::map<int, WeightSweep> mWeightSweeps;
 
     struct MasterSweep {
         bool isActive = false;
@@ -227,7 +232,7 @@ private:
 
     // Modular Inline Helpers for Control-Rate Block Interrupt Handling
     inline void processMasterSweep(long currentS);
-    inline void processChannelSweeps(long currentS);
+    inline void processEnvelopes(long currentS);
     inline float computeAutoRecalibrationMultiplier();
     void recalculateWeights();
     inline void accumulateInstrumentChannels(float* stereoOutput, int numFrames, float balanceMultiplier);

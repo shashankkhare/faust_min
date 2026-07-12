@@ -296,7 +296,7 @@ DART_EXPORT void mixer_unregister_instrument(FaustMixer* mixer, FaustInstrument*
     // For now, removing an instrument from all tracks isn't explicitly supported in this single call.
 }
 
-// --- FaustMixer Track & Fade Automation ---
+// --- FaustMixer Track & Breakpoint Envelope ---
 
 DART_EXPORT int mixer_add_track(FaustMixer* mixer, float initialWeight) {
     return mixer ? mixer->addTrack(initialWeight) : 0;
@@ -306,12 +306,8 @@ DART_EXPORT void mixer_remove_track(FaustMixer* mixer, int trackID) {
     if (mixer) mixer->removeTrack(trackID);
 }
 
-DART_EXPORT void mixer_fade_in_track(FaustMixer* mixer, int trackID, float durationSeconds) {
-    if (mixer) mixer->fadeInTrack(trackID, durationSeconds);
-}
-
-DART_EXPORT void mixer_fade_out_track(FaustMixer* mixer, int trackID, float durationSeconds) {
-    if (mixer) mixer->fadeOutTrack(trackID, durationSeconds);
+DART_EXPORT void mixer_set_track_envelope(FaustMixer* mixer, int trackID, float* times, float* values, uint8_t* interpTypes, int numPoints) {
+    if (mixer) mixer->setTrackEnvelope(trackID, times, values, interpTypes, numPoints);
 }
 
 DART_EXPORT void mixer_set_track_weight(FaustMixer* mixer, int trackID, float weight) {

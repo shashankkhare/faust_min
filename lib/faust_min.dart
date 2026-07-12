@@ -96,11 +96,8 @@ typedef _dart_mixer_add_inst_to_track = void Function(Pointer<NativeMixerOpaque>
 typedef _c_mixer_remove_inst_from_track = Void Function(Pointer<NativeMixerOpaque> mixer, Int32 trackID, Pointer<NativeInstrumentOpaque> inst);
 typedef _dart_mixer_remove_inst_from_track = void Function(Pointer<NativeMixerOpaque> mixer, int trackID, Pointer<NativeInstrumentOpaque> inst);
 
-typedef _c_mixer_fade_in_track = Void Function(Pointer<NativeMixerOpaque> mixer, Int32 trackID, Float durationSeconds);
-typedef _dart_mixer_fade_in_track = void Function(Pointer<NativeMixerOpaque> mixer, int trackID, double durationSeconds);
-
-typedef _c_mixer_fade_out_track = Void Function(Pointer<NativeMixerOpaque> mixer, Int32 trackID, Float durationSeconds);
-typedef _dart_mixer_fade_out_track = void Function(Pointer<NativeMixerOpaque> mixer, int trackID, double durationSeconds);
+typedef _c_mixer_set_track_envelope = Void Function(Pointer<NativeMixerOpaque> mixer, Int32 trackID, Pointer<Float> times, Pointer<Float> values, Pointer<Uint8> interpTypes, Int32 numPoints);
+typedef _dart_mixer_set_track_envelope = void Function(Pointer<NativeMixerOpaque> mixer, int trackID, Pointer<Float> times, Pointer<Float> values, Pointer<Uint8> interpTypes, int numPoints);
 
 typedef _c_mixer_set_track_weight = Void Function(Pointer<NativeMixerOpaque> mixer, Int32 trackID, Float weight);
 typedef _dart_mixer_set_track_weight = void Function(Pointer<NativeMixerOpaque> mixer, int trackID, double weight);
@@ -953,8 +950,7 @@ class FaustMixer {
   static late final _funcRemoveTrack = _dylib.lookupFunction<_c_mixer_remove_track, _dart_mixer_remove_track>('mixer_remove_track');
   static late final _funcAddInstToTrack = _dylib.lookupFunction<_c_mixer_add_inst_to_track, _dart_mixer_add_inst_to_track>('mixer_add_instrument_to_track');
   static late final _funcRemoveInstFromTrack = _dylib.lookupFunction<_c_mixer_remove_inst_from_track, _dart_mixer_remove_inst_from_track>('mixer_remove_instrument_from_track');
-  static late final _funcFadeInTrack = _dylib.lookupFunction<_c_mixer_fade_in_track, _dart_mixer_fade_in_track>('mixer_fade_in_track');
-  static late final _funcFadeOutTrack = _dylib.lookupFunction<_c_mixer_fade_out_track, _dart_mixer_fade_out_track>('mixer_fade_out_track');
+  static late final _funcSetTrackEnvelope = _dylib.lookupFunction<_c_mixer_set_track_envelope, _dart_mixer_set_track_envelope>('mixer_set_track_envelope');
   static late final _funcSetTrackWeight = _dylib.lookupFunction<_c_mixer_set_track_weight, _dart_mixer_set_track_weight>('mixer_set_track_weight');
   static late final _funcGetTrackWeight = _dylib.lookupFunction<_c_mixer_get_track_weight, _dart_mixer_get_track_weight>('mixer_get_track_weight');
   static late final _funcMasterFadeIn = _dylib.lookupFunction<_c_mixer_master_fade_in, _dart_mixer_master_fade_in>('mixer_master_fade_in');
@@ -1039,13 +1035,22 @@ class FaustMixer {
   void removeInstrumentFromTrack(int trackID, FaustInstrument inst) =>
       _funcRemoveInstFromTrack(_handle, trackID, inst.nativePointer);
 
-  /// Fade in a track from silence to its assigned weight over [durationSeconds].
-  void fadeInTrack(int trackID, double durationSeconds) =>
-      _funcFadeInTrack(_handle, trackID, durationSeconds);
-
-  /// Fade out a track from its current weight to silence over [durationSeconds].
-  void fadeOutTrack(int trackID, double durationSeconds) =>
-      _funcFadeOutTrack(_handle, trackID, durationSeconds);
+  /// Set a per-track breakpoint envelope (post-weight gain multiplier).
+  void setTrackEnvelope(int trackID, List<double> times, List<double> values, List<int> interpTypes) {
+    final n = times.length;
+    final tPtr = calloc<Float>(n);
+    final vPtr = calloc<Float>(n);
+    final iPtr = calloc<Uint8>(n);
+    for (int j = 0; j < n; j++) {
+      tPtr[j] = times[j];
+      vPtr[j] = values[j];
+      iPtr[j] = interpTypes[j];
+    }
+    _funcSetTrackEnvelope(_handle, trackID, tPtr, vPtr, iPtr, n);
+    calloc.free(tPtr);
+    calloc.free(vPtr);
+    calloc.free(iPtr);
+  }
 
   /// Immediately set a track's dynamic weight (clamped to its assigned cap).
   void setTrackWeight(int trackID, double weight) =>

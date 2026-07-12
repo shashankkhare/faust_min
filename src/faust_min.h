@@ -23,6 +23,8 @@
 #ifndef FAUST_MIN_H
 #define FAUST_MIN_H
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -303,11 +305,10 @@ DART_EXPORT float mixer_get_sample_rate(FaustMixer* mixer);
 DART_EXPORT void mixer_set_master_gain(FaustMixer* mixer, float gain);
 DART_EXPORT void mixer_register_waveform_callback(FaustMixer* mixer, void (*cb)(float rms, float peak, void* userData), void* userData);
 
-// --- FaustMixer Track & Fade Automation ---
+// --- FaustMixer Track & Breakpoint Envelope ---
 DART_EXPORT int mixer_add_track(FaustMixer* mixer, float initialWeight);
 DART_EXPORT void mixer_remove_track(FaustMixer* mixer, int trackID);
-DART_EXPORT void mixer_fade_in_track(FaustMixer* mixer, int trackID, float durationSeconds);
-DART_EXPORT void mixer_fade_out_track(FaustMixer* mixer, int trackID, float durationSeconds);
+DART_EXPORT void mixer_set_track_envelope(FaustMixer* mixer, int trackID, float* times, float* values, uint8_t* interpTypes, int numPoints);
 DART_EXPORT void mixer_set_track_weight(FaustMixer* mixer, int trackID, float weight);
 DART_EXPORT float mixer_get_track_weight(FaustMixer* mixer, int trackID);
 DART_EXPORT void mixer_master_fade_in(FaustMixer* mixer, float durationSeconds);
