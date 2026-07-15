@@ -15,6 +15,13 @@ gain = hslider("gain", 0.5, 0, 1, 0.01) : si.smoo;
 intensity = hslider("intensity", 0.5, 0, 1, 0.01) : si.smoo;
 gate = button("gate");
 
+// --- ADSR ENVELOPE ---
+attack   = hslider("attack", 2.0, 0.01, 10.0, 0.01);
+decay    = hslider("decay",  2.0, 0.01, 10.0, 0.01);
+sustain  = hslider("sustain", 0.8, 0.0, 1.0, 0.01);
+release  = hslider("release", 2.0, 0.01, 10.0, 0.01);
+envelope = en.adsr(attack, decay, sustain, release, gate);
+
 // Multi-oscillator wave envelope — incommensurate ratios avoid repetition
 lfo1 = os.osc(0.031) * 0.5 + 0.5;
 lfo2 = os.osc(0.053) * 0.5 + 0.5;
@@ -44,5 +51,4 @@ spray = no.noise : fi.highpass(3, 4000.0) * (0.05 + intensity * 0.2);
 // Combine
 mix = (rumble + swash + spray) * waveEnv + crash * waveEnv;
 
-running = gate > 0.0;
-process = mix : fi.dcblocker * ba.if(running, 1.0, 0.0) * gain;
+process = mix : fi.dcblocker * envelope * gain;

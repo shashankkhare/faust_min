@@ -13,9 +13,12 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 import("stdfaust.lib");
 
 // --- 0. ENVELOPE ---
-// 20ms attack/sustain/release to prevent pops at loop boundary noteOff/noteOn
 gate = button("gate");
-envelope = en.asr(0.02, 1.0, 0.02, gate);
+attack   = hslider("attack", 2.0, 0.01, 10.0, 0.01);
+decay    = hslider("decay",  2.0, 0.01, 10.0, 0.01);
+sustain  = hslider("sustain", 0.8, 0.0, 1.0, 0.01);
+release  = hslider("release", 2.0, 0.01, 10.0, 0.01);
+envelope = en.adsr(attack, decay, sustain, release, gate);
 
 // --- 1. USER CONTROL INTERFACE ---
 // Material Selector: 0 = Organic Bamboo, 1 = Tibetan Metal
