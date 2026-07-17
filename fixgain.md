@@ -12,9 +12,10 @@ Produces consistent perceived loudness across all frequencies for an instrument.
 
 Before proceeding, ensure the DSP is stable and produces decent energy levels natively.
 - Delete the instrument's CSV file from `assets/dsp/`.
-- Run `test_instruments` to test the instrument at 160Hz to verify decent energy levels. This applies even for ambient instruments where frequency does not matter.
-- Verify that the fundamental energy is large compared to overtones (for ambient instruments, this criterion is bypassed).
+- Run `test_instruments` to test the instrument at 160Hz to verify decent energy levels.
+- Verify that the fundamental energy is large compared to overtones.
 - If energy is too low or too high, refer to [`checkdsp.md`](checkdsp.md) to diagnose the issue.
+- If no errors are flagged after following `checkdsp.md`, proceed to step 2.
 
 ### 2. Create or Reuse CSV
 
