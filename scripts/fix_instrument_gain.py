@@ -15,35 +15,36 @@ import subprocess, sys, os, math, re, argparse
 CSV_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "dsp")
 TEST_BINARY = "./build-release/test_instruments"
 WORK_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ENV = {**os.environ, "LD_LIBRARY_PATH": os.path.join(WORK_DIR, "build-release", "shared")}
 
 TARGET_E_AT_AMP1 = 0.3
 TARGET_TOLERANCE = 0.10  # ±10%
 STRIKE = "0"
+RENDER_MODE = True
+
+NAMES = {0:'dayan',1:'bayan',2:'kick',3:'snare',4:'hihat',5:'tom',6:'ride',
+         7:'bell',8:'bowl',9:'sitar',10:'flute',11:'tanpura',12:'piano',13:'sax',
+         14:'cowbell',15:'trumpet',16:'shakuhachi',17:'bansuri',18:'violin',
+         19:'rainmaker',20:'churchbell',21:'acousticguitar',22:'electricguitar',
+         23:'bass',24:'cello',25:'cricket',26:'cuckoo',27:'waterfall',28:'djembe',
+         29:'marimba',30:'conga',31:'bongo',32:'voice',33:'shaker',34:'seawave',
+         35:'chougong',36:'lagnga',37:'dholak',38:'dhol',39:'guzheng',40:'erhu',
+         41:'wind',42:'thunder',43:'dagu',44:'sarod',45:'santoor',46:'tumbi',
+         47:'tibetanbowl',48:'ngachen',49:'mridangam',50:'ghatam',51:'panflute',
+         52:'nativeamericanflute',53:'dizi',54:'harmonium'}
+NAME_TO_ID = {v: k for k, v in NAMES.items()}
 
 def resolve_id(name_or_id):
     """Resolve an instrument name or numeric ID to (id, name)."""
     try:
         id_val = int(name_or_id)
-        # Numeric ID — find name by scanning available instruments output
-        cmd = [TEST_BINARY, "--get-id", "none"]
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=5, cwd=WORK_DIR, input="-1\n")
-        for line in r.stdout.split('\n'):
-            m = re.search(r'ID\s+(\d+)\s*:\s*(\S+)', line)
-            if m and int(m.group(1)) == id_val:
-                name = m.group(2)
-                return id_val, name
-        print(f"ERROR: no instrument found for ID {id_val}")
-        sys.exit(1)
+        name = NAMES.get(id_val, name_or_id)
+        return id_val, name
     except ValueError:
-        # String name — resolve ID via test binary
-        name = name_or_id
-        cmd = [TEST_BINARY, "--get-id", name]
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=5, cwd=WORK_DIR, input="-1\n")
-        for line in result.stdout.split('\n'):
-            m = re.search(r'ID\s+(\d+)\s*:\s*(\S+)', line)
-            if m and m.group(2).lower() == name.lower():
-                return int(m.group(1)), m.group(2)
-        print(f"ERROR: unknown instrument '{name}'")
+        name_lower = name_or_id.lower()
+        if name_lower in NAME_TO_ID:
+            return NAME_TO_ID[name_lower], name_lower
+        print(f"ERROR: unknown instrument '{name_or_id}'")
         sys.exit(1)
 
 def csv_path(instrument_name):
@@ -94,9 +95,11 @@ def write_csv(path, header, rows, columns):
             f.write(','.join(str(r.get(c, '')) for c in columns) + '\n')
 
 def measure(instrument_id, freq, amp):
-    cmd = [TEST_BINARY, str(instrument_id), f"f={freq}", f"a={amp}", f"s={STRIKE}"]
+    cmd = [TEST_BINARY, str(instrument_id), f"f={freq}", f"v={amp}", f"s={STRIKE}"]
+    if RENDER_MODE:
+        cmd.append("--render")
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=15, cwd=WORK_DIR)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=15, cwd=WORK_DIR, env=ENV)
         for line in reversed(result.stdout.strip().split('\n')):
             parts = line.split(' , ')
             for part in parts:
@@ -115,7 +118,7 @@ def set_gain(row, gain_col, value, path, header, rows, columns):
 
 def binary_search_gain(instrument_id, freq, amp, target_energy, initial_gain,
                        path, header, rows, columns, gain_col, row):
-    GAIN_MIN, GAIN_MAX = 0.01, 50.0
+    GAIN_MIN, GAIN_MAX = 0.01, 100.0
     PROBE_LIMIT = 15
     BS_ITERS = 4
 
@@ -201,16 +204,19 @@ def binary_search_gain(instrument_id, freq, amp, target_energy, initial_gain,
     return g_final, False
 
 def main():
-    global TARGET_E_AT_AMP1, STRIKE
+    global TARGET_E_AT_AMP1, STRIKE, RENDER_MODE
     
     parser = argparse.ArgumentParser(description="Linearize energy output across CSV amplitude levels.")
     parser.add_argument("instrument", help="Instrument name or ID")
     parser.add_argument("--target", type=float, default=0.3, help="Target energy at amp=1.0 (default 0.3)")
     parser.add_argument("--strike", type=str, default="0", help="Strike type to use for testing (default 0)")
+    parser.add_argument("--render", action="store_true", default=True, help="Use fast render mode (no audio output, default True)")
+    parser.add_argument("--no-render", action="store_true", help="Use real-time audio mode (audible output)")
     
     args = parser.parse_args()
     TARGET_E_AT_AMP1 = args.target
     STRIKE = args.strike
+    RENDER_MODE = not args.no_render
 
     if not os.path.exists(TEST_BINARY):
         print(f"ERROR: {TEST_BINARY} not found. Run build first.")
@@ -247,9 +253,6 @@ def main():
     for freq in freqs:
         freq_rows = [r for r in rows if abs(r[freq_col] - freq) < 0.01]
         freq_rows.sort(key=lambda r: r[amp_col])
-
-        if len(freq_rows) < 2:
-            continue
 
         ref_row = None
         for r in freq_rows:
@@ -307,7 +310,7 @@ def main():
             if not ok:
                 print(f"  WARNING: amp={a} could not reach target, skipping")
                 skipped_freqs.append(freq)
-                break
+                continue
             print("  OK")
             if abs(g_found - old_g) > 0.0001:
                 total_changes += 1

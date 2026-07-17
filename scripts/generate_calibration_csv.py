@@ -65,7 +65,7 @@ def interpolate_extra(freq, amp, old_data, extra_cols):
             if col not in row:
                 continue
             f_old = float(row.get('frequency', 0))
-            a_old = float(row.get('amplitude', 0))
+            a_old = float(row.get('amplitude', row.get('velocity', 0)))
             f_norm = (freq - f_old) / (freq + f_old + 1e-6)
             a_norm = (amp - a_old) / (amp + a_old + 1e-6)
             dist = f_norm * f_norm + a_norm * a_norm
@@ -83,16 +83,16 @@ def generate_csv(name, csv_path):
     extra_cols = []
     if old_data:
         all_cols = list(old_data[0].keys())
-        exclude = {'frequency', 'freq', 'amplitude', 'amp', 'gain'}
+        exclude = {'frequency', 'freq', 'amplitude', 'amp', 'velocity', 'vel', 'gain'}
         extra_cols = [c for c in all_cols if c not in exclude]
     
-    base_cols = ['frequency', 'amplitude', 'gain']
+    base_cols = ['frequency', 'velocity', 'gain']
     all_cols = base_cols + extra_cols
     
     rows = []
     for freq in freqs:
         for amp in AMPLITUDES:
-            row = {'frequency': freq, 'amplitude': amp, 'gain': 0.5}
+            row = {'frequency': freq, 'velocity': amp, 'gain': 1.0}
             if extra_cols and old_data:
                 extra = interpolate_extra(freq, amp, old_data, extra_cols)
                 row.update(extra)
