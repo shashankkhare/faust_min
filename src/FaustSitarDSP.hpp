@@ -397,7 +397,7 @@ class FaustSitarDSP : public dsp {
 	
 	virtual void instanceResetUserInterface() {
 		fHslider0 = FAUSTFLOAT(0.29999999999999999f);
-		fHslider1 = FAUSTFLOAT(0.5f);
+		fHslider1 = FAUSTFLOAT(0.84999999999999998f);
 		fHslider2 = FAUSTFLOAT(0.34999999999999998f);
 		fHslider3 = FAUSTFLOAT(1.2f);
 		fHslider4 = FAUSTFLOAT(138.59999999999999f);
@@ -623,7 +623,7 @@ class FaustSitarDSP : public dsp {
 		ui_interface->addHorizontalSlider("sustain", &fHslider9, FAUSTFLOAT(5.0f), FAUSTFLOAT(0.5f), FAUSTFLOAT(12.0f), FAUSTFLOAT(0.100000001f));
 		ui_interface->declare(&fHslider3, "unit", "Hz");
 		ui_interface->addHorizontalSlider("symp_drift", &fHslider3, FAUSTFLOAT(1.20000005f), FAUSTFLOAT(0.0f), FAUSTFLOAT(5.0f), FAUSTFLOAT(0.00999999978f));
-		ui_interface->addHorizontalSlider("symp_gain", &fHslider1, FAUSTFLOAT(0.5f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("symp_gain", &fHslider1, FAUSTFLOAT(0.850000024f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addHorizontalSlider("velocity", &fHslider10, FAUSTFLOAT(0.600000024f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->declare(&fHslider5, "style", "check");
 		ui_interface->addHorizontalSlider("vibrato", &fHslider5, FAUSTFLOAT(0.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(1.0f));
@@ -634,7 +634,7 @@ class FaustSitarDSP : public dsp {
 	
 	virtual void compute(int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs) {
 		FAUSTFLOAT* output0 = outputs[0];
-		float fSlow0 = (7.5f * float(fHslider0));
+		float fSlow0 = (134.4375f * float(fHslider0));
 		float fSlow1 = float(fHslider1);
 		float fSlow2 = float(fHslider2);
 		float fSlow3 = float(fHslider3);

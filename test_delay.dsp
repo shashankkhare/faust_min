@@ -1,0 +1,11 @@
+import("stdfaust.lib");
+min_inflow = 0.5;
+pressure = 0.8;
+pump_lfo = (os.osc(0.6) * 0.5 + 0.5);
+target_inflow = pressure * (min_inflow + pump_lfo * (1.0 - min_inflow));
+gate = button("gate");
+velocity = 0.7;
+valve_aperture = gate * velocity;
+active_drainage = valve_aperture * 0.08;
+reservoir_pressure = target_inflow : + ~ (*(0.9997 - active_drainage) : max(0.0) : min(1.0));
+process = reservoir_pressure;

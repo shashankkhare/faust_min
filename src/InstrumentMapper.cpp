@@ -205,8 +205,9 @@ bool InstrumentMapper::isPolyphonic(int id) {
 }
 
 std::string InstrumentMapper::getInstrumentClass(int id) {
+    if (id == 7 || id == 8 || id == 11 || id == 20 || id == 47) return "Drone";
     if (isPercussionID(id)) return "Percussion";
-    if (id == 11 || id == 19 || id == 25 || id == 27 || id == 34 || id == 41 || id == 42) return "Ambience";
+    if (id == 19 || id == 25 || id == 26 || id == 27 || id == 32 || id == 34 || id == 41 || id == 42) return "Ambience";
     return "Melody";
 }
 

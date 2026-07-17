@@ -8,12 +8,15 @@ import("stdfaust.lib");
 
 // Full acoustic piano range: A0 (27.5 Hz) to C8 (4186 Hz)
 freq       = hslider("freq [unit:Hz]", 110.0, 27.5, 4186, 0.1);
-gain       = hslider("gain", 0.5, 0, 1, 0.01);
+gain       = hslider("gain", 0.5, 0, 1, 0.01) : si.smoo;
 velocity   = hslider("velocity", 0.8, 0, 1, 0.01);
 gate       = button("gate");
 
 // SUSTAIN PEDAL: 0 = Off (Normal Damping), 1 = On (Strings Ring Out)
 sustain    = hslider("sustainPedal [style:knob]", 0, 0, 1, 1) : int;
+
+// STRIKE: 0 = Staccato (dampers on), 1 = Sustain (dampers lifted, like grand piano)
+strike     = hslider("strike", 0, 0, 1, 0.01);
 
 brightness = hslider("brightness", 0.7, 0, 1, 0.01);
 stiffness  = hslider("stiffness", 0.25, 0, 1, 0.01);
@@ -36,7 +39,9 @@ hammerEnv = hammerTimer : >(0.0);
 hammerProgress = 1.0 - hammerTimer / (hammerDur * ma.SR);
 hammerSine = sin(2.0 * ma.PI * freq * hammerProgress * hammerDur);
 
-hammerGain = sqrt(max(55.0, freq) / 261.0);
+// FIXED: Scaled back to realistic physical excitation levels. 
+// 4000.0 was blowing up the waveguide recursive accumulator.
+hammerGain = 1.0;
 hammerTone = hammerSine * hammerEnv * velocity * hammerGain;
 
 hammer = (hammerTone * 0.7 + no.noise * hammerEnv * velocity * 0.3)
@@ -58,11 +63,10 @@ pianoString(f, detune) = hammer : + ~ (
     : *(decayLoss)
 )
 with {
-    // If key is held OR sustain pedal is pressed, string loops freely
-    isSustained = (gate > 0.0) | (sustain > 0);
+    isSustained = (gate > 0.0) | (strike > 0.0);
 
-    heldDecay    = max(0.985, 1.0 - 1.2 / max(20.0, f)); 
-    releaseDecay = max(0.850, 1.0 - 15.3 / max(20.0, f));
+    heldDecay    = max(0.985, 1.0 - 1.0 / max(20.0, f));
+    releaseDecay = max(0.50, 1.0 - 17.3 / max(20.0, f));
 
     decayLoss    = select2(isSustained, releaseDecay, heldDecay);
 };
@@ -93,5 +97,7 @@ mix = soundboardIn + soundboard;
 
 softclip(x) = x / (1.0 + abs(x));
 
-process = mix * gain * 75.0 : softclip;
+// FIXED: Multiply by gain on the outside of softclip so slider changes 
+// volume rather than forcing saturation shape dynamics.
+process = mix : fi.dcblocker: softclip : * (gain * 30.725);
 

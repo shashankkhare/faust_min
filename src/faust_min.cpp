@@ -32,10 +32,25 @@
 #include <algorithm>
 #include <cstdio>
 #include <chrono>
+
+#ifdef __ANDROID__
+#include <android/log.h>
+#define FM_LOG_TAG "FaustMin"
+#define FM_LOGI(...) __android_log_print(ANDROID_LOG_INFO,  FM_LOG_TAG, __VA_ARGS__)
+#define FM_LOGW(...) __android_log_print(ANDROID_LOG_WARN,  FM_LOG_TAG, __VA_ARGS__)
+#define FM_LOGE(...) __android_log_print(ANDROID_LOG_ERROR, FM_LOG_TAG, __VA_ARGS__)
+#define FM_LOG_ALWAYS(...) __android_log_print(ANDROID_LOG_INFO, FM_LOG_TAG, __VA_ARGS__)
+#else
+#define FM_LOGI(...) printf(__VA_ARGS__); fflush(stdout)
+#define FM_LOGW(...) printf(__VA_ARGS__); fflush(stdout)
+#define FM_LOGE(...) fprintf(stderr, __VA_ARGS__); fflush(stderr)
+#define FM_LOG_ALWAYS(...) printf(__VA_ARGS__); fflush(stdout)
+#endif
+
 #define TLOG(msg) do { \
     auto __now = std::chrono::steady_clock::now(); \
     auto __us = std::chrono::duration_cast<std::chrono::microseconds>(__now.time_since_epoch()).count(); \
-    printf("[TIMESTAMP %ld] %s\n", __us, msg); fflush(stdout); \
+    FM_LOG_ALWAYS("[TIMESTAMP %ld] %s", __us, msg); \
 } while(0)
 #include "FaustFlute.hpp"
 #include "FaustBowl.hpp"
@@ -172,6 +187,10 @@ DART_EXPORT void orchestrator_stop_song(SequenceOrchestrator* orch, const char* 
     if (orch && directory) orch->stopSong(std::string(directory));
 }
 
+DART_EXPORT void orchestrator_set_asset_base_path(SequenceOrchestrator* orch, const char* path) {
+    if (orch && path) orch->setAssetBasePath(std::string(path));
+}
+
 // --- FaustMixer Singleton Endpoints ---
 
 DART_EXPORT FaustMixer* mixer_get_instance() {
@@ -179,11 +198,15 @@ DART_EXPORT FaustMixer* mixer_get_instance() {
 }
 
 DART_EXPORT void mixer_init(FaustMixer* mixer, float sampleRate) {
+    FM_LOGI("mixer_init: mixer=%p SR=%.0f", (void*)mixer, sampleRate);
     if (mixer) mixer->init(sampleRate);
 }
 
 DART_EXPORT int mixer_start(FaustMixer* mixer) {
-    return mixer ? (mixer->start() ? 0 : -1) : -1;
+    if (!mixer) return -1;
+    bool ok = mixer->start();
+    FM_LOGI("mixer_start called, result=%d", ok ? 1 : -1);
+    return ok ? 1 : -1;
 }
 
 /**
@@ -288,17 +311,17 @@ DART_EXPORT int mixer_register_instrument(FaustMixer* mixer, FaustInstrument* in
     }
     int trackID = mixer->addTrack(weight);
     mixer->addInstrumentToTrack(trackID, inst);
-    return 1;
+    return trackID;
 }
 
 DART_EXPORT void mixer_unregister_instrument(FaustMixer* mixer, FaustInstrument* inst) {
-    // Note: Since we don't track the ID here, we might need a reverse lookup in the future.
-    // For now, removing an instrument from all tracks isn't explicitly supported in this single call.
+    (void)mixer; (void)inst;
 }
 
 // --- FaustMixer Track & Breakpoint Envelope ---
 
 DART_EXPORT int mixer_add_track(FaustMixer* mixer, float initialWeight) {
+    FM_LOGI("mixer_add_track: mixer=%p weight=%.3f", (void*)mixer, initialWeight);
     return mixer ? mixer->addTrack(initialWeight) : 0;
 }
 
@@ -307,6 +330,7 @@ DART_EXPORT void mixer_remove_track(FaustMixer* mixer, int trackID) {
 }
 
 DART_EXPORT void mixer_set_track_envelope(FaustMixer* mixer, int trackID, float* times, float* values, uint8_t* interpTypes, int numPoints) {
+    FM_LOGI("mixer_set_track_envelope: mixer=%p track=%d points=%d", (void*)mixer, trackID, numPoints);
     if (mixer) mixer->setTrackEnvelope(trackID, times, values, interpTypes, numPoints);
 }
 
@@ -319,6 +343,7 @@ DART_EXPORT float mixer_get_track_weight(FaustMixer* mixer, int trackID) {
 }
 
 DART_EXPORT void mixer_add_instrument_to_track(FaustMixer* mixer, int trackID, FaustInstrument* inst, float instWeight) {
+    FM_LOGI("mixer_add_inst_to_track: mixer=%p track=%d inst=%p weight=%.3f", (void*)mixer, trackID, (void*)inst, instWeight);
     if (mixer && inst) mixer->addInstrumentToTrack(trackID, inst, instWeight);
 }
 

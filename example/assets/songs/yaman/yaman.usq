@@ -1,0 +1,78 @@
+grid: 4
+bpm: 80
+basefreq: 222.0
+instrument: tanpura
+notation: Hindustani
+
+5Sa............... _............... 5Sa............... _...............
+
+grid: 4
+bpm: 80
+basefreq: 222.0
+instrument: sarod
+notation: Hindustani
+glide: 0.06
+vibrato_depth: 0.02
+vibrato_rate: 5.5
+chikari_freq: 222.0
+
+5Sa..^ 5Sa..^ 8Ni..^ 5Sa..^
+8Ni..^ 8Ga..^ 8Re..^ 8Ni..~
+8Ga..^ 6Dha..^ 8Ni..^ 6Dha..~
+8Re..^ 8Ga..^ 8Re..^ 6Dha..^
+9Ni..^ 6Sa*2..^ 9Ni..~ 6Dha..~
+8Re..^ 9Ni..^ 6Sa*2..^ 8Ga..^
+9Ni..^ 8Re..^ 6Dha..^ 8Ni..^
+5Sa..^ 8Re..^ 8Ga..^ 8Re..~
+
+8Ga. 8Re. 5Sa. 8Ni. 9Ni. 5Sa. 8Re. 8Ga.
+8Re. 8Ga. 6Dha. 8Ni. 6Dha. 8Ni. 8Re. 8Ga.
+8Ni. 5Sa. 8Re. 8Ga. 9Ni. 6Sa*2. 9Ni. 5Sa.
+8Ga. 8Re. 6Dha. 8Ni. 8Re. 8Ga. 8Re. 5Sa.
+6Dha. 8Ni. 8Re. 8Ga. 8Re. 6Dha. 8Ni. 5Sa.
+8Ni. 5Sa. 8Re. 8Ga. 6Dha. 8Ni. 8Re. 8Ga.
+9Ni. 6Sa*2. 9Ni. 8Re. 8Ga. 8Re. 5Sa. 8Ni.
+5Sa. 8Re. 8Ga. 8Re. 6Dha. 8Ni. 5Sa. 8Ga.
+
+61Sa 8Ga~ 61Sa 8Ga~ 81Ni 8Ga~ 61Sa 8Ga~
+81Re 8Ga~ 81Re 8Ga~ 81Ga 8Re~ 81Ga 8Re~
+81Ga 8Ni~ 81Ga 8Ni~ 81Ni 8Re~ 81Ni 8Re~
+61Sa 8Ga~ 61Sa 8Ga~ 81Dha 8Ga~ 81Dha 8Re~
+81Re 8Ga~ 81Re 8Ga~ 81Ni 8Re~ 81Ni 8Ga~
+61Sa 8Ga~ 61Sa 8Ga~ 81Ga 8Re~ 81Ga 8Re~
+81Ni 8Dha~ 81Ni 8Dha~ 81Re 8Ga~ 81Re 8Ga~
+81Ga 8Ni~ 81Ga 8Ni~ 81Re 8Ga~ 81Re 8Ga~
+61Sa 8Ga~ 61Sa 8Ga~ 61Sa 8Ga~ 61Sa 8Ga~
+5Sa . . . . . . .
+
+grid: 4
+bpm: 80
+basefreq: 222.0
+instrument: dayan
+
+Na... Tin... Tun... tk... Na... Tin... Na... tk... Na... Tin... Tun... tk... Na... Tin... Na... tk...
+Na. Tin. Tun. tk. Na. Tin. Na. tk. Na. Tin. Tun. tk. Na. Tin. Na. tk. Na. Tin. Tun. tk. Na. Tin. Na. tk. Na. Tin. Tun. tk. Na. Tin. Na. tk.
+Na. Tin. Tun. tk. Na. Tin. Na. tk. Na. Tin. Tun. tk. Na. Tin. Na. tk. Na. Tin. Tun. tk. Na. Tin. Na. tk. Na. Tin. Tun. tk. Na. Tin. Na. tk.
+Na Tin Tun tk Na Tin Na tk Na Tin Tun tk Na Tin Na tk Na Tin Tun tk Na Tin Na tk Na Tin Tun tk Na Tin Na tk Na Tin Tun tk Na Tin Na tk Na Tin Tun tk Na Tin Na tk Na Tin Tun tk Na Tin Na tk Na Tin Tun tk Na Tin Na tk Na Tin Tun tk Na Tin Na tk Na Tin Tun tk Na Tin Na tk Na Tin Tun tk Na Tin Na tk Na Tin Tun tk Na Tin Na tk Na Tin Tun tk Na Tin Na tk Na Tin Tun tk Na Tin Na tk Na Tin Tun tk Na Tin Na tk Na Tin Tun tk Na Tin Na tk Na Tin Tun tk Na Tin Na tk Na Tin Tun tk Na Tin Na tk
+
+grid: 4
+bpm: 80
+basefreq: 111.0
+instrument: bayan
+
+Ghe... _... _... Ka... _... Ka... Ghe... _... Ghe... _... _... Ka... _... Ka... Ghe... _...
+Ghe. _. _. Ka. _. Ka. Ghe. _. Ghe. _. _. Ka. _. Ka. Ghe. _. Ghe. _. _. Ka. _. Ka. Ghe. _. Ghe. _. _. Ka. _. Ka. Ghe. _.
+Ghe. _. _. Ka. _. Ka. Ghe. _. Ghe. _. _. Ka. _. Ka. Ghe. _. Ghe. _. _. Ka. _. Ka. Ghe. _. Ghe. _. _. Ka. _. Ka. Ghe. _.
+Ghe _ _ Ka _ Ka Ghe _ Ghe _ _ Ka _ Ka Ghe _ Ghe _ _ Ka _ Ka Ghe _ Ghe _ _ Ka _ Ka Ghe _ Ghe _ _ Ka _ Ka Ghe _ Ghe _ _ Ka _ Ka Ghe _ Ghe _ _ Ka _ Ka Ghe _ Ghe _ _ Ka _ Ka Ghe _ Ghe _ _ Ka _ Ka Ghe _ Ghe _ _ Ka _ Ka Ghe _ Ghe _ _ Ka _ Ka Ghe _ Ghe _ _ Ka _ Ka Ghe _ Ghe _ _ Ka _ Ka Ghe _ Ghe _ _ Ka _ Ka Ghe _ Ghe _ _ Ka _ Ka Ghe _ Ghe _ _ Ka _ Ka Ghe _ Ghe _ _ Ka _ Ka Ghe _ Ghe _ _ Ka _ Ka Ghe _
+
+
+grid: 4
+bpm: 80
+basefreq: 222.0
+instrument: harmonium
+notation: Hindustani
+
+5Sa,5Ga,5Pa..._ 5Re,5M2,5Dha..._ 5Ga,5Pa,5Ni..._ 5Re,5M2,5Dha..._
+5Sa,5Ga,5Pa..._ 5Re,5M2,5Dha..._ 5Ga,5Pa,5Ni..._ 5Re,5M2,5Dha..._
+5Sa,5Ga,5Pa..._ 5Re,5M2,5Dha..._ 5Ga,5Pa,5Ni..._ 5Re,5M2,5Dha..._
+5Sa,5Ga,5Pa..._ 5Re,5M2,5Dha..._ 5Ga,5Pa,5Ni..._ 5Re,5M2,5Dha..._

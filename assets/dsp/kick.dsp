@@ -2,31 +2,72 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 
 // =============================================================================
 // === PHYSICAL MODEL DESIGN ===
-// Description: Electronic/acoustic kick drum generator utilizing a fast pitch envelope sweep and sub-bass reinforcement.
-//
-// Parameters (Controls):
-//   - freq [unit:Hz]
-//   - gain
-//   - velocity
-//   - gate
-//   - sub_boost
+// Description: Acoustic coupled dual-membrane (double-sided plastic sheet) 
+//              kick drum model utilizing modal resonators and internal air coupling.
 // =============================================================================
 import("stdfaust.lib");
 
-// --- Dedicated Kick Drum ---
-// Expert Play Range: Standard Kick Drum fundamental typically 40-100 Hz.
-freq = hslider("freq [unit:Hz]", 100.0, 40, 100, 0.1);
-gain = hslider("gain", 0.8, 0, 1, 0.01);
-velocity = hslider("velocity", 1, 0, 1, 0.01);
-gate = button("gate");
+// --- CONTROLS ---
+freq        = hslider("freq [unit:Hz]", 55.0, 40, 100, 0.1);
+gain        = hslider("gain", 0.8, 0, 1, 0.01) : si.smoo;
+velocity    = hslider("velocity", 0.8, 0, 1, 0.01);
+gate        = button("gate");
 
-// Add your custom things here (e.g., sub-bass boost)
-sub_boost = hslider("sub_boost", 0.5, 0, 1, 0.01);
+// Head tension decoupling: controls the tuning difference between front and back sheets
+headTuning  = hslider("headTuning", 1.2, 1.0, 1.5, 0.01) : si.smoo;
+// Sub-bass air compression factor inside the shell cavity
+sub_boost   = hslider("sub_boost", 0.5, 0, 1, 0.01) : si.smoo;
 
-pitch_env = en.adsr(0.001, 0.03, 0.0, 0.01, gate);
-click = no.noise * en.adsr(0.001, 0.005, 0.0, 0.01, gate) * 0.15 * (0.5 + 0.5 * velocity);
+// =====================================================
+// EXCITATION: Beater impact on plastic batter head
+// =====================================================
+rawTrig = (gate - gate') > 0.0;
 
-kick_body = os.osc(freq * (1 + 0.5 * pitch_env)) * en.adsr(0.001, 0.5, 0.0, 0.1, gate);
-sub = os.osc(freq * 0.5) * en.adsr(0.001, 0.5, 0.0, 0.15, gate) * sub_boost * 0.8;
+// High-speed exponential pitch envelope mimicking plastic sheet tension decay
+pitchDrop = s ~ _
+with {
+    s(y) = ba.if(rawTrig, 1.0, y * 0.996); // Ultra-fast exponential decay
+};
 
-process = (kick_body + click + sub) * gain * (0.6 + 0.4 * velocity) * 2.0;
+// Felt beater strike: a quick noise spike paired with a heavy low impulse click
+beaterStrike = (no.noise * env * 0.2) + (os.osc(freq * 3.0) * env * 0.8)
+with {
+    env = ba.if(rawTrig, 1.0, _ * 0.99) ~ _ : max(0.0); // 3ms strike transient
+};
+
+// =====================================================
+// DUAL-HEAD PHYSICAL MEMBRANE MODES
+// =====================================================
+dualHeadModel = _ <: (batterHead, resonantHead) :> _;
+
+// Dynamic pitch drop applied to the fundamental tuning
+instFreq = freq * (1.0 + pitchDrop * 1.8);
+
+// 1. Batter Head (The plastic sheet you hit - high damping, snappy overtones)
+// FIXED: Explicit split and merge syntax mapped safely outside local blocks
+batterHead = _ <: (b_mode1, b_mode2,b_mode3) :> _
+with {
+    b_mode1 = fi.resonbp(instFreq, 12.0, 0.6);        // Fundamental (1.0)
+    b_mode2 = fi.resonbp(instFreq * 1.59, 8.0, 0.3); // First circular mode (1.59)
+    b_mode3 = fi.resonbp(instFreq * 2.14, 15.0, 0.2); // Upper asymmetrical mode (2.14)
+};
+
+// 2. Resonant Head (The front plastic sheet - low damping, deep boom)
+// FIXED: Combined spatial scaling inside a mathematically sound signal path
+resonantHead = _ <: (r_mode1, r_mode2, r_mode3) :> *(sub_boost * 1.5)
+with {
+    r_freq  = instFreq * headTuning;
+    r_mode1 = fi.resonbp(r_freq, 35.0, 0.7);        // Highly resonant fundamental
+    r_mode2 = fi.resonbp(r_freq * 1.59, 8.0, 0.3); // First circular mode (1.59)
+    r_mode3 = fi.resonbp(r_freq * 2.14, 15.0, 0.2); // Upper asymmetrical mode (2.14)
+};
+
+// =====================================================
+// COUPLING ENGINE & CLEANUP
+// =====================================================
+process = beaterStrike * velocity
+        : dualHeadModel 
+        : fi.dcblocker
+        : ma.tanh 
+        * gain * 37.5;
+

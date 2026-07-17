@@ -1,19 +1,5 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 
-// =============================================================================
-// === PHYSICAL MODEL DESIGN ===
-// Description: Plucked string waveguide model of an electric guitar combined with distortion drive and sustain modeling.
-//
-// Parameters (Controls):
-//   - freq
-//   - velocity
-//   - gate
-//   - gain
-//   - pluckPosition
-//   - mute
-//   - drive
-//   - sustain
-// =============================================================================
 import("stdfaust.lib");
 
 mypm = library("physmodels.lib") with { maxLength = 20; };
@@ -22,26 +8,27 @@ mypm = library("physmodels.lib") with { maxLength = 20; };
 freq = hslider("freq", 196.0, 82, 1046, 0.01);
 velocity = hslider("velocity", 0.5, 0, 1, 0.01);
 gate = button("gate");
-gain = hslider("gain", 0.5, 0, 100, 0.01) : si.smoo;
+gain = hslider("gain", 1.0, 0, 1, 0.01);
 
-pluckPosition = hslider("pluckPosition", 0.8, 0.01, 0.99, 0.01) : si.smoo;
-mute = hslider("mute", 1.0, 0.0, 1.0, 0.01) : si.smoo; // 1 for no mute, 0 for instant mute
+pluckPosition = hslider("pluckPosition", 0.5, 0.01, 0.99, 0.01);
+mute = hslider("mute", 1.0, 0.0, 1.0, 0.01);
 
 // Distortion and sustain controls
-drive = hslider("drive", 0.5, 0, 1, 0.01) : si.smoo;
-sustain = hslider("sustain", 0.5, 0, 1, 0.01) : si.smoo;
+drive = hslider("drive", 0.7, 0, 1, 0.01);
+sustain = hslider("sustain", 0.8, 0, 1, 0.01);
 pregain = 1.0 + sustain * 19.0;
 
-// String length in meters
 stringLength = freq : mypm.f2l;
 
-// Cabinet simulator using a 2nd order lowpass filter to eliminate high-frequency fizz and simulate real speakers
+// Boost excitation — elecGuitar model outputs very quiet signal
+excBoost = 100;
+
 cabinet = fi.lowpass(2, 4000);
 
-process = mypm.elecGuitar(stringLength, pluckPosition, mute, velocity, gate)
+process = mypm.elecGuitar(stringLength, pluckPosition, mute, velocity * excBoost, gate)
         : fi.dcblocker 
         : *(pregain) 
         : ef.cubicnl(drive, 0) 
         : ma.tanh 
         : cabinet 
-        : *(gain * 2.5);
+        : *(gain * 1.33);

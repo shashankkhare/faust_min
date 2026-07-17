@@ -324,7 +324,7 @@ class FaustBayanDSP : public dsp {
 	
 	virtual void compute(int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs) {
 		FAUSTFLOAT* output0 = outputs[0];
-		float fSlow0 = (2.22110009f * float(fHslider0));
+		float fSlow0 = (3.88689995f * float(fHslider0));
 		int iSlow1 = int((float(fHslider1) + 0.5f));
 		int iSlow2 = (iSlow1 >= 3);
 		int iSlow3 = (iSlow1 >= 2);

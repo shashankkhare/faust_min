@@ -36,16 +36,17 @@ class FaustAcoustic_guitarDSP : public dsp {
 	
  private:
 	
+	FAUSTFLOAT fHslider0;
 	int fSampleRate;
 	float fConst1;
-	FAUSTFLOAT fHslider0;
 	FAUSTFLOAT fHslider1;
+	FAUSTFLOAT fHslider2;
 	float fConst4;
 	int iRec13[2];
 	float fConst5;
 	float fConst6;
 	float fConst7;
-	FAUSTFLOAT fHslider2;
+	FAUSTFLOAT fHslider3;
 	float fConst8;
 	float fRec28[2];
 	float fRec25[2];
@@ -54,7 +55,7 @@ class FaustAcoustic_guitarDSP : public dsp {
 	int IOTA;
 	float fRec32[2048];
 	float fVec0[2];
-	FAUSTFLOAT fHslider3;
+	FAUSTFLOAT fHslider4;
 	float fConst9;
 	int iRec34[2];
 	float fRec33[3];
@@ -110,8 +111,6 @@ class FaustAcoustic_guitarDSP : public dsp {
 	float fRec70[3];
 	float fVec6[2];
 	float fRec0[2];
-	FAUSTFLOAT fHslider4;
-	float fRec71[2];
 	
  public:
 	
@@ -234,12 +233,12 @@ class FaustAcoustic_guitarDSP : public dsp {
 	}
 	
 	virtual void instanceResetUserInterface() {
-		fHslider0 = FAUSTFLOAT(196.0f);
-		fHslider1 = FAUSTFLOAT(0.0f);
-		fHslider2 = FAUSTFLOAT(0.80000000000000004f);
-		fHslider3 = FAUSTFLOAT(0.5f);
+		fHslider0 = FAUSTFLOAT(1.0f);
+		fHslider1 = FAUSTFLOAT(196.0f);
+		fHslider2 = FAUSTFLOAT(0.0f);
+		fHslider3 = FAUSTFLOAT(0.80000000000000004f);
+		fHslider4 = FAUSTFLOAT(0.5f);
 		fButton0 = FAUSTFLOAT(0.0f);
-		fHslider4 = FAUSTFLOAT(1.0f);
 	}
 	
 	virtual void instanceClear() {
@@ -388,9 +387,6 @@ class FaustAcoustic_guitarDSP : public dsp {
 		for (int l47 = 0; (l47 < 2); l47 = (l47 + 1)) {
 			fRec0[l47] = 0.0f;
 		}
-		for (int l48 = 0; (l48 < 2); l48 = (l48 + 1)) {
-			fRec71[l48] = 0.0f;
-		}
 	}
 	
 	virtual void init(int sample_rate) {
@@ -413,81 +409,82 @@ class FaustAcoustic_guitarDSP : public dsp {
 	
 	virtual void buildUserInterface(UI* ui_interface) {
 		ui_interface->openVerticalBox("acoustic_guitar");
-		ui_interface->addHorizontalSlider("freq", &fHslider0, FAUSTFLOAT(196.0f), FAUSTFLOAT(40.0f), FAUSTFLOAT(1046.0f), FAUSTFLOAT(0.00999999978f));
-		ui_interface->addHorizontalSlider("gain", &fHslider4, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->declare(&fHslider1, "unit", "Hz");
+		ui_interface->addHorizontalSlider("freq", &fHslider1, FAUSTFLOAT(196.0f), FAUSTFLOAT(82.0f), FAUSTFLOAT(1046.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("gain", &fHslider0, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addButton("gate", &fButton0);
-		ui_interface->addHorizontalSlider("pluckPosition", &fHslider2, FAUSTFLOAT(0.800000012f), FAUSTFLOAT(0.00999999978f), FAUSTFLOAT(0.99000001f), FAUSTFLOAT(0.00999999978f));
-		ui_interface->declare(&fHslider1, "style", "knob");
-		ui_interface->addHorizontalSlider("stringType", &fHslider1, FAUSTFLOAT(0.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(2.0f), FAUSTFLOAT(1.0f));
-		ui_interface->addHorizontalSlider("velocity", &fHslider3, FAUSTFLOAT(0.5f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("pluckPosition", &fHslider3, FAUSTFLOAT(0.800000012f), FAUSTFLOAT(0.00999999978f), FAUSTFLOAT(0.99000001f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->declare(&fHslider2, "style", "knob");
+		ui_interface->addHorizontalSlider("stringType", &fHslider2, FAUSTFLOAT(0.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(2.0f), FAUSTFLOAT(1.0f));
+		ui_interface->addHorizontalSlider("velocity", &fHslider4, FAUSTFLOAT(0.5f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->closeBox();
 	}
 	
 	virtual void compute(int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs) {
 		FAUSTFLOAT* output0 = outputs[0];
-		float fSlow0 = float(fHslider0);
-		float fSlow1 = std::tan((fConst1 * fSlow0));
-		float fSlow2 = (1.0f / fSlow1);
-		float fSlow3 = (((fSlow2 + 0.125f) / fSlow1) + 1.0f);
-		float fSlow4 = (0.600000024f / (fSlow1 * fSlow3));
-		float fSlow5 = (0.0f - fSlow4);
-		int iSlow6 = int(float(fHslider1));
-		int iSlow7 = (iSlow6 == 0);
-		int iSlow8 = (iSlow6 == 1);
-		float fSlow9 = (340.0f / fSlow0);
-		float fSlow10 = (fConst6 * (fSlow9 + -0.100000001f));
-		float fSlow11 = (fConst7 * float(fHslider2));
-		float fSlow12 = std::tan((fConst9 * fSlow0));
-		float fSlow13 = (1.0f / fSlow12);
-		float fSlow14 = (((fSlow13 + 1.41421354f) / fSlow12) + 1.0f);
-		float fSlow15 = (50.0f * (float(fHslider3) / fSlow14));
-		float fSlow16 = (1.0f / fSlow14);
-		float fSlow17 = (((fSlow13 + -1.41421354f) / fSlow12) + 1.0f);
-		float fSlow18 = (2.0f * (1.0f - (1.0f / FaustAcoustic_guitarDSP_faustpower2_f(fSlow12))));
-		float fSlow19 = (1.0f / std::max<float>(1.0f, (fConst10 * FaustAcoustic_guitarDSP_faustpower2_f((1.0f - (0.00033333333f * fSlow0))))));
-		float fSlow20 = float(fButton0);
-		float fSlow21 = (fConst6 * (fSlow9 + -0.109999999f));
-		float fSlow22 = (1.0f / fSlow3);
-		float fSlow23 = (((fSlow2 + -0.125f) / fSlow1) + 1.0f);
-		float fSlow24 = (2.0f * (1.0f - (1.0f / FaustAcoustic_guitarDSP_faustpower2_f(fSlow1))));
-		float fSlow25 = std::tan((fConst22 * fSlow0));
-		float fSlow26 = (1.0f / fSlow25);
-		float fSlow27 = (((fSlow26 + 0.100000001f) / fSlow25) + 1.0f);
-		float fSlow28 = (0.800000012f / (fSlow25 * fSlow27));
-		float fSlow29 = (0.0f - fSlow28);
-		float fSlow30 = (1.0f / fSlow27);
-		float fSlow31 = (((fSlow26 + -0.100000001f) / fSlow25) + 1.0f);
-		float fSlow32 = (2.0f * (1.0f - (1.0f / FaustAcoustic_guitarDSP_faustpower2_f(fSlow25))));
-		float fSlow33 = std::tan((fConst23 * fSlow0));
-		float fSlow34 = (1.0f / fSlow33);
-		float fSlow35 = (((fSlow34 + 0.0833333358f) / fSlow33) + 1.0f);
-		float fSlow36 = (1.0f / (fSlow33 * fSlow35));
-		float fSlow37 = (1.0f / fSlow35);
-		float fSlow38 = (((fSlow34 + -0.0833333358f) / fSlow33) + 1.0f);
-		float fSlow39 = (2.0f * (1.0f - (1.0f / FaustAcoustic_guitarDSP_faustpower2_f(fSlow33))));
-		float fSlow40 = (0.0f - fSlow36);
-		float fSlow41 = std::tan((fConst24 * fSlow0));
-		float fSlow42 = (1.0f / fSlow41);
-		int iSlow43 = (iSlow6 > 0);
-		int iSlow44 = (iSlow6 > 1);
-		float fElse3 = (iSlow44 ? 20.0f : 10.0f);
-		float fSlow45 = (1.0f / (iSlow43 ? fElse3 : 15.0f));
-		float fSlow46 = ((fSlow42 * (fSlow42 - fSlow45)) + 1.0f);
-		float fSlow47 = (2.0f * (1.0f - (1.0f / FaustAcoustic_guitarDSP_faustpower2_f(fSlow41))));
-		float fSlow48 = ((fSlow42 * (fSlow42 + fSlow45)) + 1.0f);
-		float fElse5 = (iSlow44 ? 2.0f : 1.5f);
-		float fSlow49 = (iSlow43 ? fElse5 : 1.20000005f);
-		float fSlow50 = (0.0f - (fSlow42 * (fSlow49 / fSlow48)));
-		float fSlow51 = (fConst7 * float(fHslider4));
+		float fSlow0 = (14.125f * float(fHslider0));
+		float fSlow1 = float(fHslider1);
+		float fSlow2 = std::tan((fConst1 * fSlow1));
+		float fSlow3 = (1.0f / fSlow2);
+		float fSlow4 = (((fSlow3 + 0.125f) / fSlow2) + 1.0f);
+		float fSlow5 = (0.600000024f / (fSlow2 * fSlow4));
+		float fSlow6 = (0.0f - fSlow5);
+		int iSlow7 = int(float(fHslider2));
+		int iSlow8 = (iSlow7 == 0);
+		int iSlow9 = (iSlow7 == 1);
+		float fSlow10 = (340.0f / fSlow1);
+		float fSlow11 = (fConst6 * (fSlow10 + -0.100000001f));
+		float fSlow12 = (fConst7 * float(fHslider3));
+		float fSlow13 = std::tan((fConst9 * fSlow1));
+		float fSlow14 = (1.0f / fSlow13);
+		float fSlow15 = (((fSlow14 + 1.41421354f) / fSlow13) + 1.0f);
+		float fSlow16 = (2.0f * (float(fHslider4) / fSlow15));
+		float fSlow17 = (1.0f / fSlow15);
+		float fSlow18 = (((fSlow14 + -1.41421354f) / fSlow13) + 1.0f);
+		float fSlow19 = (2.0f * (1.0f - (1.0f / FaustAcoustic_guitarDSP_faustpower2_f(fSlow13))));
+		float fSlow20 = (1.0f / std::max<float>(1.0f, (fConst10 * FaustAcoustic_guitarDSP_faustpower2_f((1.0f - (0.00033333333f * fSlow1))))));
+		float fSlow21 = float(fButton0);
+		float fSlow22 = (fConst6 * (fSlow10 + -0.109999999f));
+		float fSlow23 = (1.0f / fSlow4);
+		float fSlow24 = (((fSlow3 + -0.125f) / fSlow2) + 1.0f);
+		float fSlow25 = (2.0f * (1.0f - (1.0f / FaustAcoustic_guitarDSP_faustpower2_f(fSlow2))));
+		float fSlow26 = std::tan((fConst22 * fSlow1));
+		float fSlow27 = (1.0f / fSlow26);
+		float fSlow28 = (((fSlow27 + 0.100000001f) / fSlow26) + 1.0f);
+		float fSlow29 = (0.800000012f / (fSlow26 * fSlow28));
+		float fSlow30 = (0.0f - fSlow29);
+		float fSlow31 = (1.0f / fSlow28);
+		float fSlow32 = (((fSlow27 + -0.100000001f) / fSlow26) + 1.0f);
+		float fSlow33 = (2.0f * (1.0f - (1.0f / FaustAcoustic_guitarDSP_faustpower2_f(fSlow26))));
+		float fSlow34 = std::tan((fConst23 * fSlow1));
+		float fSlow35 = (1.0f / fSlow34);
+		float fSlow36 = (((fSlow35 + 0.0833333358f) / fSlow34) + 1.0f);
+		float fSlow37 = (1.0f / (fSlow34 * fSlow36));
+		float fSlow38 = (1.0f / fSlow36);
+		float fSlow39 = (((fSlow35 + -0.0833333358f) / fSlow34) + 1.0f);
+		float fSlow40 = (2.0f * (1.0f - (1.0f / FaustAcoustic_guitarDSP_faustpower2_f(fSlow34))));
+		float fSlow41 = (0.0f - fSlow37);
+		float fSlow42 = std::tan((fConst24 * fSlow1));
+		float fSlow43 = (1.0f / fSlow42);
+		int iSlow44 = (iSlow7 > 0);
+		int iSlow45 = (iSlow7 > 1);
+		float fElse3 = (iSlow45 ? 20.0f : 10.0f);
+		float fSlow46 = (1.0f / (iSlow44 ? fElse3 : 15.0f));
+		float fSlow47 = ((fSlow43 * (fSlow43 - fSlow46)) + 1.0f);
+		float fSlow48 = (2.0f * (1.0f - (1.0f / FaustAcoustic_guitarDSP_faustpower2_f(fSlow42))));
+		float fSlow49 = ((fSlow43 * (fSlow43 + fSlow46)) + 1.0f);
+		float fElse5 = (iSlow45 ? 2.0f : 1.5f);
+		float fSlow50 = (iSlow44 ? fElse5 : 1.20000005f);
+		float fSlow51 = (0.0f - (fSlow43 * (fSlow50 / fSlow49)));
 		for (int i0 = 0; (i0 < count); i0 = (i0 + 1)) {
 			iRec13[0] = 0;
 			int iRec14 = iRec13[1];
 			float fTempFTZ0 = (float(iRec9[1]) - (0.997843683f * ((0.699999988f * fRec18[2]) + (0.150000006f * (fRec18[1] + fRec18[3])))));
 			float fRec17 = ((std::fabs(fTempFTZ0) > 1.17549435e-38f) ? fTempFTZ0 : 0.0f);
-			float fTempFTZ1 = (fSlow11 + (fConst8 * fRec28[1]));
+			float fTempFTZ1 = (fSlow12 + (fConst8 * fRec28[1]));
 			fRec28[0] = ((std::fabs(fTempFTZ1) > 1.17549435e-38f) ? fTempFTZ1 : 0.0f);
 			float fTemp0 = (1.0f - fRec28[0]);
-			float fTemp1 = (fSlow10 * fTemp0);
+			float fTemp1 = (fSlow11 * fTemp0);
 			float fTemp2 = (fTemp1 + -1.49999499f);
 			int iTemp3 = int(fTemp2);
 			int iTemp4 = int(std::min<float>(fConst5, float(std::max<int>(0, iTemp3))));
@@ -523,7 +520,7 @@ class FaustAcoustic_guitarDSP : public dsp {
 			fRec31[0] = ((std::fabs(fTempFTZ5) > 1.17549435e-38f) ? fTempFTZ5 : 0.0f);
 			float fTempFTZ6 = (-1.0f * (0.997843683f * ((0.699999988f * fRec31[2]) + (0.150000006f * (fRec31[1] + fRec31[3])))));
 			fRec32[(IOTA & 2047)] = ((std::fabs(fTempFTZ6) > 1.17549435e-38f) ? fTempFTZ6 : 0.0f);
-			float fTemp27 = (fSlow10 * fRec28[0]);
+			float fTemp27 = (fSlow11 * fRec28[0]);
 			float fTemp28 = (fTemp27 + -1.49999499f);
 			int iTemp29 = int(fTemp28);
 			int iTemp30 = int(std::min<float>(fConst5, float(std::max<int>(0, iTemp29))));
@@ -551,15 +548,15 @@ class FaustAcoustic_guitarDSP : public dsp {
 			int iTemp52 = int(std::min<float>(fConst5, float(std::max<int>(0, (iTemp29 + 4)))));
 			fVec0[0] = (((((fRec32[((IOTA - (iTemp30 + 2)) & 2047)] * fTemp33) * fTemp35) * fTemp37) * fTemp39) + (fTemp40 * ((((((fRec32[((IOTA - (iTemp41 + 2)) & 2047)] * fTemp42) * fTemp43) * fTemp44) + (0.5f * (((fTemp32 * fRec32[((IOTA - (iTemp45 + 2)) & 2047)]) * fTemp46) * fTemp47))) + (0.166666672f * ((fTemp48 * fRec32[((IOTA - (iTemp49 + 2)) & 2047)]) * fTemp50))) + (0.0416666679f * (fTemp51 * fRec32[((IOTA - (iTemp52 + 2)) & 2047)])))));
 			iRec34[0] = ((1103515245 * iRec34[1]) + 12345);
-			float fTempFTZ7 = ((4.65661287e-10f * float(iRec34[0])) - (fSlow16 * ((fSlow17 * fRec33[2]) + (fSlow18 * fRec33[1]))));
+			float fTempFTZ7 = ((4.65661287e-10f * float(iRec34[0])) - (fSlow17 * ((fSlow18 * fRec33[2]) + (fSlow19 * fRec33[1]))));
 			fRec33[0] = ((std::fabs(fTempFTZ7) > 1.17549435e-38f) ? fTempFTZ7 : 0.0f);
-			fVec1[0] = fSlow20;
-			float fTemp53 = (fSlow20 - fVec1[1]);
+			fVec1[0] = fSlow21;
+			float fTemp53 = (fSlow21 - fVec1[1]);
 			float fTemp54 = (fTemp53 * float((fTemp53 > 0.0f)));
 			fVec2[0] = fTemp54;
 			iRec35[0] = (((iRec35[1] + (iRec35[1] > 0)) * (fTemp54 <= fVec2[1])) + (fTemp54 > fVec2[1]));
-			float fTemp55 = (fSlow19 * float(iRec35[0]));
-			float fTemp56 = (fSlow15 * ((fRec33[2] + (fRec33[0] + (2.0f * fRec33[1]))) * std::max<float>(0.0f, std::min<float>(fTemp55, (2.0f - fTemp55)))));
+			float fTemp55 = (fSlow20 * float(iRec35[0]));
+			float fTemp56 = (fSlow16 * ((fRec33[2] + (fRec33[0] + (2.0f * fRec33[1]))) * std::max<float>(0.0f, std::min<float>(fTemp55, (2.0f - fTemp55)))));
 			fVec3[0] = (fVec0[1] + fTemp56);
 			float fTempFTZ8 = ((0.0500000007f * fRec30[((IOTA - 1) & 2047)]) + (0.949999988f * fVec3[1]));
 			fRec30[(IOTA & 2047)] = ((std::fabs(fTempFTZ8) > 1.17549435e-38f) ? fTempFTZ8 : 0.0f);
@@ -608,7 +605,7 @@ class FaustAcoustic_guitarDSP : public dsp {
 			int iRec48 = iRec47[1];
 			float fTempFTZ28 = (float(iRec43[1]) - (0.997843683f * ((0.699999988f * fRec52[2]) + (0.150000006f * (fRec52[1] + fRec52[3])))));
 			float fRec51 = ((std::fabs(fTempFTZ28) > 1.17549435e-38f) ? fTempFTZ28 : 0.0f);
-			float fTemp58 = (fSlow21 * fTemp0);
+			float fTemp58 = (fSlow22 * fTemp0);
 			float fTemp59 = (fTemp58 + -1.49999499f);
 			int iTemp60 = int(fTemp59);
 			int iTemp61 = int(std::min<float>(fConst5, float(std::max<int>(0, iTemp60))));
@@ -644,7 +641,7 @@ class FaustAcoustic_guitarDSP : public dsp {
 			fRec64[0] = ((std::fabs(fTempFTZ32) > 1.17549435e-38f) ? fTempFTZ32 : 0.0f);
 			float fTempFTZ33 = (-1.0f * (0.997843683f * ((0.699999988f * fRec64[2]) + (0.150000006f * (fRec64[1] + fRec64[3])))));
 			fRec65[(IOTA & 2047)] = ((std::fabs(fTempFTZ33) > 1.17549435e-38f) ? fTempFTZ33 : 0.0f);
-			float fTemp84 = (fSlow21 * fRec28[0]);
+			float fTemp84 = (fSlow22 * fRec28[0]);
 			float fTemp85 = (fTemp84 + -1.49999499f);
 			int iTemp86 = int(fTemp85);
 			int iTemp87 = int(std::min<float>(fConst5, float(std::max<int>(0, iTemp86))));
@@ -720,26 +717,24 @@ class FaustAcoustic_guitarDSP : public dsp {
 			fRec66[0] = ((std::fabs(fTempFTZ54) > 1.17549435e-38f) ? fTempFTZ54 : 0.0f);
 			float fTempFTZ55 = ((fConst21 * fRec4[1]) - (fConst19 * ((fConst20 * fRec67[1]) - (fConst17 * fRec4[0]))));
 			fRec67[0] = ((std::fabs(fTempFTZ55) > 1.17549435e-38f) ? fTempFTZ55 : 0.0f);
-			float fThen1 = (iSlow8 ? fRec36[0] : fThen0);
+			float fThen1 = (iSlow9 ? fRec36[0] : fThen0);
 			float fElse1 = (fRec66[0] + (1.41253757f * fRec67[0]));
-			float fTemp111 = (iSlow7 ? fElse1 : fThen1);
-			float fTempFTZ56 = (fTemp111 - (fSlow22 * ((fSlow23 * fRec1[2]) + (fSlow24 * fRec1[1]))));
+			float fTemp111 = (iSlow8 ? fElse1 : fThen1);
+			float fTempFTZ56 = (fTemp111 - (fSlow23 * ((fSlow24 * fRec1[2]) + (fSlow25 * fRec1[1]))));
 			fRec1[0] = ((std::fabs(fTempFTZ56) > 1.17549435e-38f) ? fTempFTZ56 : 0.0f);
-			float fTempFTZ57 = (fTemp111 - (fSlow30 * ((fSlow31 * fRec68[2]) + (fSlow32 * fRec68[1]))));
+			float fTempFTZ57 = (fTemp111 - (fSlow31 * ((fSlow32 * fRec68[2]) + (fSlow33 * fRec68[1]))));
 			fRec68[0] = ((std::fabs(fTempFTZ57) > 1.17549435e-38f) ? fTempFTZ57 : 0.0f);
-			float fTempFTZ58 = (fTemp111 - (fSlow37 * ((fSlow38 * fRec69[2]) + (fSlow39 * fRec69[1]))));
+			float fTempFTZ58 = (fTemp111 - (fSlow38 * ((fSlow39 * fRec69[2]) + (fSlow40 * fRec69[1]))));
 			fRec69[0] = ((std::fabs(fTempFTZ58) > 1.17549435e-38f) ? fTempFTZ58 : 0.0f);
-			float fTemp112 = (0.333333343f * ((fSlow5 * fRec1[2]) + (((fSlow29 * fRec68[2]) + (((fSlow36 * fRec69[0]) + (fSlow40 * fRec69[2])) + (fSlow28 * fRec68[0]))) + (fSlow4 * fRec1[0]))));
-			float fTempFTZ59 = (fTemp111 - (((fRec70[2] * fSlow46) + (fSlow47 * fRec70[1])) / fSlow48));
+			float fTemp112 = (0.333333343f * ((fSlow6 * fRec1[2]) + (((fSlow30 * fRec68[2]) + (((fSlow37 * fRec69[0]) + (fSlow41 * fRec69[2])) + (fSlow29 * fRec68[0]))) + (fSlow5 * fRec1[0]))));
+			float fTempFTZ59 = (fTemp111 - (((fRec70[2] * fSlow47) + (fSlow48 * fRec70[1])) / fSlow49));
 			fRec70[0] = ((std::fabs(fTempFTZ59) > 1.17549435e-38f) ? fTempFTZ59 : 0.0f);
-			float fTemp113 = (fRec70[2] * fSlow50);
-			float fTemp114 = (fSlow42 * ((fSlow49 * fRec70[0]) / fSlow48));
+			float fTemp113 = (fRec70[2] * fSlow51);
+			float fTemp114 = (fSlow43 * ((fSlow50 * fRec70[0]) / fSlow49));
 			fVec6[0] = ((fTemp114 + fTemp113) + fTemp112);
 			float fTempFTZ60 = ((fTemp112 + (fTemp113 + ((0.995000005f * fRec0[1]) + fTemp114))) - fVec6[1]);
 			fRec0[0] = ((std::fabs(fTempFTZ60) > 1.17549435e-38f) ? fTempFTZ60 : 0.0f);
-			float fTempFTZ61 = (fSlow51 + (fConst8 * fRec71[1]));
-			fRec71[0] = ((std::fabs(fTempFTZ61) > 1.17549435e-38f) ? fTempFTZ61 : 0.0f);
-			output0[i0] = FAUSTFLOAT((3.125f * (float(tanhf(float(fRec0[0]))) * fRec71[0])));
+			output0[i0] = FAUSTFLOAT((fSlow0 * float(tanhf(float(fRec0[0])))));
 			iRec13[1] = iRec13[0];
 			fRec28[1] = fRec28[0];
 			fRec25[1] = fRec25[0];
@@ -795,7 +790,6 @@ class FaustAcoustic_guitarDSP : public dsp {
 			fRec70[1] = fRec70[0];
 			fVec6[1] = fVec6[0];
 			fRec0[1] = fRec0[0];
-			fRec71[1] = fRec71[0];
 		}
 	}
 

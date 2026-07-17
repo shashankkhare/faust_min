@@ -1,90 +1,65 @@
 declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
-declare name "tibetanBowl";
-declare description "Banded Waveguide Tibetan Bowl";
+declare name "tibetanBowlMono";
+declare description "Banded Waveguide Tibetan Bowl (Mono - Correct Physical Velocity Mapping)";
 declare author "Shashank Khare";
 declare licence "MIT";
-declare version "1.0";
+declare version "2.4";
 
-// =============================================================================
-// === PHYSICAL MODEL DESIGN ===
-// Description: Banded waveguide simulation of a Tibetan singing bowl, supporting strike mallet excitation or friction bowing with nonlinear filter modulation.
-//
-// Parameters (Controls):
-//   - freq
-//   - gain
-//   - velocity
-//   - gate
-//   - strike
-//   - h:Physical_and_Nonlinearity/v:Physical_Parameters/Integration_Constant [2][tooltip:A value between 0 and 1]
-//   - h:Physical_and_Nonlinearity/v:Physical_Parameters/Base_Gain [2][tooltip:A value between 0 and 1]
-//   - h:Physical_and_Nonlinearity/v:Nonlinear_Filter_Parameters/Modulation_Type [3][tooltip:0=theta modulated by signal; 1=averaged signal; 2=squared signal; 3=sine freqMod; 4=sine freq]
-//   - h:Physical_and_Nonlinearity/v:Nonlinear_Filter_Parameters/Nonlinearity [3][tooltip:Nonlinearity factor (0 to 1)]
-//   - h:Physical_and_Nonlinearity/v:Nonlinear_Filter_Parameters/Modulation_Frequency [3][unit:Hz][tooltip:Sine modulation frequency (works if Modulation Type=3)]
-// =============================================================================
-import("instruments.lib");
+import("stdfaust.lib");
 
-// Expert Play Range: Tibetan singing bowl fundamental typically 100-400 Hz.
-freq = nentry("freq",400.0, 100, 400, 1);
-gain = nentry("gain",0.8,0,1,0.01);
+// --- UI Controls ---
+freq     = nentry("freq", 220.0, 100, 1000, 0.1);
+gain     = nentry("gain", 0.8, 0, 2, 0.01) : si.smoo;
 velocity = hslider("velocity", 0.8, 0, 1, 0.01);
-gate = hslider("gate", 0, 0, 1, 1);
+gate     = button("gate"); 
 
-strikeVal = hslider("strike", 0, 0, 1, 1);
-integrationConstant = hslider("h:Physical_and_Nonlinearity/v:Physical_Parameters/Integration_Constant
-[2][tooltip:A value between 0 and 1]",0,0,1,0.01);
-baseGain = hslider("h:Physical_and_Nonlinearity/v:Physical_Parameters/Base_Gain
-[2][tooltip:A value between 0 and 1]",1,0,1,0.01);
-
-// Expert Play Range: Tibetan singing bowl fundamental typically 100-400 Hz.
-typeModulation = nentry("h:Physical_and_Nonlinearity/v:Nonlinear_Filter_Parameters/Modulation_Type
-[3][tooltip:0=theta modulated by signal; 1=averaged signal; 2=squared signal; 3=sine freqMod; 4=sine freq]",100, 100, 400, 1);
-nonLinearity = hslider("h:Physical_and_Nonlinearity/v:Nonlinear_Filter_Parameters/Nonlinearity
-[3][tooltip:Nonlinearity factor (0 to 1)]",0,0,1,0.01);
-// Expert Play Range: Tibetan singing bowl fundamental typically 100-400 Hz.
-frequencyMod = hslider("h:Physical_and_Nonlinearity/v:Nonlinear_Filter_Parameters/Modulation_Frequency
-[3][unit:Hz][tooltip:Sine modulation frequency (works if Modulation Type=3)]",220.0, 100, 400, 0.1);
-
-nlfOrder = 6;
-NLFM = nonLinearModulator((nonLinearity : si.smoo),1,freq,
-    typeModulation,(frequencyMod : si.smoo),nlfOrder);
-
-nModes = 13;
-my_modes(x) = ba.take(x+1, (1.0, 0.625, 0.390625, 1.61, 2.5921, 4.173281, 6.7137, 7.0, 17.40, 16.0, 2.0, 4.0, 8.0));
+// --- Modal Properties ---
+my_modes(x)      = ba.take(x+1, (1.0, 0.625, 0.390625, 1.61, 2.5921, 4.173281, 6.7137, 7.0, 17.40, 16.0, 2.0, 4.0, 8.0));
 my_excitation(x) = ba.take(x+1, (1.0, 0.5, 0.5, 2.0, 2.0, 2.0, 3.0, 3.0, 4.0, 3.0, 0.5, 0.5, 0.5));
 
-tableOffset = 0;
-tableSlope = 10 - (9*velocity);
+// --- Delay Line Engine ---
+delayLine(x) = de.delay(8192, ma.SR / (freq * my_modes(x)));
 
-delayLengthBase = ma.SR/freq;
-delayLength(x) = delayLengthBase/my_modes(x);
-delayLine(x) = de.delay(4096,delayLength(x));
+// --- Safe Modal Bandpass Filters ---
+safe_modeFilter(f, r) = fi.tf2(b0, 0, -b0, a1, a2)
+with {
+    w = 2.0 * ma.PI * f / ma.SR;
+    r_safe = min(0.998, r); 
+    b0 = 1.0 - r_safe;
+    a1 = -2.0 * r_safe * cos(w);
+    a2 = r_safe * r_safe;
+};
+bandPassFilter(x) = safe_modeFilter(freq * my_modes(x), 0.995);
 
-radius = 1 - ma.PI*32/ma.SR;
-bandPassFilter(x) = bandPass(freq*my_modes(x),radius);
+// =====================================================
+// FIXED EXCITATION ENGINE (VELOCITY AT THE INPUT)
+// =====================================================
+trig = (gate > gate') : ba.impulsify; 
 
-baseGainApp = 0.8999999999999999 + (0.1*baseGain);
-velocityInputApp = integrationConstant;
-velocityInput = velocityInputApp + _*baseGainApp,par(i,(nModes-1),(_*baseGainApp)) :> _;
+// CORITICAL FIX: Velocity scales the raw shockwave here.
+// Harder hits generate a wider, heavier initial acoustic wavefront.
+mallet_strike = trig : fi.resonbp(150.0, 1.5, 20.0) : *(velocity) : fi.dcblocker;
 
-maxVelocity = 0.03 + 0.2 * velocity;
-bowVelocity = maxVelocity*en.adsr(0.5,0.005,1,0.5,gate);
+globalDamping  = 0.996; 
+excitationGain = 1.5; 
 
-stereo = stereoizer(delayLengthBase);
-
-bowing = (bowVelocity - velocityInput <: *(bow(tableOffset,tableSlope)) : /(nModes)) * (gate : si.smoo);
-
-trig = gate > gate';
-
-mallet_env = loop_mallet ~ _ with {
-    g = exp(-1.0 / (0.015 * ma.SR));
-    loop_mallet(s) = ba.if(trig, velocity, s * g);
+// =====================================================
+// INDEPENDENT WAVEGUIDE ENGINE
+// =====================================================
+waveguide_mode(id) = loop_core
+with {
+    mallet_exc = mallet_strike * my_excitation(id) * excitationGain;    
+    loop_core = (mallet_exc + _) ~ (delayLine(id) : *(globalDamping) : bandPassFilter(id));
 };
 
-globalDamping = 0.998;
-resonance(x) = + : + (mallet_env * (1-strikeVal) * my_excitation(x)) : delayLine(x) : *(globalDamping) : bandPassFilter(x);
+// Mix down all 13 modes cleanly
+bowl_system = par(i, 13, waveguide_mode(i)) :> _;
 
+// =====================================================
+// EXECUTION PIPELINE (PURE GAIN SCALING)
+// =====================================================
+// Velocity is completely removed from this track. 
+process = bowl_system 
+        : fi.dcblocker
+        : *(gain)*5.0;
 
-process =
-    (bowing*strikeVal <:
-    par(i,nModes,(resonance(i)~_)))~par(i,nModes,_) :> _ :
-    NLFM : stereo : *(gain * 18.0252), *(gain * 18.0252);

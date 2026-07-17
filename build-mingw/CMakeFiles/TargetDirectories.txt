@@ -1,4 +1,0 @@
-/home/shashankkhare/AndroidStudioProjects/faust_min/build-mingw/CMakeFiles/compile_faust_dsps.dir
-/home/shashankkhare/AndroidStudioProjects/faust_min/build-mingw/CMakeFiles/faust_min.dir
-/home/shashankkhare/AndroidStudioProjects/faust_min/build-mingw/CMakeFiles/edit_cache.dir
-/home/shashankkhare/AndroidStudioProjects/faust_min/build-mingw/CMakeFiles/rebuild_cache.dir

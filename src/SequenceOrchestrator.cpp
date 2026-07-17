@@ -678,7 +678,7 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
                             } else if (seqWrapper->sequenceObj->baseFreq > 0 && seqWrapper->sequenceObj->instrumentID == 44) {
                                 inst->setParamImmediate("freq_right", seqWrapper->sequenceObj->baseFreq * 1.5f, -1);
                             }
-                            if (ev.frequency > 0.0f) {
+                            {
                                 inst->noteOn(ev.frequency, dynamicVelocity, ev.strikeVal);
 #if DEBUG_ORCHESTRATOR
                                 printf("[DEBUG_ORCHESTRATOR] noteOn freq=%.2f vel=%.2f strike=%.1f seq=%s\n",

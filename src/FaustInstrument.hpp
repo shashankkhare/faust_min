@@ -113,7 +113,8 @@ public:
         long frame;
         float freq;
         float amp;
-        float value3; // used for energy capture
+        float value3; // used for energy capture (RMS)
+        float peak;   // peak absolute sample value
         std::vector<float> rawAudio;
     };
     

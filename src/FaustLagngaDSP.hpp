@@ -274,7 +274,7 @@ class FaustLagngaDSP : public dsp {
 		ui_interface->openVerticalBox("lagnga");
 		ui_interface->declare(&fHslider1, "unit", "Hz");
 		ui_interface->addHorizontalSlider("freq", &fHslider1, FAUSTFLOAT(220.0f), FAUSTFLOAT(80.0f), FAUSTFLOAT(300.0f), FAUSTFLOAT(0.100000001f));
-		ui_interface->addHorizontalSlider("gain", &fHslider0, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(2.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("gain", &fHslider0, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addButton("gate", &fButton0);
 		ui_interface->addHorizontalSlider("mallet_softness", &fHslider2, FAUSTFLOAT(0.300000012f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addHorizontalSlider("velocity", &fHslider3, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
@@ -283,7 +283,7 @@ class FaustLagngaDSP : public dsp {
 	
 	virtual void compute(int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs) {
 		FAUSTFLOAT* output0 = outputs[0];
-		float fSlow0 = (6.0f * float(fHslider0));
+		float fSlow0 = (18.0f * float(fHslider0));
 		float fSlow1 = float(fHslider1);
 		float fSlow2 = (1.0f / std::tan((fConst1 * fSlow1)));
 		float fSlow3 = (1.0f / (fSlow2 + 1.0f));

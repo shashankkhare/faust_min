@@ -1,1 +1,0 @@
-/usr/bin/g++ -O3 -DNDEBUG CMakeFiles/test_orchestrator.dir/home/shashankkhare/AndroidStudioProjects/faust_min/test/test_orchestrator.cpp.o -o test_orchestrator  -Wl,-rpath,/home/shashankkhare/AndroidStudioProjects/faust_min/build-host /usr/lib/x86_64-linux-gnu/libfaust.so -lpthread -ldl libfaust_min.so 

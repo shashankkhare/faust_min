@@ -4,11 +4,11 @@ import("stdfaust.lib");
 pm = library("physmodels.lib");
 
 // --- GLOBAL CONTROLS ---
-freq          = hslider("freq", 196.0, 40, 1046, 0.01); 
+freq          = hslider("freq [unit:Hz]", 196.0, 82, 1046, 0.01); 
 velocity      = hslider("velocity", 0.5, 0, 1, 0.01);
 gate          = button("gate");
 pluckPosition = hslider("pluckPosition", 0.8, 0.01, 0.99, 0.01) : si.smoo;
-gain          = hslider("gain", 1.0, 0, 1, 0.01) : si.smoo;
+gain          = hslider("gain", 1.0, 0, 1, 0.01);
 
 // String Selection: 0 = Steel String, 1 = Nylon String, 2 = Heavy Bass String
 stringType    = hslider("stringType [style:knob]", 0, 0, 2, 1) : int;
@@ -41,7 +41,7 @@ strikeTrigger = gate : ba.impulsify;
 
 // pm.pluckString outputs ~0.1 peak; waveguide chain absorbs most of it.
 // Boost velocity into the model so the waveguide operates at a healthy level.
-excBoost = 50;
+excBoost = 2;
 
 steelModel = pm.guitar(stringLength, pluckPosition, velocity * excBoost, strikeTrigger)
              : fi.highshelf(1, 3.0, 3000.0);
@@ -57,5 +57,5 @@ stringSelector = select2(stringType == 0, select2(stringType == 1, bassModel, ny
 process = stringSelector
         : guitarBody(stringType)
         : ma.tanh
-        : *(gain * 3.125);
+        : *(gain * 14.125);
 

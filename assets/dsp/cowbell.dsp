@@ -16,7 +16,7 @@ import("stdfaust.lib");
 // --- Dedicated Cowbell ---
 // Expert Play Range: Cowbell fundamental typically 400-800 Hz.
 freq = hslider("freq [unit:Hz]", 560.0, 400, 800, 1);
-gain = hslider("gain", 0.5, 0, 1, 0.01);
+gain = hslider("gain", 0.5, 0, 100, 0.01);
 velocity = hslider("velocity", 1, 0, 1, 0.01);
 gate = button("gate");
 

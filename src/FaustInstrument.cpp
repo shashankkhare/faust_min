@@ -34,6 +34,8 @@
 #include <cstring>
 #include <limits>
 #include "InstrumentMapper.hpp"
+
+
 #include "FaustDayanDSP.hpp"
 #include "FaustBayanDSP.hpp"
 #include "FaustKickDSP.hpp"
@@ -253,6 +255,10 @@ void FaustInstrument::loadTargetDSP() {
     mLUTRecords.clear();
     mLUTActive = false;
     std::ifstream csvFile(csvPath);
+#ifdef DEBUG_INSTRUMENT
+    printf("[LUT] CSV path: %s, opened=%d, mExecType=%d\n", csvPath.c_str(), (int)csvFile.is_open(), (int)mExecType);
+    fflush(stdout);
+#endif
     if (csvFile.is_open()) {
         std::string headerLine;
         if (std::getline(csvFile, headerLine)) {
@@ -304,10 +310,18 @@ void FaustInstrument::loadTargetDSP() {
                 return a.frequency < b.frequency;
             });
             mLUTActive = true;
+#ifdef DEBUG_INSTRUMENT
             printf("[Native] SUCCESS: Auto-constructed %llu LUT records from companion CSV '%s'\n", (unsigned long long)mLUTRecords.size(), csvPath.c_str());
             fflush(stdout);
+#endif
         }
     }
+#ifdef DEBUG_INSTRUMENT
+    if (!csvFile.is_open()) {
+        printf("[LUT] CSV file NOT FOUND at path: %s\n", csvPath.c_str());
+        fflush(stdout);
+    }
+#endif
 
     if (mExecType == DSPExecutionType::StaticCompiled) {
         for (int v = 0; v < mNumVoices; ++v) {
@@ -398,7 +412,9 @@ void FaustInstrument::loadTargetDSP() {
                     }
                 }
                 if (success) {
+#ifdef DEBUG_INSTRUMENT
                     printf("[Native] SUCCESS: Faust Bytecode Interpreter successfully compiled DSP file '%s' with %d voices\n", path.c_str(), mNumVoices);
+#endif
                     if (!err.empty()) {
                         printf("[Native] Compiler Warnings: %s\n", err.c_str());
                     }
@@ -458,8 +474,10 @@ void FaustInstrument::initParams() {
             }
         }
         iniFile.close();
+#ifdef DEBUG_INSTRUMENT
         printf("[Native] Loaded INI parameters from '%s'\n", iniPath.c_str());
         fflush(stdout);
+#endif
     }
 }
 
@@ -754,8 +772,10 @@ void FaustInstrument::noteOn(float freq, float vel, float strikeVal) {
         setParamImmediate("velocity", vel, v);
     }
 
-    if (mLUTActive)
+    if (mLUTActive) {
+        printf("[NOTEON] instrument=%d freq=%.2f vel=%.2f strike=%.1f\n", mInstrumentID, mFrequency, mVelocity, strikeVal);
         applyDynamicLUTParams(mFrequency, mVelocity, v);
+    }
 
     mStrikeVal = strikeVal;
     if (strikeVal >= 0.0f)
@@ -813,7 +833,7 @@ void FaustInstrument::processInternalGlides(int numFrames) {
 
     if (mFreqGlideActive) {
         if (mFreqGlideFramesElapsed == 0 && mEnableDiagLogging) {
-            mDiagLogs.push_back({mElapsedFrames, mFreqGlideStart, mAmplitude, 0.0f});
+            mDiagLogs.push_back({mElapsedFrames, mFreqGlideStart, mAmplitude, 0.0f, 0.0f});
         }
         mFreqGlideFramesElapsed += numFrames;
         if (mFreqGlideFramesElapsed >= mFreqGlideFramesTotal) {
@@ -821,7 +841,7 @@ void FaustInstrument::processInternalGlides(int numFrames) {
             setFrequencyImmediate(mFreqGlideTarget);
             setParamImmediate("glide", mDSPGlideParam, -1);
             if (mEnableDiagLogging) {
-                mDiagLogs.push_back({mElapsedFrames + numFrames, mFreqGlideTarget, mAmplitude, mDSPGlideParam});
+                mDiagLogs.push_back({mElapsedFrames + numFrames, mFreqGlideTarget, mAmplitude, mDSPGlideParam, 0.0f});
             }
         } else {
             float progress = static_cast<float>(mFreqGlideFramesElapsed) / mFreqGlideFramesTotal;
@@ -830,7 +850,7 @@ void FaustInstrument::processInternalGlides(int numFrames) {
             float currentFreq = mFreqGlideStart + (mFreqGlideTarget - mFreqGlideStart) * s_progress;
             setFrequencyImmediate(currentFreq);
             if (mEnableDiagLogging && (mFreqGlideFramesElapsed % 4096 < numFrames)) {
-                mDiagLogs.push_back({mElapsedFrames + numFrames, currentFreq, mAmplitude, 0.0f});
+                mDiagLogs.push_back({mElapsedFrames + numFrames, currentFreq, mAmplitude, 0.0f, 0.0f});
             }
         }
     }
@@ -1028,13 +1048,18 @@ void FaustInstrument::processRealtimeStream(float* buffer, int numFrames) {
                         long targetFrame = static_cast<long>(t * mSampleRate);
                         if (prevElapsed < targetFrame && mElapsedFrames >= targetFrame) {
                             float sumSq = 0.0f;
+                            float peakVal = 0.0f;
                             for (int i = 0; i < remaining; ++i) {
                                 float valL = chunkBuffer[i * 2];
                                 float valR = chunkBuffer[i * 2 + 1];
                                 sumSq += (valL * valL + valR * valR) * 0.5f;
+                                float absL = std::abs(valL);
+                                float absR = std::abs(valR);
+                                if (absL > peakVal) peakVal = absL;
+                                if (absR > peakVal) peakVal = absR;
                             }
-                            float energy = sumSq / remaining;
-                            DiagLog log = {mElapsedFrames, mFrequency, 0.0f, energy, {}};
+                            float rms = std::sqrt(sumSq / remaining);
+                            DiagLog log = {mElapsedFrames, mFrequency, 0.0f, rms, peakVal, {}};
 
                             {
                                 std::lock_guard<std::recursive_mutex> lock(mDSPLock);
@@ -1065,11 +1090,7 @@ void FaustInstrument::processRealtimeStream(float* buffer, int numFrames) {
     int framesProcessed = 0;
     int nOuts = mVoices[0]->getNumOutputs();
     
-    // Equal-power polyphonic scaling to prevent master limiter ducking (jerks)
-    float scale = 1.0f;
-    if (mNumVoices > 1) {
-        scale = 1.0f / std::sqrt((float)mNumVoices);
-    }
+    // Voices sum raw; normalizeBuffer (tanh) handles saturation at the end
 
     for (const auto& ev : mEventQueue) {
         if (framesPerSubBlock > 0 && (framesProcessed + framesPerSubBlock <= numFrames)) {
@@ -1082,7 +1103,7 @@ void FaustInstrument::processRealtimeStream(float* buffer, int numFrames) {
 
                 if (nOuts == 1) {
                     for (int i = 0; i < framesPerSubBlock; ++i) {
-                        float val = mRenderBuffer[i] * scale;
+                        float val = mRenderBuffer[i];
                         if (mGain != 1.0f) val *= mGain;
                         chunkBuffer[i * 2] += val;
                         chunkBuffer[i * 2 + 1] += val;
@@ -1090,8 +1111,8 @@ void FaustInstrument::processRealtimeStream(float* buffer, int numFrames) {
                     updateVoiceEnergyInline(v, mRenderBuffer, nullptr, framesPerSubBlock);
                 } else if (nOuts == 2) {
                     for (int i = 0; i < framesPerSubBlock; ++i) {
-                        float valL = outputs[0][i] * scale;
-                        float valR = outputs[1][i] * scale;
+                        float valL = outputs[0][i];
+                        float valR = outputs[1][i];
                         if (mGain != 1.0f) { valL *= mGain; valR *= mGain; }
                         chunkBuffer[i * 2] += valL;
                         chunkBuffer[i * 2 + 1] += valR;
@@ -1125,7 +1146,7 @@ void FaustInstrument::processRealtimeStream(float* buffer, int numFrames) {
 
             if (nOuts == 1) {
                 for (int i = 0; i < remaining; ++i) {
-                    float val = mRenderBuffer[i] * scale;
+                    float val = mRenderBuffer[i];
                     if (mGain != 1.0f) val *= mGain;
                     chunkBuffer[i * 2] += val;
                     chunkBuffer[i * 2 + 1] += val;
@@ -1133,8 +1154,8 @@ void FaustInstrument::processRealtimeStream(float* buffer, int numFrames) {
                 updateVoiceEnergyInline(v, mRenderBuffer, nullptr, remaining);
             } else if (nOuts == 2) {
                 for (int i = 0; i < remaining; ++i) {
-                    float valL = outputs[0][i] * scale;
-                    float valR = outputs[1][i] * scale;
+                    float valL = outputs[0][i];
+                    float valR = outputs[1][i];
                     if (mGain != 1.0f) { valL *= mGain; valR *= mGain; }
                     chunkBuffer[i * 2] += valL;
                     chunkBuffer[i * 2 + 1] += valR;
@@ -1154,13 +1175,18 @@ void FaustInstrument::processRealtimeStream(float* buffer, int numFrames) {
                     long targetFrame = static_cast<long>(t * mSampleRate);
                     if (prevElapsed < targetFrame && mElapsedFrames >= targetFrame) {
                         float sumSq = 0.0f;
+                        float peakVal = 0.0f;
                         for (int i = 0; i < remaining; ++i) {
                             float valL = chunkBuffer[i * 2];
                             float valR = chunkBuffer[i * 2 + 1];
                             sumSq += (valL * valL + valR * valR) * 0.5f;
+                            float absL = std::abs(valL);
+                            float absR = std::abs(valR);
+                            if (absL > peakVal) peakVal = absL;
+                            if (absR > peakVal) peakVal = absR;
                         }
-                        float energy = sumSq / remaining;
-                        DiagLog log = {mElapsedFrames, mFrequency, 0.0f, energy, {}};
+                        float rms = std::sqrt(sumSq / remaining);
+                        DiagLog log = {mElapsedFrames, mFrequency, 0.0f, rms, peakVal, {}};
 
                         {
                             std::lock_guard<std::recursive_mutex> lock(mDSPLock);
@@ -1213,7 +1239,13 @@ void FaustInstrument::stopInternalStream() {
 }
 
 void FaustInstrument::applyDynamicLUTParams(float freq, float velocity, int voiceIndex) {
-    if (!mLUTActive || mLUTRecords.empty()) return;
+    if (!mLUTActive || mLUTRecords.empty()) {
+#ifdef DEBUG_INSTRUMENT
+        printf("[LUT] SKIP: mLUTActive=%d mLUTRecords=%zu\n", (int)mLUTActive, mLUTRecords.size());
+        fflush(stdout);
+#endif
+        return;
+    }
 
     constexpr int K = 3;
     struct Neighbor { const LUTRecord* record; float distSq; };
@@ -1235,9 +1267,14 @@ void FaustInstrument::applyDynamicLUTParams(float freq, float velocity, int voic
         
         float distSq = fNorm * fNorm + aNorm * aNorm;
 
-            if (distSq < 1e-10f) { printf("Setting %s to %f\n", rec.targetParams.begin()->first.c_str(), rec.targetParams.begin()->second); printf("Found exact match in LUT\n");
-            for (const auto& pair : rec.targetParams)
+            if (distSq < 1e-10f) {
+            for (const auto& pair : rec.targetParams) {
                 setParamImmediate(pair.first.c_str(), pair.second, voiceIndex);
+#ifdef DEBUG_INSTRUMENT
+                printf("[LUT] EXACT match: set param '%s' = %.4f\n", pair.first.c_str(), pair.second);
+                fflush(stdout);
+#endif
+            }
             return;
         }
 
@@ -1251,9 +1288,7 @@ void FaustInstrument::applyDynamicLUTParams(float freq, float velocity, int voic
         }
     }
 
-#ifdef DEBUG
-    // To prevent flooding the console if the test is fast, we only print if requested. 
-    // Usually it's helpful to see it per-note.
+#ifdef DEBUG_INSTRUMENT
     printf("\n[DEBUG LUT] Interpolating for Request: Freq=%.1f, Vel=%.2f, TargetStrike=%.1f\n", freq, velocity, mStrikeVal >= 0.0f ? mStrikeVal : 1.0f);
 #endif
 
@@ -1261,9 +1296,9 @@ void FaustInstrument::applyDynamicLUTParams(float freq, float velocity, int voic
     for (int i = 0; i < K && nearest[i].record; ++i) {
         float weight = 1.0f / (nearest[i].distSq + 1e-10f);
         
-#ifdef DEBUG
-        printf("  -> Using Row %d: CSV Freq=%.1f, CSV Amp=%.2f, CSV Strike=%.1f (DistSq=%.6f, Weight=%.2f)\n", 
-               i, nearest[i].record->frequency, nearest[i].record->amplitude, nearest[i].record->strike, nearest[i].distSq, weight);
+#ifdef DEBUG_INSTRUMENT
+        printf("  -> Using Row %d: CSV Freq=%.1f, CSV Vel=%.2f, CSV Strike=%.1f (DistSq=%.6f, Weight=%.2f)\n", 
+               i, nearest[i].record->frequency, nearest[i].record->velocity, nearest[i].record->strike, nearest[i].distSq, weight);
 #endif
 
         for (const auto& pair : nearest[i].record->targetParams) {
@@ -1274,8 +1309,14 @@ void FaustInstrument::applyDynamicLUTParams(float freq, float velocity, int voic
 
     for (const auto& pair : accumulatedParams) {
         float wSum = totalWeights[pair.first];
-        if (wSum > 0.0f)
-            setParamImmediate(pair.first.c_str(), pair.second / wSum, voiceIndex);
+        if (wSum > 0.0f) {
+            float val = pair.second / wSum;
+            setParamImmediate(pair.first.c_str(), val, voiceIndex);
+#ifdef DEBUG_INSTRUMENT
+            printf("[LUT] set param '%s' = %.4f (raw sum=%.4f, wSum=%.4f)\n", pair.first.c_str(), val, pair.second, wSum);
+            fflush(stdout);
+#endif
+        }
     }
 }
 

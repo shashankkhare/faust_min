@@ -197,4 +197,4 @@ bowl_resonance = membrane_mix : fi.resonbp(bowl_freq, 2.0, 1.5) : fi.lowpass(2, 
 bayan_raw = membrane_mix + (bowl_resonance * 0.9);
 
 dynamicDrive = ba.selectn(5, int_strike, 1.2, 1.5, 0.5, 1.0, 1.6);
-process = (bayan_raw * dynamicDrive * 4.0 : ma.tanh) * gain * 2.2211;
+process = (bayan_raw * dynamicDrive * 4.0 : ma.tanh) * gain * 3.8869;

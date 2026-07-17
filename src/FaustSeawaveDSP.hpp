@@ -82,8 +82,8 @@ class FaustSeawaveDSP : public dsp {
 	
  private:
 	
-	FAUSTFLOAT fButton0;
 	int fSampleRate;
+	float fConst0;
 	float fConst1;
 	float fRec2[2];
 	float fConst2;
@@ -143,6 +143,14 @@ class FaustSeawaveDSP : public dsp {
 	float fRec0[2];
 	FAUSTFLOAT fHslider1;
 	float fRec16[2];
+	FAUSTFLOAT fHslider2;
+	FAUSTFLOAT fButton0;
+	float fVec4[2];
+	float fRec17[2];
+	FAUSTFLOAT fHslider3;
+	FAUSTFLOAT fHslider4;
+	FAUSTFLOAT fHslider5;
+	int iRec18[2];
 	
  public:
 	
@@ -151,6 +159,12 @@ class FaustSeawaveDSP : public dsp {
 		m->declare("basics.lib/version", "0.2");
 		m->declare("compile_options", "-lang cpp -es 1 -single -ftz 1");
 		m->declare("copyright", "Copyright (c) 2026 Shashank Khare, MIT License");
+		m->declare("envelopes.lib/adsr:author", "Yann Orlarey and Andrey Bundin");
+		m->declare("envelopes.lib/author", "GRAME");
+		m->declare("envelopes.lib/copyright", "GRAME");
+		m->declare("envelopes.lib/license", "LGPL with exception");
+		m->declare("envelopes.lib/name", "Faust Envelope Library");
+		m->declare("envelopes.lib/version", "0.1");
 		m->declare("filename", "seawave.dsp");
 		m->declare("filters.lib/bandpass0_bandstop1:author", "Julius O. Smith III");
 		m->declare("filters.lib/bandpass0_bandstop1:copyright", "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>");
@@ -232,7 +246,7 @@ class FaustSeawaveDSP : public dsp {
 	
 	virtual void instanceConstants(int sample_rate) {
 		fSampleRate = sample_rate;
-		float fConst0 = std::min<float>(192000.0f, std::max<float>(1.0f, float(fSampleRate)));
+		fConst0 = std::min<float>(192000.0f, std::max<float>(1.0f, float(fSampleRate)));
 		fConst1 = (0.108999997f / fConst0);
 		fConst2 = (0.0790000036f / fConst0);
 		fConst3 = (0.0309999995f / fConst0);
@@ -285,9 +299,13 @@ class FaustSeawaveDSP : public dsp {
 	}
 	
 	virtual void instanceResetUserInterface() {
-		fButton0 = FAUSTFLOAT(0.0f);
 		fHslider0 = FAUSTFLOAT(0.5f);
 		fHslider1 = FAUSTFLOAT(0.5f);
+		fHslider2 = FAUSTFLOAT(2.0f);
+		fButton0 = FAUSTFLOAT(0.0f);
+		fHslider3 = FAUSTFLOAT(0.80000000000000004f);
+		fHslider4 = FAUSTFLOAT(2.0f);
+		fHslider5 = FAUSTFLOAT(2.0f);
 	}
 	
 	virtual void instanceClear() {
@@ -348,6 +366,15 @@ class FaustSeawaveDSP : public dsp {
 		for (int l20 = 0; (l20 < 2); l20 = (l20 + 1)) {
 			fRec16[l20] = 0.0f;
 		}
+		for (int l21 = 0; (l21 < 2); l21 = (l21 + 1)) {
+			fVec4[l21] = 0.0f;
+		}
+		for (int l22 = 0; (l22 < 2); l22 = (l22 + 1)) {
+			fRec17[l22] = 0.0f;
+		}
+		for (int l23 = 0; (l23 < 2); l23 = (l23 + 1)) {
+			iRec18[l23] = 0;
+		}
 	}
 	
 	virtual void init(int sample_rate) {
@@ -370,17 +397,27 @@ class FaustSeawaveDSP : public dsp {
 	
 	virtual void buildUserInterface(UI* ui_interface) {
 		ui_interface->openVerticalBox("seawave");
+		ui_interface->addHorizontalSlider("attack", &fHslider2, FAUSTFLOAT(2.0f), FAUSTFLOAT(0.00999999978f), FAUSTFLOAT(10.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("decay", &fHslider4, FAUSTFLOAT(2.0f), FAUSTFLOAT(0.00999999978f), FAUSTFLOAT(10.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addHorizontalSlider("gain", &fHslider1, FAUSTFLOAT(0.5f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addButton("gate", &fButton0);
 		ui_interface->addHorizontalSlider("intensity", &fHslider0, FAUSTFLOAT(0.5f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("release", &fHslider5, FAUSTFLOAT(2.0f), FAUSTFLOAT(0.00999999978f), FAUSTFLOAT(10.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("sustain", &fHslider3, FAUSTFLOAT(0.800000012f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->closeBox();
 	}
 	
 	virtual void compute(int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs) {
 		FAUSTFLOAT* output0 = outputs[0];
-		float fSlow0 = ((float(fButton0) > 0.0f) ? 1.0f : 0.0f);
-		float fSlow1 = (fConst5 * float(fHslider0));
-		float fSlow2 = (fConst5 * float(fHslider1));
+		float fSlow0 = (fConst5 * float(fHslider0));
+		float fSlow1 = (fConst5 * float(fHslider1));
+		float fSlow2 = std::max<float>(1.0f, (fConst0 * float(fHslider2)));
+		float fSlow3 = (1.0f / fSlow2);
+		float fSlow4 = float(fButton0);
+		float fSlow5 = float(fHslider3);
+		float fSlow6 = ((1.0f - fSlow5) / std::max<float>(1.0f, (fConst0 * float(fHslider4))));
+		float fSlow7 = (1.0f / std::max<float>(1.0f, (fConst0 * float(fHslider5))));
+		int iSlow8 = (fSlow4 == 0.0f);
 		for (int i0 = 0; (i0 < count); i0 = (i0 + 1)) {
 			float fTempFTZ0 = (fConst1 + (fRec2[1] - std::floor((fConst1 + fRec2[1]))));
 			fRec2[0] = ((std::fabs(fTempFTZ0) > 1.17549435e-38f) ? fTempFTZ0 : 0.0f);
@@ -390,7 +427,7 @@ class FaustSeawaveDSP : public dsp {
 			fRec4[0] = ((std::fabs(fTempFTZ2) > 1.17549435e-38f) ? fTempFTZ2 : 0.0f);
 			float fTempFTZ3 = (fConst4 + (fRec5[1] - std::floor((fConst4 + fRec5[1]))));
 			fRec5[0] = ((std::fabs(fTempFTZ3) > 1.17549435e-38f) ? fTempFTZ3 : 0.0f);
-			float fTempFTZ4 = (fSlow1 + (fConst6 * fRec6[1]));
+			float fTempFTZ4 = (fSlow0 + (fConst6 * fRec6[1]));
 			fRec6[0] = ((std::fabs(fTempFTZ4) > 1.17549435e-38f) ? fTempFTZ4 : 0.0f);
 			float fTemp0 = (0.400000006f * fRec6[0]);
 			float fTemp1 = std::pow((std::max<float>(0.0f, (((0.075000003f * (ftbl0FaustSeawaveDSPSIG0[int((65536.0f * fRec2[0]))] + 1.0f)) + ((0.125f * (ftbl0FaustSeawaveDSPSIG0[int((65536.0f * fRec3[0]))] + 1.0f)) + ((0.150000006f * ((ftbl0FaustSeawaveDSPSIG0[int((65536.0f * fRec4[0]))] + 1.0f) + (ftbl0FaustSeawaveDSPSIG0[int((65536.0f * fRec5[0]))] + 1.0f))) + fTemp0))) + -0.550000012f)) / (fTemp0 + 0.451000005f)), 2.0f);
@@ -439,9 +476,13 @@ class FaustSeawaveDSP : public dsp {
 			fVec3[0] = fTemp24;
 			float fTempFTZ13 = (((0.995000005f * fRec0[1]) + fTemp24) - fVec3[1]);
 			fRec0[0] = ((std::fabs(fTempFTZ13) > 1.17549435e-38f) ? fTempFTZ13 : 0.0f);
-			float fTempFTZ14 = (fSlow2 + (fConst6 * fRec16[1]));
+			float fTempFTZ14 = (fSlow1 + (fConst6 * fRec16[1]));
 			fRec16[0] = ((std::fabs(fTempFTZ14) > 1.17549435e-38f) ? fTempFTZ14 : 0.0f);
-			output0[i0] = FAUSTFLOAT(((fSlow0 * fRec0[0]) * fRec16[0]));
+			fVec4[0] = fSlow4;
+			float fTempFTZ15 = (fSlow4 + (fRec17[1] * float((fVec4[1] >= fSlow4))));
+			fRec17[0] = ((std::fabs(fTempFTZ15) > 1.17549435e-38f) ? fTempFTZ15 : 0.0f);
+			iRec18[0] = (iSlow8 * (iRec18[1] + 1));
+			output0[i0] = FAUSTFLOAT(((fRec0[0] * fRec16[0]) * std::max<float>(0.0f, (std::min<float>((fSlow3 * fRec17[0]), std::max<float>(((fSlow6 * (fSlow2 - fRec17[0])) + 1.0f), fSlow5)) * (1.0f - (fSlow7 * float(iRec18[0])))))));
 			fRec2[1] = fRec2[0];
 			fRec3[1] = fRec3[0];
 			fRec4[1] = fRec4[0];
@@ -467,6 +508,9 @@ class FaustSeawaveDSP : public dsp {
 			fVec3[1] = fVec3[0];
 			fRec0[1] = fRec0[0];
 			fRec16[1] = fRec16[0];
+			fVec4[1] = fVec4[0];
+			fRec17[1] = fRec17[0];
+			iRec18[1] = iRec18[0];
 		}
 	}
 

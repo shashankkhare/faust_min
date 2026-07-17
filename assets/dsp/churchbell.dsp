@@ -16,13 +16,24 @@ import("stdfaust.lib");
 freq = hslider("freq", 200.0, 100, 1000, 0.1); // No si.smoo on freq to avoid biquad pops on note changes
 velocity = hslider("velocity", 0.8, 0, 1, 0.01); // No smoothing to preserve instant strike dynamics
 gate = button("gate");
-gain = hslider("gain", 0.6, 0, 1, 0.01) : si.smoo;
+gain = hslider("gain", 0.6, 0, 100, 0.01) : si.smoo;
 
 // Generate trigger pulse from gate rising edge
 trig = (gate > 0) & (gate' <= 0);
 
+// Safe bounded mode filter to prevent 32-bit float limit cycle explosions
+safe_modeFilter(freq,t60,gain) = fi.tf2(b0,b1,b2,a1,a2)*gain
+with {
+    b0 = 1; b1 = 0; b2 = -1;
+    w = 2*ma.PI*freq/ma.SR;
+    r_target = pow(0.001,1/float(t60*ma.SR));
+    r = min(0.999, r_target); // HARD CAP ON RADIUS (prevents r=1.0 in 32-bit floats)
+    a1 = -2*r*cos(w);
+    a2 = r^2;
+};
+
 // A transposable Church Bell using physical modal synthesis
-churchBell(f, vel, t) = excitation : _ <: par(i, 7, pm.modeFilter(modeFreqs(i), modeT60s(i), modeGains(i))) :> /(7)
+churchBell(f, vel, t) = excitation : _ <: par(i, 7, safe_modeFilter(modeFreqs(i), modeT60s(i), modeGains(i))) :> /(7)
 with {
     // Correct transposable churchbell ratios (pitched relative to Hum f * 1.0)
     modeFreqs(0) = f * 1.00;   // Hum
@@ -34,12 +45,13 @@ with {
     modeFreqs(6) = f * 8.00;   // Octave Nominal
 
     // Decay times (T60 in seconds)
-    modeT60s(0) = 25.0;
-    modeT60s(1) = 20.0;
-    modeT60s(2) = 15.0;
-    modeT60s(3) = 10.0;
-    modeT60s(4) = 5.0;
-    modeT60s(5) = 2.5;
+    // Capped to max 10.0 to prevent endless ringing and numeric overflow
+    modeT60s(0) = 10.0;
+    modeT60s(1) = 8.0;
+    modeT60s(2) = 6.0;
+    modeT60s(3) = 4.0;
+    modeT60s(4) = 3.0;
+    modeT60s(5) = 2.0;
     modeT60s(6) = 1.0;
 
     // Amplitude weights

@@ -43,6 +43,7 @@ add_custom_target(compile_faust_dsps DEPENDS ${FAUST_GENERATED_HEADERS})
  
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+#add_compile_definitions(DEBUG_INSTRUMENT)
 
 add_library(faust_min SHARED
   "faust_min.cpp"
@@ -81,12 +82,22 @@ add_dependencies(faust_min compile_faust_dsps)
 file(GLOB CSV_FILES "${CMAKE_CURRENT_SOURCE_DIR}/../assets/dsp/*.csv")
 foreach(CSV_FILE ${CSV_FILES})
     get_filename_component(CSV_NAME ${CSV_FILE} NAME)
+    # Copy to source assets (for Flutter bundle)
     add_custom_command(
         TARGET faust_min POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${CSV_FILE}
         "${CMAKE_SOURCE_DIR}/../assets/dsp/${CSV_NAME}"
         COMMENT "Syncing CSV lookup table to main assets: ${CSV_NAME}"
+    )
+    # Also copy to build dir for test binaries (running from build-release/)
+    add_custom_command(
+        TARGET faust_min POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/assets/dsp"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CSV_FILE}
+        "${CMAKE_BINARY_DIR}/assets/dsp/${CSV_NAME}"
+        COMMENT "Copying CSV to build directory: ${CSV_NAME}"
     )
 endforeach()
  

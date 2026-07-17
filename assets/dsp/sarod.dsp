@@ -26,7 +26,7 @@ import("stdfaust.lib");
 import("fm.lib");
 
 // Expert Play Range: Sarod typical range C3 (~130 Hz) to A5 (~880 Hz).
-freq = hslider("freq", 146.83, 130, 900, 0.01);
+freq = hslider("freq", 146.83, 90, 900, 0.01);
 gate = button("gate");
 velocity = hslider("velocity", 0.5, 0, 1, 0.01);
 gain = hslider("gain", 1.0, 0, 1, 0.01);
@@ -53,8 +53,8 @@ with {
     with { loop(s) = ba.if(t, 150, max(0.0, s - 1.0)); };
 };
 pluck_env = en.ar(0.003, 0.015, gate_held_pluck);
-pick_noise = no.noise : fi.bandpass(2, 100.0, 12000.0);
-base_exc = pick_noise * 0.18 * pluck_env * velocity;
+pick_noise = no.noise : fi.bandpass(2, 100.0, 5000.0);
+base_exc = pick_noise * 0.5 * pluck_env * velocity;
 
 is_chikari = strike > 0.5;
 melody_exc = base_exc * (1 - is_chikari);
@@ -129,19 +129,19 @@ membrane_filter(x) =
      + (x : fi.resonbp(342.3,   3.0, 0.25))
      + (x : fi.resonbp(386.4,   3.0, 0.25))
      + (x : fi.resonbp(402.7,   3.0, 0.25))
-     + (x : fi.resonbp(423.0,   3.0, 0.22))
-     + (x : fi.resonbp(438.7,   3.0, 0.22))
-     + (x : fi.resonbp(465.3,   3.0, 0.25))
-     + (x : fi.resonbp(477.4,   3.0, 0.25))
-     + (x : fi.resonbp(498.4,   3.0, 0.22))
-     + (x : fi.resonbp(522.9,   3.0, 0.22))
-     + (x : fi.resonbp(535.9,   3.0, 0.25))
-     + (x : fi.resonbp(544.2,   3.0, 0.25))
-     + (x : fi.resonbp(553.6,   3.0, 0.22))
-     + (x : fi.resonbp(573.3,   3.0, 0.22))
-     + (x : fi.resonbp(606.6,   3.0, 0.22))
-     + (x : fi.resonbp(610.3,   3.0, 0.18))
-     + (x : fi.resonbp(850.0,   3.0, 0.25))
+     + (x : fi.resonbp(423.0,   1.5, 0.15))
+     + (x : fi.resonbp(438.7,   1.5, 0.15))
+     + (x : fi.resonbp(465.3,   1.5, 0.15))
+     + (x : fi.resonbp(477.4,   1.5, 0.15))
+     + (x : fi.resonbp(498.4,   1.5, 0.15))
+     + (x : fi.resonbp(522.9,   1.5, 0.15))
+     + (x : fi.resonbp(535.9,   1.5, 0.15))
+     + (x : fi.resonbp(544.2,   1.5, 0.15))
+     + (x : fi.resonbp(553.6,   1.5, 0.12))
+     + (x : fi.resonbp(573.3,   1.5, 0.12))
+     + (x : fi.resonbp(606.6,   2.0, 0.15))
+     + (x : fi.resonbp(610.3,   2.0, 0.12))
+     + (x : fi.resonbp(850.0,   1.5, 0.15))
      + (x : fi.resonbp(1200.0,  2.5, 0.40))  // boosted: strong peak measured at 1150-1240 Hz
      + (x : fi.resonbp(1800.0,  2.5, 0.65))  // boosted: key string brightness
      + (x : fi.resonbp(2600.0,  2.5, 0.60))  // wire/metal presence
@@ -155,8 +155,8 @@ membrane_filter(x) =
 body_filter(x) =
     (  (x * 0.35)                               // passthrough — carries membrane high-freqs
      + (x : fi.resonbp(180.0,  2.5,  1.45))    // reduced from 1.00 — low band not dominant
-     + (x : fi.resonbp(320.0,  2.5,  1.90))    // reduced from 1.25
-     + (x : fi.resonbp(550.0,  4.0,  1.30))    // peak energy zone (37.7%) — kept
+     + (x : fi.resonbp(320.0,  1.5,  0.60))    // tamed: was Q2.5/gain1.90, caused 349Hz resonance
+     + (x : fi.resonbp(550.0,  2.0,  0.50))    // tamed: was Q4.0/gain1.30, caused 440/523Hz resonance
      + (x : fi.resonbp(950.0,  3.5,  0.85))    // kept
      + (x : fi.resonbp(1050.0, 3.5,  0.90))    // NEW — strong peak measured at 1025 Hz
      + (x : fi.resonbp(1200.0, 3.0,  0.80))    // NEW — cluster measured at 1150-1240 Hz
@@ -165,5 +165,5 @@ body_filter(x) =
 
 // Signal path: string → membrane (skin resonance) → body (wooden bowl) → output
 // membrane_filter was previously dead code — now correctly wired into chain.
-process = summed : membrane_filter : body_filter : *(gain * (5.0 * 1.7667)) <: _,_;
+process = summed : membrane_filter : body_filter : *(gain * 10.0) <: _,_;
 

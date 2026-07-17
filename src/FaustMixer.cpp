@@ -30,10 +30,27 @@
 #include "FaustMixer.hpp"
 #include <iostream>
 #include <chrono>
+
+#ifdef __ANDROID__
+#include <android/log.h>
+#define FM_LOG_TAG "FaustMin"
+#define FM_LOGI(...) __android_log_print(ANDROID_LOG_INFO,  FM_LOG_TAG, __VA_ARGS__)
+#define FM_LOGW(...) __android_log_print(ANDROID_LOG_WARN,  FM_LOG_TAG, __VA_ARGS__)
+#define FM_LOGE(...) __android_log_print(ANDROID_LOG_ERROR, FM_LOG_TAG, __VA_ARGS__)
+#define FM_LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, FM_LOG_TAG, __VA_ARGS__)
+#define FM_LOG_ALWAYS(...) __android_log_print(ANDROID_LOG_INFO, FM_LOG_TAG, __VA_ARGS__)
+#else
+#define FM_LOGI(...) printf(__VA_ARGS__); fflush(stdout)
+#define FM_LOGW(...) printf(__VA_ARGS__); fflush(stdout)
+#define FM_LOGE(...) fprintf(stderr, __VA_ARGS__); fflush(stderr)
+#define FM_LOGD(...) printf(__VA_ARGS__); fflush(stdout)
+#define FM_LOG_ALWAYS(...) printf(__VA_ARGS__); fflush(stdout)
+#endif
+
 #define TLOG(msg) do { \
     auto __now = std::chrono::steady_clock::now(); \
     auto __us = std::chrono::duration_cast<std::chrono::microseconds>(__now.time_since_epoch()).count(); \
-    printf("[TIMESTAMP %ld] %s\n", __us, msg); fflush(stdout); \
+    FM_LOG_ALWAYS("[TIMESTAMP %ld] %s\n", __us, msg); \
 } while(0)
 
 #define DEBUG_MIXER 0
@@ -56,8 +73,7 @@ static void elevateWorkerThreadPriority() {
     sp.sched_priority = sched_get_priority_max(SCHED_FIFO) - 1;
     if (pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp) != 0) {
         // Non-fatal: falls back to standard priority
-        printf("[Native] Worker thread: SCHED_FIFO elevation failed (non-fatal)\n");
-        fflush(stdout);
+        FM_LOGW("[Worker] SCHED_FIFO elevation failed (non-fatal)");
     }
 #elif defined(__APPLE__)
     // iOS & macOS: Quality-of-Service class — no entitlement needed
@@ -166,8 +182,7 @@ void FaustMixer::init(float sampleRate) {
         int hwCores = static_cast<int>(std::thread::hardware_concurrency());
         mWorkerCount = std::max(4, hwCores - 2);
         startWorkers();
-        printf("[Native] FaustMixer persistent thread pool fully armed: %d workers\n", mWorkerCount);
-        fflush(stdout);
+        FM_LOGI("[Mixer] persistent thread pool fully armed: %d workers", mWorkerCount);
     }
 
 #ifdef __ANDROID__
@@ -186,6 +201,9 @@ void FaustMixer::init(float sampleRate) {
     if (builder.openStream(&stream) == oboe::Result::OK) {
         mStreamDevice = stream;
         mIsHardwareStarted = true;
+        FM_LOGI("[Mixer] Oboe stream opened OK, SR=%d", (int)mSampleRate);
+    } else {
+        FM_LOGE("[Mixer] Oboe stream FAILED to open");
     }
 #else
     ma_device_config config = ma_device_config_init(ma_device_type_playback);
@@ -234,7 +252,8 @@ bool FaustMixer::start() {
         lock.unlock(); // Unlock before starting hardware to avoid deadlock with the callback thread!
 #ifdef __ANDROID__
         oboe::AudioStream* stream = static_cast<oboe::AudioStream*>(mStreamDevice);
-        stream->requestStart();
+        auto result = stream->requestStart();
+        FM_LOGI("[Mixer] requestStart result=%d", static_cast<int>(result));
 #else
         ma_device* device = static_cast<ma_device*>(mStreamDevice);
         ma_device_start(device);
@@ -244,18 +263,28 @@ bool FaustMixer::start() {
 }
 
 void FaustMixer::stop() {
+    stopWorkers();
+
     std::lock_guard<std::mutex> lock(mRegistryMutex);
-    if (!mIsHardwareStarted || !mStreamDevice || !mIsStreamActive) return;
+    if (!mIsHardwareStarted || !mStreamDevice) return;
 
 #ifdef __ANDROID__
     oboe::AudioStream* stream = static_cast<oboe::AudioStream*>(mStreamDevice);
-    stream->requestPause();
+    if (mIsStreamActive) {
+        stream->requestPause();
+    }
+    stream->close();
 #else
     ma_device* device = static_cast<ma_device*>(mStreamDevice);
-    // Pause the audio thread. DO NOT uninitialize the device here!
-    ma_device_stop(device);
+    if (mIsStreamActive) {
+        ma_device_stop(device);
+    }
+    ma_device_uninit(device);
+    delete device;
 #endif
+    mStreamDevice = nullptr;
     mIsStreamActive = false;
+    mIsHardwareStarted = false;
 }
 
 void FaustMixer::setPreRenderCallback(PreRenderCallback callback, void* userData) {
@@ -375,8 +404,7 @@ int FaustMixer::addTrack(float initialWeight) {
     int id = mNextTrackID++;
     mTracks[id] = { id, initialWeight, initialWeight, {} };
     recalculateWeights();
-    printf("[Mixer Registry] Added Track ID: %d with Weight: %.2f\n", id, initialWeight);
-    fflush(stdout);
+    FM_LOGI("[Mixer] Added Track ID: %d with Weight: %.2f", id, initialWeight);
     return id;
 }
 
@@ -384,8 +412,7 @@ void FaustMixer::removeTrack(int trackID) {
     std::lock_guard<std::mutex> lock(mRegistryMutex);
     mTracks.erase(trackID);
     recalculateWeights();
-    printf("[Mixer Registry] Removed Track ID: %d\n", trackID);
-    fflush(stdout);
+    FM_LOGI("[Mixer] Removed Track ID: %d", trackID);
 }
 
 void FaustMixer::addInstrumentToTrack(int trackID, FaustInstrument* inst, float instWeight) {
@@ -394,8 +421,7 @@ void FaustMixer::addInstrumentToTrack(int trackID, FaustInstrument* inst, float 
     if (mTracks.count(trackID)) {
         mTracks[trackID].instruments.push_back({inst, instWeight, 1.0f});
         recalculateWeights();
-        printf("[Mixer Registry] Added Instrument ptr: %p to Track ID: %d with Weight: %.2f\n", (void*)inst, trackID, instWeight);
-        fflush(stdout);
+        FM_LOGI("[Mixer] Added Instrument ptr: %p to Track ID: %d with Weight: %.2f", (void*)inst, trackID, instWeight);
     }
 }
 
@@ -802,7 +828,7 @@ void FaustMixer::onAudioReady(float* stereoOutput, int numFrames) {
     if (!stereoOutput || numFrames <= 0) return;
 
     if (!mFirstCallbackFired.exchange(true)) {
-        TLOG("FIRST onAudioReady() CALLBACK FIRED - audio pipeline is live");
+        FM_LOGI("[Mixer] FIRST onAudioReady() CALLBACK FIRED - audio pipeline is live, frames=%d", numFrames);
     }
 
 #if DEBUG_MIXER
@@ -850,21 +876,7 @@ void FaustMixer::onAudioReady(float* stereoOutput, int numFrames) {
 
     applyMasterGainAndLimiter(stereoOutput, numFrames);
 
-#if DEBUG_MIXER
-    // Log peak level of every callback to verify audio is in the buffer
-    {
-        float peakOut = 0.0f;
-        for (int i = 0; i < numFrames * 2; i++) {
-            float absS = fabsf(stereoOutput[i]);
-            if (absS > peakOut) peakOut = absS;
-        }
-        static int cbCounter = 0;
-        if (cbCounter < 3000) {
-            printf("[AUDIO PEAK %d] peak=%.6f\n", cbCounter++, peakOut);
-            fflush(stdout);
-        }
-    }
-#endif
+
 
     // Fire waveform callback with RMS and peak of final output
     if (mWaveformCallback) {

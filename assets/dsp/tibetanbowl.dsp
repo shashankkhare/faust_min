@@ -25,7 +25,7 @@ import("instruments.lib");
 
 // Expert Play Range: Tibetan singing bowl fundamental typically 100-400 Hz.
 freq = nentry("freq",400.0, 100, 400, 1);
-gain = nentry("gain",0.8,0,1,0.01);
+gain = nentry("gain",0.8,0,100,0.01);
 velocity = hslider("velocity", 0.8, 0, 1, 0.01);
 gate = hslider("gate", 0, 0, 1, 1);
 
@@ -59,8 +59,15 @@ delayLengthBase = ma.SR/freq;
 delayLength(x) = delayLengthBase/my_modes(x);
 delayLine(x) = de.delay(4096,delayLength(x));
 
-radius = 1 - ma.PI*32/ma.SR;
-bandPassFilter(x) = bandPass(freq*my_modes(x),radius);
+radius = 0.98;
+safe_bp(f, r) = fi.tf2(b0, 0, -b0, a1, a2)
+with {
+    w = 2*ma.PI*f/ma.SR;
+    b0 = 1-r;
+    a1 = -2*r*cos(w);
+    a2 = r*r;
+};
+bandPassFilter(x) = safe_bp(freq*my_modes(x), radius);
 
 baseGainApp = 0.8999999999999999 + (0.1*baseGain);
 velocityInputApp = integrationConstant;
@@ -81,9 +88,10 @@ mallet_env = loop_mallet ~ _ with {
 };
 
 globalDamping = 0.998;
-resonance(x) = + : + (mallet_env * (1-strikeVal) * my_excitation(x)) : delayLine(x) : *(globalDamping) : bandPassFilter(x);
+excitationGain = 2;
+resonance(x) = + : + (mallet_env * (1-strikeVal) * my_excitation(x) * excitationGain) : delayLine(x) : *(globalDamping) : bandPassFilter(x);
 
 process =
     (bowing*strikeVal <:
     par(i,nModes,(resonance(i)~_)))~par(i,nModes,_) :> _ :
-    NLFM : stereo : instrReverb : *(gain * 2.5), *(gain * 2.5);
+    NLFM : stereo : instrReverb : *(gain * 1.5), *(gain * 1.5);

@@ -51,16 +51,15 @@ impulse = trig * impulse_amp;
 
 // Noise for contact/wash rattle
 raw_noise = no.noise * noise_amp;
-noise_env = en.asr(0.001, 1.0, 0.02, gate);
 // HP + LP cascade for modal excitation
 noise_colored = raw_noise : fi.highpass(2, noise_hpf) : fi.lowpass(2, thump_lp);
 
 // Direct noise wash (sustained rattle without modal filtering)
 wash_noise = raw_noise : fi.highpass(2, 3000);
-wash = wash_noise * noise_env * wash_level;
+wash = wash_noise * wash_level;
 
 // Combined excitation for modal bank: impulse + colored noise
-exc = impulse + noise_colored * noise_env * 0.5;
+exc = impulse + noise_colored * 0.5;
 
 // Modal bank: sum of 8 resonant bandpass filters
 modes = _ <: (fi.resonbp(f1, bw1, a1),
@@ -73,6 +72,6 @@ modes = _ <: (fi.resonbp(f1, bw1, a1),
              fi.resonbp(f8, bw8, a8)) :> _;
 
 // Output envelope for overall decay shaping
-env = en.asr(0.001, 1.0, decay, gate);
+env = en.adsr(0.001, decay, 0.0, 0.001, gate);
 process = ((exc : modes) + wash) * env * gain * velocity * 6.0;
 

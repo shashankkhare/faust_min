@@ -394,7 +394,7 @@ int main(int argc, char* argv[]) {
             group.sequences.push_back({"Bayan", new UMLSequence("Bayan", 1, umlBayan)});
             
             group.percussionTrackWeight = 1.6f;
-            group.melodyTrackWeight = 0.55f;
+            group.melodyTrackWeight = 0.40f;
             group.backgroundTrackWeight = 0.8f;
             duration = -1;
         } else if (selection == 2) {

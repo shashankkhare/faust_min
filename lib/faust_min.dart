@@ -236,6 +236,9 @@ typedef _c_orch_register_tick_callback = Void Function(
 typedef _dart_orch_register_tick_callback = void Function(
     Pointer<NativeOrchestratorOpaque>, Pointer<NativeFunction<TickCallbackNative>>, Pointer<Void>);
 
+typedef _c_orch_set_asset_base_path = Void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>);
+typedef _dart_orch_set_asset_base_path = void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>);
+
 typedef _c_orch_load_song = Int32 Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>);
 typedef _dart_orch_load_song = int Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>);
 
@@ -742,6 +745,7 @@ class SequenceOrchestrator {
 
   static late final _funcRegisterTickCb = _dylib.lookupFunction<_c_orch_register_tick_callback, _dart_orch_register_tick_callback>('orchestrator_register_tick_callback');
   static late final _funcPollFinished = _dylib.lookupFunction<_c_orch_poll_finished, _dart_orch_poll_finished>('orchestrator_poll_finished');
+  static late final _funcSetAssetBasePath = _dylib.lookupFunction<_c_orch_set_asset_base_path, _dart_orch_set_asset_base_path>('orchestrator_set_asset_base_path');
   static late final _funcLoadSong = _dylib.lookupFunction<_c_orch_load_song, _dart_orch_load_song>('orchestrator_load_song');
   static late final _funcUnloadSong = _dylib.lookupFunction<_c_orch_unload_song, _dart_orch_unload_song>('orchestrator_unload_song');
   static late final _funcPlaySong = _dylib.lookupFunction<_c_orch_play_song, _dart_orch_play_song>('orchestrator_play_song');
@@ -760,6 +764,17 @@ class SequenceOrchestrator {
       _funcAddSeq(_handle, namePtr.cast(), sequence.nativePointer);
     } finally {
       malloc.free(namePtr);
+    }
+  }
+
+  /// Set the base path for resolving relative song directories.
+  void setAssetBasePath(String path) {
+    if (_isDisposed) return;
+    final pathPtr = path.toNativeUtf8();
+    try {
+      _funcSetAssetBasePath(_handle, pathPtr.cast());
+    } finally {
+      malloc.free(pathPtr);
     }
   }
 
@@ -1005,7 +1020,7 @@ class FaustMixer {
   /// Register an instrument with the mixer.
   ///
   /// Throws [ArgumentError] if the instrument's sample rate does not match the mixer's.
-  void registerInstrument(FaustInstrument inst, double weight) {
+  int registerInstrument(FaustInstrument inst, double weight) {
     final result = _funcRegisterInst(_handle, inst.nativePointer, weight);
     if (result == 0) {
       throw ArgumentError(
@@ -1014,6 +1029,7 @@ class FaustMixer {
         'Create the instrument with the mixer\'s sample rate.'
       );
     }
+    return result;
   }
 
   /// Unregister an instrument from the mixer.

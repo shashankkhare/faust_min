@@ -25,14 +25,14 @@ import("stdfaust.lib");
 import("fm.lib");
 freq = hslider("freq [unit:Hz]", 138.6, 130, 900, 0.01); 
 gate = button("gate");
-gain = hslider("gain", 0.3, 0, 1, 0.01);
+gain = hslider("gain", 0.3, 0, 1, 0.01); 
 velocity = hslider("velocity", 0.6, 0, 1, 0.01);
 
 // ROUTING CONTROL: 0 = Main String, 1 = Chikari String, 2 = Heavy Mizrab Accent
 strike = hslider("strike [style:knob]", 0, 0, 2, 1); 
 
 jivari = hslider("jivari [style:knob]", 0.35, 0, 1, 0.001); 
-symp_gain = hslider("symp_gain", 0.5, 0, 1, 0.01); 
+symp_gain = hslider("symp_gain", 0.85, 0, 1, 0.01); 
 
 // Chikari Base Slider (Default C#4 matching classical tuning)
 chikari_freq = hslider("chikari_freq [unit:Hz]", 111.0, 55, 900, 0.01);
@@ -124,5 +124,5 @@ core = all_strings_mix : fi.dcblocker : body_filter;
 
 gourd_saturation(x) = x - (x * x * x * 0.06);
 
-process = core : gourd_saturation : * (gain * 7.5);
+process = core : gourd_saturation : * (gain * 134.4375);
 

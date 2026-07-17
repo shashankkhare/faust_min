@@ -50,7 +50,7 @@ import("stdfaust.lib");
 
 // Expert Play Range: Lag-nga (Tibetan frame drum) fundamental typically 80-300 Hz.
 freq            = hslider("freq [unit:Hz]", 220.0, 80, 300, 0.1);
-gain            = hslider("gain", 1.0, 0.0, 2.0, 0.01);
+gain            = hslider("gain", 1.0, 0.0, 1.0, 0.01);
 velocity        = hslider("velocity", 1.0, 0.0, 1.0, 0.01);
 gate            = button("gate");
 mallet_softness = hslider("mallet_softness", 0.3, 0.0, 1.0, 0.01); // 0=hard wood, 1=padded
@@ -95,4 +95,4 @@ drum_mix = sym1 + sym2 + sym3 + sym4 + ant1 + ant2 + body;
 // Soft tanh saturation models membrane nonlinearity on hard strike.
 // Lowpass extended to 8x fundamental so it doesn't muffle the bright wooden stick attack.
 // Using softer drive (5.0 instead of 10.0) to prevent overdrive/clipping at the tail end.
-process = (drum_mix * 2.0 : ma.tanh : fi.lowpass(1, freq * 8.0)) * (gain * 6.0);
+process = (drum_mix * 2.0 : ma.tanh : fi.lowpass(1, freq * 8.0)) * (gain * 18.0);

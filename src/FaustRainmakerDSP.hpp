@@ -78,6 +78,7 @@ class FaustRainmakerDSP : public dsp {
 	
 	FAUSTFLOAT fHslider0;
 	int fSampleRate;
+	float fConst0;
 	float fConst1;
 	FAUSTFLOAT fHslider1;
 	float fRec3[2];
@@ -90,10 +91,13 @@ class FaustRainmakerDSP : public dsp {
 	float fConst4;
 	float fRec5[2];
 	float fRec0[3];
-	float fConst5;
+	FAUSTFLOAT fHslider4;
 	FAUSTFLOAT fButton0;
 	float fVec1[2];
 	float fRec6[2];
+	FAUSTFLOAT fHslider5;
+	FAUSTFLOAT fHslider6;
+	FAUSTFLOAT fHslider7;
 	int iRec7[2];
 	
  public:
@@ -103,7 +107,7 @@ class FaustRainmakerDSP : public dsp {
 		m->declare("basics.lib/version", "0.2");
 		m->declare("compile_options", "-lang cpp -es 1 -single -ftz 1");
 		m->declare("copyright", "Copyright (c) 2026 Shashank Khare, MIT License");
-		m->declare("envelopes.lib/asr:author", "Yann Orlarey, Stéphane Letz");
+		m->declare("envelopes.lib/adsr:author", "Yann Orlarey and Andrey Bundin");
 		m->declare("envelopes.lib/author", "GRAME");
 		m->declare("envelopes.lib/copyright", "GRAME");
 		m->declare("envelopes.lib/license", "LGPL with exception");
@@ -160,12 +164,11 @@ class FaustRainmakerDSP : public dsp {
 	
 	virtual void instanceConstants(int sample_rate) {
 		fSampleRate = sample_rate;
-		float fConst0 = std::min<float>(192000.0f, std::max<float>(1.0f, float(fSampleRate)));
+		fConst0 = std::min<float>(192000.0f, std::max<float>(1.0f, float(fSampleRate)));
 		fConst1 = (1.0f / fConst0);
 		fConst2 = (3.14159274f / fConst0);
 		fConst3 = (44.0999985f / fConst0);
 		fConst4 = (1.0f - fConst3);
-		fConst5 = (1.0f / std::max<float>(1.0f, (0.0199999996f * fConst0)));
 	}
 	
 	virtual void instanceResetUserInterface() {
@@ -173,7 +176,11 @@ class FaustRainmakerDSP : public dsp {
 		fHslider1 = FAUSTFLOAT(0.050000000000000003f);
 		fHslider2 = FAUSTFLOAT(0.0f);
 		fHslider3 = FAUSTFLOAT(220.0f);
+		fHslider4 = FAUSTFLOAT(2.0f);
 		fButton0 = FAUSTFLOAT(0.0f);
+		fHslider5 = FAUSTFLOAT(0.80000000000000004f);
+		fHslider6 = FAUSTFLOAT(2.0f);
+		fHslider7 = FAUSTFLOAT(2.0f);
 	}
 	
 	virtual void instanceClear() {
@@ -225,9 +232,13 @@ class FaustRainmakerDSP : public dsp {
 		ui_interface->openVerticalBox("rainmaker");
 		ui_interface->addHorizontalSlider("Instrument_Material", &fHslider2, FAUSTFLOAT(0.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(1.0f));
 		ui_interface->addHorizontalSlider("Tilt_Speed_Hz", &fHslider1, FAUSTFLOAT(0.0500000007f), FAUSTFLOAT(0.00999999978f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("attack", &fHslider4, FAUSTFLOAT(2.0f), FAUSTFLOAT(0.00999999978f), FAUSTFLOAT(10.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("decay", &fHslider6, FAUSTFLOAT(2.0f), FAUSTFLOAT(0.00999999978f), FAUSTFLOAT(10.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addHorizontalSlider("freq", &fHslider3, FAUSTFLOAT(220.0f), FAUSTFLOAT(50.0f), FAUSTFLOAT(2000.0f), FAUSTFLOAT(1.0f));
 		ui_interface->addHorizontalSlider("gain", &fHslider0, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addButton("gate", &fButton0);
+		ui_interface->addHorizontalSlider("release", &fHslider7, FAUSTFLOAT(2.0f), FAUSTFLOAT(0.00999999978f), FAUSTFLOAT(10.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("sustain", &fHslider5, FAUSTFLOAT(0.800000012f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->closeBox();
 	}
 	
@@ -237,8 +248,13 @@ class FaustRainmakerDSP : public dsp {
 		float fSlow1 = (fConst1 * float(fHslider1));
 		float fSlow2 = float(((float(fHslider2) == 0.0f) ? 150 : 45));
 		float fSlow3 = (fConst3 * float(fHslider3));
-		float fSlow4 = float(fButton0);
-		int iSlow5 = (fSlow4 == 0.0f);
+		float fSlow4 = std::max<float>(1.0f, (fConst0 * float(fHslider4)));
+		float fSlow5 = (1.0f / fSlow4);
+		float fSlow6 = float(fButton0);
+		float fSlow7 = float(fHslider5);
+		float fSlow8 = ((1.0f - fSlow7) / std::max<float>(1.0f, (fConst0 * float(fHslider6))));
+		float fSlow9 = (1.0f / std::max<float>(1.0f, (fConst0 * float(fHslider7))));
+		int iSlow10 = (fSlow6 == 0.0f);
 		for (int i0 = 0; (i0 < count); i0 = (i0 + 1)) {
 			float fTempFTZ0 = (fSlow1 + (fRec3[1] - std::floor((fSlow1 + fRec3[1]))));
 			fRec3[0] = ((std::fabs(fTempFTZ0) > 1.17549435e-38f) ? fTempFTZ0 : 0.0f);
@@ -253,11 +269,11 @@ class FaustRainmakerDSP : public dsp {
 			float fTempFTZ3 = ((1.55220433e-12f * ((fRec1[0] * fSlow2) * float(iRec4[0]))) - (((fRec0[2] * (((fTemp1 + -0.5f) / fTemp0) + 1.0f)) + (2.0f * (fRec0[1] * (1.0f - (1.0f / FaustRainmakerDSP_faustpower2_f(fTemp0)))))) / fTemp2));
 			fRec0[0] = ((std::fabs(fTempFTZ3) > 1.17549435e-38f) ? fTempFTZ3 : 0.0f);
 			float fTemp3 = (fTemp0 * fTemp2);
-			fVec1[0] = fSlow4;
-			float fTempFTZ4 = (fSlow4 + (fRec6[1] * float((fVec1[1] >= fSlow4))));
+			fVec1[0] = fSlow6;
+			float fTempFTZ4 = (fSlow6 + (fRec6[1] * float((fVec1[1] >= fSlow6))));
 			fRec6[0] = ((std::fabs(fTempFTZ4) > 1.17549435e-38f) ? fTempFTZ4 : 0.0f);
-			iRec7[0] = (iSlow5 * (iRec7[1] + 1));
-			output0[i0] = FAUSTFLOAT((fSlow0 * (((fRec0[0] / fTemp3) + (fRec0[2] * (0.0f - (1.0f / fTemp3)))) * std::max<float>(0.0f, (std::min<float>((fConst5 * fRec6[0]), 1.0f) - (fConst5 * float(iRec7[0])))))));
+			iRec7[0] = (iSlow10 * (iRec7[1] + 1));
+			output0[i0] = FAUSTFLOAT((fSlow0 * (((fRec0[0] / fTemp3) + (fRec0[2] * (0.0f - (1.0f / fTemp3)))) * std::max<float>(0.0f, (std::min<float>((fSlow5 * fRec6[0]), std::max<float>(((fSlow8 * (fSlow4 - fRec6[0])) + 1.0f), fSlow7)) * (1.0f - (fSlow9 * float(iRec7[0]))))))));
 			fRec3[1] = fRec3[0];
 			fRec1[1] = fRec1[0];
 			iRec4[1] = iRec4[0];

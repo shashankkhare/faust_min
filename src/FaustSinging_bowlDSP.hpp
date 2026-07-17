@@ -113,8 +113,6 @@ class FaustSinging_bowlDSP : public dsp {
 		m->declare("name", "singing_bowl");
 		m->declare("noises.lib/name", "Faust Noise Generator Library");
 		m->declare("noises.lib/version", "0.1");
-		m->declare("physmodels.lib/name", "Faust Physical Models Library");
-		m->declare("physmodels.lib/version", "0.1");
 		m->declare("platform.lib/name", "Generic Platform Library");
 		m->declare("platform.lib/version", "0.2");
 		m->declare("signals.lib/name", "Faust Signal Routing Library");
@@ -146,19 +144,19 @@ class FaustSinging_bowlDSP : public dsp {
 		fConst10 = std::exp((0.0f - (10.0f / fConst0)));
 		fConst11 = (1.0f - fConst10);
 		fConst12 = (3.14159274f / fConst0);
-		float fConst13 = std::pow(0.00100000005f, (0.0666666701f / fConst0));
+		float fConst13 = std::min<float>(0.999000013f, std::pow(0.00100000005f, (0.100000001f / fConst0)));
 		fConst14 = (0.0f - (2.0f * fConst13));
 		fConst15 = (6.28318548f / fConst0);
 		fConst16 = FaustSinging_bowlDSP_faustpower2_f(fConst13);
-		float fConst17 = std::pow(0.00100000005f, (0.125f / fConst0));
+		float fConst17 = std::min<float>(0.999000013f, std::pow(0.00100000005f, (0.166666672f / fConst0)));
 		fConst18 = (0.0f - (2.0f * fConst17));
 		fConst19 = (17.5929184f / fConst0);
 		fConst20 = FaustSinging_bowlDSP_faustpower2_f(fConst17);
-		float fConst21 = std::pow(0.00100000005f, (0.25f / fConst0));
+		float fConst21 = std::min<float>(0.999000013f, std::pow(0.00100000005f, (0.25f / fConst0)));
 		fConst22 = (0.0f - (2.0f * fConst21));
 		fConst23 = (33.9291992f / fConst0);
 		fConst24 = FaustSinging_bowlDSP_faustpower2_f(fConst21);
-		float fConst25 = std::pow(0.00100000005f, (0.5f / fConst0));
+		float fConst25 = std::min<float>(0.999000013f, std::pow(0.00100000005f, (0.5f / fConst0)));
 		fConst26 = (0.0f - (2.0f * fConst25));
 		fConst27 = (55.9203491f / fConst0);
 		fConst28 = FaustSinging_bowlDSP_faustpower2_f(fConst25);
@@ -232,7 +230,7 @@ class FaustSinging_bowlDSP : public dsp {
 	virtual void buildUserInterface(UI* ui_interface) {
 		ui_interface->openVerticalBox("singing_bowl");
 		ui_interface->addHorizontalSlider("freq", &fHslider3, FAUSTFLOAT(110.0f), FAUSTFLOAT(60.0f), FAUSTFLOAT(1000.0f), FAUSTFLOAT(0.100000001f));
-		ui_interface->addHorizontalSlider("gain", &fHslider0, FAUSTFLOAT(0.600000024f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("gain", &fHslider0, FAUSTFLOAT(0.600000024f), FAUSTFLOAT(0.0f), FAUSTFLOAT(100.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addButton("gate", &fButton0);
 		ui_interface->addHorizontalSlider("strike", &fHslider2, FAUSTFLOAT(0.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(1.0f));
 		ui_interface->addHorizontalSlider("velocity", &fHslider1, FAUSTFLOAT(0.800000012f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
