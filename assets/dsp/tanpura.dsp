@@ -16,17 +16,17 @@ gain = hslider("gain", 0.5, 0, 1.0, 0.01);
 velocity = hslider("velocity", 0.8, 0, 1, 0.01);
 gate = button("gate");
 
-sustain = hslider("sustain", 24.0, 4.0, 24.0, 0.01);
-jivari = hslider("jivari", 0.75, 0.0, 1.0, 0.01);
+sustain = hslider("sustain", 36.0, 4.0, 36.0, 0.01);
+jivari = hslider("jivari", 0.45, 0.0, 1.0, 0.01);
 
-excDur = hslider("excDur", 0.03, 0.0001, 0.1, 0.0001);
-excGain = hslider("excGain", 0.05, 0.0, 1.0, 0.01);
+excDur = hslider("excDur", 0.01, 0.0001, 0.1, 0.0001);
+excGain = hslider("excGain", 2.5, 0.0, 3.0, 0.01);
 stringGainVal = hslider("stringGainVal", 1.0, 0.0, 2.0, 0.01);
 
 t0 = (gate - gate') > 0.0;
 pluck_env = en.ar(excDur, excDur , t0);
-// Soft, fleshy finger pluck (lowered from 12000 Hz to 1500 Hz to remove harsh clicking)
-pick_noise = no.noise : fi.lowpass(2, 1500.0);
+// Soft, fleshy finger pluck — pink noise (1/f filtered) for warm transient
+pick_noise = no.noise : fi.lowpass(2, 2000.0) : fi.lowpass(1, 800.0);
 master_exc_signal = pick_noise * pluck_env * velocity;
 
 // --- Gourd Resonator Acoustic Body Filter ---
@@ -45,4 +45,4 @@ string_output = sitar_string(freq, sustain, jivari, excGain * stringGainVal, gat
 
 mix = string_output;
 softclip(x) = x / (1.0 + abs(x));
-process = mix : gourdResonator : fi.dcblocker : softclip : *(gain * 367.5);
+process = mix : gourdResonator : fi.dcblocker : softclip : *(gain * 37.5);

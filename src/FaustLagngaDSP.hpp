@@ -36,9 +36,9 @@ class FaustLagngaDSP : public dsp {
 	
  private:
 	
-	FAUSTFLOAT fHslider0;
 	int fSampleRate;
 	float fConst1;
+	FAUSTFLOAT fHslider0;
 	FAUSTFLOAT fHslider1;
 	float fConst2;
 	FAUSTFLOAT fHslider2;
@@ -161,7 +161,7 @@ class FaustLagngaDSP : public dsp {
 		float fConst5 = (fConst4 + 1.0f);
 		fConst6 = (0.0f - (1.0f / (fConst3 * fConst5)));
 		fConst7 = (1.0f / fConst5);
-		fConst8 = (0.000818181841f / fConst3);
+		fConst8 = (0.00681818184f / fConst3);
 		fConst9 = (1.0f - fConst4);
 		float fConst10 = std::pow(0.00100000005f, (1.17647064f / fConst0));
 		fConst11 = (0.0f - (2.0f * fConst10));
@@ -197,8 +197,8 @@ class FaustLagngaDSP : public dsp {
 	}
 	
 	virtual void instanceResetUserInterface() {
-		fHslider0 = FAUSTFLOAT(1.0f);
-		fHslider1 = FAUSTFLOAT(220.0f);
+		fHslider0 = FAUSTFLOAT(220.0f);
+		fHslider1 = FAUSTFLOAT(1.0f);
 		fHslider2 = FAUSTFLOAT(0.29999999999999999f);
 		fHslider3 = FAUSTFLOAT(1.0f);
 		fButton0 = FAUSTFLOAT(0.0f);
@@ -272,9 +272,9 @@ class FaustLagngaDSP : public dsp {
 	
 	virtual void buildUserInterface(UI* ui_interface) {
 		ui_interface->openVerticalBox("lagnga");
-		ui_interface->declare(&fHslider1, "unit", "Hz");
-		ui_interface->addHorizontalSlider("freq", &fHslider1, FAUSTFLOAT(220.0f), FAUSTFLOAT(80.0f), FAUSTFLOAT(300.0f), FAUSTFLOAT(0.100000001f));
-		ui_interface->addHorizontalSlider("gain", &fHslider0, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->declare(&fHslider0, "unit", "Hz");
+		ui_interface->addHorizontalSlider("freq", &fHslider0, FAUSTFLOAT(220.0f), FAUSTFLOAT(80.0f), FAUSTFLOAT(300.0f), FAUSTFLOAT(0.100000001f));
+		ui_interface->addHorizontalSlider("gain", &fHslider1, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addButton("gate", &fButton0);
 		ui_interface->addHorizontalSlider("mallet_softness", &fHslider2, FAUSTFLOAT(0.300000012f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addHorizontalSlider("velocity", &fHslider3, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
@@ -283,27 +283,27 @@ class FaustLagngaDSP : public dsp {
 	
 	virtual void compute(int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs) {
 		FAUSTFLOAT* output0 = outputs[0];
-		float fSlow0 = (18.0f * float(fHslider0));
-		float fSlow1 = float(fHslider1);
-		float fSlow2 = (1.0f / std::tan((fConst1 * fSlow1)));
-		float fSlow3 = (1.0f / (fSlow2 + 1.0f));
-		float fSlow4 = (1.0f - fSlow2);
+		float fSlow0 = float(fHslider0);
+		float fSlow1 = (1.0f / std::tan((fConst1 * fSlow0)));
+		float fSlow2 = (1.0f / (fSlow1 + 1.0f));
+		float fSlow3 = (1.0f - fSlow1);
+		float fSlow4 = (90.0f * float(fHslider1));
 		float fSlow5 = std::tan((fConst2 * std::max<float>(400.0f, (2800.0f - (2100.0f * float(fHslider2))))));
 		float fSlow6 = (1.0f / fSlow5);
 		float fSlow7 = (1.0f / (((fSlow6 + 1.41421354f) / fSlow5) + 1.0f));
-		float fSlow8 = (fSlow1 * float(fHslider3));
-		float fSlow9 = (0.000818181841f * fSlow8);
+		float fSlow8 = (fSlow0 * float(fHslider3));
+		float fSlow9 = (0.00681818184f * fSlow8);
 		float fSlow10 = float(fButton0);
 		float fSlow11 = (fConst8 * fSlow8);
 		float fSlow12 = (((fSlow6 + -1.41421354f) / fSlow5) + 1.0f);
 		float fSlow13 = (2.0f * (1.0f - (1.0f / FaustLagngaDSP_faustpower2_f(fSlow5))));
-		float fSlow14 = (fConst12 * fSlow1);
-		float fSlow15 = (fConst19 * fSlow1);
-		float fSlow16 = (fConst23 * fSlow1);
-		float fSlow17 = (fConst27 * fSlow1);
-		float fSlow18 = (fConst31 * fSlow1);
-		float fSlow19 = (fConst35 * fSlow1);
-		float fSlow20 = (fConst39 * fSlow1);
+		float fSlow14 = (fConst12 * fSlow0);
+		float fSlow15 = (fConst19 * fSlow0);
+		float fSlow16 = (fConst23 * fSlow0);
+		float fSlow17 = (fConst27 * fSlow0);
+		float fSlow18 = (fConst31 * fSlow0);
+		float fSlow19 = (fConst35 * fSlow0);
+		float fSlow20 = (fConst39 * fSlow0);
 		for (int i0 = 0; (i0 < count); i0 = (i0 + 1)) {
 			fVec0[0] = fSlow10;
 			float fTemp0 = (fSlow10 - fVec0[1]);
@@ -332,11 +332,11 @@ class FaustLagngaDSP : public dsp {
 			fRec9[0] = ((std::fabs(fTempFTZ7) > 1.17549435e-38f) ? fTempFTZ7 : 0.0f);
 			float fTempFTZ8 = (fTemp2 - ((fConst38 * (fRec10[1] * std::cos((fSlow20 * fTemp4)))) + (fConst40 * fRec10[2])));
 			fRec10[0] = ((std::fabs(fTempFTZ8) > 1.17549435e-38f) ? fTempFTZ8 : 0.0f);
-			float fTemp5 = float(tanhf(float((2.0f * (((((((fRec1[0] + (0.319999993f * (fRec5[0] - fRec5[2]))) + (0.119999997f * (fRec6[0] - fRec6[2]))) + (0.0700000003f * (fRec7[0] - fRec7[2]))) + (0.600000024f * (fRec8[0] - fRec8[2]))) + (0.180000007f * (fRec9[0] - fRec9[2]))) + (0.25f * (fRec10[0] - fRec10[2]))) - fRec1[2])))));
+			float fTemp5 = (fSlow4 * (((((((fRec1[0] + (0.319999993f * (fRec5[0] - fRec5[2]))) + (0.119999997f * (fRec6[0] - fRec6[2]))) + (0.0700000003f * (fRec7[0] - fRec7[2]))) + (0.600000024f * (fRec8[0] - fRec8[2]))) + (0.180000007f * (fRec9[0] - fRec9[2]))) + (0.25f * (fRec10[0] - fRec10[2]))) - fRec1[2]));
 			fVec3[0] = fTemp5;
-			float fTempFTZ9 = (0.0f - (fSlow3 * ((fSlow4 * fRec0[1]) - (fTemp5 + fVec3[1]))));
+			float fTempFTZ9 = (0.0f - (fSlow2 * ((fSlow3 * fRec0[1]) - (fTemp5 + fVec3[1]))));
 			fRec0[0] = ((std::fabs(fTempFTZ9) > 1.17549435e-38f) ? fTempFTZ9 : 0.0f);
-			output0[i0] = FAUSTFLOAT((fSlow0 * fRec0[0]));
+			output0[i0] = FAUSTFLOAT(float(tanhf(float(fRec0[0]))));
 			fVec0[1] = fVec0[0];
 			fVec1[1] = fVec1[0];
 			fVec2[1] = fVec2[0];

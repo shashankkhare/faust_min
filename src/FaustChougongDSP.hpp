@@ -273,7 +273,7 @@ class FaustChougongDSP : public dsp {
 	
 	virtual void compute(int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs) {
 		FAUSTFLOAT* output0 = outputs[0];
-		float fSlow0 = (0.100000001f * (float(fHslider0) * float(fHslider1)));
+		float fSlow0 = (1.79999995f * (float(fHslider0) * float(fHslider1)));
 		float fSlow1 = float(fButton0);
 		float fSlow2 = float(fHslider2);
 		float fSlow3 = (fConst2 * fSlow2);

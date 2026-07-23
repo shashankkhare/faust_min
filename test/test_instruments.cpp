@@ -24,7 +24,7 @@ static float computeRMS(const float* buf, int numFrames) {
     float sumSq = 0.0f;
     for (int i = 0; i < numFrames * 2; ++i)
         sumSq += buf[i] * buf[i];
-    return std::sqrt(sumSq / numFrames);
+    return std::sqrt(sumSq / (numFrames * 2));
 }
 
 static float computePeak(const float* buf, int numFrames) {
@@ -903,23 +903,30 @@ void testRainmaker(FaustMixer& mixer, DSPExecutionType execType) {
     mixer.addInstrumentToTrack(track, inst.get());
     inst->enableDiagnosticLogging(true);
     
+    // Bamboo: tube resonance ~220Hz, slow tilt
     inst->setParam("Instrument_Material", 0.0f);
-    inst->setParam("Tilt_Speed_Hz", 0.05f);
+    inst->setParam("Tilt_Speed_Hz", 0.02f);
     inst->clearDiagnosticFreqs();
     inst->addDiagnosticFreq(220);
     inst->clearDiagnosticLogs();
+    inst->setDiagnosticSamplingTimes({4.0f, 6.0f, 8.0f});
     inst->noteOn(220.0f, gTestVelocity, gTestVelocity);
-    usleep(5000000);
+    usleep(10000000);
     printEnergy(inst.get(), 220.0);
     std::cout << "_bamboo , " << std::flush;
     
+    inst->noteOff();
+    usleep(2000000);
+    
+    // Metal: tube resonance ~880Hz, faster tilt
     inst->setParam("Instrument_Material", 1.0f);
     inst->setParam("Tilt_Speed_Hz", 0.2f);
     inst->clearDiagnosticFreqs();
-    inst->addDiagnosticFreq(220);
+    inst->addDiagnosticFreq(880);
     inst->clearDiagnosticLogs();
+    inst->setDiagnosticSamplingTimes({4.0f, 6.0f, 8.0f});
     inst->noteOn(880.0f, gTestVelocity, gTestVelocity);
-    usleep(5000000);
+    usleep(10000000);
     printEnergy(inst.get(), 880.0);
     std::cout << "_metal" << std::flush;
     
@@ -1335,10 +1342,11 @@ void testSeaWave(FaustMixer& mixer, DSPExecutionType execType) {
     mixer.addInstrumentToTrack(track, inst.get());
     inst->enableDiagnosticLogging(true);
     inst->clearDiagnosticLogs();
+    inst->setDiagnosticSamplingTimes({1.0f, 2.0f, 3.0f});
     inst->noteOn(-1.0f, gTestVelocity, gTestVelocity);
-    usleep(5000000);
+    usleep(4000000);
     inst->noteOff();
-    usleep(2000000);
+    usleep(500000);
     printEnergy(inst.get(), -1.0);
     std::cout << std::endl;
     mixer.removeTrack(track);
@@ -1905,8 +1913,25 @@ static void testRenderMode(int instrumentID, DSPExecutionType execType, float st
         float rms = computeRMS(buf.data() + startFrame * 2, measureFrames);
         float peak = computePeak(buf.data() + startFrame * 2, measureFrames);
 
+        // Goertzel energy at the fundamental frequency
+        float goertzel = 0.0f;
+        if (measureFrames > 0 && freq > 0.0) {
+            float k = (0.5f + (measureFrames * freq) / sampleRate);
+            float omega = (2.0f * M_PI * k) / measureFrames;
+            float coeff = 2.0f * cosf(omega);
+            float q1 = 0.0f, q2 = 0.0f;
+            for (int i = startFrame; i < totalFrames; ++i) {
+                float x = (buf[i * 2] + buf[i * 2 + 1]) * 0.5f;
+                float q0 = coeff * q1 - q2 + x;
+                q2 = q1;
+                q1 = q0;
+            }
+            float magSq = q1 * q1 + q2 * q2 - q1 * q2 * coeff;
+            goertzel = sqrtf(std::max(0.0f, magSq)) / measureFrames;
+        }
+
         std::cout << "{ " << freq << ", " << rms
-                  << ", P=" << peak << " }  (" << ms << " ms)";
+                  << ", P=" << peak << ", G=" << goertzel << " }  (" << ms << " ms)";
         if (&freq != &freqs.back()) std::cout << " , ";
         std::cout << std::flush;
     }
@@ -1920,6 +1945,8 @@ int main(int argc, char* argv[]) {
     int directID = -1;
     bool hasDirectID = false;
     bool renderMode = false;
+    float gTestStartSec = -1.0f;
+    float gTestDurSec = -1.0f;
     
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
@@ -1938,6 +1965,10 @@ int main(int argc, char* argv[]) {
                 try { gTestFrequency = std::stod(arg.substr(2)); } catch (...) {}
             } else if (arg.substr(0, 2) == "s=") {
                 try { gTestStrike = std::stof(arg.substr(2)); } catch (...) {}
+            } else if (arg.substr(0, 6) == "start=") {
+                try { gTestStartSec = std::stof(arg.substr(6)); } catch (...) {}
+            } else if (arg.substr(0, 4) == "dur=") {
+                try { gTestDurSec = std::stof(arg.substr(4)); } catch (...) {}
             } else if (!hasDirectID) {
                 try {
                     directID = std::stoi(arg);
@@ -1958,16 +1989,8 @@ int main(int argc, char* argv[]) {
               << std::endl;
 
     if (renderMode && hasDirectID) {
-        float startSec = 0.04f;
-        float durationSec = 0.96f;
-        if (directID == 12) {
-            // Piano: higher frequencies decay faster, measure earlier
-            double f = (gTestFrequency > 0.0) ? gTestFrequency : 160.0;
-            if (f < 130.0)      { startSec = 0.02f; durationSec = 0.20f; }
-            else if (f < 260.0) { startSec = 0.01f; durationSec = 0.15f; }
-            else if (f < 520.0) { startSec = 0.005f; durationSec = 0.10f; }
-            else                { startSec = 0.003f; durationSec = 0.05f; }
-        }
+        float startSec = (gTestStartSec >= 0.0f) ? gTestStartSec : InstrumentMapper::getMeasureStart(directID);
+        float durationSec = (gTestDurSec > 0.0f) ? gTestDurSec : InstrumentMapper::getMeasureDuration(directID);
         testRenderMode(directID, execType, startSec, durationSec);
         return 0;
     }

@@ -75,6 +75,12 @@ public:
     // consecutive strikes (drone/polyphonic instruments like tanpura, sarod)
     static bool isPolyphonic(int id);
 
+    // Returns the start offset (seconds) for energy measurement, skipping the attack transient
+    static float getMeasureStart(int id);
+
+    // Returns the measurement duration (seconds) for energy measurement
+    static float getMeasureDuration(int id);
+
 };
 
 #endif // INSTRUMENT_MAPPER_HPP

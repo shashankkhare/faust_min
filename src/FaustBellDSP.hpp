@@ -12,6 +12,7 @@ Compilation options: -lang cpp -es 1 -single -ftz 1
 #define FAUSTFLOAT float
 #endif 
 
+/* link with : "" */
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -201,7 +202,7 @@ class FaustBellDSP : public dsp {
 		ui_interface->openVerticalBox("bell");
 		ui_interface->declare(&fHslider1, "unit", "Hz");
 		ui_interface->addHorizontalSlider("freq", &fHslider1, FAUSTFLOAT(440.0f), FAUSTFLOAT(200.0f), FAUSTFLOAT(800.0f), FAUSTFLOAT(1.0f));
-		ui_interface->addHorizontalSlider("gain", &fHslider0, FAUSTFLOAT(0.5f), FAUSTFLOAT(0.0f), FAUSTFLOAT(100.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("gain", &fHslider0, FAUSTFLOAT(0.5f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addButton("gate", &fButton0);
 		ui_interface->addHorizontalSlider("ring_time", &fHslider2, FAUSTFLOAT(2.0f), FAUSTFLOAT(0.5f), FAUSTFLOAT(10.0f), FAUSTFLOAT(0.100000001f));
 		ui_interface->addHorizontalSlider("velocity", &fHslider3, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
@@ -210,7 +211,7 @@ class FaustBellDSP : public dsp {
 	
 	virtual void compute(int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs) {
 		FAUSTFLOAT* output0 = outputs[0];
-		float fSlow0 = float(fHslider0);
+		float fSlow0 = (1.13750005f * float(fHslider0));
 		float fSlow1 = float(fHslider1);
 		float fSlow2 = (fConst1 * fSlow1);
 		float fSlow3 = float(fButton0);
@@ -240,7 +241,7 @@ class FaustBellDSP : public dsp {
 			fRec4[0] = ((std::fabs(fTempFTZ2) > 1.17549435e-38f) ? fTempFTZ2 : 0.0f);
 			float fTempFTZ3 = (fSlow14 + (fRec5[1] - std::floor((fSlow14 + fRec5[1]))));
 			fRec5[0] = ((std::fabs(fTempFTZ3) > 1.17549435e-38f) ? fTempFTZ3 : 0.0f);
-			output0[i0] = FAUSTFLOAT((fSlow0 * ((((ftbl0FaustBellDSPSIG0[int((65536.0f * fRec1[0]))] * std::max<float>(0.0f, std::min<float>(fTemp1, ((fSlow5 * fTemp2) + 1.0f)))) + (fSlow7 * (ftbl0FaustBellDSPSIG0[int((65536.0f * fRec3[0]))] * std::max<float>(0.0f, std::min<float>(fTemp1, ((fSlow9 * fTemp2) + 1.0f)))))) + (fSlow10 * (ftbl0FaustBellDSPSIG0[int((65536.0f * fRec4[0]))] * std::max<float>(0.0f, std::min<float>(fTemp1, ((fSlow12 * fTemp2) + 1.0f)))))) + (fSlow13 * (ftbl0FaustBellDSPSIG0[int((65536.0f * fRec5[0]))] * std::max<float>(0.0f, std::min<float>(fTemp1, ((fSlow15 * fTemp2) + 1.0f))))))));
+			output0[i0] = FAUSTFLOAT(float(tanhf(float((fSlow0 * ((((ftbl0FaustBellDSPSIG0[int((65536.0f * fRec1[0]))] * std::max<float>(0.0f, std::min<float>(fTemp1, ((fSlow5 * fTemp2) + 1.0f)))) + (fSlow7 * (ftbl0FaustBellDSPSIG0[int((65536.0f * fRec3[0]))] * std::max<float>(0.0f, std::min<float>(fTemp1, ((fSlow9 * fTemp2) + 1.0f)))))) + (fSlow10 * (ftbl0FaustBellDSPSIG0[int((65536.0f * fRec4[0]))] * std::max<float>(0.0f, std::min<float>(fTemp1, ((fSlow12 * fTemp2) + 1.0f)))))) + (fSlow13 * (ftbl0FaustBellDSPSIG0[int((65536.0f * fRec5[0]))] * std::max<float>(0.0f, std::min<float>(fTemp1, ((fSlow15 * fTemp2) + 1.0f)))))))))));
 			fRec1[1] = fRec1[0];
 			fVec1[1] = fVec1[0];
 			iRec2[1] = iRec2[0];

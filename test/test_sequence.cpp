@@ -469,96 +469,128 @@ int main(int argc, char* argv[]) {
             duration = -1;
 
         } else if (selection == 3) {
-            group.name = "Rock Band (Hotel California)";
+            group.name = "Hotel California — Acoustic (Guitar, Bass, Drums)";
 
-            std::string umlEGuitar = 
+            std::string umlAGuitar = 
                 "grid: 4\n"
                 "bpm: 60\n"
-                "instrument: electricguitar\n"
+                "instrument: acousticguitar\n"
                 "notation: Western\n"
-                "drive: 0.75\n"
-                "sustain: 0.8\n"
                 "\n"
                 // Measure 1-4 (Bm, F#, A, E)
-                "B3 D4 F#4 D4 B3 D4 F#4 D4 "
-                "A#3 C#4 F#4 C#4 A#3 C#4 F#4 C#4 "
-                "A3 C#4 E4 C#4 A3 C#4 E4 C#4 "
-                "G#3 B3 E4 B3 G#3 B3 E4 B3 "
+                "5B2. 5F#3 6B3 6B2 5F#3 6B3. 6F#4... 5D4... "
+                "5F#2. 5F#3 6A#3. 5C#4. 6A#3 5F#4....... "
+                "6A2. 6E3 6A3. 5C#4. 5A3 5A4... 6C#4... "
+                "6B2. 5E3 5G#3. 5B2 6E2 5B2 6E4....... "
                 // Measure 5-8 (G, D, Em, F#)
-                "G3 B3 D4 B3 G3 B3 D4 B3 "
-                "F#3 A3 D4 A3 F#3 A3 D4 A3 "
-                "E3 G3 B3 G3 E3 G3 B3 G3 "
-                "F#3 A#3 C#4 A#3 F#3 A#3 C#4 A#3 "
+                "6G3. 6B3 6G3. 5B3. 6G3 5C#4... 5D4... "
+                "_ . 6A3 6D4. 5F#4.. 6F#4... 6D4... "
+                "_ . 6B3 5G3. 5B3 6A3. 5B3... 5G3... "
+                "6F#2. 6F#3 6A#3. 5C#4. 6A#3 6F#4....... "
                 // Repeat Measure 1-4
-                "B3 D4 F#4 D4 B3 D4 F#4 D4 "
-                "A#3 C#4 F#4 C#4 A#3 C#4 F#4 C#4 "
-                "A3 C#4 E4 C#4 A3 C#4 E4 C#4 "
-                "G#3 B3 E4 B3 G#3 B3 E4 B3 "
+                "5B2. 5F#3 6B3 6B2 5F#3 6B3. 6F#4... 5D4... "
+                "5F#2. 5F#3 6A#3. 5C#4. 6A#3 5F#4....... "
+                "6A2. 6E3 6A3. 5C#4. 5A3 5A4... 6C#4... "
+                "6B2. 5E3 5G#3. 5B2 6E2 5B2 6E4....... "
                 // Repeat Measure 5-8
-                "G3 B3 D4 B3 G3 B3 D4 B3 "
-                "F#3 A3 D4 A3 F#3 A3 D4 A3 "
-                "E3 G3 B3 G3 E3 G3 B3 G3 "
-                "F#3 A#3 C#4 A#3 F#3 A#3 C#4 A#3";
-                
+                "6G3. 6B3 6G3. 5B3. 6G3 5C#4... 5D4... "
+                "_ . 6A3 6D4. 5F#4.. 6F#4... 6D4... "
+                "_ . 6B3 5G3. 5B3 6A3. 5B3... 5G3... "
+                "6F#2. 6F#3 6A#3. 5C#4. 6A#3 6F#4.......";
+
             std::string umlBGuitar = 
                 "grid: 4\n"
                 "bpm: 60\n"
                 "instrument: bassguitar\n"
                 "notation: Western\n"
                 "\n"
-                // Measures 1-8 (Bm, F#, A, E, G, D, Em, F#)
-                "B1. B1. F#1. F#1. A1. A1. E1. E1. "
-                "G1. G1. D2. D2. E1. E1. F#1. F#1. "
-                "B1. B1. F#1. F#1. A1. A1. E1. E1. "
-                "G1. G1. D2. D2. E1. E1. F#1. F#1. "
-                "B1. B1. F#1. F#1. A1. A1. E1. E1. "
-                "G1. G1. D2. D2. E1. E1. F#1. F#1. "
-                "B1. B1. F#1. F#1. A1. A1. E1. E1. "
-                "G1. G1. D2. D2. E1. E1. F#1. F#1.";
-                
+                // Measures 1-4: Bm, F#, A, E
+                "B1............... F#1............... A1............... E1............... "
+                // Measures 5-8: G, D, Em, F#
+                "G1............... D2............... E1............... F#1............... "
+                // Repeat
+                "B1............... F#1............... A1............... E1............... "
+                "G1............... D2............... E1............... F#1...............";
+
             std::string umlKick = 
                 "grid: 4\n"
                 "bpm: 60\n"
                 "instrument: kick\n"
                 "\n"
-                "8x _ _ 8x  _ 8x _ _  8x _ _ 8x  _ _ 8x _ "
-                "8x _ _ _  8x 8x _ _  8x _ 8x _  _ _ 8x _ "
-                "8x _ 8x _  _ 8x _ 8x  8x _ _ _  8x 8x _ _ "
-                "8x _ _ 8x  _ _ 8x _  8x 8x _ 8x  _ 8x 8x _ "
-                "8x _ _ 8x  _ 8x _ _  8x _ _ 8x  _ _ 8x _ "
-                "8x _ _ _  8x 8x _ _  8x _ 8x _  _ _ 8x _ "
-                "8x _ 8x _  _ 8x _ 8x  8x _ _ _  8x 8x _ _ "
-                "8x _ _ 8x  _ _ 8x _  8x 8x _ 8x  _ 8x 8x _";
+                // Measures 1-4: Simple 4-on-the-floor (4 slots each)
+                "8x... 8x... 8x... 8x... "
+                "8x... 8x... 8x... 8x... "
+                "8x... 8x... 8x... 8x... "
+                "8x... 8x... 8x... 8x... "
+                // Measures 5-8: Syncopated groove (2+6+8=16)
+                "8x. 8x..... 8x....... "
+                "8x. 8x..... 8x....... "
+                "8x. 8x..... 8x....... "
+                "8x. 8x..... 8x....... "
+                // Measures 9-12: Double-time feel (8x2=16)
+                "8x. 8x. 8x. 8x. 8x. 8x. 8x. 8x. "
+                "8x. 8x. 8x. 8x. 8x. 8x. 8x. 8x. "
+                "8x. 8x. 8x. 8x. 8x. 8x. 8x. 8x. "
+                "8x. 8x. 8x. 8x. 8x. 8x. 8x. 8x. "
+                // Measures 13-16: Breakdown (8+8=16)
+                "8x....... 8x....... "
+                "8x....... 8x....... "
+                "8x....... 8x... 8x... "
+                "8x... 8x... 8x... 8x... ";
                 
             std::string umlSnare = 
                 "grid: 4\n"
                 "bpm: 60\n"
                 "instrument: snare\n"
                 "\n"
-                "_ _ _ _ 8x _ _ 8x _ _ _ _ 8x _ _ _ "
-                "_ _ _ 8x 8x _ _ _ _ 8x _ _ 8x _ 8x 8x "
-                "_ _ _ _ 8x _ _ _ _ _ 8x _ 8x _ _ _ "
-                "_ _ 8x _ 8x _ _ 8x _ 8x _ 8x 8x 8x 8x 8x "
-                "_ _ _ _ 8x _ _ 8x _ _ _ _ 8x _ _ _ "
-                "_ _ _ 8x 8x _ _ _ _ 8x _ _ 8x _ 8x 8x "
-                "_ _ _ _ 8x _ _ _ _ _ 8x _ 8x _ _ _ "
-                "_ 8x _ 8x 8x _ 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x";
+                // Measures 1-4: Standard backbeat (4+4+4+4=16)
+                ".... 8x... .... 8x... "
+                ".... 8x... .... 8x... "
+                ".... 8x... .... 8x... "
+                ".... 8x... .... 8x... "
+                // Measures 5-8: Ghost notes + accents (8x2=16)
+                ".. 8x. 8x. .. 8x. .. 8x. 8x. "
+                ".. 8x. 8x. .. 8x. .. 8x. 8x. "
+                ".. 8x. 8x. .. 8x. .. 8x. 8x. "
+                ".. 8x. 8x. .. 8x. .. 8x. 8x. "
+                // Measures 9-12: Driving backbeat (4+2+6+4=16)
+                ".... 8x. 8x..... 8x... "
+                ".... 8x. 8x..... 8x... "
+                ".... 8x. 8x..... 8x... "
+                ".... 8x. 8x..... 8x... "
+                // Measures 13-16: Fill ending
+                ".... 8x... .... 8x... "
+                ".... 8x... .... 8x... "
+                ".... 8x... 8x....... "
+                ".. 8x. .. 8x. .. 8x. .. 8x. ";
                 
             std::string umlHihat = 
                 "grid: 4\n"
                 "bpm: 60\n"
                 "instrument: hihat\n"
                 "\n"
+                // Measures 1-4: Sparse intro
+                "8x. 8x. 8x. 8x. 8x. 8x. 8x. 8x. "
+                "8x. 8x. 8x. 8x. 8x. 8x. 8x. 8x. "
                 "8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x "
-                "8x _ 8x _ 8x 8x 8x 8x 8x _ 8x _ 8x 8x 8x 8x "
-                "8x 8x 8x 8x _ 8x 8x 8x 8x 8x 8x 8x _ 8x 8x 8x "
-                "8x 8x 8x 8x 8x 8x 8x 8x 8x _ _ _ _ _ _ _ "
+                "8x 8x 8x 8x 8x 8x 8x 8x 8x....... "
+                // Measures 5-8: Steady groove
+                "8x. 8x. 8x. 8x. 8x. 8x. 8x. 8x. "
+                "8x. 8x. 8x. 8x. 8x. 8x. 8x. 8x. "
                 "8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x "
-                "8x _ 8x _ 8x 8x 8x 8x 8x _ 8x _ 8x 8x 8x 8x "
-                "8x 8x 8x 8x _ 8x 8x 8x 8x 8x 8x 8x _ 8x 8x 8x "
-                "8x 8x _ _ _ _ _ _ _ _ _ _ _ _ _ _";
+                "8x 8x 8x 8x 8x 8x 8x 8x 8x....... "
+                // Measures 9-12: Open hi-hat accents
+                "8x. 8x. 8x. 8x. 8x. 8x. 8x. 8x 8x "
+                "8x. 8x. 8x. 8x. 8x. 8x. 8x. 8x 8x "
+                "8x. 8x. 8x. 8x. 8x. 8x. 8x. 8x 8x "
+                "8x. 8x. 8x. 8x. 8x. 8x. 8x. 8x 8x "
+                // Measures 13-16: Outro build
+                "8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x "
+                "8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x "
+                "8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x "
+                "8x 8x 8x 8x 8x 8x 8x 8x 8x....... ";
 
-            group.sequences.push_back({"RockEGuitar", new UMLSequence("RockEGuitar", 22, umlEGuitar)});
+            group.sequences.push_back({"AcousticGuitar", new UMLSequence("AcousticGuitar", 21, umlAGuitar)});
             group.sequences.push_back({"RockBGuitar", new UMLSequence("RockBGuitar", 23, umlBGuitar)});
             group.sequences.push_back({"RockKick", new UMLSequence("RockKick", 2, umlKick)});
             group.sequences.push_back({"RockSnare", new UMLSequence("RockSnare", 3, umlSnare)});
@@ -636,168 +668,119 @@ int main(int argc, char* argv[]) {
             group.sequences.push_back({"Bowl444", new UMLSequence("Bowl444", 8, umlBowl444)});
 
         } else if (selection == 5) {
-            group.name = "Acoustic Hotel California (Acoustic Guitar, 3 Congas, Bass, Drums)";
+            group.name = "Hotel California — Piano, Bass, 3 Congas, Shaker";
 
-            std::string umlAGuitar = 
+            // Piano (ID 12): arpeggiated chord voicings
+            std::string umlPiano = 
                 "grid: 4\n"
                 "bpm: 60\n"
-                "instrument: acousticguitar\n"
+                "instrument: piano\n"
                 "notation: Western\n"
                 "\n"
-                // Measure 1-4 (Bm, F#, A, E)
-                "5B2. 5F#3 6B3 6B2 5F#3 6B3. 6F#4... 5D4... "
-                "5F#2. 5F#3 6A#3. 5C#4. 6A#3 5F#4....... "
-                "6A2. 6E3 6A3. 5C#4. 5A3 5A4... 6C#4... "
-                "6B2. 5E3 5G#3. 5B2 6E2 5B2 6E4....... "
-                // Measure 5-8 (G, D, Em, F#)
-                "6G3. 6B3 6G3. 5B3. 6G3 5C#4... 5D4... "
-                "_ . 6A3 6D4. 5F#4.. 6F#4... 6D4... "
-                "_ . 6B3 5G3. 5B3 6A3. 5B3... 5G3... "
-                "6F#2. 6F#3 6A#3. 5C#4. 6A#3 6F#4....... "
-                // Repeat Measure 1-4
-                "5B2. 5F#3 6B3 6B2 5F#3 6B3. 6F#4... 5D4... "
-                "5F#2. 5F#3 6A#3. 5C#4. 6A#3 5F#4....... "
-                "6A2. 6E3 6A3. 5C#4. 5A3 5A4... 6C#4... "
-                "6B2. 5E3 5G#3. 5B2 6E2 5B2 6E4....... "
-                // Repeat Measure 5-8
-                "6G3. 6B3 6G3. 5B3. 6G3 5C#4... 5D4... "
-                "_ . 6A3 6D4. 5F#4.. 6F#4... 6D4... "
-                "_ . 6B3 5G3. 5B3 6A3. 5B3... 5G3... "
-                "6F#2. 6F#3 6A#3. 5C#4. 6A#3 6F#4.......";
+                // Measures 1-4 (Bm, F#, A, E)
+                "5B3. 5F#4 6B4 6B3 5F#4 6B4. 6F#5... 5D5... "
+                "5F#3. 5F#4 6A#4. 5C#5. 6A#4 5F#5....... "
+                "6A3. 6E4 6A4. 5C#5. 5A4 5A5... 6C#5... "
+                "6B3. 5E4 5G#4. 5B3 6E3 5B3 6E5....... "
+                // Measures 5-8 (G, D, Em, F#)
+                "6G3. 6B3 6G4. 5B4. 6G3 5C#5... 5D5... "
+                ". . 6A3 6D4. 5F#4.. 6F#4... 6D4... "
+                ". . 6B3 5G3. 5B3 6A3. 5B3... 5G3... "
+                "6F#3. 6F#4 6A#4. 5C#5. 6A#4 6F#5....... "
+                // Repeat Measures 1-4
+                "5B3. 5F#4 6B4 6B3 5F#4 6B4. 6F#5... 5D5... "
+                "5F#3. 5F#4 6A#4. 5C#5. 6A#4 5F#5....... "
+                "6A3. 6E4 6A4. 5C#5. 5A4 5A5... 6C#5... "
+                "6B3. 5E4 5G#4. 5B3 6E3 5B3 6E5....... "
+                // Repeat Measures 5-8
+                "6G3. 6B3 6G4. 5B4. 6G3 5C#5... 5D5... "
+                ". . 6A3 6D4. 5F#4.. 6F#4... 6D4... "
+                ". . 6B3 5G3. 5B3 6A3. 5B3... 5G3... "
+                "6F#3. 6F#4 6A#4. 5C#5. 6A#4 6F#5.......";
 
-            std::string umlBGuitar = 
+            std::string umlBass = 
                 "grid: 4\n"
                 "bpm: 60\n"
                 "instrument: bassguitar\n"
                 "notation: Western\n"
                 "\n"
-                // Measures 1-4: Bm, F#, A, E (intro/verse 1)
                 "B1............... F#1............... A1............... E1............... "
-                // Measures 5-8: G, D, Em, F# (verse 2)
                 "G1............... D2............... E1............... F#1............... "
-                // Measures 9-12: Bm, F#, A, E (verse 3)
                 "B1............... F#1............... A1............... E1............... "
-                // Measures 13-16: G, D, Em, F# (verse 4)
                 "G1............... D2............... E1............... F#1...............";
 
-            // Tumba (Low Conga, e.g. 130 Hz): matches MIDI Low Conga pattern (1a, 2+, 3+)
+            // Low Conga (Tumba, 130Hz): groove + fast changeover roll at end of each measure
+            // Pattern: hit on 1, offbeat of 2, offbeat of 3, then 4-note roll (to-to-mu-to) on beat 4
             std::string umlCongaLow = 
                 "grid: 4\n"
                 "bpm: 60\n"
                 "basefreq: 130.0\n"
                 "instrument: conga\n"
                 "\n"
-                // Measures 1-16: MIDI Low Conga pattern — hits on 1a, 2+, 3+
-                "_ _ _ to  _ _ to _  _ _ to _  _ _ _ _ "
-                "_ _ _ to  _ _ to _  _ _ to _  _ _ _ _ "
-                "_ _ _ to  _ _ to _  _ _ to _  _ _ _ _ "
-                "_ _ _ to  _ _ to _  _ _ to _  _ _ _ _ "
-                "_ _ _ to  _ _ to _  _ _ to _  _ _ _ _ "
-                "_ _ _ to  _ _ to _  _ _ to _  _ _ _ _ "
-                "_ _ _ to  _ _ to _  _ _ to _  _ _ _ _ "
-                "_ _ _ to  _ _ to _  _ _ to _  _ _ _ _ "
-                "_ _ _ to  _ _ to _  _ _ to _  _ _ _ _ "
-                "_ _ _ to  _ _ to _  _ _ to _  _ _ _ _ "
-                "_ _ _ to  _ _ to _  _ _ to _  _ _ _ _ "
-                "_ _ _ to  _ _ to _  _ _ to _  _ _ _ _ "
-                "_ _ _ to  _ _ to _  _ _ to _  _ _ _ _ "
-                "_ _ _ to  _ _ to _  _ _ to _  _ _ _ _ "
-                "_ _ _ to  _ _ to _  _ _ to _  _ _ _ _ "
-                "_ _ _ to  _ _ to _  _ _ to _  _ _ _ _";
+                "to . . .  . . to .  . . to .  to to mu to "
+                "to . . .  . . to .  . . to .  to to mu to "
+                "to . . .  . . to .  . . to .  to to mu to "
+                "to . . .  . . to .  . . to .  to to mu to "
+                "to . . .  . . to .  . . to .  to to mu to "
+                "to . . .  . . to .  . . to .  to to mu to "
+                "to . . .  . . to .  . . to .  to to mu to "
+                "to . . .  . . to .  . . to .  to to mu to "
+                "to . . .  . . to .  . . to .  to to mu to "
+                "to . . .  . . to .  . . to .  to to mu to "
+                "to . . .  . . to .  . . to .  to to mu to "
+                "to . . .  . . to .  . . to .  to to mu to "
+                "to . . .  . . to .  . . to .  to to mu to "
+                "to . . .  . . to .  . . to .  to to mu to "
+                "to . . .  . . to .  . . to .  to to mu to "
+                "to . . .  . . to .  . . to .  to to mu to";
 
-            // Segundo (Mid Conga, e.g. 175 Hz): matches MIDI Open Hi Conga pattern (1, 1+, 2, 3, 4, 4+)
+            // Mid Conga (Segundo, 175Hz): interlocking hits + changeover fill (slap-based)
             std::string umlCongaMid = 
                 "grid: 4\n"
                 "bpm: 60\n"
                 "basefreq: 175.0\n"
                 "instrument: conga\n"
                 "\n"
-                // Measures 1-16: MIDI Open Hi Conga pattern — hits on 1, 1+, 2, 3, 4, 4+
-                "to _ to _  to _ _ _  to _ _ _  to _ to _ "
-                "to _ to _  to _ _ _  to _ _ _  to _ to _ "
-                "to _ to _  to _ _ _  to _ _ _  to _ to _ "
-                "to _ to _  to _ _ _  to _ _ _  to _ to _ "
-                "to _ to _  to _ _ _  to _ _ _  to _ to _ "
-                "to _ to _  to _ _ _  to _ _ _  to _ to _ "
-                "to _ to _  to _ _ _  to _ _ _  to _ to _ "
-                "to _ to _  to _ _ _  to _ _ _  to _ to _ "
-                "to _ to _  to _ _ _  to _ _ _  to _ to _ "
-                "to _ to _  to _ _ _  to _ _ _  to _ to _ "
-                "to _ to _  to _ _ _  to _ _ _  to _ to _ "
-                "to _ to _  to _ _ _  to _ _ _  to _ to _ "
-                "to _ to _  to _ _ _  to _ _ _  to _ to _ "
-                "to _ to _  to _ _ _  to _ _ _  to _ to _ "
-                "to _ to _  to _ _ _  to _ _ _  to _ to _ "
-                "to _ to _  to _ _ _  to _ _ _  to _ to _";
+                ". to . .  to . . .  . to . .  sl to to to "
+                ". to . .  to . . .  . to . .  sl to to to "
+                ". to . .  to . . .  . to . .  sl to to to "
+                ". to . .  to . . .  . to . .  sl to to to "
+                ". to . .  to . . .  . to . .  sl to to to "
+                ". to . .  to . . .  . to . .  sl to to to "
+                ". to . .  to . . .  . to . .  sl to to to "
+                ". to . .  to . . .  . to . .  sl to to to "
+                ". to . .  to . . .  . to . .  sl to to to "
+                ". to . .  to . . .  . to . .  sl to to to "
+                ". to . .  to . . .  . to . .  sl to to to "
+                ". to . .  to . . .  . to . .  sl to to to "
+                ". to . .  to . . .  . to . .  sl to to to "
+                ". to . .  to . . .  . to . .  sl to to to "
+                ". to . .  to . . .  . to . .  sl to to to "
+                ". to . .  to . . .  . to . .  sl to to to";
 
-            // Quinto (High Conga, e.g. 225 Hz): complementary slap accents on beats 2 and 4
+            // High Conga (Quinto, 225Hz): sparse slaps + fast changeover roll
             std::string umlCongaHigh = 
                 "grid: 4\n"
                 "bpm: 60\n"
                 "basefreq: 225.0\n"
                 "instrument: conga\n"
                 "\n"
-                // Measures 1-16: complementary slap/mute pattern on beats 2 and 4
-                "_ _ _ _  sl _ mu _  _ _ _ _  sl _ mu _ "
-                "_ _ _ _  sl _ mu _  _ _ _ _  sl _ mu _ "
-                "_ _ _ _  sl _ mu _  _ _ _ _  sl _ mu _ "
-                "_ _ _ _  sl _ mu _  _ _ _ _  sl _ mu _ "
-                "_ _ _ _  sl _ mu _  _ _ _ _  sl _ mu _ "
-                "_ _ _ _  sl _ mu _  _ _ _ _  sl _ mu _ "
-                "_ _ _ _  sl _ mu _  _ _ _ _  sl _ mu _ "
-                "_ _ _ _  sl _ mu _  _ _ _ _  sl _ mu _ "
-                "_ _ _ _  sl _ mu _  _ _ _ _  sl _ mu _ "
-                "_ _ _ _  sl _ mu _  _ _ _ _  sl _ mu _ "
-                "_ _ _ _  sl _ mu _  _ _ _ _  sl _ mu _ "
-                "_ _ _ _  sl _ mu _  _ _ _ _  sl _ mu _ "
-                "_ _ _ _  sl _ mu _  _ _ _ _  sl _ mu _ "
-                "_ _ _ _  sl _ mu _  _ _ _ _  sl _ mu _ "
-                "_ _ _ _  sl _ mu _  _ _ _ _  sl _ mu _ "
-                "_ _ _ _  sl _ mu _  _ _ _ _  sl _ mu _";
-
-            std::string umlKick = 
-                "grid: 4\n"
-                "bpm: 60\n"
-                "instrument: kick\n"
-                "\n"
-                // Measures 1-4: Silence (64 steps)
-                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
-                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
-                // Measures 5-16: Active patterns (192 steps total)
-                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  "
-                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  "
-                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  "
-                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  "
-                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  "
-                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  "
-                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  "
-                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  "
-                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  "
-                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  "
-                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  "
-                "8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _  8x. _ 8x. _";
-                
-            std::string umlSnare = 
-                "grid: 4\n"
-                "bpm: 60\n"
-                "instrument: snare\n"
-                "\n"
-                // Measures 1-4: Silence (64 steps)
-                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
-                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
-                // Measures 5-8: Active patterns (64 steps: 3 measures silence, 1 measure with snare at end)
-                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  "
-                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  "
-                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  "
-                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ 8x. _  "
-                // Repeat Measures 1-4 (Measures 9-12): Silence (64 steps)
-                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
-                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
-                // Repeat Measures 5-8 (Measures 13-16): Active patterns (64 steps: 3 measures silence, 1 measure with snare at end)
-                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  "
-                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  "
-                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  "
-                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ 8x. _";
+                ". . . .  sl . . .  . . . .  sl sl to sl "
+                ". . . .  sl . . .  . . . .  sl sl to sl "
+                ". . . .  sl . . .  . . . .  sl sl to sl "
+                ". . . .  sl . . .  . . . .  sl sl to sl "
+                ". . . .  sl . . .  . . . .  sl sl to sl "
+                ". . . .  sl . . .  . . . .  sl sl to sl "
+                ". . . .  sl . . .  . . . .  sl sl to sl "
+                ". . . .  sl . . .  . . . .  sl sl to sl "
+                ". . . .  sl . . .  . . . .  sl sl to sl "
+                ". . . .  sl . . .  . . . .  sl sl to sl "
+                ". . . .  sl . . .  . . . .  sl sl to sl "
+                ". . . .  sl . . .  . . . .  sl sl to sl "
+                ". . . .  sl . . .  . . . .  sl sl to sl "
+                ". . . .  sl . . .  . . . .  sl sl to sl "
+                ". . . .  sl . . .  . . . .  sl sl to sl "
+                ". . . .  sl . . .  . . . .  sl sl to sl";
 
             std::string umlShaker = 
                 "grid: 4\n"
@@ -805,30 +788,28 @@ int main(int argc, char* argv[]) {
                 "basefreq: 3000.0\n"
                 "instrument: shaker\n"
                 "\n"
-                // Measures 1-4: Silence (64 steps)
-                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
-                "_ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _  _ _ _ _ _ _ _ _ "
-                // Measures 5-16: Active patterns (192 steps total)
-                "8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  "
-                "8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  "
-                "8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  "
-                "8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  "
-                "8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  "
-                "8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  "
-                "8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  "
-                "8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  "
-                "8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  "
-                "8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  "
-                "8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  "
-                "8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _  8sh _ 8sh _";
+                "8sh . 8sh .  8sh . 8sh .  8sh . 8sh .  8sh . 8sh . "
+                "8sh . 8sh .  8sh . 8sh .  8sh . 8sh .  8sh . 8sh . "
+                "8sh . 8sh .  8sh . 8sh .  8sh . 8sh .  8sh . 8sh . "
+                "8sh . 8sh .  8sh . 8sh .  8sh . 8sh .  8sh . 8sh . "
+                "8sh . 8sh .  8sh . 8sh .  8sh . 8sh .  8sh . 8sh . "
+                "8sh . 8sh .  8sh . 8sh .  8sh . 8sh .  8sh . 8sh . "
+                "8sh . 8sh .  8sh . 8sh .  8sh . 8sh .  8sh . 8sh . "
+                "8sh . 8sh .  8sh . 8sh .  8sh . 8sh .  8sh . 8sh . "
+                "8sh . 8sh .  8sh . 8sh .  8sh . 8sh .  8sh . 8sh . "
+                "8sh . 8sh .  8sh . 8sh .  8sh . 8sh .  8sh . 8sh . "
+                "8sh . 8sh .  8sh . 8sh .  8sh . 8sh .  8sh . 8sh . "
+                "8sh . 8sh .  8sh . 8sh .  8sh . 8sh .  8sh . 8sh . "
+                "8sh . 8sh .  8sh . 8sh .  8sh . 8sh .  8sh . 8sh . "
+                "8sh . 8sh .  8sh . 8sh .  8sh . 8sh .  8sh . 8sh . "
+                "8sh . 8sh .  8sh . 8sh .  8sh . 8sh .  8sh . 8sh . "
+                "8sh . 8sh .  8sh . 8sh .  8sh . 8sh .  8sh . 8sh .";
 
-            group.sequences.push_back({"AcousticGuitar", new UMLSequence("AcousticGuitar", 21, umlAGuitar)});
-            group.sequences.push_back({"AcousticBass", new UMLSequence("AcousticBass", 23, umlBGuitar)});
+            group.sequences.push_back({"Piano", new UMLSequence("Piano", 12, umlPiano)});
+            group.sequences.push_back({"Bass", new UMLSequence("Bass", 23, umlBass)});
             group.sequences.push_back({"CongaLow", new UMLSequence("CongaLow", 30, umlCongaLow)});
             group.sequences.push_back({"CongaMid", new UMLSequence("CongaMid", 30, umlCongaMid)});
             group.sequences.push_back({"CongaHigh", new UMLSequence("CongaHigh", 30, umlCongaHigh)});
-            group.sequences.push_back({"AcousticKick", new UMLSequence("AcousticKick", 2, umlKick)});
-            group.sequences.push_back({"AcousticSnare", new UMLSequence("AcousticSnare", 3, umlSnare)});
             group.sequences.push_back({"Shaker", new UMLSequence("Shaker", 33, umlShaker)});
 
             duration = -1;

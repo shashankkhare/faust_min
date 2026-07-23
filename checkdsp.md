@@ -20,9 +20,6 @@
 ## 4. Check Raw Energy
 
 ```bash
-# Delete CSV so defaults apply
-rm assets/dsp/<instrument>.csv
-
 # Run at a mid frequency with v=1.0
 build-release/test_instruments <id> f=200 v=1 s=0 --render
 ```
@@ -30,3 +27,4 @@ build-release/test_instruments <id> f=200 v=1 s=0 --render
 - Energy should be in a reasonable range (~0.01 to ~2.0)
 - If near 0: excitation problem (missing mute, missing velocity boost)
 - If way above 2.0: output multiplier too high
+- **Peak must NOT exceed [-1.0, 1.0]** — every instrument must clip/limit output to this range. If peak > 1.0 or < -1.0, the DSP is broken.

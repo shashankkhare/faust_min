@@ -69,5 +69,5 @@ process = beaterStrike * velocity
         : dualHeadModel 
         : fi.dcblocker
         : ma.tanh 
-        * gain * 37.5;
+        * gain * 15.0;
 

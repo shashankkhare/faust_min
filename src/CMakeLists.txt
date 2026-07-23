@@ -39,6 +39,9 @@ foreach(DSP_FILE ${DSP_FILES})
         set_source_files_properties(${CPP_FILE} PROPERTIES OBJECT_DEPENDS ${HPP_FILE})
     endif()
 endforeach()
+
+# FaustInstrument.cpp includes ALL generated hpp headers — ensure it recompiles when any hpp changes
+set_source_files_properties("FaustInstrument.cpp" PROPERTIES OBJECT_DEPENDS "${FAUST_GENERATED_HEADERS}")
 add_custom_target(compile_faust_dsps DEPENDS ${FAUST_GENERATED_HEADERS})
  
 set(CMAKE_CXX_STANDARD 17)

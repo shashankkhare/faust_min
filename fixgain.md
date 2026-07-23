@@ -27,7 +27,7 @@ Change `gain = hslider("gain", 1.0, 0, 1, 0.01);` to `gain = hslider("gain", 1.0
 
 ### 4. Measure & Fit
 
-Run the calibration script to measure the instrument's energy output at each (frequency, amplitude) pair in its CSV, then adjust the `gain` column so that `amp=1.0` produces energy ≈ 0.3.
+Run the calibration script to measure the instrument's energy output at each (frequency, amplitude) pair in its CSV, then adjust the `gain` column so that `amp=1.0` produces energy ≈ 0.5 for melody instruments, or ≈ 0.3 for drones (tanpura, gongs, bowls, bells).
 
 ```bash
 python3 scripts/fix_instrument_gain.py <instrument_name_or_id> [--target <energy>] [--strike <strike_id>]

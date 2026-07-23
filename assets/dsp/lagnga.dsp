@@ -63,7 +63,7 @@ trig = gate : ba.impulsify;
 // EXCITATION: Hard curved wooden stick — sharp transient with high-frequency presence
 // Highpass at 80 Hz removes DC thump. Lowpass cutoff ranges from 700 Hz (soft) to 2800 Hz (hard).
 stickCutoff = 2800.0 - mallet_softness * 2100.0;
-excitation  = trig * velocity * 0.18 * (freq / 220.0)
+excitation  = trig * velocity * 1.5 * (freq / 220.0)
             : fi.highpass(1, 150.0)
             : fi.lowpass(2, max(400.0, stickCutoff));
 
@@ -95,4 +95,4 @@ drum_mix = sym1 + sym2 + sym3 + sym4 + ant1 + ant2 + body;
 // Soft tanh saturation models membrane nonlinearity on hard strike.
 // Lowpass extended to 8x fundamental so it doesn't muffle the bright wooden stick attack.
 // Using softer drive (5.0 instead of 10.0) to prevent overdrive/clipping at the tail end.
-process = (drum_mix * 2.0 : ma.tanh : fi.lowpass(1, freq * 8.0)) * (gain * 18.0);
+process = (drum_mix * gain * 90.0) : fi.lowpass(1, freq * 8.0) : ma.tanh;

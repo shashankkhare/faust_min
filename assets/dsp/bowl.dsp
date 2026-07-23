@@ -9,7 +9,7 @@ import("stdfaust.lib");
 
 // --- UI Controls ---
 freq     = nentry("freq", 220.0, 100, 1000, 0.1);
-gain     = nentry("gain", 0.8, 0, 2, 0.01) : si.smoo;
+gain     = nentry("gain", 0.8, 0, 2, 0.01);
 velocity = hslider("velocity", 0.8, 0, 1, 0.01);
 gate     = button("gate"); 
 
@@ -61,5 +61,6 @@ bowl_system = par(i, 13, waveguide_mode(i)) :> _;
 // Velocity is completely removed from this track. 
 process = bowl_system 
         : fi.dcblocker
-        : *(gain)*5.0;
+        : *(gain)*5.0
+        : ma.tanh;
 

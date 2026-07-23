@@ -286,3 +286,125 @@ std::string InstrumentMapper::getDSPPathForID(int id, const std::string& assetBa
         default: return base + "dayan.dsp";
     }
 }
+
+float InstrumentMapper::getMeasureStart(int id) {
+    switch (id) {
+        case 0:  return 0.050f; // Dayan — Tun rings ~1.75s
+        case 1:  return 0.050f; // Bayan — Open ring ~1.5s
+        case 2:  return 0.030f; // Kick — Fast decay
+        case 3:  return 0.030f; // Snare — Shell 100ms + wires 400ms
+        case 4:  return 0.020f; // HiHat — Closed 60-250ms
+        case 5:  return 0.030f; // Tom — Default 0.5s decay
+        case 6:  return 0.050f; // Ride — Ping 41ms + shimmer 450ms
+        case 7:  return 0.200f; // Bell — ring_time default 2.0s
+        case 8:  return 0.200f; // Bowl — 5-15s ring
+        case 9:  return 0.020f; // Sitar — 5s sustain
+        case 10: return 0.050f; // Flute — 30ms release
+        case 11: return 0.200f; // Tanpura — 36s sustain
+        case 12: return 0.020f; // Piano — 0.5-2s released
+        case 13: return 0.100f; // Sax — 200ms release
+        case 14: return 0.020f; // Cowbell — 300ms decay
+        case 15: return 0.100f; // Trumpet — 200ms release
+        case 16: return 0.050f; // Shakuhachi — 30ms release
+        case 17: return 0.050f; // Bansuri — 40ms release
+        case 18: return 0.050f; // Violin — 30ms release
+        case 19: return 3.000f; // Rainmaker — 5s attack
+        case 20: return 0.200f; // ChurchBell — 10s hum T60
+        case 21: return 0.020f; // AcGuitar — 2-6s sustain
+        case 22: return 0.020f; // ElGuitar — 2-5s sustain
+        case 23: return 0.020f; // Bass — 1-3s sustain
+        case 24: return 0.050f; // Cello — 30ms release
+        case 25: return 0.050f; // Cricket — 133ms chirp
+        case 26: return 0.050f; // Cuckoo — 700ms call
+        case 27: return 3.000f; // Waterfall — Continuous, slow LFO
+        case 28: return 0.050f; // Djembe — 0.3-1.5s ring
+        case 29: return 0.030f; // Marimba — Fast body
+        case 30: return 0.050f; // Conga — 75ms-500ms
+        case 31: return 0.020f; // Bongo — 20-200ms
+        case 32: return 0.100f; // Voice — 60ms release
+        case 33: return 0.020f; // Shaker — 60ms body
+        case 34: return 3.000f; // Seawave — 2s attack
+        case 35: return 0.100f; // ChouGong — 1.5s bloom
+        case 36: return 0.100f; // LagNga — 0.85s T60
+        case 37: return 0.050f; // Dholak — Bass 0.9s
+        case 38: return 0.050f; // Dhol — Bass 1.4s
+        case 39: return 0.020f; // Guzheng — 3-10s sustain
+        case 40: return 0.100f; // Erhu — 300ms ADSR release
+        case 41: return 3.000f; // Wind — 1s fade, continuous
+        case 42: return 0.100f; // Thunder — 4.5s rumble
+        case 43: return 0.050f; // Dagu — 100-500ms ring
+        case 44: return 0.020f; // Sarod — 2.3-4.0s freq-dep
+        case 45: return 0.020f; // Santoor — 2-5s sustain
+        case 46: return 0.020f; // Tumbi — 5-10s sustain
+        case 47: return 0.200f; // TibetanBowl — 8-20s ring
+        case 48: return 0.100f; // Ngachen — 3.5s T60
+        case 49: return 0.050f; // Mridangam — 2.45s max T60
+        case 50: return 0.050f; // Ghatam — Shell 800ms
+        case 51: return 0.050f; // PanFlute — 40ms release
+        case 52: return 0.050f; // NAF — 40ms release
+        case 53: return 0.050f; // Dizi — 80ms burst release
+        case 54: return 0.100f; // Harmonium — 200ms ASR release
+        default: return 0.020f;
+    }
+}
+
+float InstrumentMapper::getMeasureDuration(int id) {
+    switch (id) {
+        case 0:  return 0.800f; // Dayan
+        case 1:  return 0.800f; // Bayan
+        case 2:  return 0.250f; // Kick
+        case 3:  return 0.300f; // Snare
+        case 4:  return 0.150f; // HiHat
+        case 5:  return 0.400f; // Tom
+        case 6:  return 0.400f; // Ride
+        case 7:  return 2.000f; // Bell
+        case 8:  return 3.000f; // Bowl
+        case 9:  return 2.000f; // Sitar
+        case 10: return 0.600f; // Flute
+        case 11: return 5.000f; // Tanpura
+        case 12: return 1.500f; // Piano
+        case 13: return 0.800f; // Sax
+        case 14: return 0.200f; // Cowbell
+        case 15: return 0.800f; // Trumpet
+        case 16: return 0.600f; // Shakuhachi
+        case 17: return 0.600f; // Bansuri
+        case 18: return 0.600f; // Violin
+        case 19: return 2.000f; // Rainmaker
+        case 20: return 5.000f; // ChurchBell
+        case 21: return 2.000f; // AcGuitar
+        case 22: return 2.000f; // ElGuitar
+        case 23: return 1.500f; // Bass
+        case 24: return 0.600f; // Cello
+        case 25: return 0.200f; // Cricket
+        case 26: return 0.700f; // Cuckoo
+        case 27: return 2.000f; // Waterfall
+        case 28: return 0.600f; // Djembe
+        case 29: return 0.300f; // Marimba
+        case 30: return 0.500f; // Conga
+        case 31: return 0.180f; // Bongo
+        case 32: return 0.600f; // Voice
+        case 33: return 0.100f; // Shaker
+        case 34: return 2.000f; // Seawave
+        case 35: return 1.500f; // ChouGong
+        case 36: return 0.800f; // LagNga
+        case 37: return 0.800f; // Dholak
+        case 38: return 1.000f; // Dhol
+        case 39: return 2.000f; // Guzheng
+        case 40: return 0.800f; // Erhu
+        case 41: return 2.000f; // Wind
+        case 42: return 2.000f; // Thunder
+        case 43: return 0.500f; // Dagu
+        case 44: return 2.000f; // Sarod
+        case 45: return 2.000f; // Santoor
+        case 46: return 2.000f; // Tumbi
+        case 47: return 5.000f; // TibetanBowl
+        case 48: return 2.000f; // Ngachen
+        case 49: return 1.000f; // Mridangam
+        case 50: return 0.600f; // Ghatam
+        case 51: return 0.600f; // PanFlute
+        case 52: return 0.600f; // NAF
+        case 53: return 0.600f; // Dizi
+        case 54: return 0.800f; // Harmonium
+        default: return 0.500f;
+    }
+}

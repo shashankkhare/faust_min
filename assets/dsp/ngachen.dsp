@@ -27,7 +27,7 @@ gate           = button("gate");
 mallet_softness = hslider("mallet_softness", 0.8, 0.0, 1.0, 0.01); // 0=hard, 1=very thick padding
 
 // Direct-Form-II 2-pole resonator
-resonator(f, t60, g, x) = x * 0.002 : + ~ routing : *(g)
+resonator(f, t60, g, x) = x * 0.15 : + ~ routing : *(g)
 with {
     r     = pow(0.001, 1.0 / (max(0.001, t60) * ma.SR)) * 0.99999;
     omega = 2.0 * ma.PI * f / ma.SR;
@@ -69,4 +69,4 @@ drum_mix = mem1 + mem2 + mem3 + mem4 + mem5 + pot_helmholtz + pot_sub;
 
 // Very gentle saturation (soft mallet = low membrane nonlinearity)
 // Light highpass to remove DC, gentle lowpass at ~4x fundamental for natural body roll-off
-process = (drum_mix * 9.0 : ma.tanh : fi.highpass(1, 18.0) : fi.lowpass(2, freq * 4.5)) * (gain * 6.5);
+process = (drum_mix * 0.78 * gain : fi.highpass(1, 18.0) : fi.lowpass(2, freq * 4.5)) : ma.tanh;

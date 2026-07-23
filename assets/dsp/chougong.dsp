@@ -70,4 +70,4 @@ gong_sum = m1a + m1b + m2a + m2b + m3a + m3b + m4a + m4b + m5 + bloom_shimmer;
 
 // Soft clipping via tanh to guarantee the resonators NEVER digitally clip
 // Reduced scalar to 0.1 to prevent driving tanh into fuzz/distortion!
-process = gong_sum * gain * velocity * 0.1 : ma.tanh;
+process = gong_sum * gain * velocity * 1.8 : ma.tanh;

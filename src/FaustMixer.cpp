@@ -512,8 +512,7 @@ void FaustMixer::setInstrumentWeight(FaustInstrument* inst, float weight) {
 void FaustMixer::setTrackWeight(int trackID, float dynamicWeight) {
     std::lock_guard<std::mutex> lock(mRegistryMutex);
     if (mTracks.count(trackID)) {
-        float assignedCap = mTracks[trackID].assignedWeight;
-        mTracks[trackID].dynamicWeight = std::min(dynamicWeight, assignedCap);
+        mTracks[trackID].dynamicWeight = dynamicWeight;
         recalculateWeights();
     }
 }

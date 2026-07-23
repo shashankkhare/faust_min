@@ -54,7 +54,7 @@ with {
 };
 pluck_env = en.ar(0.003, 0.015, gate_held_pluck);
 pick_noise = no.noise : fi.bandpass(2, 100.0, 5000.0);
-base_exc = pick_noise * 0.5 * pluck_env * velocity;
+base_exc = pick_noise * 1.0 * pluck_env * velocity;
 
 is_chikari = strike > 0.5;
 melody_exc = base_exc * (1 - is_chikari);
@@ -163,7 +163,9 @@ body_filter(x) =
      + (x : fi.resonbp(1800.0, 3.0,  0.55))    // NEW — lets membrane 1800 Hz pass into body
     );
 
+softclip(x) = ba.if(abs(x) < 0.9, x, 0.9 * ma.tanh(x / 0.9));
+
 // Signal path: string → membrane (skin resonance) → body (wooden bowl) → output
 // membrane_filter was previously dead code — now correctly wired into chain.
-process = summed : membrane_filter : body_filter : *(gain * 10.0) <: _,_;
+process = summed : membrane_filter : body_filter : *(gain * 2.4995) : softclip <: _,_;
 

@@ -26,7 +26,7 @@ import("stdfaust.lib");
 // UI Controls (Discrete sliders)
 // Expert Play Range: Conga fundamental typically 200-500 Hz.
 freq = hslider("freq", 200.0, 200, 500, 0.1);
-gain = hslider("gain", 0.8, 0, 1, 0.01) : si.smoo;
+gain = hslider("gain", 0.8, 0, 1, 0.01);
 velocity = hslider("velocity", 0.8, 0, 1, 0.01);
 gate = button("gate");
 position = hslider("position", 0, 0, 2, 1);
@@ -62,4 +62,4 @@ with {
 drumOutput = excitation : congaModel(freq, decayScale);
 
 // Conga has a thick leather head, so we lowpass slightly to keep it warm and woody (no high-Q bandpass cavity)
-process = (drumOutput : fi.lowpass(2, freq * 4.0)) : ma.tanh * 1.5 * gain;
+process = (drumOutput : fi.lowpass(2, freq * 4.0)) * gain * 35 : ma.tanh;

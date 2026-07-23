@@ -352,7 +352,7 @@ class FaustKickDSP : public dsp {
 			fRec0[0] = ((std::fabs(fTempFTZ11) > 1.17549435e-38f) ? fTempFTZ11 : 0.0f);
 			float fTempFTZ12 = (fSlow9 + (fConst2 * fRec14[1]));
 			fRec14[0] = ((std::fabs(fTempFTZ12) > 1.17549435e-38f) ? fTempFTZ12 : 0.0f);
-			output0[i0] = FAUSTFLOAT((37.5f * (float(tanhf(float(fRec0[0]))) * fRec14[0])));
+			output0[i0] = FAUSTFLOAT((15.0f * (float(tanhf(float(fRec0[0]))) * fRec14[0])));
 			fRec1[1] = fRec1[0];
 			fVec0[1] = fVec0[0];
 			fRec3[1] = fRec3[0];
