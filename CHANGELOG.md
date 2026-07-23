@@ -1,3 +1,14 @@
+## 5.0.0
+
+*   **50+ Calibrated Instruments**: All instruments tuned and calibrated across multiple frequencies with measured energy (RMS, peak, Goertzel) per-instrument measurement windows.
+*   **Kick Drum Gain Recalibrated**: 37.5→15 multiplier, E=0.32 P=0.84 target.
+*   **Tibetan Percussion Balance**: Chougong, LagNga, Ngachen gain tuning for balanced energy levels.
+*   **InstrumentMapper Measurement Tables**: Per-instrument `getMeasureStart()`/`getMeasureDuration()` for accurate energy measurement windows.
+*   **Goertzel Energy in test_instruments**: `--render` mode now reports Goertzel energy at fundamental frequency.
+*   **UML Sequencer & Mixer Updates**: Envelope support for track volume control.
+*   **cmake OBJECT_DEPENDS Fix**: `FaustInstrument.cpp` depends on all generated hpp headers for correct rebuild propagation.
+*   **computeRMS Stereo Fix**: Corrected stereo energy division (numFrames*2).
+
 ## 0.4.0
 
 *   **Ghatam Instrument** (ID 50): Clay pot percussion with rich midrange resonance.
