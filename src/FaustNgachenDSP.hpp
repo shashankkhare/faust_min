@@ -181,7 +181,7 @@ class FaustNgachenDSP : public dsp {
 		fConst28 = std::pow(0.00100000005f, (0.714285731f / fConst0));
 		fConst29 = (0.999979973f * fConst28);
 		fConst30 = (1.0f / fConst4);
-		fConst31 = (0.779999971f / fConst2);
+		fConst31 = (2.24250007f / fConst2);
 		fConst32 = (1.0f - fConst3);
 	}
 	
@@ -277,7 +277,7 @@ class FaustNgachenDSP : public dsp {
 		float fSlow2 = (1.0f / fSlow1);
 		float fSlow3 = (1.0f / (((fSlow2 + 1.41421354f) / fSlow1) + 1.0f));
 		float fSlow4 = float(fHslider1);
-		float fSlow5 = (0.779999971f * fSlow4);
+		float fSlow5 = (2.24250007f * fSlow4);
 		float fSlow6 = (fConst7 * fSlow0);
 		float fSlow7 = float(fButton0);
 		float fSlow8 = std::tan((fConst12 * std::max<float>(50.0f, (450.0f - (400.0f * float(fHslider2))))));

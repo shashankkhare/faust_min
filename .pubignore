@@ -1,0 +1,35 @@
+# Lock files
+assets/dsp/.~lock.*
+
+# Build artifacts
+build-*/
+build/
+
+# Test binaries and logs
+test_*
+*.log
+*.csv
+
+# Debug/test source files
+debug_*
+test*.cpp
+test*.dsp
+test*.hpp
+print_bounds.cpp
+
+# CI/editor
+.git/
+.github/
+.vscode/
+*.iml
+.metadata
+
+# Platform build dirs
+example/android/build/
+example/ios/build/
+example/linux/build/
+example/macos/build/
+example/windows/build/
+
+# Generated files
+.DS_Store

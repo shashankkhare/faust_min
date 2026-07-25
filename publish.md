@@ -1,5 +1,29 @@
 # Publishing faust_min — Cross-Platform Release Checklist
 
+## VERSIONING RULES — STRICTLY ENFORCED
+
+**NEVER VIOLATE THESE RULES. NO EXCEPTIONS.**
+
+| Change Type | Rule | Example |
+|-------------|------|---------|
+| **Minor release** | Increment minor by **0.1** (MAX) | 0.4.0 → 0.5.0, 0.5.0 → 0.6.0 |
+| **Major release** | Increment major by **1.0.0** | 0.5.0 → 1.0.0, 1.0.0 → 2.0.0 |
+| **Patch release** | Increment patch by **1** | 0.5.0 → 0.5.1, 0.5.2 → 0.5.3 |
+
+**FORBIDDEN — Will be rejected:**
+- ❌ Minor bump > 0.1 (e.g., 0.4.0 → 0.5.1 or higher)
+- ❌ Major bump > 1.0.0 (e.g., 0.5.0 → 5.0.0)
+- ❌ Any version like 5.0.0, 10.0.0 etc. — these are MAJOR versions and must only increment by 1.0.0
+
+**BEFORE PUBLISHING — Verify:**
+```bash
+# Extract current and previous version, validate bump is legal:
+# Script enforces: minor <= +0.1, major <= +1.0.0
+bash scripts/validate_version.sh
+```
+
+---
+
 ## 1. Pre-Release
 
 **CRITICAL: All builds must use `-DCMAKE_BUILD_TYPE=Release` (or `RelWithDebInfo`).**

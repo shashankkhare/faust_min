@@ -69,4 +69,4 @@ drum_mix = mem1 + mem2 + mem3 + mem4 + mem5 + pot_helmholtz + pot_sub;
 
 // Very gentle saturation (soft mallet = low membrane nonlinearity)
 // Light highpass to remove DC, gentle lowpass at ~4x fundamental for natural body roll-off
-process = (drum_mix * 0.78 * gain : fi.highpass(1, 18.0) : fi.lowpass(2, freq * 4.5)) : ma.tanh;
+process = (drum_mix * 2.2425 * gain : fi.highpass(1, 18.0) : fi.lowpass(2, freq * 4.5)) : ma.tanh;

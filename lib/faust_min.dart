@@ -24,7 +24,6 @@ import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:async';
-import 'dart:isolate';
 import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
 
@@ -966,10 +965,10 @@ class FaustMixer {
   static late final _funcAddInstToTrack = _dylib.lookupFunction<_c_mixer_add_inst_to_track, _dart_mixer_add_inst_to_track>('mixer_add_instrument_to_track');
   static late final _funcRemoveInstFromTrack = _dylib.lookupFunction<_c_mixer_remove_inst_from_track, _dart_mixer_remove_inst_from_track>('mixer_remove_instrument_from_track');
   static late final _funcSetTrackEnvelope = _dylib.lookupFunction<_c_mixer_set_track_envelope, _dart_mixer_set_track_envelope>('mixer_set_track_envelope');
-  static late final _funcSetTrackWeight = _dylib.lookupFunction<_c_mixer_set_track_weight, _dart_mixer_set_track_weight>('mixer_set_track_weight');
-  static late final _funcGetTrackWeight = _dylib.lookupFunction<_c_mixer_get_track_weight, _dart_mixer_get_track_weight>('mixer_get_track_weight');
-  static late final _funcMasterFadeIn = _dylib.lookupFunction<_c_mixer_master_fade_in, _dart_mixer_master_fade_in>('mixer_master_fade_in');
-  static late final _funcMasterFadeOut = _dylib.lookupFunction<_c_mixer_master_fade_out, _dart_mixer_master_fade_out>('mixer_master_fade_out');
+  static final _funcSetTrackWeight = _dylib.lookupFunction<_c_mixer_set_track_weight, _dart_mixer_set_track_weight>('mixer_set_track_weight');
+  static final _funcGetTrackWeight = _dylib.lookupFunction<_c_mixer_get_track_weight, _dart_mixer_get_track_weight>('mixer_get_track_weight');
+  static final _funcMasterFadeIn = _dylib.lookupFunction<_c_mixer_master_fade_in, _dart_mixer_master_fade_in>('mixer_master_fade_in');
+  static final _funcMasterFadeOut = _dylib.lookupFunction<_c_mixer_master_fade_out, _dart_mixer_master_fade_out>('mixer_master_fade_out');
 
   FaustMixer._internal() {
     _handle = _funcGetInstance();

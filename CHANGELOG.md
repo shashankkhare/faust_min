@@ -1,4 +1,8 @@
-## 5.0.0
+## 0.5.1
+
+* **Packaging fix**: Include vendored `deps/oboe` in published package for Android builds.
+
+## 0.5.0
 
 *   **50+ Calibrated Instruments**: All instruments tuned and calibrated across multiple frequencies with measured energy (RMS, peak, Goertzel) per-instrument measurement windows.
 *   **Kick Drum Gain Recalibrated**: 37.5→15 multiplier, E=0.32 P=0.84 target.

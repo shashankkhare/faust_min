@@ -68,10 +68,11 @@ packages:
   faust_min:
     dependency: "direct main"
     description:
-      path: ".."
-      relative: true
-    source: path
-    version: "5.0.0"
+      name: faust_min
+      sha256: dcf4e0b58c2a72cda889a7176ac53d57e2a11970c41866526ad6293d4767e197
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.5.1"
   ffi:
     dependency: "direct main"
     description:

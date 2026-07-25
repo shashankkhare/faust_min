@@ -16,10 +16,10 @@ import("stdfaust.lib");
 freq = hslider("freq", 200.0, 100, 1000, 0.1); // No si.smoo on freq to avoid biquad pops on note changes
 velocity = hslider("velocity", 0.8, 0, 1, 0.01); // No smoothing to preserve instant strike dynamics
 gate = button("gate");
-gain = hslider("gain", 0.6, 0, 100, 0.01) : si.smoo;
+gain = hslider("gain", 0.6, 0, 1, 0.01);
 
-// Generate trigger pulse from gate rising edge
-trig = (gate > 0) & (gate' <= 0);
+// Clean impulse from gate rising edge (same pattern as lagnga/ngachen)
+trig = gate : ba.impulsify;
 
 // Safe bounded mode filter to prevent 32-bit float limit cycle explosions
 safe_modeFilter(freq,t60,gain) = fi.tf2(b0,b1,b2,a1,a2)*gain
@@ -27,13 +27,13 @@ with {
     b0 = 1; b1 = 0; b2 = -1;
     w = 2*ma.PI*freq/ma.SR;
     r_target = pow(0.001,1/float(t60*ma.SR));
-    r = min(0.999, r_target); // HARD CAP ON RADIUS (prevents r=1.0 in 32-bit floats)
+    r = min(0.99999, r_target); // HARD CAP ON RADIUS (prevents r=1.0 in 32-bit floats)
     a1 = -2*r*cos(w);
     a2 = r^2;
 };
 
 // A transposable Church Bell using physical modal synthesis
-churchBell(f, vel, t) = excitation : _ <: par(i, 7, safe_modeFilter(modeFreqs(i), modeT60s(i), modeGains(i))) :> /(7)
+churchBell(f, vel) = excitation : _ <: par(i, 7, safe_modeFilter(modeFreqs(i), modeT60s(i), modeGains(i))) :> /(7)
 with {
     // Correct transposable churchbell ratios (pitched relative to Hum f * 1.0)
     modeFreqs(0) = f * 1.00;   // Hum
@@ -63,11 +63,13 @@ with {
     modeGains(5) = 0.4;
     modeGains(6) = 0.2;
 
-    // Excitation: 1-sample impulse scaled by velocity.
-    // Lowpass at 350 Hz simulates a soft, heavy clapper and avoids high frequency "click/rock" transients.
-    // Scaled by 1.2 to keep the resonators' initial output below the hard clipping threshold.
-    excitation = t : fi.lowpass(2, 350) * vel * 1.2;
+    // EXCITATION: Heavy metal clapper strike
+    // ba.impulsify creates clean unit impulse from gate transitions
+    // Frequency scaling: lower fundamentals need proportionally more energy
+    // No filtering: mode resonators already bandpass at their own frequencies,
+    // and fi.highpass/lowpass both attenuate single-sample impulses
+    excitation = trig * vel * 1.5 * (f / 220.0);
 };
 
-// Sum of 7 modes scaled down, filtered, soft-clipped, and multiplied by gain.
-process = churchBell(freq, velocity, trig) : fi.dcblocker : ma.tanh * gain;
+// Sum of 7 modes, filtered, soft-clipped, and multiplied by gain.
+process = churchBell(freq, velocity) : fi.dcblocker : *(gain * 12.25) : ma.tanh;
