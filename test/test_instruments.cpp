@@ -63,7 +63,7 @@ static void printEnergy(FaustInstrument* inst, double baseFreq) {
             int remaining = log.rawAudio.size() / 2; // Stereo interleaved
             for (size_t t = 0; t < targets.size(); ++t) {
                 float targetFreq = targets[t];
-                float k = (0.5f + (remaining * targetFreq) / sampleRate);
+                float k = (remaining * targetFreq) / sampleRate;
                 float omega = (2.0f * M_PI * k) / remaining;
                 float coeff = 2.0f * cos(omega);
                 float q1 = 0.0f;
@@ -98,6 +98,7 @@ static float gTestVelocity = 0.8f;
 static float gTestPressure = -1.0f; // -1 means use default or LUT
 static double gTestFrequency = -1.0; // -1 means use default test sequence
 static float gTestStrike = 0.0f; // default strike for calibration
+static bool gTestScan = false;
 
 static std::vector<double> getTestFreqsDouble(FaustInstrument* inst, const std::vector<double>& defaultFreqs) {
     if (gTestFrequency > 0.0) {
@@ -1894,6 +1895,7 @@ static void testRenderMode(int instrumentID, DSPExecutionType execType, float st
         inst->setParamImmediate("freq", static_cast<float>(freq));
         inst->setParamImmediate("velocity", gTestVelocity);
         inst->setParamImmediate("strike", gTestStrike);
+        inst->setParamImmediate("vibrato_depth", 0.0f);
         inst->noteOn(freq, gTestVelocity, gTestStrike);
 
         auto t0 = std::chrono::high_resolution_clock::now();
@@ -1913,10 +1915,10 @@ static void testRenderMode(int instrumentID, DSPExecutionType execType, float st
         float rms = computeRMS(buf.data() + startFrame * 2, measureFrames);
         float peak = computePeak(buf.data() + startFrame * 2, measureFrames);
 
-        // Goertzel energy at the fundamental frequency
-        float goertzel = 0.0f;
-        if (measureFrames > 0 && freq > 0.0) {
-            float k = (0.5f + (measureFrames * freq) / sampleRate);
+        auto goertzel = [&](float targetFreq) -> float {
+            if (measureFrames <= 0 || targetFreq <= 0.0f || targetFreq >= sampleRate * 0.5f)
+                return 0.0f;
+            float k = (measureFrames * targetFreq) / sampleRate;
             float omega = (2.0f * M_PI * k) / measureFrames;
             float coeff = 2.0f * cosf(omega);
             float q1 = 0.0f, q2 = 0.0f;
@@ -1927,11 +1929,35 @@ static void testRenderMode(int instrumentID, DSPExecutionType execType, float st
                 q1 = q0;
             }
             float magSq = q1 * q1 + q2 * q2 - q1 * q2 * coeff;
-            goertzel = sqrtf(std::max(0.0f, magSq)) / measureFrames;
-        }
+            return sqrtf(std::max(0.0f, magSq)) / measureFrames;
+        };
+
+        float gh[9] = {0.0f};
+        for (int h = 1; h <= 8; ++h)
+            gh[h] = goertzel(freq * h);
+
+        float gdiv2 = goertzel(freq / 2.0f);
+        float gdiv3 = goertzel(freq / 3.0f);
+        float gdiv4 = goertzel(freq / 4.0f);
+
+        float g_pred = goertzel(340.0f / (340.0f / freq - 0.08f));
 
         std::cout << "{ " << freq << ", " << rms
-                  << ", P=" << peak << ", G=" << goertzel << " }  (" << ms << " ms)";
+                  << ", P=" << peak << ", G=" << gh[1]
+                  << ", G2=" << gh[2] << ", G3=" << gh[3]
+                  << ", G4=" << gh[4] << ", G5=" << gh[5]
+                  << ", G6=" << gh[6] << ", G7=" << gh[7] << ", G8=" << gh[8]
+                  << ", G/2=" << gdiv2 << ", G/3=" << gdiv3 << ", G/4=" << gdiv4
+                  << " }  (" << ms << " ms)";
+
+        if (gTestScan) {
+            std::cout << "\nSCAN";
+            for (int pct = -5; pct <= 5; ++pct) {
+                float cf = freq * (1.0f + pct * 0.01f);
+                std::cout << " " << goertzel(cf);
+            }
+        }
+
         if (&freq != &freqs.back()) std::cout << " , ";
         std::cout << std::flush;
     }
@@ -1954,6 +1980,8 @@ int main(int argc, char* argv[]) {
             execType = DSPExecutionType::StaticCompiled;
         } else if (arg == "--interpreter" || arg == "-i") {
             execType = DSPExecutionType::InterpretedByte;
+        } else if (arg == "--scan") {
+            gTestScan = true;
         } else if (arg == "--render") {
             renderMode = true;
         } else {

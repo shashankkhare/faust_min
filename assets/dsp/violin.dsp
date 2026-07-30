@@ -13,6 +13,7 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 //   - bowVelocity
 //   - bowPosition
 //   - velocity
+//   - calibration
 // =============================================================================
 import("stdfaust.lib");
 
