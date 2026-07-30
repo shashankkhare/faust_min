@@ -99,13 +99,17 @@ def measure_scan(instrument_id, freq):
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=30, cwd=WORK_DIR, env=ENV)
         for line in result.stdout.split('\n'):
-            line = line.strip()
+            line = line.strip().rstrip(',').strip()
             if line.startswith('SCAN'):
                 parts = line.split()
-                if len(parts) >= 12:
-                    values = [float(p) for p in parts[1:]]
-                    if len(values) >= 11:
-                        return values[:11]
+                values = []
+                for p in parts[1:]:
+                    try:
+                        values.append(float(p))
+                    except ValueError:
+                        pass
+                if len(values) >= 11:
+                    return values[:11]
         return None
     except subprocess.TimeoutExpired:
         return None
@@ -118,7 +122,7 @@ def find_peak_offset(values):
 
 def compute_calibration_physical(freq, peak_offset_pct):
     f2l_minus_tuning = SPEED_OF_SOUND / freq - STRING_TUNING
-    return -peak_offset_pct / 100.0 * f2l_minus_tuning
+    return peak_offset_pct / 100.0 * f2l_minus_tuning
 
 
 def compute_calibration_cents(freq, peak_offset_pct):
