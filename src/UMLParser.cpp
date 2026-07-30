@@ -192,7 +192,11 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
                 seq.loop = (lowerVal == "true" || lowerVal == "1" || lowerVal == "yes");
             }
             else if (key == "delay") {
-                seq.delaySec = std::stod(val);
+                if (val.find('.') != std::string::npos) {
+                    seq.delaySec += std::stod(val);
+                } else {
+                    seq.delayGridUnits += std::stod(val);
+                }
             }
             else if (key == "measure") {
                 seq.measure = std::stoi(val);
@@ -463,8 +467,8 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
     seq.totalDurationSamples = (long)(currentGridIndex * samplesPerGrid);
 
     // Apply delay offset: shift all events and total duration
-    if (seq.delaySec > 0.0) {
-        long delaySamples = (long)(seq.delaySec * sampleRate);
+    if (seq.delaySec > 0.0 || seq.delayGridUnits > 0.0) {
+        long delaySamples = (long)(seq.delaySec * sampleRate) + (long)(seq.delayGridUnits * samplesPerGrid);
         for (auto& ev : seq.events) {
             ev.sampleOffset += delaySamples;
         }
@@ -702,6 +706,8 @@ void UMLParser::handlePitchedToken(const TokenItem& ti, float velocityScalar, lo
 
     bool nextIsNote = (nextTokenIndex < tokenItemsArray.size() &&
                        tokenItemsArray[nextTokenIndex].type == TokenType::NoteWithControl);
+                       
+    bool isEndOfSequence = (nextTokenIndex >= tokenItemsArray.size());
 
     bool shouldBypassNoteOff = false;
     if (notes.size() > 1) {
@@ -712,8 +718,21 @@ void UMLParser::handlePitchedToken(const TokenItem& ti, float velocityScalar, lo
         shouldBypassNoteOff = true; // Always bypass for NOOP/Chikari
     }
 
-    // If no glide is present, schedule a NoteOff event.
-    if (!hasGlide && !shouldBypassNoteOff) {
+    if (isEndOfSequence) {
+        long maxLA = (long)(0.03 * sampleRate);
+        long minLA = (long)(0.002 * sampleRate);
+        long propLA = durationSamples / 10;
+        long lookAhead = std::max(std::min(propLA, maxLA), minLA);
+        
+        long offOffset = sampleOffset + durationSamples - lookAhead;
+        if (offOffset <= sampleOffset) offOffset = sampleOffset + 1;
+        UMLEvent offEv;
+        offEv.sampleOffset = offOffset;
+        offEv.type = UMLEventType::NoteOff;
+        offEv.frequency = -1.0f;
+        outEvents.push_back(offEv);
+        
+    } else if (!hasGlide && !shouldBypassNoteOff) {
         long lookAhead = 0;
         if (nextIsNote) {
             long maxLA = (long)(0.03 * sampleRate);

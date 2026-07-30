@@ -157,6 +157,11 @@ private:
         std::vector<EnvelopePoint> envelope;
         float fadeGain = 1.0f;
         long envelopeStartSample = 0;
+        
+        // AGC State
+        float agcEnvelope = 1.0f;
+        float agcAttack = 0.005f;
+        float agcRelease = 0.999f;
     };
 
     // Real-Time Audio Interrupt Accumulator Endpoint

@@ -88,17 +88,16 @@ class FaustRainmakerDSP : public dsp {
 	int iRec5[2];
 	float fConst2;
 	float fConst3;
-	FAUSTFLOAT fHslider3;
 	float fConst4;
 	float fRec6[2];
 	float fRec1[3];
-	FAUSTFLOAT fHslider4;
+	FAUSTFLOAT fHslider3;
 	FAUSTFLOAT fButton0;
 	float fVec1[2];
 	float fRec7[2];
+	FAUSTFLOAT fHslider4;
 	FAUSTFLOAT fHslider5;
 	FAUSTFLOAT fHslider6;
-	FAUSTFLOAT fHslider7;
 	int iRec8[2];
 	float fVec2[2];
 	float fRec0[2];
@@ -187,12 +186,11 @@ class FaustRainmakerDSP : public dsp {
 		fHslider0 = FAUSTFLOAT(1.0f);
 		fHslider1 = FAUSTFLOAT(0.10000000000000001f);
 		fHslider2 = FAUSTFLOAT(1.0f);
-		fHslider3 = FAUSTFLOAT(220.0f);
-		fHslider4 = FAUSTFLOAT(5.0f);
+		fHslider3 = FAUSTFLOAT(5.0f);
 		fButton0 = FAUSTFLOAT(0.0f);
-		fHslider5 = FAUSTFLOAT(0.59999999999999998f);
-		fHslider6 = FAUSTFLOAT(8.0f);
-		fHslider7 = FAUSTFLOAT(5.0f);
+		fHslider4 = FAUSTFLOAT(0.59999999999999998f);
+		fHslider5 = FAUSTFLOAT(8.0f);
+		fHslider6 = FAUSTFLOAT(1.0f);
 	}
 	
 	virtual void instanceClear() {
@@ -250,48 +248,48 @@ class FaustRainmakerDSP : public dsp {
 		ui_interface->openVerticalBox("rainmaker");
 		ui_interface->addHorizontalSlider("Instrument_Material", &fHslider2, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(1.0f));
 		ui_interface->addHorizontalSlider("Tilt_Speed_Hz", &fHslider1, FAUSTFLOAT(0.100000001f), FAUSTFLOAT(0.00999999978f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
-		ui_interface->addHorizontalSlider("attack", &fHslider4, FAUSTFLOAT(5.0f), FAUSTFLOAT(0.00999999978f), FAUSTFLOAT(10.0f), FAUSTFLOAT(0.00999999978f));
-		ui_interface->addHorizontalSlider("decay", &fHslider6, FAUSTFLOAT(8.0f), FAUSTFLOAT(0.00999999978f), FAUSTFLOAT(10.0f), FAUSTFLOAT(0.00999999978f));
-		ui_interface->addHorizontalSlider("freq", &fHslider3, FAUSTFLOAT(220.0f), FAUSTFLOAT(50.0f), FAUSTFLOAT(2000.0f), FAUSTFLOAT(1.0f));
+		ui_interface->addHorizontalSlider("attack", &fHslider3, FAUSTFLOAT(5.0f), FAUSTFLOAT(0.00999999978f), FAUSTFLOAT(10.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("decay", &fHslider5, FAUSTFLOAT(8.0f), FAUSTFLOAT(0.00999999978f), FAUSTFLOAT(10.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addHorizontalSlider("gain", &fHslider0, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addButton("gate", &fButton0);
-		ui_interface->addHorizontalSlider("release", &fHslider7, FAUSTFLOAT(5.0f), FAUSTFLOAT(0.00999999978f), FAUSTFLOAT(10.0f), FAUSTFLOAT(0.00999999978f));
-		ui_interface->addHorizontalSlider("sustain", &fHslider5, FAUSTFLOAT(0.600000024f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("release", &fHslider6, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f), FAUSTFLOAT(10.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("sustain", &fHslider4, FAUSTFLOAT(0.600000024f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->closeBox();
 	}
 	
 	virtual void compute(int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs) {
 		FAUSTFLOAT* output0 = outputs[0];
-		float fSlow0 = (10.0f * float(fHslider0));
+		float fSlow0 = (5.0f * float(fHslider0));
 		float fSlow1 = (fConst1 * float(fHslider1));
-		float fSlow2 = float(((float(fHslider2) == 0.0f) ? 150 : 45));
-		float fSlow3 = (fConst3 * float(fHslider3));
-		float fSlow4 = std::max<float>(1.0f, (fConst0 * float(fHslider4)));
-		float fSlow5 = (1.0f / fSlow4);
-		float fSlow6 = float(fButton0);
-		float fSlow7 = float(fHslider5);
-		float fSlow8 = ((1.0f - fSlow7) / std::max<float>(1.0f, (fConst0 * float(fHslider6))));
-		float fSlow9 = (1.0f / std::max<float>(1.0f, (fConst0 * float(fHslider7))));
-		int iSlow10 = (fSlow6 == 0.0f);
+		int iSlow2 = (float(fHslider2) == 0.0f);
+		float fSlow3 = float((iSlow2 ? 150 : 45));
+		float fSlow4 = (fConst3 * float((iSlow2 ? 220 : 800)));
+		float fSlow5 = std::max<float>(1.0f, (fConst0 * float(fHslider3)));
+		float fSlow6 = (1.0f / fSlow5);
+		float fSlow7 = float(fButton0);
+		float fSlow8 = float(fHslider4);
+		float fSlow9 = ((1.0f - fSlow8) / std::max<float>(1.0f, (fConst0 * float(fHslider5))));
+		float fSlow10 = (1.0f / std::max<float>(1.0f, (fConst0 * float(fHslider6))));
+		int iSlow11 = (fSlow7 == 0.0f);
 		for (int i0 = 0; (i0 < count); i0 = (i0 + 1)) {
 			float fTempFTZ0 = (fSlow1 + (fRec4[1] - std::floor((fSlow1 + fRec4[1]))));
 			fRec4[0] = ((std::fabs(fTempFTZ0) > 1.17549435e-38f) ? fTempFTZ0 : 0.0f);
 			float fTempFTZ1 = ((0.999000013f * fRec2[1]) + (0.00100000005f * std::fabs(ftbl0FaustRainmakerDSPSIG0[int((65536.0f * fRec4[0]))])));
 			fRec2[0] = ((std::fabs(fTempFTZ1) > 1.17549435e-38f) ? fTempFTZ1 : 0.0f);
 			iRec5[0] = ((1103515245 * iRec5[1]) + 12345);
-			float fTempFTZ2 = (fSlow3 + (fConst4 * fRec6[1]));
+			float fTempFTZ2 = ((fConst4 * fRec6[1]) + fSlow4);
 			fRec6[0] = ((std::fabs(fTempFTZ2) > 1.17549435e-38f) ? fTempFTZ2 : 0.0f);
 			float fTemp0 = std::tan((fConst2 * fRec6[0]));
 			float fTemp1 = (1.0f / fTemp0);
 			float fTemp2 = (((fTemp1 + 0.5f) / fTemp0) + 1.0f);
-			float fTempFTZ3 = ((3.10440866e-12f * ((fRec2[0] * fSlow2) * float(iRec5[0]))) - (((fRec1[2] * (((fTemp1 + -0.5f) / fTemp0) + 1.0f)) + (2.0f * (fRec1[1] * (1.0f - (1.0f / FaustRainmakerDSP_faustpower2_f(fTemp0)))))) / fTemp2));
+			float fTempFTZ3 = ((3.10440866e-12f * ((fRec2[0] * fSlow3) * float(iRec5[0]))) - (((fRec1[2] * (((fTemp1 + -0.5f) / fTemp0) + 1.0f)) + (2.0f * (fRec1[1] * (1.0f - (1.0f / FaustRainmakerDSP_faustpower2_f(fTemp0)))))) / fTemp2));
 			fRec1[0] = ((std::fabs(fTempFTZ3) > 1.17549435e-38f) ? fTempFTZ3 : 0.0f);
 			float fTemp3 = (fTemp0 * fTemp2);
-			fVec1[0] = fSlow6;
-			float fTempFTZ4 = (fSlow6 + (fRec7[1] * float((fVec1[1] >= fSlow6))));
+			fVec1[0] = fSlow7;
+			float fTempFTZ4 = (fSlow7 + (fRec7[1] * float((fVec1[1] >= fSlow7))));
 			fRec7[0] = ((std::fabs(fTempFTZ4) > 1.17549435e-38f) ? fTempFTZ4 : 0.0f);
-			iRec8[0] = (iSlow10 * (iRec8[1] + 1));
-			float fTemp4 = (fSlow0 * (((fRec1[0] / fTemp3) + (fRec1[2] * (0.0f - (1.0f / fTemp3)))) * std::max<float>(0.0f, (std::min<float>((fSlow5 * fRec7[0]), std::max<float>(((fSlow8 * (fSlow4 - fRec7[0])) + 1.0f), fSlow7)) * (1.0f - (fSlow9 * float(iRec8[0])))))));
+			iRec8[0] = (iSlow11 * (iRec8[1] + 1));
+			float fTemp4 = (fSlow0 * (((fRec1[0] / fTemp3) + (fRec1[2] * (0.0f - (1.0f / fTemp3)))) * std::max<float>(0.0f, (std::min<float>((fSlow6 * fRec7[0]), std::max<float>(((fSlow9 * (fSlow5 - fRec7[0])) + 1.0f), fSlow8)) * (1.0f - (fSlow10 * float(iRec8[0])))))));
 			fVec2[0] = fTemp4;
 			float fTempFTZ5 = (((0.995000005f * fRec0[1]) + fTemp4) - fVec2[1]);
 			fRec0[0] = ((std::fabs(fTempFTZ5) > 1.17549435e-38f) ? fTempFTZ5 : 0.0f);

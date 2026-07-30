@@ -288,13 +288,13 @@ class FaustTanpuraDSP : public dsp {
 	virtual void instanceResetUserInterface() {
 		fHslider0 = FAUSTFLOAT(0.5f);
 		fHslider1 = FAUSTFLOAT(130.81f);
-		fHslider2 = FAUSTFLOAT(36.0f);
+		fHslider2 = FAUSTFLOAT(24.0f);
 		fHslider3 = FAUSTFLOAT(0.45000000000000001f);
 		fButton0 = FAUSTFLOAT(0.0f);
 		fHslider4 = FAUSTFLOAT(1.0f);
-		fHslider5 = FAUSTFLOAT(2.5f);
+		fHslider5 = FAUSTFLOAT(0.029999999999999999f);
 		fHslider6 = FAUSTFLOAT(0.80000000000000004f);
-		fHslider7 = FAUSTFLOAT(0.01f);
+		fHslider7 = FAUSTFLOAT(0.12f);
 	}
 	
 	virtual void instanceClear() {
@@ -381,21 +381,21 @@ class FaustTanpuraDSP : public dsp {
 	
 	virtual void buildUserInterface(UI* ui_interface) {
 		ui_interface->openVerticalBox("tanpura");
-		ui_interface->addHorizontalSlider("excDur", &fHslider7, FAUSTFLOAT(0.00999999978f), FAUSTFLOAT(9.99999975e-05f), FAUSTFLOAT(0.100000001f), FAUSTFLOAT(9.99999975e-05f));
-		ui_interface->addHorizontalSlider("excGain", &fHslider5, FAUSTFLOAT(2.5f), FAUSTFLOAT(0.0f), FAUSTFLOAT(3.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("excDur", &fHslider7, FAUSTFLOAT(0.119999997f), FAUSTFLOAT(9.99999975e-05f), FAUSTFLOAT(0.125f), FAUSTFLOAT(9.99999975e-05f));
+		ui_interface->addHorizontalSlider("excGain", &fHslider5, FAUSTFLOAT(0.0299999993f), FAUSTFLOAT(0.0f), FAUSTFLOAT(3.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addHorizontalSlider("freq", &fHslider1, FAUSTFLOAT(130.809998f), FAUSTFLOAT(130.0f), FAUSTFLOAT(300.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addHorizontalSlider("gain", &fHslider0, FAUSTFLOAT(0.5f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addButton("gate", &fButton0);
 		ui_interface->addHorizontalSlider("jivari", &fHslider3, FAUSTFLOAT(0.449999988f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addHorizontalSlider("stringGainVal", &fHslider4, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(2.0f), FAUSTFLOAT(0.00999999978f));
-		ui_interface->addHorizontalSlider("sustain", &fHslider2, FAUSTFLOAT(36.0f), FAUSTFLOAT(4.0f), FAUSTFLOAT(36.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("sustain", &fHslider2, FAUSTFLOAT(24.0f), FAUSTFLOAT(4.0f), FAUSTFLOAT(36.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addHorizontalSlider("velocity", &fHslider6, FAUSTFLOAT(0.800000012f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->closeBox();
 	}
 	
 	virtual void compute(int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs) {
 		FAUSTFLOAT* output0 = outputs[0];
-		float fSlow0 = (37.5f * float(fHslider0));
+		float fSlow0 = (45.5f * float(fHslider0));
 		float fSlow1 = float(fHslider1);
 		float fSlow2 = std::max<float>(40.0f, fSlow1);
 		float fSlow3 = float(fHslider3);

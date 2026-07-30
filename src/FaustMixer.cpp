@@ -660,15 +660,9 @@ void FaustMixer::recalculateWeights() {
     for (auto& pair : mTracks) {
         float normalizedTrackWeight = pair.second.dynamicWeight * trackMultiplier;
         
-        float totalInstWeight = 0.0f;
         for (auto& tInst : pair.second.instruments) {
-            totalInstWeight += tInst.instrumentWeight;
-        }
-        float instMultiplier = (totalInstWeight > 0.0f) ? (1.0f / totalInstWeight) : 1.0f;
-        
-        for (auto& tInst : pair.second.instruments) {
-            float normalizedInstWeight = tInst.instrumentWeight * instMultiplier;
-            tInst.effectiveWeight = normalizedTrackWeight * normalizedInstWeight;
+            // Ignored instrument weight entirely as requested. Raw summation hits the AGC!
+            tInst.effectiveWeight = normalizedTrackWeight;
         }
     }
 }
@@ -755,36 +749,68 @@ inline void FaustMixer::accumulateInstrumentChannels(float* stereoOutput, int nu
     }
     bool hasReverb = false;
 
-    // Accumulate results into stereoOutput
+    // Accumulate results into stereoOutput using Per-Track AGC
     float peakMix = 0.0f;
-    for (int slot = 0; slot < workCount; slot++) {
-        FaustInstrument* inst = activeList[slot];
-        float effectiveWeight = activeWeights[slot];
-        float trackFade = activeFadeGains[slot];
+    for (auto& pair : mTracks) {
+        int trackID = pair.first;
+        MixerTrack& track = pair.second;
         
-        float* sourceBuffer = mInstrumentBuffers[slot];
-        float revSend = inst->getReverbSend();
-        if (revSend > 0.0f) hasReverb = true;
-
-        float instPeak = 0.0f;
         for (int i = 0; i < numFrames; ++i) {
-            float scaledSampleL = sourceBuffer[i * 2] * effectiveWeight * trackFade;
-            float scaledSampleR = sourceBuffer[i * 2 + 1] * effectiveWeight * trackFade;
+            float summedL = 0.0f;
+            float summedR = 0.0f;
+            float revSendL = 0.0f;
+            float revSendR = 0.0f;
+            float normalizedTrackWeight = 1.0f; // Track weight to apply AFTER AGC
             
-            float peak = std::max(std::abs(scaledSampleL), std::abs(scaledSampleR));
-            if (peak > instPeak) instPeak = peak;
-            
-            stereoOutput[i * 2] += scaledSampleL;
-            stereoOutput[i * 2 + 1] += scaledSampleR;
-
-            if (revSend > 0.0f) {
-                mReverbInL[i] += scaledSampleL * revSend;
-                mReverbInR[i] += scaledSampleR * revSend;
+            // 1. Raw sum all instruments assigned to this track
+            for (int slot = 0; slot < workCount; slot++) {
+                if (instrumentToTrackMap[slot] == trackID) {
+                    float* sourceBuffer = mInstrumentBuffers[slot];
+                    float revSend = activeList[slot]->getReverbSend();
+                    if (revSend > 0.0f) hasReverb = true;
+                    
+                    // Note: activeWeights[slot] stores normalizedTrackWeight
+                    normalizedTrackWeight = activeWeights[slot]; 
+                    
+                    // Raw instruments (NO weights applied yet)
+                    float rawL = sourceBuffer[i * 2];
+                    float rawR = sourceBuffer[i * 2 + 1];
+                    
+                    summedL += rawL;
+                    summedR += rawR;
+                    
+                    if (revSend > 0.0f) {
+                        revSendL += rawL * revSend;
+                        revSendR += rawR * revSend;
+                    }
+                }
             }
             
-            float mixAbsL = std::abs(stereoOutput[i * 2]);
-            float mixAbsR = std::abs(stereoOutput[i * 2 + 1]);
-            float mixPeak = std::max(mixAbsL, mixAbsR);
+            // 2. Apply Per-Track AGC to limit raw sum to 1.0
+            float currentPeak = std::max(std::abs(summedL), std::abs(summedR));
+            if (currentPeak > track.agcEnvelope) {
+                track.agcEnvelope = track.agcAttack * currentPeak + (1.0f - track.agcAttack) * track.agcEnvelope;
+            } else {
+                track.agcEnvelope = track.agcRelease * track.agcEnvelope + (1.0f - track.agcRelease) * currentPeak;
+            }
+            float agcMultiplier = 1.0f / std::max(1.0f, track.agcEnvelope);
+            
+            // 3. Apply the actual Track Weight AND Fade Gain to the final AGC output
+            float trackFade = track.fadeGain;
+            float finalMultiplier = agcMultiplier * normalizedTrackWeight * trackFade;
+            
+            float finalL = summedL * finalMultiplier;
+            float finalR = summedR * finalMultiplier;
+            
+            stereoOutput[i * 2] += finalL;
+            stereoOutput[i * 2 + 1] += finalR;
+            
+            if (hasReverb) {
+                mReverbInL[i] += revSendL * finalMultiplier;
+                mReverbInR[i] += revSendR * finalMultiplier;
+            }
+            
+            float mixPeak = std::max(std::abs(stereoOutput[i * 2]), std::abs(stereoOutput[i * 2 + 1]));
             if (mixPeak > peakMix) peakMix = mixPeak;
         }
     }

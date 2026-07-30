@@ -95,4 +95,4 @@ drum_mix = sym1 + sym2 + sym3 + sym4 + ant1 + ant2 + body;
 // Soft tanh saturation models membrane nonlinearity on hard strike.
 // Lowpass extended to 8x fundamental so it doesn't muffle the bright wooden stick attack.
 // Using softer drive (5.0 instead of 10.0) to prevent overdrive/clipping at the tail end.
-process = (drum_mix * gain * 40.03) : fi.lowpass(1, freq * 8.0) : ma.tanh;
+process = (drum_mix * gain * 1.0) : fi.lowpass(1, freq * 8.0) : ma.tanh;

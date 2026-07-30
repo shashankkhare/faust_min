@@ -123,18 +123,30 @@ void playSequenceGroup(FaustMixer& mixer, SequenceOrchestrator& orch, SequenceGr
         
         int id = seqPair.second->instrumentID;
         int targetTrack = melodyTrack;
-        // Background (ambient/drone/accompaniment)
+        // Background (ambient/drone/accompaniment/harmony/bass)
         if (id == 11 || id == 19 || id == 27 || id == 34 || id == 41 || id == 42 ||
-            (id == 54 && group.name == "Sarod & Harmonium — Raag Yaman")) {
+            (id == 54 && group.name == "Sarod & Harmonium — Raag Yaman") ||
+            seqPair.first.find("Cello") != std::string::npos ||
+            seqPair.first.find("ViolinH") != std::string::npos ||
+            seqPair.first.find("Piano") != std::string::npos) {
             targetTrack = backgroundTrack;
         // Membrane percussion → percussion bus
         } else if (InstrumentMapper::isMembraneophone(id)) {
             targetTrack = percussionTrack;
-        // Idiophones stay on melodyTrack (default)
+        // Idiophones & Melody stay on melodyTrack (default)
         }
         
+        float instWeight = 1.0f;
+        if (seqPair.first.find("Cello") != std::string::npos) {
+            instWeight = 2.0f; // Boost cellos
+        } else if (seqPair.first.find("ViolinH") != std::string::npos) {
+            instWeight = 0.6f; // Push harmony violins slightly back
+        } else if (seqPair.first.find("Timpani") != std::string::npos) {
+            instWeight = 0.3f; // Greatly reduce timpani to prevent speaker cracking
+        }
+
         if (seqPair.second->getFaustInstrument()) {
-            mixer.addInstrumentToTrack(targetTrack, seqPair.second->getFaustInstrument());
+            mixer.addInstrumentToTrack(targetTrack, seqPair.second->getFaustInstrument(), instWeight);
         }
     }
 
@@ -266,7 +278,8 @@ int main(int argc, char* argv[]) {
             std::cout << " 10. Sarod & Harmonium — Raag Yaman" << std::endl;
             std::cout << " 11. Carnatic Classical — Raag Hamsadhwani (Violin, Mridangam, Ghatam)" << std::endl;
             std::cout << " 12. Last of the Mohicans — Promontory & Elk Hunt (Panflute, NAF, Rainmaker, Dhol)" << std::endl;
-            std::cout << ">>> Enter selection (1-12): ";
+            std::cout << " 13. Vivaldi Spring Ensemble (20 Instruments Load Test)" << std::endl;
+            std::cout << ">>> Enter selection (1-13): ";
             if (!(std::cin >> selection)) {
                 break;
             }
@@ -1200,10 +1213,75 @@ int main(int argc, char* argv[]) {
             group.melodyTrackWeight = 1.8f;
             group.backgroundTrackWeight = 0.5f;
             duration = -1;
-        }
+        } else if (selection == 13) {
+            group.name = "Vivaldi Spring Ensemble (20 Instruments Load Test)";
+            
+            std::string umlViolinM = 
+                "grid: 4\nbpm: 100\ninstrument: violin\nnotation: Western\nloop: false\n\n"
+                "5E4. 5G#4. 5G#4. 5G#4. 5F#4. 5E4. 6B4... "
+                "5E4. 5G#4. 5G#4. 5G#4. 5F#4. 5E4. 6B4... "
+                "6B4. 6C#5. 6B4. 6A4. 5G#4. 4F#4. 3E4 2E4 1E4 0E4";
+                
+            std::string umlViolinH = 
+                "grid: 4\nbpm: 100\ninstrument: violin\nnotation: Western\nloop: false\n\n"
+                "5C#4. 5E4. 5E4. 5E4. 5D#4. 5C#4. 6G#4... "
+                "5C#4. 5E4. 5E4. 5E4. 5D#4. 5C#4. 6G#4... "
+                "6G#4. 6A4. 6G#4. 6F#4. 5E4. 4D#4. 3C#4 2C#4 1C#4 0C#4";
 
-        if (!group.sequences.empty()) {
-            if (timeoutSec > 0 && duration != -1) duration = timeoutSec;
+            std::string umlBass = 
+                "grid: 4\nbpm: 100\ninstrument: cello\nnotation: Western\nloop: false\n\n"
+                "5E2. 5E2. 5E2. 5E2. 5B1. 5B1. 5E2... "
+                "5E2. 5E2. 5E2. 5E2. 5B1. 5B1. 5E2... "
+                "5E2. 5A1. 5E2. 5B1. 5E2. 5B1. 5E2... ";
+
+            std::string umlFlute = 
+                "grid: 4\nbpm: 100\ninstrument: flute\nnotation: Western\nloop: false\n\n"
+                "5E5. 5G#5. 5G#5. 5G#5. 5F#5. 5E5. 6B5... "
+                "5E5. 5G#5. 5G#5. 5G#5. 5F#5. 5E5. 6B5... "
+                "6B5. 6C#6. 6B5. 6A5. 5G#5. 4F#5. 3E5 2E5 1E5 0E5";
+                
+            std::string umlTimpani = 
+                "grid: 4\nbpm: 100\ninstrument: tom\nnotation: Western\nloop: false\n\n"
+                "5E2... 5E2... 5E2... 5E2... 5B1... 5B1... 5E2... "
+                "5E2... 5E2... 5E2... 5E2... 5B1... 5B1... 5E2... "
+                "5E2... 5A1... 5E2... 5B1... 5E2... 5B1... 5E2... ";
+
+            std::string umlTrumpet = 
+                "grid: 4\nbpm: 100\ninstrument: trumpet\nnotation: Western\nloop: false\n\n"
+                "5E4... 5E4... 5E4... 5E4... 5B3... 5B3... 5E4... "
+                "5E4... 5E4... 5E4... 5E4... 5B3... 5B3... 5E4... "
+                "5E4... 5A3... 5E4... 5B3... 5E4... 5B3... 5E4... ";
+
+            std::string umlPiano = 
+                "delay: 48\ngrid: 4\nbpm: 100\ninstrument: piano\nnotation: Western\nloop: false\n\n"
+                "5E4. 5G#4. 5G#4. 5G#4. 5F#4. 5E4. 6B4... "
+                "5E4. 5G#4. 5G#4. 5G#4. 5F#4. 5E4. 6B4... "
+                "6B4. 6C#5. 6B4. 6A4. 6G#4. 6F#4. 6E4... ";
+
+            auto buildUml = [](const std::string& baseUml, int instanceNum) {
+                float delay = (instanceNum - 1) * 0.015f; // 15ms stagger to humanize/chorus
+                float vibRate = 4.5f + (instanceNum * 0.15f); // slightly different vibrato rates
+                return "delay: " + std::to_string(delay) + "\n" +
+                       "vibrato_rate: " + std::to_string(vibRate) + "\n" +
+                       "vibrato_depth: 0.03\n" + baseUml;
+            };
+
+            // 20 instruments total - Start with 1, and uncomment the rest one by one to incrementally test the load
+            for(int i=1; i<=1; i++) group.sequences.push_back({"ViolinM"+std::to_string(i), new UMLSequence("ViolinM"+std::to_string(i), 18, buildUml(umlViolinM, i))});
+            for(int i=2; i<=5; i++) group.sequences.push_back({"ViolinM"+std::to_string(i), new UMLSequence("ViolinM"+std::to_string(i), 18, buildUml(umlViolinM, i))});
+            
+            // --- COMMENTED OUT FOR INCREMENTAL LOAD TESTING ---
+            for(int i=1; i<=4; i++) group.sequences.push_back({"ViolinH"+std::to_string(i), new UMLSequence("ViolinH"+std::to_string(i), 18, buildUml(umlViolinH, i))});
+            for(int i=1; i<=4; i++) group.sequences.push_back({"Cello"+std::to_string(i), new UMLSequence("Cello"+std::to_string(i), 24, buildUml(umlBass, i))});
+            // for(int i=1; i<=3; i++) group.sequences.push_back({"Flute"+std::to_string(i), new UMLSequence("Flute"+std::to_string(i), 10, buildUml(umlFlute, i))});
+            for(int i=1; i<=2; i++) group.sequences.push_back({"Timpani"+std::to_string(i), new UMLSequence("Timpani"+std::to_string(i), 5, buildUml(umlTimpani, i))});
+            // for(int i=1; i<=2; i++) group.sequences.push_back({"Trumpet"+std::to_string(i), new UMLSequence("Trumpet"+std::to_string(i), 15, buildUml(umlTrumpet, i))});
+            for(int i=1; i<=2; i++) group.sequences.push_back({"Piano"+std::to_string(i), new UMLSequence("Piano"+std::to_string(i), 12, buildUml(umlPiano, i))});
+
+            group.melodyTrackWeight = 1.0f;
+            group.percussionTrackWeight = 0.10f;
+            group.backgroundTrackWeight = 0.45f;
+            if (timeoutSec > 0) duration = timeoutSec;
             playSequenceGroup(mixer, orch, group, duration);
         } else {
             std::cout << "Invalid selection. Please try again." << std::endl;

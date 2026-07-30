@@ -37,6 +37,10 @@ bowPosition       = hslider("bowPosition", 0.15, 0.0, 1.0, 0.001) : si.smoo;
 // velocity slider acts as note articulation style (Default: 0.5 = 75ms attack)
 velocity = hslider("velocity", 0.5, 0.0, 1.0, 0.01);
 
+// Calibration: frequency-dependent string length offset to correct pitch drift
+// (set automatically by CSV LUT; 0 = no correction)
+calibration = hslider("calibration", 0.0, -0.1, 0.1, 0.001) : si.smoo;
+
 // Linearly map velocity to attack time up to 150ms
 attackTime  = velocity * 0.150; 
 releaseTime = 0.030; // Snappy 30ms release to clear fast note transitions
@@ -77,7 +81,7 @@ humanizedFreq = f + drift + vibratoLFO;
 // DC blocker (fi.dcblocker) removes any DC offset accumulated in the waveguide feedback
 // loop which can build up during model instability. Hard clip at ±1.0 prevents any
 // momentary instability from corrupting the audio output stream.
-process = pm.violinModel(pm.f2l(humanizedFreq), bowPressure, bowVelocity, bowPosition)
+process = pm.violinModel(pm.f2l(humanizedFreq) + calibration, bowPressure, bowVelocity, bowPosition)
           : fi.dcblocker
           : max(-1.0, min(1.0))
           : *(bodyCompGain)

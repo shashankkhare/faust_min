@@ -86,6 +86,7 @@ public:
     std::string umlData;
     bool loop = false;
     double delaySec = 0.0; // delay before first note, in seconds
+    double delayGridUnits = 0.0; // delay before first note, in grid units
     int measure = 0; // display-only: number of beats per measure (e.g., 4 for 4/4)
 
     std::vector<UMLRawNote> rawNotes;

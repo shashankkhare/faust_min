@@ -27,7 +27,7 @@ Control the temporal layout, timing, and orchestration of the sequence.
 | `gain` | `Number` | Global gain multiplier for this sequence. |
 | `loop` | `bool` | If `true`, the sequence repeats indefinitely. Default: `false`. |
 | `measure` | `int` | Display-only: number of beats per measure (e.g., `4` for 4/4). Not used by the parser. |
-| `delay` | `float` (seconds) | Seconds of silence before the first note. The sequence starts with `delay` seconds of rest, then plays normally. Useful for aligning sequences to start at different times (e.g., a voice entry after an instrumental section). Default: `0`. |
+| `delay` | `float` / `int` | The initial rest/silence before the sequence starts playing. Dual-mode parsing: If the value contains a decimal point (e.g., `10.5`), it is parsed as absolute **seconds**. If it is an integer (e.g., `48`), it is parsed as **grid units**. This allows you to lock delays to the tempo/grid, or use absolute time for micro-timing. Values accumulate if multiple delay tags are provided. |
 | `exectype` | `static` / `interpreter` | DSP execution mode. Default: `static`. |
 
 ### 1.2 Instrument-Play Parameters

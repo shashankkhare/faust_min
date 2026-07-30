@@ -31,11 +31,15 @@
 #include "UMLParser.hpp"
 #include "InstrumentMapper.hpp"
 #include <chrono>
+#if DEBUG_ORCHESTRATOR
 #define TLOG(msg) do { \
     auto __now = std::chrono::steady_clock::now(); \
     auto __us = std::chrono::duration_cast<std::chrono::microseconds>(__now.time_since_epoch()).count(); \
     printf("[TIMESTAMP %ld] %s\n", __us, msg); fflush(stdout); \
 } while(0)
+#else
+#define TLOG(msg) do {} while(0)
+#endif
 
 #include <faust/dsp/dsp.h>
 #ifndef FAUST_DISABLE_INTERPRETER
@@ -64,6 +68,15 @@ inline long getDeterministicJitter(size_t eventIndex, int instID) {
     hash = ((hash >> 16) ^ hash) * 0x45d9f3b;
     hash = (hash >> 16) ^ hash;
     return static_cast<long>(hash % 961) - 480; // +/- 10ms at 48kHz
+}
+
+inline float getDeterministicVelocityJitter(size_t eventIndex, int instID) {
+    uint32_t hash = static_cast<uint32_t>((eventIndex * 31) ^ (instID << 12));
+    hash = ((hash >> 16) ^ hash) * 0x45d9f3b;
+    hash = ((hash >> 16) ^ hash) * 0x45d9f3b;
+    hash = (hash >> 16) ^ hash;
+    // Map to [-0.05, 0.05] for +/- 5% jitter
+    return (static_cast<float>(hash % 1001) / 1000.0f) * 0.10f - 0.05f;
 }
 
 SequenceOrchestrator::SequenceOrchestrator() {
@@ -640,6 +653,13 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
                                 dynamicVelocity = baseVelocity + (1.0f - baseVelocity) * (1.0f - r);
                             }
                             
+                            if (mHumanize.load(std::memory_order_relaxed)) {
+                                float vJitter = getDeterministicVelocityJitter(seqWrapper->nextEventIndex, seqWrapper->sequenceObj->instrumentID);
+                                dynamicVelocity *= (1.0f + vJitter);
+                                if (dynamicVelocity > 1.0f) dynamicVelocity = 1.0f;
+                                if (dynamicVelocity < 0.0f) dynamicVelocity = 0.0f;
+                            }
+                            
                             float baseGlide = inst->getDSPGlideParam();
                             if (seqWrapper->sequenceObj->initialParams.count("glide")) {
                                 baseGlide = seqWrapper->sequenceObj->initialParams["glide"];
@@ -727,6 +747,15 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
                             if (seqWrapper->sequenceObj->initialParams.count("vibrato_rate")) {
                                 vRate = seqWrapper->sequenceObj->initialParams["vibrato_rate"];
                             }
+                            
+                            if (mHumanize.load(std::memory_order_relaxed)) {
+                                float jitterOffset = ((float)rand() / RAND_MAX - 0.5f) * 0.05f; // +/- 2.5% depth jitter
+                                vDepth += vDepth * jitterOffset;
+                                
+                                float rateJitter = ((float)rand() / RAND_MAX - 0.5f) * 0.1f; // +/- 5% speed jitter
+                                vRate += vRate * rateJitter;
+                            }
+                            
                             inst->setParam("vibrato", vMaster);
                             inst->setParam("vibrato_depth", vDepth);
                             inst->setParam("vibrato_rate", vRate);

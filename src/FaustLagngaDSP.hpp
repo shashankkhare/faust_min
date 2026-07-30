@@ -287,7 +287,7 @@ class FaustLagngaDSP : public dsp {
 		float fSlow1 = (1.0f / std::tan((fConst1 * fSlow0)));
 		float fSlow2 = (1.0f / (fSlow1 + 1.0f));
 		float fSlow3 = (1.0f - fSlow1);
-		float fSlow4 = (40.0299988f * float(fHslider1));
+		float fSlow4 = float(fHslider1);
 		float fSlow5 = std::tan((fConst2 * std::max<float>(400.0f, (2800.0f - (2100.0f * float(fHslider2))))));
 		float fSlow6 = (1.0f / fSlow5);
 		float fSlow7 = (1.0f / (((fSlow6 + 1.41421354f) / fSlow5) + 1.0f));
