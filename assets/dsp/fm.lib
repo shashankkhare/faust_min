@@ -39,6 +39,7 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 //   exc_gain    — gain on the injected excitation
 //   trigger     — gate (0/1); enables excitation injection
 //   exc_signal  — noise/impulse driving the string
+//   cal         — pitch calibration in cents (0=no shift, ±100 max)
 //
 // =============================================================================
 // DEPENDENCIES
@@ -51,10 +52,12 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 // ===================================================================
 // sitar_string — waveguide string with asymmetric tanh jawari
 // ===================================================================
-sitar_string(f, sus_time, jivari_val, exc_gain, trigger, exc_signal) = melody_output
+sitar_string(f, sus_time, jivari_val, exc_gain, trigger, exc_signal, cal) = melody_output
 with {
+    cfreq = f * pow(2, cal/1200);
+
     // 1. Delay: integer + fractional for pitch accuracy
-    del = ma.SR / max(40.0, f);
+    del = ma.SR / max(40.0, cfreq);
     int_del = int(del);
     frac_del = del - int_del;
 
@@ -77,8 +80,118 @@ with {
 
     // 5. Envelope-following time-varying modulation
     string_envelope = raw_wave : an.amp_follower(0.030);
-    mod_depth = (300.0 / max(40.0, f)) * jivari_val * 4.5 * string_envelope;
-    external_modulator = os.osc(f) * mod_depth;
+    mod_depth = (300.0 / max(40.0, cfreq)) * jivari_val * 4.5 * string_envelope;
+    external_modulator = os.osc(cfreq) * mod_depth;
 
     melody_output = de.fdelayltv(1, 1024, max(1.0, 4.0 + external_modulator), raw_wave);
 };
+
+// ===================================================================
+// fluteModel — cylindrical bore waveguide (Western classical flute)
+// ===================================================================
+//
+// Noise-excited digital waveguide for a cylindrical tube with a DC-
+// blocking highpass in the feedback path to suppress subharmonics.
+// Supports both open-open (flute, f = v/2L) and open-closed
+// (clarinet, f = v/4L) configurations via the `mode` parameter.
+//
+// DESIGN
+// ===================================================================
+//
+// Open-open tube:     delay = SR / freq   (full period, f = v/2L)
+// Open-closed tube:   delay = SR / (freq * 2) (half period, f = v/4L)
+//
+//   1. DELAY LINE — integer + fractional (fdelay1a allpass)
+//   2. NOISE EXCITATION — white noise highpassed at freq*0.5 to
+//      suppress subharmonic buildup; gain scaled by pressure × breathEnv
+//   3. FEEDBACK — fixed per-sample gain (0.999); ~3% loss/cycle at 440 Hz
+//   4. DC BLOCKER — first-order highpass at 15 Hz in feedback path to
+//      prevent DC accumulation without detuning the fundamental
+//
+// PARAMETERS
+// ===================================================================
+//   freq        — target fundamental frequency in Hz (before calibration)
+//   pressure    — breath pressure [0..1]; scales noise injection level
+//   breathEnv   — continuous breath envelope signal (0 = silent, 1 = full)
+//   mouthPos    — embouchure position [0..1]; NOT USED in current model
+//   loss        — tube loss [0..1]; NOT USED in current model (fixed gain)
+//   mode        — 0 = open-open (flute), 1 = open-closed (clarinet)
+//   cal         — pitch calibration in cents (±100 max); cfreq = freq × 2^(cal/1200)
+//
+// ===================================================================
+// CALIBRATION
+// ===================================================================
+//
+// Self-calibrating via pitchcorrect.py. Uses `<instrument_name>_calibration`
+// column in CSV. Calibration model: `cents`, where `cfreq = freq × 2^(cal/1200)`.
+//
+// ===================================================================
+// DEPENDENCIES
+// ===================================================================
+//   stdfaust.lib — ma.SR, de.delay, de.fdelay1a, no.noise,
+//                  fi.highpass
+//
+// ===================================================================
+
+fluteModel(freq, pressure, breathEnv, mouthPos, loss, mode, cal) = output
+with {
+    // 1. BASE TARGET PERIOD (in samples)
+    target_period = ma.SR / max(40.0, freq);
+
+    // 2. PRECISION CALIBRATION ENGINE
+    // We apply your 'cal' slider/parameter directly to the acoustic period.
+    // Negative cal values lengthen the tube (lower pitch), positive values shorten it (raise pitch).
+    calibrated_period = target_period * pow(2.0, -cal / 1200.0);
+
+    // Half-wave acoustic bore calculation with fixed filter group-delay offset (~2.5 samples)
+    bore_del = (calibrated_period * 0.5) - 2.5;
+
+    // 3. JET PRE-DELAY
+    jet_del = (calibrated_period * 0.5) * max(0.02, mouthPos * 0.45);
+
+    // Isolate integer and fractional parts for the main bore tracking
+    int_bore = int(bore_del);
+    frac_bore = bore_del - int_bore;
+
+    // Stable wall loss lowpass parameters
+    wall_cutoff = 8500.0 - (loss * 6500.0);
+    g_wall = 0.990 - (loss * 0.04); 
+
+    // Streamlined Excitation Architecture
+    dynamic_noise_gain = 0.002 + (pow(mouthPos, 2.0) * 0.025);
+    breath_drive = pressure * breathEnv;
+    noise = no.noise : fi.highpass(2, max(40.0, freq * 0.6));
+    noise_injection = noise * breath_drive * dynamic_noise_gain;
+    excitation = breath_drive + noise_injection;
+
+    // Physical interaction loop at the labium split point
+// Physical interaction loop at the labium split point
+    flute_loop(bore_reflection) = net_pressure
+    with {
+        // Balanced physical jet phase inversion 
+        delayed_jet = excitation - bore_reflection : de.delay(16384, int(jet_del));
+        
+        // --- SELF-RECOVERING SMOOTH CLIPPER ---
+        // Clipping slightly wider (1.1) ensures the derivative slope never hits absolute zero.
+        // This prevents the feedback loop from freezing in a zero-gain black hole.
+        clipped_jet = max(-1.1, min(1.1, delayed_jet));
+        jet_wave = clipped_jet - (pow(clipped_jet, 3.0) * 0.3333);
+        
+        // Micro-stimulus: We leak a tiny fraction of raw breath excitation past the clip.
+        // This acts as an acoustic spark plug to restart the engine if it ever breaks down.
+        recovery_stimulus = excitation * 0.0001;
+        
+        net_pressure = jet_wave - bore_reflection + recovery_stimulus;
+    };
+    // Main acoustic body loop containing precise fractional reflections
+    raw_wave = flute_loop ~ (
+        de.delay(16384, int_bore)                     
+        : de.fdelay1a(1024, frac_bore)                 
+        : fi.dcblocker                                 
+        : fi.lowpass(1, wall_cutoff)                   
+        : * (g_wall)                                   
+    );
+
+    output = raw_wave;
+};
+

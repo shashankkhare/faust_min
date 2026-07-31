@@ -25,10 +25,13 @@ foreach(DSP_FILE ${DSP_FILES})
     endif()
     set(HPP_FILE "${CMAKE_CURRENT_SOURCE_DIR}/Faust${CAP_NAME}DSP.hpp")
     
+    # All DSPs that import("fm.lib") depend on it
+    set(LIB_DEPS "")
+    list(APPEND LIB_DEPS "${CMAKE_CURRENT_SOURCE_DIR}/../assets/dsp/fm.lib")
     add_custom_command(
         OUTPUT ${HPP_FILE}
         COMMAND faust -lang cpp -es 1 -single -ftz 1 -I ${CMAKE_CURRENT_SOURCE_DIR}/faust_arch -cn Faust${CAP_NAME}DSP ${DSP_FILE} -o ${HPP_FILE}
-        DEPENDS ${DSP_FILE}
+        DEPENDS ${DSP_FILE} ${LIB_DEPS}
         COMMENT "Auto-compiling Faust DSP: ${DSP_NAME} (-single) -> Faust${CAP_NAME}DSP.hpp"
     )
     list(APPEND FAUST_GENERATED_HEADERS ${HPP_FILE})

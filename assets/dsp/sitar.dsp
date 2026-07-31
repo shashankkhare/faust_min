@@ -24,6 +24,7 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 import("stdfaust.lib");
 import("fm.lib");
 freq = hslider("freq [unit:Hz]", 138.6, 130, 900, 0.01); 
+cal = hslider("calibration", 0.0, -100.0, 100.0, 0.01) : si.smoo;
 gate = button("gate");
 gain = hslider("gain", 0.3, 0, 1, 0.01); 
 velocity = hslider("velocity", 0.6, 0, 1, 0.01);
@@ -78,7 +79,7 @@ chikari_exc_signal = pick_noise * chikari_pluck_env * velocity;
 mizrab_scale = ba.if(is_mizrab, 1.4, 1.0);
 melody_gain = ba.if(is_mizrab, 0.65, 0.40);
 // Pulls energy directly from the master excitation source
-melody_output = sitar_string(melody_freq, sustain_knob, jivari * mizrab_scale, melody_gain, (is_melody + is_mizrab), master_exc_signal);
+melody_output = sitar_string(melody_freq, sustain_knob, jivari * mizrab_scale, melody_gain, (is_melody + is_mizrab), master_exc_signal, cal);
 
 // --- INSTANCE 2 & 3: Chikari Drone Strings ---
     chikari_freq1 = chikari_freq * 2.0; 
@@ -86,8 +87,8 @@ melody_output = sitar_string(melody_freq, sustain_knob, jivari * mizrab_scale, m
 
 // FIXED LOGIC: Chikari instances are now driven directly by the latched trigger excitation channel.
 // Setting 'strike = 1' and clicking 'gate' will now cleanly fire and sustain the drone overtones naturally.
-chikariLoop = ( sitar_string(chikari_freq1, 1.8, jivari * 0.7, 0.35, chikari_trig, chikari_exc_signal)
-              + sitar_string(chikari_freq2, 1.8, jivari * 0.7, 0.35, chikari_trig, chikari_exc_signal)
+chikariLoop = ( sitar_string(chikari_freq1, 1.8, jivari * 0.7, 0.35, chikari_trig, chikari_exc_signal, 0)
+              + sitar_string(chikari_freq2, 1.8, jivari * 0.7, 0.35, chikari_trig, chikari_exc_signal, 0)
               ) * 0.5;
 
 played_strings = melody_output + chikariLoop;
@@ -95,8 +96,8 @@ played_strings = melody_output + chikariLoop;
 // --- INSTANCE 4, 5 & 6: Sympathetic Taraf Strings ---
 symp_trigger = pluck_env : si.smoo;
 
-symp_string(multiplier, hz_offset) = sitar_string(t_freq, sustain_knob * 1.5, jivari * 0.45, 0.35, symp_trigger, played_strings)
-with { t_freq = max((freq * multiplier) + (hz_offset * symp_drift_hz), 40.0); };
+symp_string(multiplier, hz_offset) = sitar_string(t_freq, sustain_knob * 1.5, jivari * 0.45, 0.35, symp_trigger, played_strings, cal)
+with {     t_freq = max((freq * multiplier) + (hz_offset * symp_drift_hz), 40.0); };
 
 symp_strings_ks = ( symp_string(1.5,  0.6)  
                   + symp_string(2.0, -0.4)  

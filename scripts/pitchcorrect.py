@@ -35,6 +35,15 @@ NAME_TO_ID = {v: k for k, v in NAMES.items()}
 STRING_TUNING = 0.08
 SPEED_OF_SOUND = 340.0
 
+# Which calibration model each instrument expects (cents vs physical)
+MODEL_MAP = {
+    9:  'cents',    # sitar: cfreq = freq * 2^(cal/1200)
+    10: 'cents',    # flute: cfreq = freq * 2^(cal/1200)
+    12: 'cents',    # piano: cfreq = freq * 2^(cal/1200)
+    18: 'physical', # violin: pm.f2l(freq) + cal (string length offset)
+    44: 'cents',    # sarod: cfreq = freq * 2^(cal/1200)
+}
+
 
 def resolve_id(name_or_id):
     try:
@@ -126,7 +135,9 @@ def compute_calibration_physical(freq, peak_offset_pct):
 
 
 def compute_calibration_cents(freq, peak_offset_pct):
-    return round(-peak_offset_pct * 10.0, 2)
+    ratio = 1.0 + peak_offset_pct / 100.0
+    cents = 1200.0 * math.log2(ratio)
+    return round(-cents, 2)
 
 
 def main():
@@ -134,8 +145,6 @@ def main():
     parser.add_argument("instrument", help="Instrument name or ID")
     parser.add_argument("--column", default="calibration",
                         help="Column name for correction values (default: calibration)")
-    parser.add_argument("--model", choices=['physical', 'cents'], default='physical',
-                        help="Correction model: physical (string length offset) or cents (default: physical)")
     parser.add_argument("--yes", "-y", action="store_true",
                         help="Skip interactive prompts")
     parser.add_argument("--skip-verify", action="store_true",
@@ -149,6 +158,14 @@ def main():
 
     instrument_id, instrument_name = resolve_id(args.instrument)
     path = csv_path(instrument_name)
+
+    if instrument_id not in MODEL_MAP:
+        print(f"ERROR: '{instrument_name}' (ID {instrument_id}) has no calibration model defined.")
+        print("Add an entry to MODEL_MAP in this script before running pitch correction.")
+        sys.exit(1)
+
+    args.model = MODEL_MAP[instrument_id]
+    print(f"Model: {args.model}")
 
     print(f"Instrument: {instrument_name} (ID {instrument_id})")
     print(f"Reading: {path}")

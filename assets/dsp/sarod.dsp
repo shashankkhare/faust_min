@@ -27,6 +27,7 @@ import("fm.lib");
 
 // Expert Play Range: Sarod typical range C3 (~130 Hz) to A5 (~880 Hz).
 freq = hslider("freq", 146.83, 90, 900, 0.01);
+cal = hslider("calibration", 0.0, -100.0, 100.0, 0.01) : si.smoo;
 gate = button("gate");
 velocity = hslider("velocity", 0.5, 0, 1, 0.01);
 gain = hslider("gain", 1.0, 0, 1, 0.01);
@@ -88,13 +89,13 @@ dynSustain = 4.0 - normFreq * 1.7;
 melody_gate = max(gate, is_chikari) : si.smoo;
 
 // sitar_string imported from fm.lib (read-only)
-stringLoop = sitar_string(modulated_freq, dynSustain, jawari, 1.0, melody_gate, melody_exc);
+stringLoop = sitar_string(modulated_freq, dynSustain, jawari, 1.0, melody_gate, melody_exc, cal);
 
 // 4 Chikari strings using sitar_string (detuned pairs for chorus)
-chikariLoop = ( sitar_string(chikari_freq1 - 1.0, 1.5, jawari * 0.5, 1.0, chikari_trig, chikari_trig_exc)
-              + sitar_string(chikari_freq1 + 1.0, 1.5, jawari * 0.5, 1.0, chikari_trig, chikari_trig_exc)
-              + sitar_string(chikari_freq2 - 1.0, 1.5, jawari * 0.5, 1.0, chikari_trig, chikari_trig_exc)
-              + sitar_string(chikari_freq2 + 1.0, 1.5, jawari * 0.5, 1.0, chikari_trig, chikari_trig_exc)
+chikariLoop = ( sitar_string(chikari_freq1 - 1.0, 1.5, jawari * 0.5, 1.0, chikari_trig, chikari_trig_exc, 0)
+              + sitar_string(chikari_freq1 + 1.0, 1.5, jawari * 0.5, 1.0, chikari_trig, chikari_trig_exc, 0)
+              + sitar_string(chikari_freq2 - 1.0, 1.5, jawari * 0.5, 1.0, chikari_trig, chikari_trig_exc, 0)
+              + sitar_string(chikari_freq2 + 1.0, 1.5, jawari * 0.5, 1.0, chikari_trig, chikari_trig_exc, 0)
               ) * chikari_gain * 0.25;
 
 // Main mechanical wire summation striking the skin
@@ -107,9 +108,9 @@ skin_vibration = wire_sum : membrane_saturate;
 symp_exc = skin_vibration * gate : fi.lowpass(2, 12000.0);
 symp_trigger = gate : si.smoo;
 
-symp_strings_ks = ( sitar_string(max(freq, 40.0), 4.0, 0.05, symp_gain, symp_trigger, symp_exc)
-                  + sitar_string(max(freq * 1.5, 40.0), 4.0, 0.05, symp_gain, symp_trigger, symp_exc)
-                  + sitar_string(max(freq * 2.0, 40.0), 4.0, 0.05, symp_gain, symp_trigger, symp_exc)
+symp_strings_ks = ( sitar_string(max(freq, 40.0), 4.0, 0.05, symp_gain, symp_trigger, symp_exc, cal)
+                  + sitar_string(max(freq * 1.5, 40.0), 4.0, 0.05, symp_gain, symp_trigger, symp_exc, cal)
+                  + sitar_string(max(freq * 2.0, 40.0), 4.0, 0.05, symp_gain, symp_trigger, symp_exc, cal)
                   ) * 0.15;
 
 summed = skin_vibration + symp_strings_ks;

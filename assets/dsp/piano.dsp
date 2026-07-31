@@ -11,6 +11,8 @@ freq       = hslider("freq [unit:Hz]", 110.0, 27.5, 4186, 0.1);
 gain       = hslider("gain", 0.5, 0, 1, 0.01) : si.smoo;
 velocity   = hslider("velocity", 0.8, 0, 1, 0.01);
 gate       = button("gate");
+calibration = hslider("calibration", 0, -100, 100, 0.01);
+cfreq = freq * (2.0 ^ (calibration / 1200.0));
 
 // SUSTAIN PEDAL: 0 = Off (Normal Damping), 1 = On (Strings Ring Out)
 sustain    = hslider("sustainPedal [style:knob]", 0, 0, 1, 1) : int;
@@ -25,7 +27,7 @@ stiffness  = hslider("stiffness", 0.25, 0, 1, 0.01);
 // HAMMER EXCITATION (Sine burst + noise transient)
 // =====================================================
 rawTrig = (gate - gate') > 0.0;
-hammerDur = max(0.003, 2.0 / freq);
+hammerDur = max(0.003, 2.0 / cfreq);
 
 hammerTimer = rawTrig : hammer_pulse
 with {
@@ -37,7 +39,7 @@ with {
 hammerEnv = hammerTimer : >(0.0);
 
 hammerProgress = 1.0 - hammerTimer / (hammerDur * ma.SR);
-hammerSine = sin(2.0 * ma.PI * freq * hammerProgress * hammerDur);
+hammerSine = sin(2.0 * ma.PI * cfreq * hammerProgress * hammerDur);
 
 // FIXED: Scaled back to realistic physical excitation levels. 
 // 4000.0 was blowing up the waveguide recursive accumulator.
@@ -51,7 +53,7 @@ hammer = (hammerTone * 0.7 + no.noise * hammerEnv * velocity * 0.3)
 // STIFF STRING DISPERSION & COUPLING
 // =====================================================
 dispersion = fi.allpassnn(1, 0.02 + stiffness * 0.12);
-loopLPF    = fi.lowpass(1, 6000 - freq * 0.8);
+loopLPF    = fi.lowpass(1, 6000 - cfreq * 0.8);
 
 // =====================================================
 // STRING ENGINE WITH SUSTAIN MAPPING
@@ -74,9 +76,9 @@ with {
 // =====================================================
 // THREE STRING UNISON TRIPLETS
 // =====================================================
-s1 = pianoString(freq, 1.0000) * 0.40;
-s2 = pianoString(freq, 1.0003) * 0.30;
-s3 = pianoString(freq, 0.9997) * 0.30;
+s1 = pianoString(cfreq, 1.0000) * 0.40;
+s2 = pianoString(cfreq, 1.0003) * 0.30;
+s3 = pianoString(cfreq, 0.9997) * 0.30;
 
 soundboardIn = s1 + s2 + s3;
 
@@ -99,5 +101,5 @@ softclip(x) = x / (1.0 + abs(x));
 
 // FIXED: Multiply by gain on the outside of softclip so slider changes 
 // volume rather than forcing saturation shape dynamics.
-process = mix : fi.dcblocker: softclip : * (gain * 30.725);
+process = mix : fi.dcblocker: softclip : * (gain * 2050);
 

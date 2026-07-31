@@ -38,7 +38,7 @@ with {
 };
 
 // --- Main String Instance using fm.lib sitar_string ---
-string_output = sitar_string(freq, sustain, jivari, excGain * stringGainVal, gate, master_exc_signal);
+string_output = sitar_string(freq, sustain, jivari, excGain * stringGainVal, gate, master_exc_signal, 0);
 
 mix = string_output;
 softclip(x) = x / (1.0 + abs(x));

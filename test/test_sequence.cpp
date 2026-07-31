@@ -127,8 +127,7 @@ void playSequenceGroup(FaustMixer& mixer, SequenceOrchestrator& orch, SequenceGr
         if (id == 11 || id == 19 || id == 27 || id == 34 || id == 41 || id == 42 ||
             (id == 54 && group.name == "Sarod & Harmonium — Raag Yaman") ||
             seqPair.first.find("Cello") != std::string::npos ||
-            seqPair.first.find("ViolinH") != std::string::npos ||
-            seqPair.first.find("Piano") != std::string::npos) {
+            seqPair.first.find("ViolinH") != std::string::npos) {
             targetTrack = backgroundTrack;
         // Membrane percussion → percussion bus
         } else if (InstrumentMapper::isMembraneophone(id)) {
@@ -1267,13 +1266,13 @@ int main(int argc, char* argv[]) {
             };
 
             // 20 instruments total - Start with 1, and uncomment the rest one by one to incrementally test the load
-            for(int i=1; i<=1; i++) group.sequences.push_back({"ViolinM"+std::to_string(i), new UMLSequence("ViolinM"+std::to_string(i), 18, buildUml(umlViolinM, i))});
-            for(int i=2; i<=5; i++) group.sequences.push_back({"ViolinM"+std::to_string(i), new UMLSequence("ViolinM"+std::to_string(i), 18, buildUml(umlViolinM, i))});
+            // for(int i=1; i<=1; i++) group.sequences.push_back({"ViolinM"+std::to_string(i), new UMLSequence("ViolinM"+std::to_string(i), 18, buildUml(umlViolinM, i))});
+            // for(int i=2; i<=5; i++) group.sequences.push_back({"ViolinM"+std::to_string(i), new UMLSequence("ViolinM"+std::to_string(i), 18, buildUml(umlViolinM, i))});
             
             // --- COMMENTED OUT FOR INCREMENTAL LOAD TESTING ---
-            for(int i=1; i<=4; i++) group.sequences.push_back({"ViolinH"+std::to_string(i), new UMLSequence("ViolinH"+std::to_string(i), 18, buildUml(umlViolinH, i))});
+            // for(int i=1; i<=4; i++) group.sequences.push_back({"ViolinH"+std::to_string(i), new UMLSequence("ViolinH"+std::to_string(i), 18, buildUml(umlViolinH, i))});
             for(int i=1; i<=4; i++) group.sequences.push_back({"Cello"+std::to_string(i), new UMLSequence("Cello"+std::to_string(i), 24, buildUml(umlBass, i))});
-            // for(int i=1; i<=3; i++) group.sequences.push_back({"Flute"+std::to_string(i), new UMLSequence("Flute"+std::to_string(i), 10, buildUml(umlFlute, i))});
+            for(int i=1; i<=3; i++) group.sequences.push_back({"Flute"+std::to_string(i), new UMLSequence("Flute"+std::to_string(i), 10, buildUml(umlFlute, i))});
             for(int i=1; i<=2; i++) group.sequences.push_back({"Timpani"+std::to_string(i), new UMLSequence("Timpani"+std::to_string(i), 5, buildUml(umlTimpani, i))});
             // for(int i=1; i<=2; i++) group.sequences.push_back({"Trumpet"+std::to_string(i), new UMLSequence("Trumpet"+std::to_string(i), 15, buildUml(umlTrumpet, i))});
             for(int i=1; i<=2; i++) group.sequences.push_back({"Piano"+std::to_string(i), new UMLSequence("Piano"+std::to_string(i), 12, buildUml(umlPiano, i))});
@@ -1281,10 +1280,13 @@ int main(int argc, char* argv[]) {
             group.melodyTrackWeight = 1.0f;
             group.percussionTrackWeight = 0.10f;
             group.backgroundTrackWeight = 0.45f;
-            if (timeoutSec > 0) duration = timeoutSec;
-            playSequenceGroup(mixer, orch, group, duration);
         } else {
             std::cout << "Invalid selection. Please try again." << std::endl;
+        }
+
+        if (selection >= 1 && selection <= 13 && selection != 9) {
+            if (timeoutSec > 0) duration = timeoutSec;
+            playSequenceGroup(mixer, orch, group, duration);
         }
 
         // If run with command line args, exit after playing once

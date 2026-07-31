@@ -21,7 +21,7 @@ import("stdfaust.lib");
 // Violin physical model using pm.violinModel (Romain Michon / Faust stdlib)
 // ============================================================
 
-f = hslider("freq", 440, 80, 1400, 0.1) : si.smoo;
+f = hslider("freq", 440, 80, 1400, 0.1);
 t = button("gate");
 
 // Expressive pitch controls
