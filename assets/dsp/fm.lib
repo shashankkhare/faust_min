@@ -158,7 +158,7 @@ with {
     g_wall = 0.990 - (loss * 0.04); 
 
     // Streamlined Excitation Architecture
-    dynamic_noise_gain = 0.002 + (pow(mouthPos, 2.0) * 0.025);
+    dynamic_noise_gain = 0.20 + (pow(mouthPos, 2.0) * 0.10);
     breath_drive = pressure * breathEnv;
     noise = no.noise : fi.highpass(2, max(40.0, freq * 0.6));
     noise_injection = noise * breath_drive * dynamic_noise_gain;

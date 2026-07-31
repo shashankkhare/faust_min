@@ -183,15 +183,8 @@ void FaustInstrument::initializeVoices() {
     }
     if (mGain >= 0.0f) {
         setGainImmediate(mGain);
-    } else {
-        if (mVoiceUIs[0]->getParamZone("gain") != nullptr) {
-            mGain = mVoiceUIs[0]->getParamValue("gain");
-        } else if (mVoiceUIs[0]->getParamZone("vol") != nullptr) {
-            mGain = mVoiceUIs[0]->getParamValue("vol");
-        } else {
-            mGain = 1.0f;
-        }
     }
+    mGain = 1.0f;
 
     // Pre-warm the DSP to settle any internal parameter smoothers (like the 80ms glide)
     if (mSampleRate > 0) {
@@ -494,11 +487,6 @@ void FaustInstrument::setSampleRate(float sampleRate) {
 }
 
 void FaustInstrument::setParamImmediate(const char* shortName, float val, int voiceIndex) {
-    if (std::string(shortName) == "gain") {
-        mGain = val;
-        return;
-    }
-    
     if (mVoiceUIs.empty()) return;
 
     std::string key(shortName);
@@ -632,12 +620,10 @@ void FaustInstrument::setFrequencyImmediate(float freq) {
 }
 
 void FaustInstrument::setGain(float gain) {
-    mGain = gain;
     setParam("gain", gain);
 }
 
 void FaustInstrument::setGainImmediate(float gain) {
-    mGain = gain;
     setParamImmediate("gain", gain);
 }
 

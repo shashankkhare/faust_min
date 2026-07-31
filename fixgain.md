@@ -94,3 +94,27 @@ LD_LIBRARY_PATH=shared ./test_instruments <instrument_id> f=<freq> v=1.0
 - The output `{ freq, energy, sqrt(energy) }` should show `energy` close to `0.3` (target).
 - Check at least 3 frequencies: low, mid, and high end of the instrument's range.
 - If energy is consistently off, re-check that step 6 multiplier matches the `max_gain` from step 5.
+
+## Flute Calibration Log (July 2026)
+
+Ran this procedure for `assets/dsp/flute.csv` and `assets/dsp/flute.dsp`.
+
+**CSV (`assets/dsp/flute.csv`, 156 rows):**
+- 26 frequencies covering 164.81–1975.53 Hz — 4 octaves of the Indian scale (Sa–Re–Ga–Ma–Pa–Dha–Ni: E3–B6). The range matches the `freq` slider bounds in the DSP (`150–2000 Hz`).
+- Velocity grid `[0.1, 0.2, 0.4, 0.6, 0.8, 1.0]`.
+- `pressure` set to a **constant 0.75** for all rows. Breathiness is deliberately reserved for a future strike/articulation column; the `mouthPosition` column was removed.
+- `calibration` (cents) and `loss` columns retained from the previous CSV.
+- `max_gain` from the calibration run was **1.0000**, so step 5 normalization was a no-op and step 6 needed no further fold.
+
+**DSP (`assets/dsp/flute.dsp`):**
+- Process multiplier is `0.0372281` = the original absolute scaling `0.0496375` × `0.75` (the max_gain folded from the first calibration round at target 0.3). The later re-run at target 0.5 produced max_gain = 1.0, so no additional fold was needed.
+- `gain` slider restored to `0–1` with `si.smooth(0.03)` smoothing (step 7).
+- Breath envelope uses a **constant `attackTime = 0.05`** instead of the velocity-scaled attack. The velocity-scaled version produced an abrupt attack/pluck at high velocities (near-instant `0.01s` attack); the boosted hiss in `fm.lib` (`dynamic_noise_gain = 0.20 + pow(mouthPos, 2.0) * 0.10`) now carries the breathy onset instead of the envelope clicking.
+
+**C++ routing (`src/FaustInstrument.cpp`):**
+- `setGain()` / `setGainImmediate()` **always** write the DSP `gain` parameter. The old interception in `setParamImmediate` that redirected `"gain"` into the raw `mGain` multiplier was removed, and `initializeVoices()` forces `mGain = 1.0f`.
+- ⚠️ `mGain` is now a **neutral post-DSP boost only** (multiplied after the DSP at `if (mGain != 1.0f)`). It is never touched by gain routing, so do not rely on it for per-instrument volume — use the `gain` parameter (which is calibrated and smoothed) instead.
+
+**Verification (step 8):** at `v=1.0` the raw energy measures 0.541 (164.81 Hz), 0.465 (440 Hz), 0.515 (1975.53 Hz) — all within the 0.45–0.55 target band for a melody instrument.
+
+**Known floor:** `velocity=0.1` rows sit at the GAIN_MIN floor of ~`0.01` (25 warnings during calibration). Even at minimum gain the instrument's quietest notes cannot reach the 0.5 target (E ≈ 0.012–0.015); this is accepted so that low velocities stay musical rather than silent.
