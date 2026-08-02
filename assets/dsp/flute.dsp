@@ -21,9 +21,10 @@ loss           = hslider("loss", 0.02, 0.0, 1.0, 0.001) : si.smoo;
 
 attackTime = 0.05;
 
-// Linear AR envelopes with corner smoothing (S-curve) prevent infinite slope at t=0
+// Gate-hold ASR envelopes with smooth corners prevent infinite slope at t=0.
 // This prevents the dcblocker in the waveguide from generating a spike (click/pluck)
-rawEnv = en.ar(attackTime, 0.05, t);
+// while sustaining the breath while the gate is held.
+rawEnv = en.asr(attackTime, 1.0, 0.05, t);
 breathEnv = rawEnv : si.smooth(0.995);
 releaseEnv = rawEnv : si.smooth(0.995);
 

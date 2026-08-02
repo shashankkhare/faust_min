@@ -172,6 +172,7 @@ macro(add_faust_test NAME SOURCE)
 endmacro()
 
 add_faust_test(test_instruments "../test/test_instruments.cpp")
+target_link_libraries(test_instruments PRIVATE fftw3)
 add_faust_test(test_mixer "../test/test_mixer.cpp")
 add_faust_test(test_sequence "../test/test_sequence.cpp")
 

@@ -31,6 +31,10 @@ bowPosition = hslider("bowPosition", 0.15, 0.0, 1.0, 0.001) : si.smoo;
 vibratoRate = hslider("vibrato_rate", 5.0, 3.0, 8.0, 0.1) : si.smoo;
 vibratoDepth = hslider("vibrato_depth", 0.008, 0.0, 0.03, 0.001) : si.smoo;
 
+// Velocity is decoupled from the bow model (no direct amplitude-velocity
+// correlation in bowed strings); it drives output loudness gain-like instead.
+// Bow pressure/velocity/position stay as inputs for future strike-based use.
+velGain = 0.25 + 0.75 * velocity : si.smoo;
 bowVelocity = gate * bowVelocityTarget : si.smooth(0.999);
 bowPressure = gate * bowPressureTarget : si.smooth(0.999);
 releaseEnv = gate : si.smooth(ba.tau2pole(0.030));
@@ -66,4 +70,4 @@ stringLength = humanizedFreq : mypm.f2l;
 process = celloModel(stringLength, bowPressure, bowVelocity, bowPosition)
           : *(releaseEnv)
           : fi.dcblocker
-          : ma.tanh * gain;
+          : ma.tanh * gain * velGain;

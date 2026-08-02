@@ -285,6 +285,10 @@ void FaustInstrument::loadTargetDSP() {
                                 rowVel = val;
                             } else if (columns[cIdx] == "strike") {
                                 rowStrike = val;
+                            } else if (columns[cIdx] == "calibration") {
+                                // Pitch calibration is applied from the dedicated
+                                // "<dsp>_calibration.csv" via applyCalibration();
+                                // never blend it through the LUT.
                             } else {
                                 paramsMap[columns[cIdx]] = val;
                             }
@@ -315,6 +319,76 @@ void FaustInstrument::loadTargetDSP() {
         fflush(stdout);
     }
 #endif
+
+    // Load the dedicated per-note pitch calibration table (frequency-only).
+    // Preferred companion name: "<dsp>_calibration.csv".
+    mCalibrationRecords.clear();
+    mCalibrationActive = false;
+    {
+        std::string calPath = csvPath;
+        if (calPath.length() > 4 && calPath.substr(calPath.length() - 4) == ".csv") {
+            calPath = calPath.substr(0, calPath.length() - 4) + "_calibration.csv";
+        }
+        std::ifstream calFile(calPath);
+#ifdef DEBUG_INSTRUMENT
+        printf("[CALIB] calibration path: %s, opened=%d\n", calPath.c_str(), (int)calFile.is_open());
+        fflush(stdout);
+#endif
+        if (calFile.is_open()) {
+            std::string headerLine;
+            if (std::getline(calFile, headerLine)) {
+                std::vector<std::string> columns;
+                std::stringstream hss(headerLine);
+                std::string colName;
+                while (std::getline(hss, colName, ',')) {
+                    while (!colName.empty() && std::isspace(colName.front())) colName.erase(colName.begin());
+                    while (!colName.empty() && std::isspace(colName.back())) colName.pop_back();
+                    columns.push_back(colName);
+                }
+
+                std::string rLine;
+                while (std::getline(calFile, rLine)) {
+                    if (rLine.empty() || rLine[0] == '#' || rLine.find("//") == 0) continue;
+                    std::stringstream rss(rLine);
+                    std::string cell;
+                    float rowFreq = 0.0f;
+                    float rowCal = 0.0f;
+                    float rowNudge = 0.0f;
+                    int cIdx = 0;
+                    while (std::getline(rss, cell, ',')) {
+                        if (cIdx < columns.size()) {
+                            try {
+                                float val = std::stof(cell);
+                                if (columns[cIdx] == "frequency" || columns[cIdx] == "freq" || cIdx == 0) {
+                                    rowFreq = val;
+                                } else if (columns[cIdx] == "calibration" || cIdx == 1) {
+                                    rowCal = val;
+                                } else if (columns[cIdx] == "freq_nudge" || columns[cIdx] == "nudge" ||
+                                           columns[cIdx] == "frequency_shift") {
+                                    rowNudge = val;
+                                }
+                            } catch (...) {}
+                        }
+                        cIdx++;
+                    }
+                    if (rowFreq > 0.0f) {
+                        mCalibrationRecords.push_back({rowFreq, rowCal, rowNudge});
+                    }
+                }
+            }
+            calFile.close();
+            if (!mCalibrationRecords.empty()) {
+                std::sort(mCalibrationRecords.begin(), mCalibrationRecords.end(),
+                          [](const CalibrationRow& a, const CalibrationRow& b) { return a.frequency < b.frequency; });
+                mCalibrationActive = true;
+#ifdef DEBUG_INSTRUMENT
+                printf("[CALIB] SUCCESS: Loaded %llu calibration rows from '%s'\n",
+                       (unsigned long long)mCalibrationRecords.size(), calPath.c_str());
+                fflush(stdout);
+#endif
+            }
+        }
+    }
 
     if (mExecType == DSPExecutionType::StaticCompiled) {
         for (int v = 0; v < mNumVoices; ++v) {
@@ -608,15 +682,17 @@ std::string FaustInstrument::getParametersJSON() {
 }
 
 void FaustInstrument::setFrequency(float freq) {
-    mFrequency = freq;
-    setParam("freq", freq, -1);
-    applyDynamicLUTParams(freq, mVelocity, -1);
+    mFrequency = applyFreqNudge(freq);
+    setParam("freq", mFrequency, -1);
+    applyDynamicLUTParams(mFrequency, mVelocity, -1);
+    applyCalibration(mFrequency, -1);
 }
 
 void FaustInstrument::setFrequencyImmediate(float freq) {
-    mFrequency = freq;
-    setParamImmediate("freq", freq, -1);
-    applyDynamicLUTParams(freq, mVelocity, -1);
+    mFrequency = applyFreqNudge(freq);
+    setParamImmediate("freq", mFrequency, -1);
+    applyDynamicLUTParams(mFrequency, mVelocity, -1);
+    applyCalibration(mFrequency, -1);
 }
 
 void FaustInstrument::setGain(float gain) {
@@ -738,9 +814,9 @@ void FaustInstrument::noteOn(float freq, float vel, float strikeVal) {
     bool freqChanged = false;
     if (freq > 0.0f) {
         freqChanged = (std::abs(mVoiceFreqs[v] - freq) > 0.1f);
-        mFrequency = freq;
-        mVoiceFreqs[v] = freq;
-        setParamImmediate("freq", freq, v); // Force jump immediately
+        mFrequency = applyFreqNudge(freq);
+        mVoiceFreqs[v] = freq; // musical identity; note-off matching is un-nudged
+        setParamImmediate("freq", mFrequency, v); // Force jump immediately
     }
 
     noteOff(v);
@@ -762,6 +838,7 @@ void FaustInstrument::noteOn(float freq, float vel, float strikeVal) {
         printf("[NOTEON] instrument=%d freq=%.2f vel=%.2f strike=%.1f\n", mInstrumentID, mFrequency, mVelocity, strikeVal);
         applyDynamicLUTParams(mFrequency, mVelocity, v);
     }
+    applyCalibration(mFrequency, v);
 
     mStrikeVal = strikeVal;
     if (strikeVal >= 0.0f)
@@ -1304,6 +1381,55 @@ void FaustInstrument::applyDynamicLUTParams(float freq, float velocity, int voic
 #endif
         }
     }
+}
+
+void FaustInstrument::applyCalibration(float freq, int voiceIndex) {
+    if (!mCalibrationActive || mCalibrationRecords.empty()) return;
+
+    // Frequency-only lookup over the sorted table. When the requested note lies
+    // between two rows, interpolate calibration in log-frequency (cents scale
+    // linearly across the equal-tempered grid); outside the table, clamp to the
+    // nearest endpoint.
+    float cents = mCalibrationRecords[0].cents;
+    size_t i = 0;
+    while (i + 1 < mCalibrationRecords.size() && mCalibrationRecords[i + 1].frequency <= freq) ++i;
+    const CalibrationRow& lo = mCalibrationRecords[i];
+    if (i + 1 < mCalibrationRecords.size()) {
+        const CalibrationRow& hi = mCalibrationRecords[i + 1];
+        float lolog = std::log2(lo.frequency);
+        float denom = std::log2(hi.frequency) - lolog;
+        float t = (denom > 0.0f) ? (std::log2(freq) - lolog) / denom : 0.0f;
+        t = std::max(0.0f, std::min(1.0f, t));
+        cents = lo.cents + t * (hi.cents - lo.cents);
+    } else {
+        cents = lo.cents;
+    }
+    setParamImmediate("calibration", cents, voiceIndex);
+#ifdef DEBUG_INSTRUMENT
+    printf("[CALIB] freq=%.2f -> cal=%.4f\n", freq, cents);
+    fflush(stdout);
+#endif
+}
+
+float FaustInstrument::applyFreqNudge(float freq) {
+    // Escape register/notch gaps: the model produces pitch ~= mode_ratio *
+    // request, and near a gap no calibration value can reach the target. A
+    // per-note frequency shift pre-distorts the request so the heard pitch
+    // lands on target. Applied only within a half-semitone band around the
+    // row so far-off requests (glides, quarter tones) are not snapped.
+    if (!mCalibrationActive || mCalibrationRecords.empty() || freq <= 0.0f) return freq;
+    const CalibrationRow* nearest = &mCalibrationRecords[0];
+    float bestDist = std::abs(std::log2(freq) - std::log2(nearest->frequency));
+    for (const auto& r : mCalibrationRecords) {
+        float d = std::abs(std::log2(freq) - std::log2(r.frequency));
+        if (d < bestDist) {
+            bestDist = d;
+            nearest = &r;
+        }
+    }
+    if (nearest->freqNudge == 0.0f) return freq;
+    if (bestDist > std::log2(2.0f) / 24.0f) return freq; // > half a semitone
+    return freq * (1.0f + nearest->freqNudge / 100.0f);
 }
 
 

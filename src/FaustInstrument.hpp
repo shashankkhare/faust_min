@@ -177,6 +177,17 @@ protected:
     std::vector<LUTRecord> mLUTRecords;
     bool mLUTActive = false;
 
+    // Pitch calibration lives on its own path: loaded from a dedicated
+    // "<dsp>_calibration.csv" and looked up by frequency only, so velocity
+    // interpolation can never detune a note.
+    struct CalibrationRow {
+        float frequency;
+        float cents;
+        float freqNudge = 0.0f; // percent shift applied to the DSP freq request
+    };
+    std::vector<CalibrationRow> mCalibrationRecords;
+    bool mCalibrationActive = false;
+
     struct TimedEvent {
         std::string paramName;
         float value;
@@ -185,6 +196,8 @@ protected:
     std::vector<TimedEvent> mEventQueue;
 
     void applyDynamicLUTParams(float freq, float amp, int voiceIndex);
+    void applyCalibration(float freq, int voiceIndex);
+    float applyFreqNudge(float freq);
 
     std::vector<std::unique_ptr<dsp>> mVoices;
     std::vector<std::unique_ptr<MapUI>> mVoiceUIs;

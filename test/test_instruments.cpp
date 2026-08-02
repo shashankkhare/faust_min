@@ -13,6 +13,7 @@
 #include <memory>
 #include <algorithm>
 #include <chrono>
+#include <fftw3.h>
 #include "../src/FaustMixer.hpp"
 #include "../src/InstrumentMapper.hpp"
 #include "../src/FaustInstrument.hpp"
@@ -35,6 +36,52 @@ static float computePeak(const float* buf, int numFrames) {
     }
     return peak;
 }
+
+// =====================================================
+// HELPER: FFTW-based pitch detection
+// =====================================================
+// FFTW3 (libfftw3) computes the FFT; we window the steady-state tail with a
+// Hann window, find the spectral peak within nominal*(0.8..1.2), then parabolic
+// interpolation gives a sub-bin frequency estimate.
+// Returns estimated pitch in Hz, or 0 if unreliable.
+static float detectPitchFFT(const float* mono, int len, float sampleRate, float nominalFreq) {
+    int n = 1;
+    while (n * 2 <= len) n <<= 1;
+    if (n < 64) return 0.0f;
+
+    std::vector<double> in(n, 0.0);
+    std::vector<fftw_complex> out(n / 2 + 1);
+    int start = len - n;
+    for (int i = 0; i < n; ++i) {
+        double w = 0.5 * (1.0 - std::cos(2.0 * M_PI * i / (n - 1)));
+        in[i] = mono[start + i] * w;
+    }
+
+    fftw_plan plan = fftw_plan_dft_r2c_1d(n, in.data(), out.data(), FFTW_ESTIMATE);
+    if (!plan) return 0.0f;
+    fftw_execute(plan);
+    fftw_destroy_plan(plan);
+
+    int kMin = std::max(1, (int)(nominalFreq * 0.8 * n / sampleRate));
+    int kMax = std::min(n / 2 - 1, (int)(nominalFreq * 1.2 * n / sampleRate));
+    if (kMax <= kMin) return 0.0f;
+
+    int peak = kMin;
+    double bestMag = -1.0;
+    for (int k = kMin; k <= kMax; ++k) {
+        double mag = std::sqrt(out[k][0] * out[k][0] + out[k][1] * out[k][1]);
+        if (mag > bestMag) { bestMag = mag; peak = k; }
+    }
+    if (peak <= kMin || peak >= kMax || bestMag <= 0.0) return 0.0f;
+
+    double mPrev = std::sqrt(out[peak - 1][0] * out[peak - 1][0] + out[peak - 1][1] * out[peak - 1][1]);
+    double mNext = std::sqrt(out[peak + 1][0] * out[peak + 1][0] + out[peak + 1][1] * out[peak + 1][1]);
+    double denom = mPrev - 2.0 * bestMag + mNext;
+    double delta = (std::abs(denom) > 1e-9) ? 0.5 * (mPrev - mNext) / denom : 0.0;
+    delta = std::max(-0.5, std::min(0.5, delta));
+    return (float)((peak + delta) * sampleRate / n);
+}
+
 
 // =====================================================
 // HELPER: print horizontal freq,energy from diagnostic logs
@@ -1951,11 +1998,11 @@ static void testRenderMode(int instrumentID, DSPExecutionType execType, float st
                   << " }  (" << ms << " ms)";
 
         if (gTestScan) {
-            std::cout << "\nSCAN";
-            for (int pct = -5; pct <= 5; ++pct) {
-                float cf = freq * (1.0f + pct * 0.01f);
-                std::cout << " " << goertzel(cf);
-            }
+            std::vector<float> mono(measureFrames);
+            for (int i = 0; i < measureFrames; ++i)
+                mono[i] = (buf[(startFrame + i) * 2] + buf[(startFrame + i) * 2 + 1]) * 0.5f;
+            float estPitch = detectPitchFFT(mono.data(), (int)mono.size(), sampleRate, (float)freq);
+            std::cout << "\nSCAN " << estPitch;
         }
 
         if (&freq != &freqs.back()) std::cout << " , ";

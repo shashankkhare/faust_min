@@ -1231,7 +1231,10 @@ int main(int argc, char* argv[]) {
                 "grid: 4\nbpm: 100\ninstrument: cello\nnotation: Western\nloop: false\n\n"
                 "5E2. 5E2. 5E2. 5E2. 5B1. 5B1. 5E2... "
                 "5E2. 5E2. 5E2. 5E2. 5B1. 5B1. 5E2... "
-                "5E2. 5A1. 5E2. 5B1. 5E2. 5B1. 5E2... ";
+                "5E2. 5A1. 5E2. 5B1. 5E2. 5B1. 5E2... "
+                "5E2. 5E2. 5E2. 5E2. 5B1. 5B1. 5E2... "
+                "5E2. 5E2. 5E2. 5E2. 5B1. 5B1. 5E2... "
+                "5E2. 5A1. 5E2. 5B1. 5E2. 5B1. 5E2...";
 
             std::string umlFlute = 
                 "grid: 4\nbpm: 100\ninstrument: flute\nnotation: Western\nloop: false\n\n"
@@ -1265,11 +1268,11 @@ int main(int argc, char* argv[]) {
                        "vibrato_depth: 0.03\n" + baseUml;
             };
 
-            // 20 instruments total - Start with 1, and uncomment the rest one by one to incrementally test the load
-            // for(int i=1; i<=1; i++) group.sequences.push_back({"ViolinM"+std::to_string(i), new UMLSequence("ViolinM"+std::to_string(i), 18, buildUml(umlViolinM, i))});
-            // for(int i=2; i<=5; i++) group.sequences.push_back({"ViolinM"+std::to_string(i), new UMLSequence("ViolinM"+std::to_string(i), 18, buildUml(umlViolinM, i))});
+            // 20 instruments total
+            for(int i=1; i<=1; i++) group.sequences.push_back({"ViolinM"+std::to_string(i), new UMLSequence("ViolinM"+std::to_string(i), 18, buildUml(umlViolinM, i))});
+            for(int i=2; i<=5; i++) group.sequences.push_back({"ViolinM"+std::to_string(i), new UMLSequence("ViolinM"+std::to_string(i), 18, buildUml(umlViolinM, i))});
             
-            // --- COMMENTED OUT FOR INCREMENTAL LOAD TESTING ---
+            // --- HARMONY COMMENTED OUT (violin too loud) ---
             // for(int i=1; i<=4; i++) group.sequences.push_back({"ViolinH"+std::to_string(i), new UMLSequence("ViolinH"+std::to_string(i), 18, buildUml(umlViolinH, i))});
             for(int i=1; i<=4; i++) group.sequences.push_back({"Cello"+std::to_string(i), new UMLSequence("Cello"+std::to_string(i), 24, buildUml(umlBass, i))});
             for(int i=1; i<=3; i++) group.sequences.push_back({"Flute"+std::to_string(i), new UMLSequence("Flute"+std::to_string(i), 10, buildUml(umlFlute, i))});

@@ -145,6 +145,8 @@ class FaustCelloDSP : public dsp {
 	float fRec0[2];
 	FAUSTFLOAT fHslider6;
 	float fRec47[2];
+	FAUSTFLOAT fHslider7;
+	float fRec48[2];
 	
  public:
 	
@@ -267,6 +269,7 @@ class FaustCelloDSP : public dsp {
 		fHslider4 = FAUSTFLOAT(0.10000000000000001f);
 		fHslider5 = FAUSTFLOAT(0.40000000000000002f);
 		fHslider6 = FAUSTFLOAT(0.5f);
+		fHslider7 = FAUSTFLOAT(0.5f);
 	}
 	
 	virtual void instanceClear() {
@@ -382,6 +385,9 @@ class FaustCelloDSP : public dsp {
 		for (int l38 = 0; (l38 < 2); l38 = (l38 + 1)) {
 			fRec47[l38] = 0.0f;
 		}
+		for (int l39 = 0; (l39 < 2); l39 = (l39 + 1)) {
+			fRec48[l39] = 0.0f;
+		}
 	}
 	
 	virtual void init(int sample_rate) {
@@ -410,6 +416,7 @@ class FaustCelloDSP : public dsp {
 		ui_interface->addHorizontalSlider("freq", &fHslider1, FAUSTFLOAT(130.809998f), FAUSTFLOAT(40.0f), FAUSTFLOAT(1000.0f), FAUSTFLOAT(0.100000001f));
 		ui_interface->addHorizontalSlider("gain", &fHslider6, FAUSTFLOAT(0.5f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addButton("gate", &fButton0);
+		ui_interface->addHorizontalSlider("velocity", &fHslider7, FAUSTFLOAT(0.5f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addHorizontalSlider("vibrato_depth", &fHslider2, FAUSTFLOAT(0.00800000038f), FAUSTFLOAT(0.0f), FAUSTFLOAT(0.0299999993f), FAUSTFLOAT(0.00100000005f));
 		ui_interface->addHorizontalSlider("vibrato_rate", &fHslider3, FAUSTFLOAT(5.0f), FAUSTFLOAT(3.0f), FAUSTFLOAT(8.0f), FAUSTFLOAT(0.100000001f));
 		ui_interface->closeBox();
@@ -428,6 +435,7 @@ class FaustCelloDSP : public dsp {
 		float fSlow8 = (fConst7 * float(fHslider5));
 		float fSlow9 = (fConst23 * fSlow3);
 		float fSlow10 = (fConst7 * float(fHslider6));
+		float fSlow11 = (fConst7 * ((0.75f * float(fHslider7)) + 0.25f));
 		for (int i0 = 0; (i0 < count); i0 = (i0 + 1)) {
 			iRec11[0] = 0;
 			iVec0[0] = 1;
@@ -581,7 +589,9 @@ class FaustCelloDSP : public dsp {
 			fRec0[0] = ((std::fabs(fTempFTZ40) > 1.17549435e-38f) ? fTempFTZ40 : 0.0f);
 			float fTempFTZ41 = (fSlow10 + (fConst8 * fRec47[1]));
 			fRec47[0] = ((std::fabs(fTempFTZ41) > 1.17549435e-38f) ? fTempFTZ41 : 0.0f);
-			output0[i0] = FAUSTFLOAT((float(tanhf(float(fRec0[0]))) * fRec47[0]));
+			float fTempFTZ42 = (fSlow11 + (fConst8 * fRec48[1]));
+			fRec48[0] = ((std::fabs(fTempFTZ42) > 1.17549435e-38f) ? fTempFTZ42 : 0.0f);
+			output0[i0] = FAUSTFLOAT(((float(tanhf(float(fRec0[0]))) * fRec47[0]) * fRec48[0]));
 			iRec11[1] = iRec11[0];
 			iVec0[1] = iVec0[0];
 			fRec24[1] = fRec24[0];
@@ -621,6 +631,7 @@ class FaustCelloDSP : public dsp {
 			fVec4[1] = fVec4[0];
 			fRec0[1] = fRec0[0];
 			fRec47[1] = fRec47[0];
+			fRec48[1] = fRec48[0];
 		}
 	}
 
