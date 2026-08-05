@@ -28,6 +28,7 @@
  */
 
 #include "FaustMixer.hpp"
+#include <faust/gui/MapUI.h>
 #include <iostream>
 #include <chrono>
 
@@ -176,6 +177,17 @@ void FaustMixer::init(float sampleRate) {
     if (!mMasterReverbDSP) {
         mMasterReverbDSP.reset(new FaustMasterReverbDSP());
         mMasterReverbDSP->init(static_cast<int>(mSampleRate));
+    }
+
+    // Tracks created before init() had no sample rate yet; arm their FX DSP now.
+    for (auto& pair : mTracks) {
+        auto& track = pair.second;
+        if (!track.fxDSP) {
+            track.fxDSP.reset(new FaustTrackFxDSP());
+            track.fxDSP->init(static_cast<int>(mSampleRate));
+            track.fxUI.reset(new MapUI());
+            track.fxDSP->buildUserInterface(track.fxUI.get());
+        }
     }
 
     if (!mWorkerRunning.load()) {
@@ -403,6 +415,13 @@ int FaustMixer::addTrack(float initialWeight) {
     std::lock_guard<std::mutex> lock(mRegistryMutex);
     int id = mNextTrackID++;
     mTracks[id] = { id, initialWeight, initialWeight, {} };
+    auto& track = mTracks[id];
+    if (mSampleRate > 0.0f) {
+        track.fxDSP.reset(new FaustTrackFxDSP());
+        track.fxDSP->init(static_cast<int>(mSampleRate));
+        track.fxUI.reset(new MapUI());
+        track.fxDSP->buildUserInterface(track.fxUI.get());
+    }
     recalculateWeights();
     FM_LOGI("[Mixer] Added Track ID: %d with Weight: %.2f", id, initialWeight);
     return id;
@@ -520,6 +539,56 @@ void FaustMixer::setTrackWeight(int trackID, float dynamicWeight) {
 float FaustMixer::getTrackWeight(int trackID) {
     std::lock_guard<std::mutex> lock(mRegistryMutex);
     return mTracks.count(trackID) ? mTracks[trackID].dynamicWeight : 0.0f;
+}
+
+void FaustMixer::setTrackReverbSend(int trackID, float send) {
+    std::lock_guard<std::mutex> lock(mRegistryMutex);
+    if (mTracks.count(trackID)) {
+        mTracks[trackID].reverbSend = std::max(0.0f, std::min(1.0f, send));
+    }
+}
+
+void FaustMixer::setTrackEcho(int trackID, float send, float feedback, float delaySec) {
+    std::lock_guard<std::mutex> lock(mRegistryMutex);
+    if (!mTracks.count(trackID)) return;
+    auto& track = mTracks[trackID];
+    if (!track.fxUI) return;
+    track.fxUI->setParamValue("echo_mix", std::max(0.0f, std::min(1.0f, send)));
+    track.fxUI->setParamValue("echo_feedback", std::max(0.0f, std::min(0.95f, feedback)));
+    track.fxUI->setParamValue("echo_time", std::max(0.01f, std::min(1.0f, delaySec)));
+}
+
+void FaustMixer::setTrackEQ(int trackID, float bassDb, float trebleDb) {
+    std::lock_guard<std::mutex> lock(mRegistryMutex);
+    if (!mTracks.count(trackID)) return;
+    auto& track = mTracks[trackID];
+    if (!track.fxUI) return;
+    track.fxUI->setParamValue("bass_db", std::max(-18.0f, std::min(18.0f, bassDb)));
+    track.fxUI->setParamValue("treble_db", std::max(-18.0f, std::min(18.0f, trebleDb)));
+}
+
+void FaustMixer::setTrackMid(int trackID, float midDb, float midFreq, float midQ) {
+    std::lock_guard<std::mutex> lock(mRegistryMutex);
+    if (!mTracks.count(trackID)) return;
+    auto& track = mTracks[trackID];
+    if (!track.fxUI) return;
+    track.fxUI->setParamValue("mid_db", std::max(-18.0f, std::min(18.0f, midDb)));
+    track.fxUI->setParamValue("mid_freq", std::max(20.0f, std::min(20000.0f, midFreq)));
+    track.fxUI->setParamValue("mid_q", std::max(0.1f, std::min(18.0f, midQ)));
+}
+
+void FaustMixer::setTrackBypassEQ(int trackID, bool bypass) {
+    std::lock_guard<std::mutex> lock(mRegistryMutex);
+    if (!mTracks.count(trackID)) return;
+    auto& track = mTracks[trackID];
+    if (track.fxUI) track.fxUI->setParamValue("bypass_eq", bypass ? 1.0f : 0.0f);
+}
+
+void FaustMixer::setTrackBypassEcho(int trackID, bool bypass) {
+    std::lock_guard<std::mutex> lock(mRegistryMutex);
+    if (!mTracks.count(trackID)) return;
+    auto& track = mTracks[trackID];
+    if (track.fxUI) track.fxUI->setParamValue("bypass_echo", bypass ? 1.0f : 0.0f);
 }
 
 void FaustMixer::setFXReturnWeight(float weight) {
@@ -754,6 +823,15 @@ inline void FaustMixer::accumulateInstrumentChannels(float* stereoOutput, int nu
     for (auto& pair : mTracks) {
         int trackID = pair.first;
         MixerTrack& track = pair.second;
+
+        if (track.fxDSP) {
+            if (static_cast<int>(track.fxInL.size()) < numFrames) {
+                track.fxInL.resize(numFrames);
+                track.fxInR.resize(numFrames);
+                track.fxOutL.resize(numFrames);
+                track.fxOutR.resize(numFrames);
+            }
+        }
         
         for (int i = 0; i < numFrames; ++i) {
             float summedL = 0.0f;
@@ -766,7 +844,10 @@ inline void FaustMixer::accumulateInstrumentChannels(float* stereoOutput, int nu
             for (int slot = 0; slot < workCount; slot++) {
                 if (instrumentToTrackMap[slot] == trackID) {
                     float* sourceBuffer = mInstrumentBuffers[slot];
-                    float revSend = activeList[slot]->getReverbSend();
+                    
+                    // If the track has a master reverb send, we will apply it POST-FX later.
+                    // Otherwise, we apply the instrument's specific send PRE-FX here.
+                    float revSend = (track.reverbSend > 0.0f) ? 0.0f : activeList[slot]->getReverbSend();
                     if (revSend > 0.0f) hasReverb = true;
                     
                     // Note: activeWeights[slot] stores normalizedTrackWeight
@@ -801,9 +882,23 @@ inline void FaustMixer::accumulateInstrumentChannels(float* stereoOutput, int nu
             
             float finalL = summedL * finalMultiplier;
             float finalR = summedR * finalMultiplier;
-            
-            stereoOutput[i * 2] += finalL;
-            stereoOutput[i * 2 + 1] += finalR;
+
+            // 4. Route the post-AGC track signal into the per-track insert FX DSP
+            //    (echo + 3-band EQ). The DSP passes dry through when params are 0.
+            if (track.fxDSP) {
+                track.fxInL[i] = finalL;
+                track.fxInR[i] = finalR;
+            } else {
+                stereoOutput[i * 2] += finalL;
+                stereoOutput[i * 2 + 1] += finalR;
+                
+                // POST-FX REVERB SEND (Fallback if no fxDSP)
+                if (track.reverbSend > 0.0f) {
+                    mReverbInL[i] += finalL * track.reverbSend;
+                    mReverbInR[i] += finalR * track.reverbSend;
+                    hasReverb = true;
+                }
+            }
             
             if (hasReverb) {
                 mReverbInL[i] += revSendL * finalMultiplier;
@@ -812,6 +907,29 @@ inline void FaustMixer::accumulateInstrumentChannels(float* stereoOutput, int nu
             
             float mixPeak = std::max(std::abs(stereoOutput[i * 2]), std::abs(stereoOutput[i * 2 + 1]));
             if (mixPeak > peakMix) peakMix = mixPeak;
+        }
+
+        // 5. Run the per-track insert FX DSP (echo + 3-band EQ) over the block.
+        if (track.fxDSP) {
+            FAUSTFLOAT* fxIns[2]  = { track.fxInL.data(), track.fxInR.data() };
+            FAUSTFLOAT* fxOuts[2] = { track.fxOutL.data(), track.fxOutR.data() };
+            track.fxDSP->compute(numFrames, fxIns, fxOuts);
+            for (int i = 0; i < numFrames; ++i) {
+                float outL = fxOuts[0][i];
+                float outR = fxOuts[1][i];
+                stereoOutput[i * 2] += outL;
+                stereoOutput[i * 2 + 1] += outR;
+                
+                // POST-FX REVERB SEND
+                if (track.reverbSend > 0.0f) {
+                    mReverbInL[i] += outL * track.reverbSend;
+                    mReverbInR[i] += outR * track.reverbSend;
+                    hasReverb = true;
+                }
+                
+                float mixPeak = std::max(std::abs(stereoOutput[i * 2]), std::abs(stereoOutput[i * 2 + 1]));
+                if (mixPeak > peakMix) peakMix = mixPeak;
+            }
         }
     }
 

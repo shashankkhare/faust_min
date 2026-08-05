@@ -98,6 +98,72 @@ static void runOneTest(int instrumentID, float duration, const char* label,
     outRMS = bucketRMS(gEnergyLog, bucketSize, duration);
 }
 
+// Renders a short note then measures the RMS tail AFTER note-off.
+// fxMode: 0=dry, 1=echo+EQ, 2=reverb only, 3=all FX.
+static double measureTailRMS(int instrumentID, int fxMode) {
+    FaustMixer& mixer = FaustMixer::getInstance();
+    mixer.clearAll();
+    gEnergyLog.clear();
+
+    auto inst = std::make_shared<FaustInstrument>(
+        instrumentID, DSPExecutionType::StaticCompiled,
+        InstrumentMapper::DEFAULT_SAMPLE_RATE
+    );
+
+    int trackID = mixer.addTrack(1.0f);
+    mixer.addInstrumentToTrack(trackID, inst.get());
+
+    if (fxMode == 1 || fxMode == 3) {
+        mixer.setTrackEcho(trackID, 0.8f, 0.5f, 0.15f);
+        mixer.setTrackEQ(trackID, 2.0f, -2.0f);
+        mixer.setTrackMid(trackID, 3.0f, 1000.0f, 1.0f);
+    }
+    if (fxMode == 2 || fxMode == 3) {
+        mixer.setTrackReverbSend(trackID, 0.5f);
+    }
+
+    inst->noteOn(440.0f, 0.8f, 0.5f);
+    usleep(800000);
+    inst->noteOff();
+    gEnergyLog.clear(); // count only the decay tail after note-off
+    usleep(1200000);
+
+    double sum = 0.0;
+    for (auto& s : gEnergyLog) sum += s.rms;
+    return sum;
+}
+
+static void runFXSmokeTest(int instrumentID) {
+    printf("================================================================================\n");
+    printf("  PER-TRACK FX SMOKE TEST (reverb send, echo, bass/treble EQ)\n");
+    printf("  instrument: %d\n", instrumentID);
+    printf("================================================================================\n\n");
+    fflush(stdout);
+
+    double dryTail = measureTailRMS(instrumentID, 0);
+    double echoTail = measureTailRMS(instrumentID, 1);
+    double reverbTail = measureTailRMS(instrumentID, 2);
+    double allTail = measureTailRMS(instrumentID, 3);
+
+    printf("  dry tail RMS sum      : %.4f\n", dryTail);
+    printf("  echo+EQ tail RMS sum  : %.4f\n", echoTail);
+    printf("  reverb tail RMS sum   : %.4f\n", reverbTail);
+    printf("  all-FX tail RMS sum   : %.4f\n", allTail);
+    printf("  ratios vs dry         : echo %.2fx | reverb %.2fx | all %.2fx\n",
+           (dryTail > 1e-6f) ? echoTail / dryTail : 0.0,
+           (dryTail > 1e-6f) ? reverbTail / dryTail : 0.0,
+           (dryTail > 1e-6f) ? allTail / dryTail : 0.0);
+    fflush(stdout);
+
+    if (allTail > dryTail * 1.3f) {
+        printf("  [PASS] per-track FX extend the track tail.\n\n");
+    } else {
+        printf("  [CHECK] all-FX tail ratio below 1.3x - inspect manually.\n\n");
+    }
+}
+
+
+
 int main(int argc, char* argv[]) {
     int instrumentID = 54;
     if (argc > 1) instrumentID = std::atoi(argv[1]);
@@ -136,6 +202,8 @@ int main(int argc, char* argv[]) {
         printf("  [%s] done (%zu energy samples)\n", names[t], gEnergyLog.size());
         fflush(stdout);
     }
+
+    runFXSmokeTest(instrumentID);
 
     mixer.stop();
 

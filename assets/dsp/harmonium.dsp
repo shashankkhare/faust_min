@@ -50,11 +50,8 @@ pressure_freq_detune = (effective_pressure * bellows_growl * 0.012) * (os.osc(6.
 detuned_freq = freq * (1.0 + pressure_freq_detune);
 
 // Free reeds generate rich odd and even harmonics due to asymmetric airflow.
-// We model this using a bandlimited pulse train waveshaped with tanh.
-reed_osc(f, pres) = os.pulsetrain(f, duty_width) : ma.tanh( * (1.5 + pres * 3.5))
-with {
-    duty_width = 0.35 + pres * 0.15; // Duty width widens under pressure
-};
+// We model this using a sawtooth waveshaped with tanh.
+reed_osc(f, pres) = os.sawtooth(f) : *(1.5 + pres * 3.5) : ma.tanh;
 
 // Stops (Octave Coupling):
 // - Male (f): Fundamental reed stop
@@ -76,4 +73,4 @@ wooden_box_filter(x) =
      + (x : fi.resonbp(1250.0, 2.5, 0.35))      // Key grid resonance
     );
 
-process = raw_reeds_mix : wooden_box_filter : * (gain * 4.0156);
+process = raw_reeds_mix : wooden_box_filter : * (gain * 1.0290);

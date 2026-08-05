@@ -23,6 +23,9 @@ foreach(DSP_FILE ${DSP_FILES})
     if (DSP_NAME STREQUAL "master_reverb")
         set(CAP_NAME "MasterReverb")
     endif()
+    if (DSP_NAME STREQUAL "track_fx")
+        set(CAP_NAME "TrackFx")
+    endif()
     set(HPP_FILE "${CMAKE_CURRENT_SOURCE_DIR}/Faust${CAP_NAME}DSP.hpp")
     
     # All DSPs that import("fm.lib") depend on it

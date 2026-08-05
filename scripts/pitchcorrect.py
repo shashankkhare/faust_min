@@ -1,19 +1,24 @@
 #!/usr/bin/env python3
 """
-pitchcorrect.py — Measure and correct pitch drift in instrument CSV LUTs.
+pitchcorrect.py — Measure and correct pitch drift for instrument DSPs.
 
-For each unique frequency in an instrument's CSV:
-  1. Runs the test binary with --render --scan to measure Goertzel at f ± 5%
-  2. Finds the peak offset (drift %)
-  3. Computes a calibration correction value
-  4. Adds an interactive review step, then writes the calibration column to CSV
-  5. Verifies the fix by re-running the scan
+For each unique frequency in an instrument's dedicated "<dsp>_calibration.csv":
+  1. Runs the test binary with --render --scan to measure the FFT-estimated pitch
+  2. Computes the residual drift %  (measured - target) / target * 100
+  3. Writes freq_nudge = (target - measured) / target * 100 into the
+     "freq_nudge" column (an additional column; the existing "calibration"
+     cents column is left untouched)
+  4. Asks for interactive review, then writes the column
+  5. Verifies by re-running the scan (±1% tolerance)
+
+The nudge is applied automatically by the engine during noteOn (applyFreqNudge)
+on top of the cents calibration (applyCalibration).
 
 Usage: python3 scripts/pitchcorrect.py <instrument_name_or_id>
-Example: python3 scripts/pitchcorrect.py violin
+Example: python3 scripts/pitchcorrect.py sarod
 """
 
-import subprocess, sys, os, math, re, argparse
+import subprocess, sys, os, math, argparse
 
 CSV_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "dsp")
 TEST_BINARY = "./build-release/test_instruments"
@@ -32,16 +37,30 @@ NAMES = {0:'dayan',1:'bayan',2:'kick',3:'snare',4:'hihat',5:'tom',6:'ride',
          52:'nativeamericanflute',53:'dizi',54:'harmonium'}
 NAME_TO_ID = {v: k for k, v in NAMES.items()}
 
-STRING_TUNING = 0.08
-SPEED_OF_SOUND = 340.0
-
-# Which calibration model each instrument expects (cents vs physical)
+# Instruments with a calibration model that supports freq_nudge correction.
 MODEL_MAP = {
-    9:  'cents',    # sitar: cfreq = freq * 2^(cal/1200)
-    10: 'cents',    # flute: cfreq = freq * 2^(cal/1200)
-    12: 'cents',    # piano: cfreq = freq * 2^(cal/1200)
-    18: 'physical', # violin: pm.f2l(freq) + cal (string length offset)
-    44: 'cents',    # sarod: cfreq = freq * 2^(cal/1200)
+    0:  'dayan',   # dayan
+    1:  'bayan',   # bayan
+    2:  'kick',    # kick
+    3:  'snare',   # snare
+    5:  'tom',     # tom
+    7:  'bell',    # bell
+    8:  'bowl',    # bowl
+    9:  'sitar',   # sitar
+    10: 'flute',   # flute
+    12: 'piano',   # piano
+    18: 'violin',  # violin
+    23: 'bass',    # bass
+    24: 'cello',   # cello
+    35: 'chougong',# chougong
+    36: 'lagnga',  # lagnga
+    37: 'dholak',  # dholak
+    38: 'dhol',    # dhol
+    43: 'dagu',    # dagu
+    44: 'sarod',   # sarod
+    48: 'ngachen', # ngachen
+    49: 'mridangam',# mridangam
+    50: 'ghatam',  # ghatam
 }
 
 
@@ -58,14 +77,15 @@ def resolve_id(name_or_id):
         sys.exit(1)
 
 
-def csv_path(instrument_name):
+def calibration_csv_path(instrument_name):
+    """Return the dedicated '<dsp>_calibration.csv' path (case/underscore tolerant)."""
+    import glob as gglob
     name_lower = instrument_name.lower()
-    direct = os.path.join(CSV_DIR, f"{name_lower}.csv")
+    direct = os.path.join(CSV_DIR, f"{name_lower}_calibration.csv")
     if os.path.exists(direct):
         return direct
-    import glob as gglob
-    for f in gglob.glob(os.path.join(CSV_DIR, "*.csv")):
-        base = os.path.splitext(os.path.basename(f))[0]
+    for f in gglob.glob(os.path.join(CSV_DIR, "*_calibration.csv")):
+        base = os.path.splitext(os.path.basename(f))[0].replace("_calibration", "")
         name_clean = name_lower.replace('_', '').replace('-', '')
         base_clean = base.replace('_', '').replace('-', '')
         if name_clean == base_clean:
@@ -88,67 +108,68 @@ def read_csv(path):
                 if i < len(parts):
                     try:
                         row[col] = float(parts[i])
-                    except:
+                    except ValueError:
                         row[col] = parts[i]
                 else:
-                    row[col] = 0.0 if col != 'strike' else 0.0
+                    row[col] = 0.0
             rows.append(row)
     return header, rows, columns
+
+
+def fmt(val):
+    """Format a float the way the CSV already stores it (no trailing zeros)."""
+    if isinstance(val, str):
+        return val
+    if abs(val) < 1e-12:
+        return "0" if val >= 0.0 else "-0"
+    return format(val, 'g')
 
 
 def write_csv(path, header, rows, columns):
     with open(path, 'w') as f:
         f.write(header + '\n')
         for r in rows:
-            f.write(','.join(str(r.get(c, '')) for c in columns) + '\n')
+            cells = []
+            for c in columns:
+                v = r.get(c, '')
+                if c == 'freq_nudge' and isinstance(v, (int, float)):
+                    cells.append(f"{v:.6f}")
+                else:
+                    cells.append(str(fmt(v)) if v != '' else '')
+            f.write(','.join(cells) + '\n')
 
 
-def measure_scan(instrument_id, freq):
+def measure_pitch(instrument_id, freq):
+    """Render one note and return the FFT-estimated pitch (Hz), or None."""
     cmd = [TEST_BINARY, str(instrument_id), f"f={freq}", "v=0.5", "--render", "--scan"]
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30, cwd=WORK_DIR, env=ENV)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60, cwd=WORK_DIR, env=ENV)
         for line in result.stdout.split('\n'):
-            line = line.strip().rstrip(',').strip()
-            if line.startswith('SCAN'):
-                parts = line.split()
-                values = []
-                for p in parts[1:]:
+            s = line.strip().rstrip(',').strip()
+            if s.startswith('SCAN'):
+                for token in s.split()[1:]:
                     try:
-                        values.append(float(p))
+                        v = float(token)
+                        if v > 0.0:
+                            return v
                     except ValueError:
-                        pass
-                if len(values) >= 11:
-                    return values[:11]
+                        continue
         return None
     except subprocess.TimeoutExpired:
         return None
 
 
-def find_peak_offset(values):
-    max_idx = max(range(len(values)), key=lambda i: values[i])
-    return max_idx - 5
-
-
-def compute_calibration_physical(freq, peak_offset_pct):
-    f2l_minus_tuning = SPEED_OF_SOUND / freq - STRING_TUNING
-    return peak_offset_pct / 100.0 * f2l_minus_tuning
-
-
-def compute_calibration_cents(freq, peak_offset_pct):
-    ratio = 1.0 + peak_offset_pct / 100.0
-    cents = 1200.0 * math.log2(ratio)
-    return round(-cents, 2)
-
-
 def main():
-    parser = argparse.ArgumentParser(description="Measure and correct pitch drift in CSV LUTs.")
+    parser = argparse.ArgumentParser(description="Measure and correct pitch drift (freq_nudge) in _calibration.csv.")
     parser.add_argument("instrument", help="Instrument name or ID")
-    parser.add_argument("--column", default="calibration",
-                        help="Column name for correction values (default: calibration)")
+    parser.add_argument("--column", default="freq_nudge",
+                        help="Column to write nudge values into (default: freq_nudge)")
     parser.add_argument("--yes", "-y", action="store_true",
                         help="Skip interactive prompts")
     parser.add_argument("--skip-verify", action="store_true",
                         help="Skip verification step")
+    parser.add_argument("--tolerance", type=float, default=1.0,
+                        help="Verification tolerance in %% drift (default: 1.0, use 0.1 for pitched percussion)")
 
     args = parser.parse_args()
 
@@ -157,28 +178,26 @@ def main():
         sys.exit(1)
 
     instrument_id, instrument_name = resolve_id(args.instrument)
-    path = csv_path(instrument_name)
-
     if instrument_id not in MODEL_MAP:
         print(f"ERROR: '{instrument_name}' (ID {instrument_id}) has no calibration model defined.")
         print("Add an entry to MODEL_MAP in this script before running pitch correction.")
         sys.exit(1)
 
-    args.model = MODEL_MAP[instrument_id]
-    print(f"Model: {args.model}")
-
+    path = calibration_csv_path(instrument_name)
     print(f"Instrument: {instrument_name} (ID {instrument_id})")
     print(f"Reading: {path}")
 
     header, rows, columns = read_csv(path)
     print(f"Loaded {len(rows)} rows, columns: {columns}")
 
+    if 'frequency' not in columns and 'freq' not in columns:
+        print(f"ERROR: no frequency column in {path}")
+        sys.exit(1)
     freq_col = 'frequency' if 'frequency' in columns else 'freq'
-    freqs = sorted(set(r[freq_col] for r in rows))
+    freqs = sorted(set(r[freq_col] for r in rows if r[freq_col] > 0.0))
     print(f"Unique frequencies: {len(freqs)}")
 
     cal_col = args.column
-
     if cal_col not in columns:
         columns.append(cal_col)
         header = ','.join(columns)
@@ -194,59 +213,50 @@ def main():
     results = {}
 
     print(f"\n{'─' * 60}")
-    print("PHASE 1: Measuring drift (baseline, calibration=0)")
+    print("PHASE 1: Measuring drift (baseline, freq_nudge=0)")
     print(f"{'─' * 60}")
 
     for freq in freqs:
-        sys.stdout.write(f"  {freq:>7.1f} Hz: ")
+        sys.stdout.write(f"  {freq:>7.2f} Hz: ")
         sys.stdout.flush()
 
-        values = measure_scan(instrument_id, freq)
-        if values is None:
+        measured = measure_pitch(instrument_id, freq)
+        if measured is None:
             print("FAILED (no scan data)")
             continue
 
-        peak_offset = find_peak_offset(values)
+        drift_pct = (measured - freq) / freq * 100.0
+        nudge = (freq - measured) / freq * 100.0
+        results[freq] = {'measured': measured, 'drift_pct': drift_pct, 'nudge': nudge}
+        print(f"measured={measured:8.2f} Hz  drift={drift_pct:+6.2f}%  nudge={nudge:+6.3f}%")
 
-        if args.model == 'physical':
-            cal = compute_calibration_physical(freq, peak_offset)
-        else:
-            cal = compute_calibration_cents(freq, peak_offset)
-
-        results[freq] = {'offset': peak_offset, 'calibration': cal, 'scan': values}
-
-        drift_str = f"{peak_offset:+d}%"
-        try:
-            cents = round(peak_offset * 10.0, 1)
-            drift_str += f" ({cents:+} cents)"
-            peak_val = max(values)
-            print(f"drift={drift_str:>12}  cal={cal:+.6f}  peak={peak_val:.6f}")
-        except:
-            print(f"drift={drift_str:>12}  cal={cal:+.6f}")
+    if not results:
+        print("No measurements succeeded. Aborting.")
+        sys.exit(1)
 
     print(f"\n{'─' * 60}")
-    print("Proposed calibration values:")
+    print("Proposed freq_nudge values:")
     print(f"{'─' * 60}")
-    print(f"  {'Freq (Hz)':>9}  {'Drift':>6}  {'Calibration':>12}")
+    print(f"  {'Freq (Hz)':>9}  {'Drift %':>8}  {'freq_nudge':>10}")
     for freq in sorted(results.keys()):
         r = results[freq]
-        print(f"  {freq:>9.1f}  {r['offset']:+5d}%  {r['calibration']:+12.6f}")
+        print(f"  {freq:>9.2f}  {r['drift_pct']:+7.2f}  {r['nudge']:+9.3f}")
 
     if not args.yes:
         try:
-            resp = input(f"\nApply these {len(results)} calibration values to '{path}'? [Y/n] ")
+            resp = input(f"\nApply these {len(results)} freq_nudge values to '{path}'? [Y/n] ")
             if resp.strip().lower() not in ('', 'y', 'yes'):
                 print("Aborted.")
                 return
         except EOFError:
             pass
 
-    print(f"\nApplying calibration values...")
+    print("\nApplying freq_nudge values...")
     for freq in sorted(results.keys()):
         r = results[freq]
-        freq_rows = [row for row in rows if abs(row[freq_col] - freq) < 0.01]
-        for row in freq_rows:
-            row[cal_col] = round(r['calibration'], 6)
+        for row in rows:
+            if abs(row[freq_col] - freq) < 0.01:
+                row[cal_col] = round(r['nudge'], 6)
 
     write_csv(path, header, rows, columns)
     print(f"Updated: {path}")
@@ -256,47 +266,49 @@ def main():
         return
 
     print(f"\n{'─' * 60}")
-    print("PHASE 2: Verification (with calibration applied)")
+    print("PHASE 2: Verification (with freq_nudge applied)")
     print(f"{'─' * 60}")
 
     all_pass = True
     for freq in sorted(results.keys()):
-        sys.stdout.write(f"  {freq:>7.1f} Hz: ")
+        sys.stdout.write(f"  {freq:>7.2f} Hz: ")
         sys.stdout.flush()
 
-        values = measure_scan(instrument_id, freq)
-        if values is None:
+        measured = measure_pitch(instrument_id, freq)
+        if measured is None:
             print("FAILED (no scan data)")
             all_pass = False
+            results[freq]['verify_measured'] = None
             continue
 
-        peak_offset = find_peak_offset(values)
-        results[freq]['verify_offset'] = peak_offset
-
-        pass_fail = "PASS" if abs(peak_offset) <= 1 else "FAIL"
+        drift_pct = (measured - freq) / freq * 100.0
+        results[freq]['verify_measured'] = measured
+        pass_fail = "PASS" if abs(drift_pct) <= args.tolerance else "FAIL"
         if pass_fail != "PASS":
             all_pass = False
-
-        cents = round(peak_offset * 10.0, 1)
-        print(f"drift={peak_offset:+d}% ({cents:+} cents)  [{pass_fail}]")
+        print(f"measured={measured:8.2f} Hz  drift={drift_pct:+6.2f}%  [{pass_fail}]")
 
     print(f"\n{'─' * 60}")
     if all_pass:
-        print("RESULT: All frequencies within ±1% tolerance.")
+        print(f"RESULT: All frequencies within ±{args.tolerance}% tolerance.")
     else:
-        bad = [f for f, r in results.items() if 'verify_offset' in r and abs(r['verify_offset']) > 1]
-        print(f"RESULT: {len(bad)} frequencies still exceed ±1% tolerance:")
+        bad = [f for f, r in results.items()
+               if r.get('verify_measured') is None or abs((r['verify_measured'] - f) / f * 100.0) > args.tolerance]
+        print(f"RESULT: {len(bad)} frequencies still exceed ±{args.tolerance}% tolerance:")
         for f in bad:
             r = results[f]
-            print(f"  {f:.1f} Hz: verify_offset={r['verify_offset']:+d}%")
+            vm = r.get('verify_measured')
+            drift = '?' if vm is None else f"{((vm - f) / f * 100.0):+.2f}%"
+            print(f"  {f:.2f} Hz: verify_drift={drift}")
 
-    print(f"\nSummary:")
+    print("\nSummary (before -> after):")
     for freq in sorted(results.keys()):
         r = results[freq]
-        pre = r['offset']
-        post = r.get('verify_offset', '?')
-        status = "OK" if (isinstance(post, int) and abs(post) <= 1) else "?"
-        print(f"  {freq:>7.1f} Hz: {pre:+3d}% -> {post:+3d}%  cal={r['calibration']:.6f}  [{status}]")
+        pre = r['drift_pct']
+        vm = r.get('verify_measured')
+        post = '?' if vm is None else f"{(vm - freq) / freq * 100.0:+.2f}%"
+        status = "OK" if (vm is not None and abs((vm - freq) / freq * 100.0) <= args.tolerance) else "?"
+        print(f"  {freq:>7.2f} Hz: {pre:+6.2f}% -> {post:>7}  nudge={r['nudge']:+8.3f}  [{status}]")
 
 
 if __name__ == "__main__":

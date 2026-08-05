@@ -52,8 +52,8 @@ hammer = (hammerTone * 0.7 + no.noise * hammerEnv * velocity * 0.3)
 // =====================================================
 // STIFF STRING DISPERSION & COUPLING
 // =====================================================
-dispersion = fi.allpassnn(1, 0.02 + stiffness * 0.12);
-loopLPF    = fi.lowpass(1, 6000 - cfreq * 0.8);
+dispersion = fi.allpassnn(1, (0.02 + stiffness * 0.12) * max(0.0, 1.0 - (cfreq / 2500.0)));
+loopLPF    = fi.lowpass(1, 16000.0);
 
 // =====================================================
 // STRING ENGINE WITH SUSTAIN MAPPING

@@ -342,6 +342,34 @@ DART_EXPORT float mixer_get_track_weight(FaustMixer* mixer, int trackID) {
     return mixer ? mixer->getTrackWeight(trackID) : 0.0f;
 }
 
+DART_EXPORT void mixer_set_track_reverb(FaustMixer* mixer, int trackID, float send) {
+    if (mixer) mixer->setTrackReverbSend(trackID, send);
+}
+
+DART_EXPORT void mixer_set_track_echo(FaustMixer* mixer, int trackID, float send, float feedback, float delaySec) {
+    if (mixer) mixer->setTrackEcho(trackID, send, feedback, delaySec);
+}
+
+DART_EXPORT void mixer_set_track_eq(FaustMixer* mixer, int trackID, float bassDb, float trebleDb) {
+    if (mixer) mixer->setTrackEQ(trackID, bassDb, trebleDb);
+}
+
+DART_EXPORT void mixer_set_track_mid(FaustMixer* mixer, int trackID, float midDb, float midFreq, float midQ) {
+    if (mixer) mixer->setTrackMid(trackID, midDb, midFreq, midQ);
+}
+
+DART_EXPORT void mixer_set_track_bypass_eq(FaustMixer* mixer, int trackID, float bypass) {
+    if (mixer) mixer->setTrackBypassEQ(trackID, bypass > 0.5f);
+}
+
+DART_EXPORT void mixer_set_track_bypass_echo(FaustMixer* mixer, int trackID, float bypass) {
+    if (mixer) mixer->setTrackBypassEcho(trackID, bypass > 0.5f);
+}
+
+DART_EXPORT void mixer_set_fx_return(FaustMixer* mixer, float weight) {
+    if (mixer) mixer->setFXReturnWeight(weight);
+}
+
 DART_EXPORT void mixer_add_instrument_to_track(FaustMixer* mixer, int trackID, FaustInstrument* inst, float instWeight) {
     FM_LOGI("mixer_add_inst_to_track: mixer=%p track=%d inst=%p weight=%.3f", (void*)mixer, trackID, (void*)inst, instWeight);
     if (mixer && inst) mixer->addInstrumentToTrack(trackID, inst, instWeight);

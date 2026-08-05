@@ -25,7 +25,7 @@ gain = hslider("gain", 0.8, 0, 1, 0.01);
 velocity = hslider("velocity", 1, 0, 1, 0.01);
 slap_force = hslider("slap_force", 1, 0, 1, 0.01);
 gate = button("gate");
-strike = hslider("strike", 3, 0, 4, 1);
+strike = hslider("strike", 0, 0, 4, 1);
 
 // Articulation Logic (Ghatam Strokes)
 // 0: Tha (Neck stroke - Balanced mix of shell and cavity)
@@ -44,11 +44,11 @@ t60Shell = ba.selectn(5, strike,
 );
 
 t60Cavity = ba.selectn(5, strike,
-    0.05,  // 0: Tha (Very short thump, no sustain)
-    0.01,  // 1: Dhi (Almost zero bass)
-    0.10,  // 2: Thom (Bass thump, extremely dry to avoid bongo sustain)
+    0.35,  // 0: Tha (Acoustically calibrated 350ms T60 Helmholtz fundamental)
+    0.01,  // 1: Dhi (Muted rim click)
+    0.30,  // 2: Thom (Deep 300ms resonant bass fundamental)
     0.005, // 3: Nam (Zero bass)
-    0.15   // 4: Gumki (Longest bass thump, but still just a quick "boop")
+    0.25   // 4: Gumki (Dynamic pitch bend)
 );
 
 // Pitch scaling for the Gumki effect (drops the pitch of the cavity)

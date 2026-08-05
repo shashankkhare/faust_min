@@ -35,7 +35,10 @@
 #include <memory>
 #include "FaustInstrument.hpp"
 #include "FaustMasterReverbDSP.hpp"
+#include "FaustTrackFxDSP.hpp"
 #include "PlatformCompat.hpp"
+
+class MapUI;
 
 enum InterpType : uint8_t {
     INTERP_LINEAR = 0,
@@ -88,6 +91,14 @@ public:
 
     void setTrackWeight(int trackID, float dynamicWeight);
     float getTrackWeight(int trackID);
+
+    // Per-track FX controls (post-AGC, applied to the track's wet signal).
+    void setTrackReverbSend(int trackID, float send);
+    void setTrackEcho(int trackID, float send, float feedback, float delaySec);
+    void setTrackEQ(int trackID, float bassDb, float trebleDb);
+    void setTrackMid(int trackID, float midDb, float midFreq, float midQ);
+    void setTrackBypassEQ(int trackID, bool bypass);
+    void setTrackBypassEcho(int trackID, bool bypass);
 
     // Global Master-Bus Automation
     void masterFadeIn(float durationSeconds);
@@ -162,6 +173,17 @@ private:
         float agcEnvelope = 1.0f;
         float agcAttack = 0.005f;
         float agcRelease = 0.999f;
+
+        // --- Per-Track FX (written under mRegistryMutex, read on audio thread) ---
+        // Send level (0..1) into the shared master reverb bus.
+        float reverbSend = 0.0f;
+        // Insert FX (echo + 3-band EQ) as a per-track Faust DSP driven via MapUI.
+        std::unique_ptr<FaustTrackFxDSP> fxDSP;
+        std::unique_ptr<MapUI> fxUI;
+        std::vector<float> fxInL;
+        std::vector<float> fxInR;
+        std::vector<float> fxOutL;
+        std::vector<float> fxOutR;
     };
 
     // Real-Time Audio Interrupt Accumulator Endpoint

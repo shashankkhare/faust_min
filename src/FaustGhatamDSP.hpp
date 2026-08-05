@@ -120,7 +120,7 @@ class FaustGhatamDSP : public dsp {
 	virtual void instanceResetUserInterface() {
 		fHslider0 = FAUSTFLOAT(0.80000000000000004f);
 		fHslider1 = FAUSTFLOAT(1.0f);
-		fHslider2 = FAUSTFLOAT(3.0f);
+		fHslider2 = FAUSTFLOAT(0.0f);
 		fHslider3 = FAUSTFLOAT(130.81f);
 		fHslider4 = FAUSTFLOAT(1.0f);
 		fButton0 = FAUSTFLOAT(0.0f);
@@ -174,7 +174,7 @@ class FaustGhatamDSP : public dsp {
 		ui_interface->addHorizontalSlider("gain", &fHslider0, FAUSTFLOAT(0.800000012f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addButton("gate", &fButton0);
 		ui_interface->addHorizontalSlider("slap_force", &fHslider1, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
-		ui_interface->addHorizontalSlider("strike", &fHslider2, FAUSTFLOAT(3.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(4.0f), FAUSTFLOAT(1.0f));
+		ui_interface->addHorizontalSlider("strike", &fHslider2, FAUSTFLOAT(0.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(4.0f), FAUSTFLOAT(1.0f));
 		ui_interface->addHorizontalSlider("velocity", &fHslider4, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->closeBox();
 	}
@@ -229,9 +229,9 @@ class FaustGhatamDSP : public dsp {
 		float fElse19 = (iSlow7 ? 0.0f : 0.800000012f);
 		float fSlow31 = (iSlow4 ? fElse19 : fThen19);
 		float fSlow32 = (1.20000005f - (0.200000003f * fSlow1));
-		float fThen21 = (iSlow6 ? 0.00999999978f : 0.0500000007f);
-		float fThen23 = (iSlow5 ? 0.100000001f : fThen21);
-		float fElse23 = (iSlow7 ? 0.150000006f : 0.00499999989f);
+		float fThen21 = (iSlow6 ? 0.00999999978f : 0.349999994f);
+		float fThen23 = (iSlow5 ? 0.300000012f : fThen21);
+		float fElse23 = (iSlow7 ? 0.25f : 0.00499999989f);
 		float fSlow33 = std::pow(0.00100000005f, (fConst1 / std::max<float>(0.00100000005f, (iSlow4 ? fElse23 : fThen23))));
 		float fElse25 = (iSlow7 ? 0.800000012f : 1.0f);
 		float fSlow34 = std::cos(((fConst7 * fSlow10) * (iSlow4 ? fElse25 : 1.0f)));

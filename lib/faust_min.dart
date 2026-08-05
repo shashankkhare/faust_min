@@ -104,6 +104,27 @@ typedef _dart_mixer_set_track_weight = void Function(Pointer<NativeMixerOpaque> 
 typedef _c_mixer_get_track_weight = Float Function(Pointer<NativeMixerOpaque> mixer, Int32 trackID);
 typedef _dart_mixer_get_track_weight = double Function(Pointer<NativeMixerOpaque> mixer, int trackID);
 
+typedef _c_mixer_set_track_reverb = Void Function(Pointer<NativeMixerOpaque> mixer, Int32 trackID, Float send);
+typedef _dart_mixer_set_track_reverb = void Function(Pointer<NativeMixerOpaque> mixer, int trackID, double send);
+
+typedef _c_mixer_set_track_echo = Void Function(Pointer<NativeMixerOpaque> mixer, Int32 trackID, Float send, Float feedback, Float delaySec);
+typedef _dart_mixer_set_track_echo = void Function(Pointer<NativeMixerOpaque> mixer, int trackID, double send, double feedback, double delaySec);
+
+typedef _c_mixer_set_track_eq = Void Function(Pointer<NativeMixerOpaque> mixer, Int32 trackID, Float bassDb, Float trebleDb);
+typedef _dart_mixer_set_track_eq = void Function(Pointer<NativeMixerOpaque> mixer, int trackID, double bassDb, double trebleDb);
+
+typedef _c_mixer_set_track_mid = Void Function(Pointer<NativeMixerOpaque> mixer, Int32 trackID, Float midDb, Float midFreq, Float midQ);
+typedef _dart_mixer_set_track_mid = void Function(Pointer<NativeMixerOpaque> mixer, int trackID, double midDb, double midFreq, double midQ);
+
+typedef _c_mixer_set_track_bypass_eq = Void Function(Pointer<NativeMixerOpaque> mixer, Int32 trackID, Float bypass);
+typedef _dart_mixer_set_track_bypass_eq = void Function(Pointer<NativeMixerOpaque> mixer, int trackID, double bypass);
+
+typedef _c_mixer_set_track_bypass_echo = Void Function(Pointer<NativeMixerOpaque> mixer, Int32 trackID, Float bypass);
+typedef _dart_mixer_set_track_bypass_echo = void Function(Pointer<NativeMixerOpaque> mixer, int trackID, double bypass);
+
+typedef _c_mixer_set_fx_return = Void Function(Pointer<NativeMixerOpaque> mixer, Float weight);
+typedef _dart_mixer_set_fx_return = void Function(Pointer<NativeMixerOpaque> mixer, double weight);
+
 typedef _c_mixer_master_fade_in = Void Function(Pointer<NativeMixerOpaque> mixer, Float durationSeconds);
 typedef _dart_mixer_master_fade_in = void Function(Pointer<NativeMixerOpaque> mixer, double durationSeconds);
 
@@ -967,6 +988,13 @@ class FaustMixer {
   static late final _funcSetTrackEnvelope = _dylib.lookupFunction<_c_mixer_set_track_envelope, _dart_mixer_set_track_envelope>('mixer_set_track_envelope');
   static final _funcSetTrackWeight = _dylib.lookupFunction<_c_mixer_set_track_weight, _dart_mixer_set_track_weight>('mixer_set_track_weight');
   static final _funcGetTrackWeight = _dylib.lookupFunction<_c_mixer_get_track_weight, _dart_mixer_get_track_weight>('mixer_get_track_weight');
+  static final _funcSetTrackReverb = _dylib.lookupFunction<_c_mixer_set_track_reverb, _dart_mixer_set_track_reverb>('mixer_set_track_reverb');
+  static final _funcSetTrackEcho = _dylib.lookupFunction<_c_mixer_set_track_echo, _dart_mixer_set_track_echo>('mixer_set_track_echo');
+  static final _funcSetTrackEQ = _dylib.lookupFunction<_c_mixer_set_track_eq, _dart_mixer_set_track_eq>('mixer_set_track_eq');
+  static final _funcSetTrackMid = _dylib.lookupFunction<_c_mixer_set_track_mid, _dart_mixer_set_track_mid>('mixer_set_track_mid');
+  static final _funcSetTrackBypassEQ = _dylib.lookupFunction<_c_mixer_set_track_bypass_eq, _dart_mixer_set_track_bypass_eq>('mixer_set_track_bypass_eq');
+  static final _funcSetTrackBypassEcho = _dylib.lookupFunction<_c_mixer_set_track_bypass_echo, _dart_mixer_set_track_bypass_echo>('mixer_set_track_bypass_echo');
+  static final _funcSetFXReturn = _dylib.lookupFunction<_c_mixer_set_fx_return, _dart_mixer_set_fx_return>('mixer_set_fx_return');
   static final _funcMasterFadeIn = _dylib.lookupFunction<_c_mixer_master_fade_in, _dart_mixer_master_fade_in>('mixer_master_fade_in');
   static final _funcMasterFadeOut = _dylib.lookupFunction<_c_mixer_master_fade_out, _dart_mixer_master_fade_out>('mixer_master_fade_out');
 
@@ -1074,6 +1102,45 @@ class FaustMixer {
   /// Get the current dynamic weight of a track.
   double getTrackWeight(int trackID) =>
       _funcGetTrackWeight(_handle, trackID);
+
+  /// Set this track's send level (0.0..1.0) into the shared master reverb bus.
+  /// Sends are summed across all tracks and returned through the master bus
+  /// scaled by [fxReturnWeight].
+  void setTrackReverbSend(int trackID, double send) =>
+      _funcSetTrackReverb(_handle, trackID, send);
+
+  /// Configure this track's echo effect.
+  ///
+  /// - [send]: wet mix level (0.0 = dry, 1.0 = full echo).
+  /// - [feedback]: regeneration of the delayed signal (0.0..0.95).
+  /// - [delaySec]: echo delay time in seconds (default 0.25).
+  void setTrackEcho(int trackID, double send, {double feedback = 0.3, double delaySec = 0.25}) =>
+      _funcSetTrackEcho(_handle, trackID, send, feedback, delaySec);
+
+  /// Set this track's bass/treble shelving EQ gains in dB (0 disables).
+  /// Bass shelf at 250 Hz, treble shelf at 2500 Hz.
+  void setTrackEQ(int trackID, double bassDb, double trebleDb) =>
+      _funcSetTrackEQ(_handle, trackID, bassDb, trebleDb);
+
+  /// Set this track's parametric mid (peaking) band.
+  ///
+  /// - [midDb]: gain in dB at the center frequency.
+  /// - [midFreq]: center frequency in Hz (20..20000).
+  /// - [midQ]: bandwidth (0.1..18, default 1.0).
+  void setTrackMid(int trackID, double midDb, {double midFreq = 1000.0, double midQ = 1.0}) =>
+      _funcSetTrackMid(_handle, trackID, midDb, midFreq, midQ);
+
+  /// Bypass (true) or re-engage (false) this track's EQ stage.
+  void setTrackBypassEQ(int trackID, {bool bypass = true}) =>
+      _funcSetTrackBypassEQ(_handle, trackID, bypass ? 1.0 : 0.0);
+
+  /// Bypass (true) or re-engage (false) this track's echo stage.
+  void setTrackBypassEcho(int trackID, {bool bypass = true}) =>
+      _funcSetTrackBypassEcho(_handle, trackID, bypass ? 1.0 : 0.0);
+
+  /// Set the master FX (reverb) return weight (0.0..1.0), scaling the wet
+  /// signal added back into the master bus.
+  set fxReturnWeight(double weight) => _funcSetFXReturn(_handle, weight);
 
   /// Fade the master bus from 0 to 1.0 over [durationSeconds].
   void masterFadeIn(double durationSeconds) =>
