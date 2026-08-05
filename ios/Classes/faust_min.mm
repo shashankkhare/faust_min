@@ -20,6 +20,5 @@
  * SOFTWARE.
  */
 
-// Relative import to be able to reuse the C++ sources.
-// See the comment in ../faust_min.podspec for more information.
-#include "../../src/faust_min.cpp"
+// C++ sources are directly compiled via podspec s.source_files
+// #include "../../src/faust_min.cpp"

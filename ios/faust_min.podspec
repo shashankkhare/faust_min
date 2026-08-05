@@ -39,7 +39,7 @@ A high-fidelity physical modeling music synthesis engine powered by Faust, featu
   # paths, so Classes contains a forwarder C file that relatively imports
   # `../src/*` so that the C sources can be shared among all target platforms.
   s.source           = { :path => '.' }
-  s.source_files = 'Classes/**/*'
+  s.source_files = 'Classes/**/*', '../src/*.cpp', '../src/*.hpp', '../src/*.h', '../src/faust_arch/faust/dsp/dsp.h'
   s.dependency 'Flutter'
   s.platform = :ios, '13.0'
 
