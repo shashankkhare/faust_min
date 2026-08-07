@@ -56,8 +56,9 @@ MODEL_MAP = {
     36: 'lagnga',  # lagnga
     37: 'dholak',  # dholak
     38: 'dhol',    # dhol
-    43: 'dagu',    # dagu
-    44: 'sarod',   # sarod
+     21: 'acousticguitar',# acoustic guitar
+     43: 'dagu',    # dagu
+     44: 'sarod',   # sarod
     48: 'ngachen', # ngachen
     49: 'mridangam',# mridangam
     50: 'ghatam',  # ghatam

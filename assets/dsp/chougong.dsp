@@ -30,8 +30,8 @@ dyn_freq = freq * (1.0 + (pitch_env * 0.04));
 
 // Mallet Excitation: Safe impulse to prevent biquad blowup
 mallet_env = loop_mallet ~ _ with {
-    g = exp(-1.0 / (0.020 * ma.SR)); // 20ms burst as requested
-    loop_mallet(s) = ba.if(trig, 2.5, s * g); // Safe impact energy
+    g = exp(-1.0 / (0.060 * ma.SR)); // 60ms burst as requested
+    loop_mallet(s) = ba.if(trig, 1.0, s * g); // Safe impact energy
 };
 // Moderate lowpass cutoff to allow some high-frequency crash without overloading partials
 excitation = (no.noise : fi.lowpass(2, dyn_freq * 4.0)) * mallet_env;
@@ -64,9 +64,9 @@ m10 = mode(8.130, 0.4, 0.1);
 
 // The "Bloom" effect (dynamic high-frequency spread that opens up after strike)
 bloom_env = en.ar(0.10, 1.2, trig); // Fast attack (100ms), decay (1.2s)
-bloom_shimmer = (m6 + m7 + m8 + m9 + m10) * bloom_env * 1.5;
+bloom_shimmer = (m6 + m7 + m8 + m9 + m10) * bloom_env * 1.2;
 
 gong_sum = m1a + m1b + m2a + m2b + m3a + m3b + m4a + m4b + m5 + bloom_shimmer;
 
 // Soft clipping via tanh to guarantee the resonators NEVER digitally clip
-process = gong_sum * gain * velocity * 1.8 : ma.tanh;
+process = gong_sum * gain * velocity * 0.928264 : ma.tanh;

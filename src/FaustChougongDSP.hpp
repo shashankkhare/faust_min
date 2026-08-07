@@ -148,7 +148,7 @@ class FaustChougongDSP : public dsp {
 	virtual void instanceConstants(int sample_rate) {
 		fSampleRate = sample_rate;
 		float fConst0 = std::min<float>(192000.0f, std::max<float>(1.0f, float(fSampleRate)));
-		fConst1 = std::exp((0.0f - (50.0f / fConst0)));
+		fConst1 = std::exp((0.0f - (16.666666f / fConst0)));
 		fConst2 = (12.566371f / fConst0);
 		fConst3 = std::max<float>(1.0f, (0.00999999978f * fConst0));
 		fConst4 = (1.0f / fConst3);
@@ -275,7 +275,7 @@ class FaustChougongDSP : public dsp {
 	
 	virtual void compute(int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs) {
 		FAUSTFLOAT* output0 = outputs[0];
-		float fSlow0 = (1.79999995f * (float(fHslider0) * float(fHslider1)));
+		float fSlow0 = (0.928264022f * (float(fHslider0) * float(fHslider1)));
 		float fSlow1 = float(fButton0);
 		float fSlow2 = float(fHslider2);
 		float fSlow3 = (fConst2 * fSlow2);
@@ -312,7 +312,7 @@ class FaustChougongDSP : public dsp {
 			int iTemp0 = (fSlow1 > fVec0[1]);
 			iVec1[0] = iTemp0;
 			float fThen0 = (fConst1 * fRec1[1]);
-			float fTempFTZ0 = (iTemp0 ? 2.5f : fThen0);
+			float fTempFTZ0 = (iTemp0 ? 1.0f : fThen0);
 			fRec1[0] = ((std::fabs(fTempFTZ0) > 1.17549435e-38f) ? fTempFTZ0 : 0.0f);
 			iRec3[0] = ((1103515245 * iRec3[1]) + 12345);
 			iRec5[0] = ((iTemp0 > iVec1[1]) + ((iTemp0 <= iVec1[1]) * (iRec5[1] + (iRec5[1] > 0))));
@@ -424,7 +424,7 @@ class FaustChougongDSP : public dsp {
 			float fTempFTZ16 = (fTemp6 - (((fRec18[2] * (((fTemp73 - fTemp74) / fTemp72) + 1.0f)) + (2.0f * (fRec18[1] * (1.0f - (1.0f / FaustChougongDSP_faustpower2_f(fTemp72)))))) / fTemp75));
 			fRec18[0] = ((std::fabs(fTempFTZ16) > 1.17549435e-38f) ? fTempFTZ16 : 0.0f);
 			float fTemp76 = (fTemp72 * fTemp75);
-			output0[i0] = FAUSTFLOAT(float(tanhf(float((fSlow0 * (((fRec0[2] * (0.0f - (0.300000012f / fTemp11))) + (((0.400000006f * ((fRec6[0] / fTemp16) + (fRec7[0] / fTemp21))) + ((fRec7[2] * (0.0f - (0.400000006f / fTemp21))) + (((fRec8[2] * (0.0f - (0.5f / fTemp26))) + (((fRec9[2] * (0.0f - (0.600000024f / fTemp31))) + (((fRec10[2] * (0.0f - (0.699999988f / fTemp36))) + (((fRec11[2] * (0.0f - (0.800000012f / fTemp41))) + (((fRec12[2] * (0.0f - (3.5f / fTemp46))) + (((4.0f * (fRec13[0] / fTemp51)) + (fRec13[2] * (0.0f - (4.0f / fTemp51)))) + (3.5f * (fRec12[0] / fTemp46)))) + (0.800000012f * (fRec11[0] / fTemp41)))) + (0.699999988f * (fRec10[0] / fTemp36)))) + (0.600000024f * (fRec9[0] / fTemp31)))) + (0.5f * (fRec8[0] / fTemp26)))) + (fRec6[2] * (0.0f - (0.400000006f / fTemp16)))))) + (0.300000012f * (fRec0[0] / fTemp11)))) + (1.5f * (((0.100000001f * ((fRec14[0] / fTemp56) + (fRec15[0] / fTemp61))) + ((fRec15[2] * (0.0f - (0.100000001f / fTemp61))) + (((fRec16[2] * (0.0f - (0.150000006f / fTemp66))) + (((fRec17[2] * (0.0f - (0.200000003f / fTemp71))) + (((0.300000012f * (fRec18[0] / fTemp76)) + (fRec18[2] * (0.0f - (0.300000012f / fTemp76)))) + (0.200000003f * (fRec17[0] / fTemp71)))) + (0.150000006f * (fRec16[0] / fTemp66)))) + (fRec14[2] * (0.0f - (0.100000001f / fTemp56)))))) * std::max<float>(0.0f, std::min<float>((fConst21 * fTemp1), ((fConst22 * (fConst20 - fTemp1)) + 1.0f)))))))))));
+			output0[i0] = FAUSTFLOAT(float(tanhf(float((fSlow0 * (((fRec0[2] * (0.0f - (0.300000012f / fTemp11))) + (((0.400000006f * ((fRec6[0] / fTemp16) + (fRec7[0] / fTemp21))) + ((fRec7[2] * (0.0f - (0.400000006f / fTemp21))) + (((fRec8[2] * (0.0f - (0.5f / fTemp26))) + (((fRec9[2] * (0.0f - (0.600000024f / fTemp31))) + (((fRec10[2] * (0.0f - (0.699999988f / fTemp36))) + (((fRec11[2] * (0.0f - (0.800000012f / fTemp41))) + (((fRec12[2] * (0.0f - (3.5f / fTemp46))) + (((4.0f * (fRec13[0] / fTemp51)) + (fRec13[2] * (0.0f - (4.0f / fTemp51)))) + (3.5f * (fRec12[0] / fTemp46)))) + (0.800000012f * (fRec11[0] / fTemp41)))) + (0.699999988f * (fRec10[0] / fTemp36)))) + (0.600000024f * (fRec9[0] / fTemp31)))) + (0.5f * (fRec8[0] / fTemp26)))) + (fRec6[2] * (0.0f - (0.400000006f / fTemp16)))))) + (0.300000012f * (fRec0[0] / fTemp11)))) + (1.20000005f * (((0.100000001f * ((fRec14[0] / fTemp56) + (fRec15[0] / fTemp61))) + ((fRec15[2] * (0.0f - (0.100000001f / fTemp61))) + (((fRec16[2] * (0.0f - (0.150000006f / fTemp66))) + (((fRec17[2] * (0.0f - (0.200000003f / fTemp71))) + (((0.300000012f * (fRec18[0] / fTemp76)) + (fRec18[2] * (0.0f - (0.300000012f / fTemp76)))) + (0.200000003f * (fRec17[0] / fTemp71)))) + (0.150000006f * (fRec16[0] / fTemp66)))) + (fRec14[2] * (0.0f - (0.100000001f / fTemp56)))))) * std::max<float>(0.0f, std::min<float>((fConst21 * fTemp1), ((fConst22 * (fConst20 - fTemp1)) + 1.0f)))))))))));
 			fVec0[1] = fVec0[0];
 			iVec1[1] = iVec1[0];
 			fRec1[1] = fRec1[0];

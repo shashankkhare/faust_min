@@ -71,6 +71,7 @@ void playSequenceGroup(FaustMixer& mixer, SequenceOrchestrator& orch, SequenceGr
     int percussionTrack = mixer.addTrack(group.percussionTrackWeight);
     int melodyTrack = mixer.addTrack(group.melodyTrackWeight);
     int backgroundTrack = mixer.addTrack(group.backgroundTrackWeight);
+    mixer.setTrackReverbSend(percussionTrack, 0.5f);
 
     // 1. Register sequences and instruments
     for (size_t i = 0; i < group.sequences.size(); ++i) {
@@ -129,10 +130,10 @@ void playSequenceGroup(FaustMixer& mixer, SequenceOrchestrator& orch, SequenceGr
             seqPair.first.find("Cello") != std::string::npos ||
             seqPair.first.find("ViolinH") != std::string::npos) {
             targetTrack = backgroundTrack;
-        // Membrane percussion → percussion bus
-        } else if (InstrumentMapper::isMembraneophone(id)) {
+        // All percussion (membrane + idiophone: bowl, bells, shaker, ghatam, ride, hihat, ...) → percussion bus
+        } else if (InstrumentMapper::isPercussionID(id)) {
             targetTrack = percussionTrack;
-        // Idiophones & Melody stay on melodyTrack (default)
+        // Melody stays on melodyTrack (default)
         }
         
         float instWeight = 1.0f;
@@ -142,6 +143,8 @@ void playSequenceGroup(FaustMixer& mixer, SequenceOrchestrator& orch, SequenceGr
             instWeight = 0.6f; // Push harmony violins slightly back
         } else if (seqPair.first.find("Timpani") != std::string::npos) {
             instWeight = 0.3f; // Greatly reduce timpani to prevent speaker cracking
+        } else if (id == 21) {
+            instWeight = 1.5f; // Boost acoustic guitar
         }
 
         if (seqPair.second->getFaustInstrument()) {

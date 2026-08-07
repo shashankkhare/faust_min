@@ -260,6 +260,11 @@ protected:
     // Running peak envelope tracker for smooth look-ahead normalization
     float mRunningPeakEnvelope = 0.0f;
 
+    // Polyphonic AGC State
+    float mAgcEnvelope = 1.0f;
+    float mAgcAttack = 0.005f;
+    float mAgcRelease = 0.999f;
+
     // Fast inline helper to calculate peak block amplitude for voice energy tracking
     inline void updateVoiceEnergyInline(int voiceIndex, const float* sourceBufferL, const float* sourceBufferR, int chunkSize) {
         float peak = 0.0f;

@@ -219,7 +219,7 @@ class FaustBansuriDSP : public dsp {
 		float fConst1 = std::tan((15707.9629f / fConst0));
 		float fConst2 = (1.0f / fConst1);
 		float fConst3 = (((fConst2 + 1.41421354f) / fConst1) + 1.0f);
-		fConst4 = (0.400000006f / fConst3);
+		fConst4 = (1.44000006f / fConst3);
 		fConst5 = (44.0999985f / fConst0);
 		fConst6 = (1.0f - fConst5);
 		fConst7 = std::exp((0.0f - (25.0f / fConst0)));

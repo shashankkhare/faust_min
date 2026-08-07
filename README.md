@@ -87,6 +87,46 @@ orchestrator.addSequence("Dhol", dholUML);
 orchestrator.play();
 ```
 
+## 🔨 Build Process (Native Engine)
+
+The native engine must be built with **CMake** — there is no other supported build path.
+
+### Prerequisites
+*   CMake 3.10+
+*   A C++17 compiler (GCC/Clang)
+*   Faust compiler (`faust`) on `PATH` — the build auto-compiles every `assets/dsp/*.dsp` file into a generated `Faust<Name>DSP.hpp` header whenever the DSP changes
+*   FFTW3 (`libfftw3`) — required only by `test_instruments`
+
+### Configure
+Run CMake from the `linux/` directory (the CMake root that includes `src/`), into a build directory:
+
+```bash
+cmake -S linux -B build-release -DCMAKE_BUILD_TYPE=Release
+```
+
+### Build — always in one shot
+Whenever the `faust_min` core is modified (any `.dsp`, any `src/*.cpp`/`*.hpp`, or any `assets/dsp/*.csv`), **all artifacts must be built together in a single invocation** — never build only one artifact:
+
+```bash
+cmake --build build-release -j$(nproc)
+# or equivalently
+make -C build-release -j$(nproc)
+```
+
+This is mandatory because every test binary (`test_sequence`, `test_mixer`, `test_instruments`) links against the `faust_min` shared library, and `faust_min` post-build syncs all DSP CSV lookup tables. Building one test in isolation leaves the others linked against a stale core — the whole set (engine + all test binaries) must be rebuilt together so they stay in lockstep. CMake tracks the generated DSP headers automatically, so this is safe and incremental.
+
+### Artifacts
+*   `build-release/shared/libfaust_min.so` — the engine (bundled by the Flutter Linux plugin).
+*   `build-release/shared/test_instruments`, `test_mixer`, `test_sequence` — test binaries (also reachable via `build-release/`).
+*   DSP calibration CSVs are auto-synced to both `assets/dsp/` and `build-release/assets/dsp/` on every build.
+
+### Running tests
+Test binaries resolve `libfaust_min.so` via the build dir, so run them from the repo root with `LD_LIBRARY_PATH` set:
+
+```bash
+LD_LIBRARY_PATH=build-release/shared ./build-release/test_instruments <id> f=220 v=0.8 s=0 --render
+```
+
 ## 🏗 Architecture & Stability
 
 Legacy C++ audio libraries often suffer from thread-safety issues, `SIGSEGV` crashes, and timing drift when used in a modern, multithreaded environment like Flutter's Dart Isolates. 

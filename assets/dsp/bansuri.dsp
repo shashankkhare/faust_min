@@ -83,5 +83,5 @@ flute = bansuriModel(pm.f2l(actualFreq), mouthPosition, noisyPressure);
 process = (flute + externalAir) 
           : *(releaseEnv) 
           : fi.lowpass(2, 5000.0) 
-          : *(gain * 0.4);
+          : *(gain * 1.44);
 

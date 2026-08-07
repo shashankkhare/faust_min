@@ -25,7 +25,7 @@ import("instruments.lib");
 
 // Expert Play Range: Tibetan singing bowl fundamental typically 100-400 Hz.
 freq = nentry("freq",400.0, 100, 400, 1);
-gain = nentry("gain",0.8,0,100,0.01);
+gain = nentry("gain",0.8,0,1,0.01);
 velocity = hslider("velocity", 0.8, 0, 1, 0.01);
 gate = hslider("gate", 0, 0, 1, 1);
 
@@ -63,7 +63,7 @@ radius = 0.98;
 safe_bp(f, r) = fi.tf2(b0, 0, -b0, a1, a2)
 with {
     w = 2*ma.PI*f/ma.SR;
-    b0 = 1-r;
+    b0 = (1.0 - r*r) * 0.5;
     a1 = -2*r*cos(w);
     a2 = r*r;
 };
@@ -88,10 +88,10 @@ mallet_env = loop_mallet ~ _ with {
 };
 
 globalDamping = 0.998;
-excitationGain = 2;
+excitationGain = 24;
 resonance(x) = + : + (mallet_env * (1-strikeVal) * my_excitation(x) * excitationGain) : delayLine(x) : *(globalDamping) : bandPassFilter(x);
 
 process =
     (bowing*strikeVal <:
     par(i,nModes,(resonance(i)~_)))~par(i,nModes,_) :> _ :
-    NLFM : stereo : instrReverb : *(gain * 1.5), *(gain * 1.5);
+    NLFM : stereo : (*(gain * 3.53325) : ma.tanh), (*(gain * 3.53325) : ma.tanh);

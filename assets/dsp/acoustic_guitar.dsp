@@ -7,20 +7,26 @@ pm = library("physmodels.lib");
 freq          = hslider("freq [unit:Hz]", 196.0, 82, 1046, 0.01); 
 velocity      = hslider("velocity", 0.5, 0, 1, 0.01);
 gate          = button("gate");
-pluckPosition = hslider("pluckPosition", 0.8, 0.01, 0.99, 0.01) : si.smoo;
+pluckPosition = hslider("pluckPosition", 0.67, 0.01, 0.99, 0.01) : si.smoo;
 gain          = hslider("gain", 1.0, 0, 1, 0.01);
 
-// String Selection: 0 = Steel String, 1 = Nylon String, 2 = Heavy Bass String
+// String Selection: 0 = Steel String (default), 1 = Nylon String, 2 = Heavy Bass String
 stringType    = hslider("stringType [style:knob]", 0, 0, 2, 1) : int;
+
+// Pitch calibration (cents): applied by FaustInstrument::applyCalibration() from
+// the companion "<dsp>_calibration.csv" table to keep the physical model in tune.
+calibration   = hslider("calibration", 0, -100, 100, 0.01);
+cfreq         = freq * (2.0 ^ (calibration / 1200.0));
 
 // --- ACOUSTIC CHAMBER / CABINET ACCENTS ---
 // Body resonances that track the fundamental for harmonic enhancement
 guitarBody(sel) = _ <: (airResonance, woodPlates) :> fi.dcblocker
 with {
     // Air resonance at fundamental (body air cavity)
+    // Steel (default) keeps a gentle Q/gain; nylon & bass keep the original accents.
     airFreq = freq;
-    airQ    = select2(sel > 0, 15.0, select2(sel > 1, 10.0, 20.0));    
-    airGain = select2(sel > 0, 1.2, select2(sel > 1, 1.5, 2.0));       
+    airQ    = ba.if(sel == 0, 8.0, ba.if(sel == 1, 10.0, 20.0));
+    airGain = ba.if(sel == 0, 0.6, ba.if(sel == 1, 2.0, 1.5));
     airResonance = fi.resonbp(airFreq, airQ, airGain);
 
     // Wood plate modes at harmonic frequencies
@@ -36,7 +42,7 @@ with {
 };
 
 // --- ROUTING ENGINE ---
-stringLength  = freq : pm.f2l;
+stringLength  = cfreq : pm.f2l;
 
 // pm.strikeModel: shaped noise burst with envelope instead of 1-sample impulse.
 // Spreads energy over time, reducing peak while keeping same total energy.

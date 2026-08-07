@@ -937,11 +937,21 @@ void FaustInstrument::processInternalGlides(int numFrames) {
 }
 
 void FaustInstrument::normalizeBuffer(float* buffer, int numFrames) {
-    // Replaced slow AGC envelope with instantaneous soft-saturation (tanh).
-    // This entirely eliminates volume "jerks" and "pumping" when strings sum,
-    // providing natural, fast saturation for polyphonic mixing.
-    for (int i = 0; i < numFrames * 2; ++i) {
-        buffer[i] = std::tanh(buffer[i]);
+    for (int i = 0; i < numFrames; ++i) {
+        float rawL = buffer[i * 2];
+        float rawR = buffer[i * 2 + 1];
+        
+        float currentPeak = std::max(std::abs(rawL), std::abs(rawR));
+        if (currentPeak > mAgcEnvelope) {
+            mAgcEnvelope = mAgcAttack * currentPeak + (1.0f - mAgcAttack) * mAgcEnvelope;
+        } else {
+            mAgcEnvelope = mAgcRelease * mAgcEnvelope + (1.0f - mAgcRelease) * currentPeak;
+        }
+        
+        float agcMultiplier = 1.0f / std::max(1.0f, mAgcEnvelope);
+        
+        buffer[i * 2] = rawL * agcMultiplier;
+        buffer[i * 2 + 1] = rawR * agcMultiplier;
     }
 }
 
@@ -1153,7 +1163,7 @@ void FaustInstrument::processRealtimeStream(float* buffer, int numFrames) {
     int framesProcessed = 0;
     int nOuts = mVoices[0]->getNumOutputs();
     
-    // Voices sum raw; normalizeBuffer (tanh) handles saturation at the end
+    // Voices sum raw; normalizeBuffer (AGC) handles peak limiting at the end
 
     for (const auto& ev : mEventQueue) {
         if (framesPerSubBlock > 0 && (framesProcessed + framesPerSubBlock <= numFrames)) {
