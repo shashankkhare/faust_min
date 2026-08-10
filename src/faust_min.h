@@ -32,7 +32,7 @@ extern "C" {
 #if defined(_WIN32) || defined(__CYGWIN__)
 #define DART_EXPORT __declspec(dllexport)
 #else
-#define DART_EXPORT __attribute__((visibility("default")))
+#define DART_EXPORT __attribute__((visibility("default"))) __attribute__((used))
 #endif
 
 // Opaque types
