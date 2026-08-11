@@ -30,8 +30,15 @@ import 'package:ffi/ffi.dart';
 const String _libName = 'faust_min';
 
 final DynamicLibrary _dylib = () {
-  if (Platform.isMacOS || Platform.isIOS) {
-    return DynamicLibrary.open('$_libName.framework/$_libName');
+  if (Platform.isIOS) {
+    return DynamicLibrary.process();
+  }
+  if (Platform.isMacOS) {
+    try {
+      return DynamicLibrary.open('$_libName.framework/$_libName');
+    } catch (_) {
+      return DynamicLibrary.process();
+    }
   }
   if (Platform.isAndroid || Platform.isLinux) {
     return DynamicLibrary.open('lib$_libName.so');
