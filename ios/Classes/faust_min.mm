@@ -20,5 +20,11 @@
  * SOFTWARE.
  */
 
-// C++ sources are directly compiled via podspec s.source_files
-// #include "../../src/faust_min.cpp"
+#import <Foundation/Foundation.h>
+#include "../../src/faust_min.h"
+
+// Force-link reference to prevent Xcode static linker from stripping C++ FFI symbols
+__attribute__((visibility("default"))) __attribute__((used))
+void faust_min_ios_force_link(void) {
+    (void)mixer_get_instance();
+}

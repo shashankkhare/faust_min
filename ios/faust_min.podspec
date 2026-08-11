@@ -47,6 +47,7 @@ A high-fidelity physical modeling music synthesis engine powered by Faust, featu
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386',
     'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) FAUST_DISABLE_INTERPRETER=1',
     'HEADER_SEARCH_PATHS' => '$(inherited) "${PODS_TARGET_SRCROOT}/../src/faust_arch" "${PODS_ROOT}/../src/faust_arch"',
-    'DEAD_CODE_STRIPPING' => 'NO' }
+    'DEAD_CODE_STRIPPING' => 'NO',
+    'OTHER_LDFLAGS' => '$(inherited) -all_load' }
   s.swift_version = '5.0'
 end
