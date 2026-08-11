@@ -4,8 +4,8 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 // fm.lib — Sitar String Jawari Waveguide Engine
 //
 // Defines `sitar_string`, a digital waveguide string with an asymmetric
-// tanh jawari waveshaper in the feedback loop. Shared by sitar.dsp and
-// sarod.dsp.
+// tanh jawari waveshaper in the feedback loop. Shared by sitar.dsp,
+// sarod.dsp and tanpura.dsp.
 //
 // =============================================================================
 // DESIGN
@@ -13,7 +13,7 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 //
 // Modified Karplus-Strong waveguide with 5 stages:
 //
-//   1. DELAY LINE          → integer + fractional (fine tuning via fdelay1a)
+//   1. DELAY LINE          → integer + fractional (cubic Lagrange, fdelayltv)
 //   2. WIRE LOSS FILTER    → one-pole lowpass (high-freq decay)
 //   3. JAWARI NONLINEARITY → asymmetric tanh with pre-gain (harmonic generation)
 //   4. FEEDBACK GAIN       → exponential decay from sustain time
@@ -44,7 +44,7 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 // =============================================================================
 // DEPENDENCIES
 // =============================================================================
-//   stdfaust.lib — ma.SR, de.delay, de.fdelay1a, de.fdelayltv,
+//   stdfaust.lib — ma.SR, de.delay, de.fdelayltv,
 //                  an.amp_follower, os.osc, ma.tanh
 //
 // =============================================================================
@@ -68,14 +68,14 @@ with {
 
     // 3. Asymmetric tanh jawari — downward wave gets pre-gain into hard clip
     jawariInLoop(x) = ba.if(x > 0.0,
-        ma.tanh(x * (1.0 + jivari_val * 2.0)) / (1.0 + jivari_val * 2.0),
+        x,
         ma.tanh(x * (1.0 + jivari_val * 20.0)) / (1.0 + jivari_val * 20.0)
     );
 
     // 4. Feedback loop
-    raw_wave = (exc_signal * exc_gain * trigger) : (+ : de.delay(16384, int_del)) ~ loop_processor
+    raw_wave = (exc_signal * exc_gain * trigger) : (+ : de.delay(16384, int_del - 1)) ~ loop_processor
     with {
-        loop_processor(x) = x : de.fdelay1a(1024, frac_del) : wire_loss_filter : jawariInLoop : * (feedback_gain);
+        loop_processor(x) = de.fdelayltv(3, 1024, 1.0 + frac_del, x) : wire_loss_filter : jawariInLoop : * (feedback_gain);
     };
 
     // 5. Envelope-following time-varying modulation

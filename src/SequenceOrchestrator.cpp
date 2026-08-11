@@ -709,7 +709,13 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
                         }
                     } else if (ev.type == UMLEventType::NoteOff) {
                         if (inst) {
-                            if (ev.frequency > 0.0f) {
+                            if (inst->isLegato()) {
+                                inst->noteOff();
+#if DEBUG_ORCHESTRATOR
+                                printf("[DEBUG_ORCHESTRATOR] noteOff (legato close) seq=%s\n", seqWrapper->sequenceObj->name.c_str());
+                                fflush(stdout);
+#endif
+                            } else if (ev.frequency > 0.0f) {
                                 inst->noteOffTargetFreq(ev.frequency);
 #if DEBUG_ORCHESTRATOR
                                 printf("[DEBUG_ORCHESTRATOR] noteOff freq=%.2f seq=%s\n", ev.frequency, seqWrapper->sequenceObj->name.c_str());

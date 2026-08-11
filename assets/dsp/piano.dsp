@@ -101,5 +101,5 @@ softclip(x) = x / (1.0 + abs(x));
 
 // FIXED: Multiply by gain on the outside of softclip so slider changes 
 // volume rather than forcing saturation shape dynamics.
-process = mix : fi.dcblocker: softclip : * (gain * 2050);
+process = mix : fi.dcblocker : *(gain * 2050) : ma.tanh;
 

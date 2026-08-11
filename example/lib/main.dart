@@ -1,288 +1,39 @@
-/*
- * Copyright (c) 2026 Shashank Khare
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:faust_min/faust_min.dart';
 
-import 'ui/generic_instrument_panel.dart';
-
-const Map<String, String> _songAssets = {
-  'yaman': 'assets/songs/yaman/yaman.usq',
-  'hamsadhwani': 'assets/songs/hamsadhwani/hamsadhwani.usq',
-};
-
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
   FaustMixer.instance.init(48000);
   FaustMixer.instance.start();
-  await _copySongAssets();
   runApp(const MyApp());
-}
-
-Future<void> _copySongAssets() async {
-  final appDir = await getApplicationDocumentsDirectory();
-  for (final entry in _songAssets.entries) {
-    final songDir = Directory('${appDir.path}/${entry.key}');
-    if (!await songDir.exists()) {
-      await songDir.create(recursive: true);
-    }
-    final destFile = File('${songDir.path}/${entry.key}.usq');
-    if (!await destFile.exists()) {
-      final data = await rootBundle.load(entry.value);
-      await destFile.writeAsBytes(
-        data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes),
-      );
-    }
-  }
-}
-
-class _SongSequenceInfo {
-  final String name;
-  final int instrumentId;
-  final String umlData;
-  _SongSequenceInfo(this.name, this.instrumentId, this.umlData);
-}
-
-Future<List<_SongSequenceInfo>> _parseSongUsq(String filePath) async {
-  final content = await File(filePath).readAsString();
-  final sections = <_SongSequenceInfo>[];
-  final filename = Platform.pathSeparator +
-      Uri.file(filePath).pathSegments.last.replaceAll('.usq', '');
-
-  final lines = content.split('\n');
-  String currentBlock = '';
-  bool inNotes = false;
-  int subIdx = 0;
-
-  for (final line in lines) {
-    final trimmed = line.trim();
-    final isParam = trimmed.isNotEmpty && !trimmed.startsWith('//') && trimmed.contains(':');
-
-    if (isParam && inNotes) {
-      final info = _extractSequenceFromBlock(currentBlock, filename, subIdx);
-      if (info != null) sections.add(info);
-      subIdx++;
-      currentBlock = '';
-      inNotes = false;
-    }
-
-    if (!isParam && trimmed.isNotEmpty) {
-      inNotes = true;
-    }
-
-    currentBlock += line + '\n';
-  }
-
-  if (currentBlock.trim().isNotEmpty) {
-    final info = _extractSequenceFromBlock(currentBlock, filename, subIdx);
-    if (info != null) sections.add(info);
-  }
-
-  return sections;
-}
-
-_SongSequenceInfo? _extractSequenceFromBlock(String block, String filename, int subIdx) {
-  String instrument = '';
-  for (final line in block.split('\n')) {
-    final t = line.trim().toLowerCase();
-    if (t.startsWith('instrument:') || t.startsWith('instrument=')) {
-      instrument = line.trim().split(RegExp(r'[:=]'))[1].trim();
-      break;
-    }
-  }
-  if (instrument.isEmpty) return null;
-
-  final id = InstrumentMapper.getId(instrument);
-  if (id < 0) {
-    debugPrint("Unknown instrument '$instrument', skipping");
-    return null;
-  }
-
-  final name = '${filename}_$subIdx';
-  return _SongSequenceInfo(name, id, block);
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'UMPL Universal Studio',
+      title: 'faust_min examples',
       theme: ThemeData.dark().copyWith(
-        primaryColor: Colors.amber,
+        colorScheme: const ColorScheme.dark(primary: Colors.amber),
       ),
-      home: const FaustInstrumentsHome(),
+      home: const ExamplesHome(),
     );
   }
 }
 
-class FaustInstrumentsHome extends StatefulWidget {
-  const FaustInstrumentsHome({super.key});
+class ExamplesHome extends StatefulWidget {
+  const ExamplesHome({super.key});
+
   @override
-  State<FaustInstrumentsHome> createState() => _FaustInstrumentsHomeState();
+  State<ExamplesHome> createState() => _ExamplesHomeState();
 }
 
-class _FaustInstrumentsHomeState extends State<FaustInstrumentsHome> {
+class _ExamplesHomeState extends State<ExamplesHome> {
   String _status = "Ready";
-  int _selectedTab = 0;
-
-  InstrumentDef? _activeInstrument;
-  String? _selectedCategory;
-
   SequenceOrchestrator? _orchestratorSession;
   final List<UMLSequence> _activeSequences = [];
-
-  List<String> get _categories =>
-      allInstruments.map((i) => i.category).toSet().toList()..sort();
-
-  List<InstrumentDef> get _filteredInstruments {
-    if (_selectedCategory == null) return allInstruments;
-    return allInstruments.where((i) => i.category == _selectedCategory).toList();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _activeInstrument = allInstruments[0];
-  }
-
-  final List<String> _patterns = [
-    "Song: Yaman",
-    "Song: Hamsadhwani",
-    "Tanpura Drone",
-    "Varanasi Dawn",
-    "Dayan Strokes",
-    "Bayan Strokes",
-    "22 Shrutis Test",
-  ];
-
-  Future<void> _playPattern(String genre) async {
-    setState(() {
-      _status = "Streaming $genre...";
-    });
-
-    try {
-      _stopAll();
-      _orchestratorSession = SequenceOrchestrator();
-
-      final appDir = await getApplicationDocumentsDirectory();
-
-      if (genre == "Song: Yaman" || genre == "Song: Hamsadhwani") {
-        FaustMixer.instance.clearAll();
-        final songName = genre == "Song: Yaman" ? "yaman" : "hamsadhwani";
-        final songDir = '${appDir.path}/$songName';
-        final usqFile = '$songDir/$songName.usq';
-
-        final sections = await _parseSongUsq(usqFile);
-        for (final s in sections) {
-          final seq = UMLSequence(s.name, s.instrumentId, s.umlData);
-          _activeSequences.add(seq);
-          _orchestratorSession!.addSequence(s.name, seq);
-          _orchestratorSession!.play(s.name);
-          FaustMixer.instance.registerInstrument(seq.getFaustInstrument(), 1.0);
-        }
-      } else if (genre == "Tanpura Drone") {
-        final String uml = """
-notation: Indian
-instrument: TA
-bpm: 60
-grid: 4
-basefreq: 130.81
-
-9Sa....................................................................................................
-""";
-        final seq = UMLSequence("tanpura_solo", 11, uml);
-        _activeSequences.add(seq);
-        _orchestratorSession!.addSequence("tanpura_solo", seq);
-        _orchestratorSession!.play("tanpura_solo");
-        final inst = seq.getFaustInstrument();
-        inst.setParameter("decay", 8.0);
-        FaustMixer.instance.registerInstrument(inst, 1.0);
-      } else if (genre == "22 Shrutis Test") {
-        final List<String> shrutis = [
-          "Sa", "r1", "r2", "R1", "R2", "g1", "g2", "G1", "G2", "M1", "M2",
-          "m1", "m2", "Pa", "d1", "d2", "D1", "D2", "n1", "n2", "N1", "N2"
-        ];
-        String notes = "";
-        for (String s in shrutis) {
-          notes += "9$s.. ";
-        }
-
-        final String uml =
-            "notation: Indian\ninstrument: FL\nbpm: 120\ngrid: 4\nbasefreq: 200.0\n\n$notes";
-        final seq = UMLSequence("shruti_test", 10, uml);
-        _activeSequences.add(seq);
-        _orchestratorSession!.addSequence("shruti_test", seq);
-        _orchestratorSession!.play("shruti_test");
-        FaustMixer.instance.registerInstrument(seq.getFaustInstrument(), 1.0);
-      } else if (genre == "Varanasi Dawn") {
-        final List<String> umplTracks = [
-          'baseFreq: 261.63\nbpm: 100\ninstrument: DA\n9Sa.......9(Pa/2).......9Sa.......9(Pa/2).......\n9Sa...9Sa...9Sa.9Sa...9Sa...9Sa.9Sa...',
-          'baseFreq: 130.81\nbpm: 100\ninstrument: TA\n9Sa^ .S.. .S.. .S..',
-          'baseFreq: 523.25\nbpm: 100\ninstrument: FL\n9Sa.9r1^9R2.9G1.9M1.9(2*Pa).....9(2*Ma)^9(2*Pa).9G2.9R1.9Sa....'
-        ];
-        final List<int> instIDs = [0, 11, 10];
-        for (int i = 0; i < umplTracks.length; i++) {
-          final name = "vd_track_$i";
-          final seq = UMLSequence(name, instIDs[i], umplTracks[i]);
-          _activeSequences.add(seq);
-          _orchestratorSession!.addSequence(name, seq);
-          _orchestratorSession!.play(name);
-          FaustMixer.instance.registerInstrument(seq.getFaustInstrument(), 1.0);
-        }
-      } else if (genre == "Dayan Strokes") {
-        final String uml =
-            "notation: Indian\ninstrument: DA\nbpm: 120\ngrid: 4\nbasefreq: 150.0\n\n9Na. 9Na. 9Tin. 9Tin. 9Tun. 9Tun. 9tk. 9tk. 9Na. 9Tin. 9Tun. .S..";
-        final seq = UMLSequence("dayan_test", 0, uml);
-        _activeSequences.add(seq);
-        _orchestratorSession!.addSequence("dayan_test", seq);
-        _orchestratorSession!.play("dayan_test");
-        FaustMixer.instance.registerInstrument(seq.getFaustInstrument(), 1.0);
-      } else if (genre == "Bayan Strokes") {
-        final String uml =
-            "notation: Indian\ninstrument: BA\nbpm: 120\ngrid: 4\nbasefreq: 110.0\n\n9Ghe. 9Ghe. 9Ka. 9Ka. 9Ghe. 9Ghe. 9Ka. 9Ka. 9Ghe. .S..";
-        final seq = UMLSequence("bayan_test", 1, uml);
-        _activeSequences.add(seq);
-        _orchestratorSession!.addSequence("bayan_test", seq);
-        _orchestratorSession!.play("bayan_test");
-        FaustMixer.instance.registerInstrument(seq.getFaustInstrument(), 1.0);
-      } else {
-        final String uml =
-            "notation: Indian\ninstrument: FL\nbpm: 120\ngrid: 4\nbasefreq: 440.0\n\n9Sa. 9Re. 9Ga. 9Ma. 9Pa. 9Dh. 9Ni. 9Sa^ .S..";
-        final seq = UMLSequence("rt_scale", 10, uml);
-        _activeSequences.add(seq);
-        _orchestratorSession!.addSequence("rt_scale", seq);
-        _orchestratorSession!.play("rt_scale");
-        FaustMixer.instance.registerInstrument(seq.getFaustInstrument(), 1.0);
-      }
-    } catch (e) {
-      debugPrint("Playback Error: $e");
-    } finally {
-      if (mounted) setState(() {});
-    }
-  }
 
   void _stopAll() {
     for (final seq in _activeSequences) {
@@ -297,124 +48,151 @@ basefreq: 130.81
     setState(() => _status = "Stopped & Released Native Instances");
   }
 
-  Widget _buildInstrumentsTab() {
-    final categories = _categories;
-    final filtered = _filteredInstruments;
+  Future<void> _playDemo(String demo) async {
+    _stopAll();
+    setState(() => _status = "Streaming $demo...");
+    _orchestratorSession = SequenceOrchestrator();
 
-    return Column(
-      children: [
-        SizedBox(
-          height: 40,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: ChoiceChip(
-                  label: const Text("All", style: TextStyle(fontSize: 12)),
-                  selected: _selectedCategory == null,
-                  onSelected: (_) => setState(() => _selectedCategory = null),
-                ),
-              ),
-              for (final cat in categories)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: ChoiceChip(
-                    label: Text(cat, style: const TextStyle(fontSize: 12)),
-                    selected: _selectedCategory == cat,
-                    onSelected: (_) =>
-                        setState(() => _selectedCategory = cat),
-                  ),
-                ),
-            ],
-          ),
-        ),
-        SizedBox(
-          height: 40,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-            children: filtered
-                .map((inst) => Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 3),
-                      child: ChoiceChip(
-                        label: Text(inst.name,
-                            style: const TextStyle(fontSize: 11)),
-                        selected: _activeInstrument?.id == inst.id,
-                        selectedColor: inst.color.withValues(alpha: 0.4),
-                        onSelected: (_) =>
-                            setState(() => _activeInstrument = inst),
-                      ),
-                    ))
-                .toList(),
-          ),
-        ),
-        const Divider(height: 1),
-        Expanded(
-          child: Center(
-            child: _activeInstrument != null
-                ? GenericInstrumentPanel(
-                    key: ValueKey(_activeInstrument!.id),
-                    def: _activeInstrument!,
-                  )
-                : const Text("Select an instrument"),
-          ),
-        ),
-      ],
-    );
+    final orchestrator = _orchestratorSession!;
+    if (demo == "Sequence 1: Sitar → Sarod") {
+      await _playSitarSarod(orchestrator);
+    } else if (demo == "Vivaldi Spring Ensemble") {
+      await _playVivaldi(orchestrator);
+    }
+    setState(() => _status = "Playing $demo");
   }
 
-  Widget _buildSongsTab() {
-    return Column(
-      children: [
-        const SizedBox(height: 12),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              "Songs & Patterns",
-              style: TextStyle(
-                  color: Colors.amber[700],
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold),
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            children: [
-              for (final pt in _patterns)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ActionChip(
-                      label: Text("Play $pt",
-                          style: const TextStyle(color: Colors.amber)),
-                      onPressed: () => _playPattern(pt),
-                    ),
-                  ),
-                ),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ActionChip(
-                    label: const Text("STOP ALL",
-                        style: TextStyle(color: Colors.red)),
-                    onPressed: _stopAll,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
+  void _register(UMLSequence seq) {
+    _activeSequences.add(seq);
+    FaustMixer.instance.registerInstrument(seq.getFaustInstrument(), 1.0);
+  }
+
+  Future<void> _playSitarSarod(SequenceOrchestrator orch) async {
+    const sitar = """
+notation: Indian
+instrument: sitar
+bpm: 60
+grid: 4
+basefreq: 220
+
+5Sa.. 5Re.. 5Ga.. 5Pa..
+""";
+
+    const sarod = """
+notation: Indian
+instrument: sarod
+bpm: 60
+grid: 4
+basefreq: 220
+chikari_freq: 220
+
+61Sa. 61Re. 61Ga. 61Pa. 61Sa. 61Re. 61Ga. 61Pa.
+""";
+
+    final sitarSeq = UMLSequence("sitar_seq", 9, sitar);
+    orch.addSequence("sitar_seq", sitarSeq);
+    orch.play("sitar_seq");
+    _register(sitarSeq);
+
+    final sarodSeq = UMLSequence("sarod_seq", 44, sarod);
+    orch.addSequence("sarod_seq", sarodSeq);
+    orch.play("sarod_seq");
+    _register(sarodSeq);
+  }
+
+  Future<void> _playVivaldi(SequenceOrchestrator orch) async {
+    const violinM = """
+grid: 4
+bpm: 100
+instrument: violin
+notation: Western
+loop: false
+
+5E4. 5G#4. 5G#4. 5G#4. 5F#4. 5E4. 6B4...
+5E4. 5G#4. 5G#4. 5G#4. 5F#4. 5E4. 6B4...
+6B4. 6C#5. 6B4. 6A4. 5G#4. 4F#4. 3E4 2E4 1E4 0E4
+""";
+
+    const bass = """
+grid: 4
+bpm: 100
+instrument: cello
+notation: Western
+loop: false
+
+5E2. 5E2. 5E2. 5E2. 5B1. 5B1. 5E2...
+5E2. 5E2. 5E2. 5E2. 5B1. 5B1. 5E2...
+5E2. 5A1. 5E2. 5B1. 5E2. 5B1. 5E2...
+5E2. 5E2. 5E2. 5E2. 5B1. 5B1. 5E2...
+5E2. 5E2. 5E2. 5E2. 5B1. 5B1. 5E2...
+5E2. 5A1. 5E2. 5B1. 5E2. 5B1. 5E2...
+""";
+
+    const flute = """
+grid: 4
+bpm: 100
+instrument: flute
+notation: Western
+loop: false
+
+5E5. 5G#5. 5G#5. 5G#5. 5F#5. 5E5. 6B5...
+5E5. 5G#5. 5G#5. 5G#5. 5F#5. 5E5. 6B5...
+6B5. 6C#6. 6B5. 6A5. 5G#5. 4F#5. 3E5 2E5 1E5 0E5
+""";
+
+    const timpani = """
+grid: 4
+bpm: 100
+instrument: tom
+notation: Western
+loop: false
+
+5E2... 5E2... 5E2... 5E2... 5B1... 5B1... 5E2...
+5E2... 5E2... 5E2... 5E2... 5B1... 5B1... 5E2...
+5E2... 5A1... 5E2... 5B1... 5E2... 5B1... 5E2...
+""";
+
+    const piano = """
+delay: 48
+grid: 4
+bpm: 100
+instrument: piano
+notation: Western
+loop: false
+
+5E4. 5G#4. 5G#4. 5G#4. 5F#4. 5E4. 6B4...
+5E4. 5G#4. 5G#4. 5G#4. 5F#4. 5E4. 6B4...
+6B4. 6C#5. 6B4. 6A4. 6G#4. 6F#4. 6E4...
+""";
+
+    String withHumanization(String uml, int instanceNum) {
+      final delay = (instanceNum - 1) * 0.015;
+      final vibRate = 4.5 + (instanceNum * 0.15);
+      return "delay: $delay\nvibrato_rate: $vibRate\nvibrato_depth: 0.03\n$uml";
+    }
+
+    void add(String name, int instrumentId, String uml) {
+      final seq = UMLSequence(name, instrumentId, uml);
+      orch.addSequence(name, seq);
+      orch.play(name);
+      _register(seq);
+    }
+
+    for (var i = 1; i <= 5; i++) {
+      add("ViolinM$i", 18, withHumanization(violinM, i));
+    }
+    for (var i = 1; i <= 4; i++) {
+      add("Cello$i", 24, withHumanization(bass, i));
+    }
+    for (var i = 1; i <= 3; i++) {
+      add("Flute$i", 10, withHumanization(flute, i));
+    }
+    for (var i = 1; i <= 2; i++) {
+      add("Timpani$i", 5, withHumanization(timpani, i));
+    }
+    for (var i = 1; i <= 2; i++) {
+      add("Piano$i", 12, withHumanization(piano, i));
+    }
   }
 
   @override
@@ -422,13 +200,15 @@ basefreq: 130.81
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text("UMPL UNIVERSAL STUDIO"),
+        title: const Text("FAUST_MIN EXAMPLES"),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: Center(
-              child: Text(_status,
-                  style: const TextStyle(color: Colors.amber, fontSize: 11)),
+              child: Text(
+                _status,
+                style: const TextStyle(color: Colors.amber, fontSize: 11),
+              ),
             ),
           ),
         ],
@@ -441,24 +221,50 @@ basefreq: 130.81
             colors: [Colors.black, Colors.grey[900]!],
           ),
         ),
-        child: _selectedTab == 0 ? _buildInstrumentsTab() : _buildSongsTab(),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              "Playback examples using the native UML sequencer and mixer.",
+              style: TextStyle(color: Colors.white70),
+            ),
+            const SizedBox(height: 16),
+            _demoCard(
+              "Sequence 1: Sitar → Sarod",
+              "Same Sa-Re-Ga-Pa melody — sitar first, then sarod layered "
+                  "with chikari drone strings.",
+              () => _playDemo("Sequence 1: Sitar → Sarod"),
+            ),
+            const SizedBox(height: 12),
+            _demoCard(
+              "Vivaldi Spring Ensemble",
+              "16-instrument ensemble — violins, cellos, flutes, timpani and "
+                  "piano playing 'La Primavera' (Spring) from Vivaldi.",
+              () => _playDemo("Vivaldi Spring Ensemble"),
+            ),
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              onPressed: _stopAll,
+              icon: const Icon(Icons.stop, color: Colors.red),
+              label: const Text("STOP ALL",
+                  style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedTab,
-        onTap: (i) => setState(() => _selectedTab = i),
-        backgroundColor: Colors.grey[900],
-        selectedItemColor: Colors.amber,
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.piano),
-            label: "Instruments",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.music_note),
-            label: "Songs",
-          ),
-        ],
+    );
+  }
+
+  Widget _demoCard(String title, String subtitle, VoidCallback onPressed) {
+    return Card(
+      color: Colors.grey[900],
+      child: ListTile(
+        title: Text(title,
+            style: const TextStyle(color: Colors.amber, fontSize: 16)),
+        subtitle: Text(subtitle, style: const TextStyle(color: Colors.white70)),
+        trailing: const Icon(Icons.play_circle, color: Colors.amber, size: 32),
+        onTap: onPressed,
       ),
     );
   }

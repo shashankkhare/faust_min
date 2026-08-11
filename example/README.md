@@ -1,16 +1,28 @@
 # faust_min_example
 
-Demonstrates how to use the faust_min plugin.
+Demonstrates how to use the `faust_min` plugin.
+
+## Examples
+
+This app plays two sequences using the native UML sequencer and mixer:
+
+- **Sequence 1: Sitar → Sarod** — The same Sa-Re-Ga-Pa melody first on
+  sitar, then layered with sarod using chikari drone strings.
+- **Vivaldi Spring Ensemble** — A 16-instrument rendition of Vivaldi's
+  "La Primavera" (Spring): 5 violins, 4 cellos, 3 flutes, 2 timpani and
+  2 pianos, each humanized with slight delay and vibrato variation.
+
+Tap a card to play, tap **STOP ALL** to release the native instances.
+
+## Interactive Instrument Tester
+
+For an interactive panel to try every instrument and play the bundled
+song assets, see the sibling app in
+[`instrument_tester/`](instrument_tester/).
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```bash
+flutter pub get
+flutter run
+```

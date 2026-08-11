@@ -47,8 +47,9 @@ MODEL_MAP = {
     7:  'bell',    # bell
     8:  'bowl',    # bowl
     9:  'sitar',   # sitar
-    10: 'flute',   # flute
-    12: 'piano',   # piano
+     10: 'flute',   # flute
+     17: 'bansuri', # bansuri
+     12: 'piano',   # piano
     18: 'violin',  # violin
     23: 'bass',    # bass
     24: 'cello',   # cello

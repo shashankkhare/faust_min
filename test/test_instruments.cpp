@@ -146,6 +146,8 @@ static float gTestPressure = -1.0f; // -1 means use default or LUT
 static double gTestFrequency = -1.0; // -1 means use default test sequence
 static float gTestStrike = 0.0f; // default strike for calibration
 static bool gTestScan = false;
+static std::string gDumpWav; // if non-empty, write the last rendered buffer to this path
+static std::map<std::string,float> gParamOverrides; // applied right after noteOn (bypasses LUT)
 
 static std::vector<double> getTestFreqsDouble(FaustInstrument* inst, const std::vector<double>& defaultFreqs) {
     if (gTestFrequency > 0.0) {
@@ -1944,6 +1946,8 @@ static void testRenderMode(int instrumentID, DSPExecutionType execType, float st
         inst->setParamImmediate("strike", gTestStrike);
         inst->setParamImmediate("vibrato_depth", 0.0f);
         inst->noteOn(freq, gTestVelocity, gTestStrike);
+        for (const auto& po : gParamOverrides)
+            inst->setParamImmediate(po.first.c_str(), po.second);
 
         auto t0 = std::chrono::high_resolution_clock::now();
 
@@ -2005,6 +2009,46 @@ static void testRenderMode(int instrumentID, DSPExecutionType execType, float st
             std::cout << "\nSCAN " << estPitch;
         }
 
+        if (!gDumpWav.empty()) {
+            FILE* f = fopen(gDumpWav.c_str(), "wb");
+            if (f) {
+                const int sr = (int)sampleRate;
+                const int ch = 2;
+                int dataSize = totalFrames * ch * 2;
+                unsigned char hdr[44] = {0};
+                hdr[0]='R'; hdr[1]='I'; hdr[2]='F'; hdr[3]='F';
+                hdr[4]=(unsigned char)((36+dataSize)&0xFF); hdr[5]=(unsigned char)(((36+dataSize)>>8)&0xFF);
+                hdr[6]=(unsigned char)(((36+dataSize)>>16)&0xFF); hdr[7]=(unsigned char)(((36+dataSize)>>24)&0xFF);
+                hdr[8]='W'; hdr[9]='A'; hdr[10]='V'; hdr[11]='E';
+                hdr[12]='f'; hdr[13]='m'; hdr[14]='t'; hdr[15]=' ';
+                hdr[16]=16; hdr[17]=0; hdr[18]=0; hdr[19]=0;
+                hdr[20]=1; hdr[21]=0;
+                hdr[22]=(unsigned char)ch; hdr[23]=0;
+                hdr[24]=(unsigned char)(sr&0xFF); hdr[25]=(unsigned char)((sr>>8)&0xFF);
+                hdr[26]=(unsigned char)((sr>>16)&0xFF); hdr[27]=(unsigned char)((sr>>24)&0xFF);
+                int byteRate = sr*ch*2;
+                hdr[28]=(unsigned char)(byteRate&0xFF); hdr[29]=(unsigned char)((byteRate>>8)&0xFF);
+                hdr[30]=(unsigned char)((byteRate>>16)&0xFF); hdr[31]=(unsigned char)((byteRate>>24)&0xFF);
+                hdr[32]=(unsigned char)(ch*2); hdr[33]=0;
+                hdr[34]=16; hdr[35]=0;
+                hdr[36]='d'; hdr[37]='a'; hdr[38]='t'; hdr[39]='a';
+                hdr[40]=(unsigned char)(dataSize&0xFF); hdr[41]=(unsigned char)((dataSize>>8)&0xFF);
+                hdr[42]=(unsigned char)((dataSize>>16)&0xFF); hdr[43]=(unsigned char)((dataSize>>24)&0xFF);
+                fwrite(hdr, 1, 44, f);
+                std::vector<short> pcm(totalFrames*ch);
+                for (int i = 0; i < totalFrames; ++i) {
+                    float l = buf[i*2], r = buf[i*2+1];
+                    if (l < -1.0f) l = -1.0f; if (l > 1.0f) l = 1.0f;
+                    if (r < -1.0f) r = -1.0f; if (r > 1.0f) r = 1.0f;
+                    pcm[i*2]   = (short)(l * 32767.0f);
+                    pcm[i*2+1] = (short)(r * 32767.0f);
+                }
+                fwrite(pcm.data(), 2, pcm.size(), f);
+                fclose(f);
+                std::cout << "  [DUMP] wrote " << gDumpWav << std::endl;
+            }
+        }
+
         if (&freq != &freqs.back()) std::cout << " , ";
         std::cout << std::flush;
     }
@@ -2029,6 +2073,8 @@ int main(int argc, char* argv[]) {
             execType = DSPExecutionType::InterpretedByte;
         } else if (arg == "--scan") {
             gTestScan = true;
+        } else if (arg.substr(0, 9) == "--dumpwav") {
+            if (i + 1 < argc) gDumpWav = argv[++i];
         } else if (arg == "--render") {
             renderMode = true;
         } else {
@@ -2044,6 +2090,13 @@ int main(int argc, char* argv[]) {
                 try { gTestStartSec = std::stof(arg.substr(6)); } catch (...) {}
             } else if (arg.substr(0, 4) == "dur=") {
                 try { gTestDurSec = std::stof(arg.substr(4)); } catch (...) {}
+            } else if (arg.find('=') != std::string::npos) {
+                size_t eq = arg.find('=');
+                std::string pn = arg.substr(0, eq);
+                float pv = 0.0f;
+                try { pv = std::stof(arg.substr(eq + 1)); }
+                catch (...) { continue; }
+                gParamOverrides[pn] = pv;
             } else if (!hasDirectID) {
                 try {
                     directID = std::stoi(arg);

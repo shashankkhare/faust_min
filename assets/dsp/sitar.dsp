@@ -23,22 +23,22 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 // =============================================================================
 import("stdfaust.lib");
 import("fm.lib");
-freq = hslider("freq [unit:Hz]", 138.6, 130, 900, 0.01); 
+freq = hslider("freq [unit:Hz]", 138.6, 130, 2400, 0.01); 
 cal = hslider("calibration", 0.0, -100.0, 100.0, 0.01) : si.smoo;
 gate = button("gate");
-gain = hslider("gain", 0.3, 0, 1, 0.01); 
+gain = hslider("gain", 0.3, 0, 100, 0.01); 
 velocity = hslider("velocity", 0.6, 0, 1, 0.01);
 
 // ROUTING CONTROL: 0 = Main String, 1 = Chikari String, 2 = Heavy Mizrab Accent
 strike = hslider("strike [style:knob]", 0, 0, 2, 1); 
 
-jivari = hslider("jivari [style:knob]", 0.35, 0, 1, 0.001); 
-symp_gain = hslider("symp_gain", 0.85, 0, 1, 0.01); 
+jivari = hslider("jivari [style:knob]", 0.0, 0, 1, 0.001); 
+symp_gain = hslider("symp_gain", 0.0, 0, 1, 0.01); 
 
 // Chikari Base Slider (Default C#4 matching classical tuning)
 chikari_freq = hslider("chikari_freq [unit:Hz]", 111.0, 55, 900, 0.01);
 
-sustain_knob = hslider("sustain [unit:s]", 5.0, 0.5, 12.0, 0.1);
+sustain_knob = hslider("sustain [unit:s]", 7.5, 0.5, 30.0, 0.1);
 symp_drift_hz = hslider("symp_drift [unit:Hz]", 1.2, 0, 5, 0.01);
 
 // --- Vibrato Controls ---
@@ -54,8 +54,8 @@ trig = gate > gate';
 
 // FIXED MASTER EXCITATION: Replaced dual independent blocks with one single unified physical pluck engine.
 // Both melody and chikari strings now share the exact same raw transient tracking window synchronously.
-pluck_env = en.ar(0.001, 0.008, trig); 
-pick_noise = no.noise : fi.lowpass(2, 6000.0) : fi.highpass(2, 60.0);
+pluck_env = en.ar(0.004, 0.15, trig); 
+pick_noise = no.noise; //WHITE-TEST
 master_exc_signal = pick_noise * pluck_env * velocity;
 
 is_melody  = strike == 0;
@@ -77,7 +77,8 @@ chikari_exc_signal = pick_noise * chikari_pluck_env * velocity;
 
 // --- INSTANCE 1: Main Melody String ---
 mizrab_scale = ba.if(is_mizrab, 1.4, 1.0);
-melody_gain = ba.if(is_mizrab, 0.65, 0.40);
+exc_gain = hslider("exc_gain", 0.0125, 0.0, 2.0, 0.01);
+melody_gain = ba.if(is_mizrab, 0.65, 0.40) * exc_gain;
 // Pulls energy directly from the master excitation source
 melody_output = sitar_string(melody_freq, sustain_knob, jivari * mizrab_scale, melody_gain, (is_melody + is_mizrab), master_exc_signal, cal);
 
@@ -105,23 +106,28 @@ symp_strings_ks = ( symp_string(1.5,  0.6)
                   ) * symp_gain;
 
 // --- Gourd Resonator Acoustic Body Filter ---
-// Tuned to align with real Sitar acoustic resonance curves:
-// - Helmholtz Air Resonance (Tumba gourd): 110.0 Hz (boosts the C# drone base)
-// - Tabli Wood Resonance (Soundboard plate): 180.0 Hz (low-mid body warmth)
+// Modes from measured sitar modal analysis (OMA/EMA, SAGE 10775463211042196):
+// - Helmholtz Air Resonance (Tumba gourd): ~110 Hz (primary gourd cavity)
+// - Tabli lateral bending (EMA): 144 Hz
+// - Main resonator bulging cluster (OMA): 283/294/316 Hz  -> boosts tonic 2nd harmonic
+// - 3rd-harmonic bulging mode (OMA): 560 Hz
+// - Upper bulging + coupling modes (OMA): 746, 833, 938/975 Hz
+// The sitar body radiates almost entirely below ~1 kHz; brightness is carried by
+// the string/jawari and pluck excitation, not by body modes.
 body_filter(x) =
-    (  (x * 0.20)                                // dry passthrough
-     + (x : fi.resonbp(110.0,  5.0, 1.25))       // Helmholtz Air resonance (gourd)
-     + (x : fi.resonbp(180.0,  4.5, 1.10))       // Tabli wood resonance (soundboard)
-     + (x : fi.resonbp(280.0,  4.0, 0.85))       // Low-mid structural wood mode
-     + (x : fi.resonbp(450.0,  4.0, 0.60))       // Mid wood mode
-     + (x : fi.resonbp(900.0,  3.5, 0.75))       // Upper-mid projection
-     + (x : fi.resonbp(1400.0, 3.0, 0.65)) 
-     + (x : fi.resonbp(2200.0, 3.5, 0.60)) 
-     + (x : fi.resonbp(3600.0, 3.0, 0.40)) 
+    (  (x * 0.30)                                 // dry passthrough
+     + (x : fi.resonbp(110.0,  4.5, 1.00))       // Tumba gourd Helmholtz air resonance
+     + (x : fi.resonbp(144.0,  4.5, 0.70))       // Tabli lateral bending mode (EMA 144 Hz)
+     + (x : fi.resonbp(300.0,  4.5, 1.30))       // Main bulging cluster 283/294/316 Hz (OMA) — body voice
+     + (x : fi.resonbp(430.0,  4.5, 0.85))       // Bridge mode — fills the 330–440 Hz fundamental gap
+     + (x : fi.resonbp(560.0,  4.5, 0.38))       // 3rd-harmonic bulging mode (OMA 560 Hz)
+     + (x : fi.resonbp(745.0,  4.5, 0.28))       // Upper resonator bulging (OMA 746 Hz)
+     + (x : fi.resonbp(833.0,  4.5, 0.24))       // Coupling mode (OMA 833 Hz)
+     + (x : fi.resonbp(940.0,  4.5, 0.20))       // Coupling mode cluster (OMA 938/975 Hz)
     );
 
 all_strings_mix = played_strings + symp_strings_ks;
-core = all_strings_mix : fi.dcblocker : body_filter;
+core = all_strings_mix : fi.dcblocker;
 
 gourd_saturation(x) = x - (x * x * x * 0.06);
 

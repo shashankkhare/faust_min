@@ -16,6 +16,7 @@ gate = button("gate");
 
 sustain = hslider("sustain", 24.0, 4.0, 36.0, 0.01);
 jivari = hslider("jivari", 0.45, 0.0, 1.0, 0.01);
+cal = hslider("calibration", 0.0, -100.0, 100.0, 0.01) : si.smoo;
 
 excDur = hslider("excDur", 0.12, 0.0001, 0.125, 0.0001);
 excGain = hslider("excGain", 0.03, 0.0, 3.0, 0.01);
@@ -38,7 +39,7 @@ with {
 };
 
 // --- Main String Instance using fm.lib sitar_string ---
-string_output = sitar_string(freq, sustain, jivari, excGain * stringGainVal, gate, master_exc_signal, 0);
+string_output = sitar_string(freq, sustain, jivari, excGain * stringGainVal, gate, master_exc_signal, cal);
 
 mix = string_output;
 softclip(x) = x / (1.0 + abs(x));

@@ -819,8 +819,10 @@ void FaustInstrument::noteOn(float freq, float vel, float strikeVal) {
         setParamImmediate("freq", mFrequency, v); // Force jump immediately
     }
 
-    noteOff(v);
-    setParamImmediate("gate", 0.0f, v);
+    if (!isLegato()) {
+        noteOff(v);
+        setParamImmediate("gate", 0.0f, v);
+    }
     
     // 3. Reset stolen voice to prevent pitch sweeps/pops.
     // UNIVERSAL FIX: Only clear the DSP if the frequency actually changed!

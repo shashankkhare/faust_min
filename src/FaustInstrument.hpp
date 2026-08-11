@@ -149,6 +149,10 @@ public:
     // Group routing identifier
     virtual int getID() const { return mInstrumentID; }
 
+    // Legato sustained instruments connect consecutive notes without
+    // re-articulating the gate (no click between transitions).
+    virtual bool isLegato() const { return InstrumentMapper::isLegato(mInstrumentID); }
+
     // Real-time audio streaming driver execution loop
     void processRealtimeStream(float* buffer, int numFrames);
 

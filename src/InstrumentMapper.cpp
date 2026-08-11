@@ -204,6 +204,23 @@ bool InstrumentMapper::isPolyphonic(int id) {
     }
 }
 
+bool InstrumentMapper::isLegato(int id) {
+    // Sustained monophonic instruments: consecutive notes connect without
+    // re-articulating the gate (no click between transitions).
+    switch (id) {
+        case 10: return true;  // Flute
+        case 16: return true;  // Shakuhachi
+        case 17: return true;  // Bansuri
+        case 18: return true;  // Violin
+        case 24: return true;  // Cello
+        case 40: return true;  // Erhu
+        case 51: return true;  // Panflute
+        case 52: return true;  // Native American Flute
+        case 53: return true;  // Dizi
+        default: return false;
+    }
+}
+
 std::string InstrumentMapper::getInstrumentClass(int id) {
     if (id == 7 || id == 8 || id == 11 || id == 20 || id == 47) return "Drone";
     if (isPercussionID(id)) return "Percussion";

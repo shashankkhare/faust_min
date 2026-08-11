@@ -716,6 +716,8 @@ void UMLParser::handlePitchedToken(const TokenItem& ti, float velocityScalar, lo
         shouldBypassNoteOff = true; // Polyphonic/drone instruments: never schedule NoteOff between strikes
     } else if (ti.rawStr.find('%') != std::string::npos || nextIsNoop) {
         shouldBypassNoteOff = true; // Always bypass for NOOP/Chikari
+    } else if (nextIsNote && InstrumentMapper::isLegato(InstrumentMapper::getIDFromName(instrument))) {
+        shouldBypassNoteOff = true; // Legato sustained instruments connect notes without gate re-articulation
     }
 
     if (isEndOfSequence) {

@@ -12,6 +12,7 @@ Compilation options: -lang cpp -es 1 -single -ftz 1
 #define FAUSTFLOAT float
 #endif 
 
+/* link with : "" */
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -437,7 +438,7 @@ class FaustPianoDSP : public dsp {
 			fRec0[0] = ((std::fabs(fTempFTZ15) > 1.17549435e-38f) ? fTempFTZ15 : 0.0f);
 			float fTempFTZ16 = (fSlow36 + (fConst45 * fRec17[1]));
 			fRec17[0] = ((std::fabs(fTempFTZ16) > 1.17549435e-38f) ? fTempFTZ16 : 0.0f);
-			output0[i0] = FAUSTFLOAT((2050.0f * ((fRec0[0] * fRec17[0]) / (std::fabs(fRec0[0]) + 1.0f))));
+			output0[i0] = FAUSTFLOAT(float(tanhf(float((2050.0f * (fRec0[0] * fRec17[0]))))));
 			fVec0[1] = fVec0[0];
 			fRec4[1] = fRec4[0];
 			iRec5[1] = iRec5[0];

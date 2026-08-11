@@ -31,10 +31,7 @@ dependencies:
   flutter:
     sdk: flutter
 
-  faust_min: ^0.5.1
-
-  ffi: ^2.1.3
-  path_provider: ^2.1.5
+  faust_min: any
 
   cupertino_icons: ^1.0.8
 
@@ -59,10 +56,6 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
-
-  assets:
-    - assets/songs/yaman/
-    - assets/songs/hamsadhwani/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

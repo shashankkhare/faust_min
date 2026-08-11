@@ -268,7 +268,7 @@ int main(int argc, char* argv[]) {
     while (true) {
         if (selection == -1) {
             std::cout << "\nSelect a sequence to play:" << std::endl;
-            std::cout << "  1. Indian Classical — Darbari Kanada (Sarod, Tanpura, Tabla) [12 semitone]" << std::endl;
+            std::cout << "  1. Indian Classical — Darbari Kanada (Bansuri, Tanpura, Tabla) [12 semitone]" << std::endl;
             std::cout << "  2. Jazz Ensemble (Piano, Sax, Bass, Drums)" << std::endl;
             std::cout << "  3. Rock Band (Electric Guitar, Bass, Drums)" << std::endl;
             std::cout << "  4. Tibetan Bowl with Rain + LagNga (Bowl, Rainmaker, LagNga)" << std::endl;
@@ -295,7 +295,7 @@ int main(int argc, char* argv[]) {
         int duration = -1; // default duration 15s
 
         if (selection == 1) {
-            group.name = "Indian Classical — Raag Darbari Kanada (Sarod, Tanpura, Tabla) [12 semitone]";
+            group.name = "Indian Classical — Raag Darbari Kanada (Bansuri, Tanpura, Tabla) [12 semitone]";
             
             std::string umlTanpura = 
                 "grid: 4\n"
@@ -314,18 +314,14 @@ int main(int argc, char* argv[]) {
             // Arohana: Sa Re ga ma Pa dha ni Sa*
             // Vadi: Re, Samvadi: Pa
             // Structure: Alaap (slow, meend, rests) → Jod (medium) → Jhala (fast chikari)
-            std::string umlSarod = 
+            std::string umlBansuri = 
                 "grid: 4\n"
                 "bpm: 70\n"
                 "basefreq: 444.0\n"
-                "instrument: sarod\n"
+                "instrument: flute\n"
                 "notation: Hindustani\n"
-                "glide: 0.03\n"
                 "vibrato_depth: 0.02\n"
                 "vibrato_rate: 5.5\n"
-                "chikari_freq1: 222.0\n"
-                "chikari_freq2: 333.0\n"
-                "jawari: 0.7\n"
                 // --- Alaap (64 cells) — slow, spacious, meend between notes, vibrato on ending ---
                 "5Sa..~ . . . . . \n"                     // Sa rings 3 cells with vibrato, 5 cells decay
                 "5Sa.^ 8re..~ . . . \n"                   // Sa→meend, re rings with vibrato, decay
@@ -404,12 +400,12 @@ int main(int argc, char* argv[]) {
             std::string umlBayan = buildBayan();
 
             group.sequences.push_back({"Tanpura", new UMLSequence("Tanpura", 11, umlTanpura)});
-            group.sequences.push_back({"Sarod", new UMLSequence("Sarod", 44, umlSarod)});
+            group.sequences.push_back({"Bansuri", new UMLSequence("Flute", 10, umlBansuri)});
             group.sequences.push_back({"Dayan", new UMLSequence("Dayan", 0, umlDayan)});
             group.sequences.push_back({"Bayan", new UMLSequence("Bayan", 1, umlBayan)});
             
-            group.percussionTrackWeight = 1.6f;
-            group.melodyTrackWeight = 0.40f;
+            group.percussionTrackWeight = 0.0f;
+            group.melodyTrackWeight = 1.4f;
             group.backgroundTrackWeight = 0.8f;
             duration = -1;
         } else if (selection == 2) {

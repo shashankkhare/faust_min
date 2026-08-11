@@ -75,6 +75,10 @@ public:
     // consecutive strikes (drone/polyphonic instruments like tanpura, sarod)
     static bool isPolyphonic(int id);
 
+    // Returns true for sustained monophonic instruments (flute, violin, bansuri)
+    // where notes should connect legato without re-articulating the gate.
+    static bool isLegato(int id);
+
     // Returns the start offset (seconds) for energy measurement, skipping the attack transient
     static float getMeasureStart(int id);
 

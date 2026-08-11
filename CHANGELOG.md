@@ -1,3 +1,9 @@
+## 0.5.2
+
+* **Frequency Calibration for All Instruments**: Per-instrument pitch calibration tables (bansuri, sitar, sarod, tanpura) with cents-model correction and `pitchcorrect.py` automation for pitch drift.
+* **Volume Calibration for All Instruments**: Gain calibration to target levels across instruments, including bansuri gain calibration to 0.5 target and piano/sitar DSP gain tuning.
+* **Instrument Fixes**: Fixed pitch drift (violin, flute), improved bansuri breath attack, tanpura DSP updates, snare hiss parameter, and general DSP physical-model refinements across all instruments.
+
 ## 0.5.1
 
 * **Packaging fix**: Include vendored `deps/oboe` in published package for Android builds.
