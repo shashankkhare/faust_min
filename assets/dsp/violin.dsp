@@ -2,7 +2,8 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 
 // =============================================================================
 // === PHYSICAL MODEL DESIGN ===
-// Description: Standard acoustic violin physically modeled with bowed string waveguides, adjustable bow pressure, velocity, and position.
+// Description: Standard acoustic violin physically modeled with bowed string waveguides,
+//              4-peak acoustic wood body filter, and 5 strike playing styles.
 //
 // Parameters (Controls):
 //   - freq
@@ -13,6 +14,7 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 //   - bowVelocity
 //   - bowPosition
 //   - velocity
+//   - strike
 //   - calibration
 // =============================================================================
 import("stdfaust.lib");
@@ -29,60 +31,67 @@ vibratoRate = hslider("vibrato_rate", 5.5, 3.0, 8.0, 0.1) : si.smoo;
 vibratoDepth = hslider("vibrato_depth", 0.012, 0.0, 0.05, 0.001) : si.smoo;
 
 // Independent Physical Bowing Controls (Instantaneous response via si.smoo)
-bowPressureTarget = hslider("bowPressure", 0.4,  0.0, 1.0, 0.001) : si.smoo;
-bowVelocityTarget = hslider("bowVelocity", 0.5,  0.0, 1.0, 0.001) : si.smoo;
-bowPosition       = hslider("bowPosition", 0.15, 0.0, 1.0, 0.001) : si.smoo;
+bowPressureTarget = hslider("bowPressure", 0.45, 0.0, 1.0, 0.001) : si.smoo;
+bowVelocityTarget = hslider("bowVelocity", 0.50, 0.0, 1.0, 0.001) : si.smoo;
+bowPositionTarget = hslider("bowPosition", 0.15, 0.0, 1.0, 0.001) : si.smoo;
 
-// --- Velocity Controlled Articulation ---
-// velocity slider acts as note articulation style (Default: 0.5 = 75ms attack)
-velocity = hslider("velocity", 0.5, 0.0, 1.0, 0.01);
+// Strike Playing Styles (0 = Détaché/Legato, 1 = Staccato, 2 = Sul Tasto, 3 = Sul Ponticello, 4 = Spiccato)
+strike = hslider("strike", 0.0, 0.0, 4.0, 1.0);
 
-// Calibration: frequency-dependent string length offset to correct pitch drift
-// (set automatically by CSV LUT; 0 = no correction)
-calibration = hslider("calibration", 0.0, -0.1, 0.1, 0.001) : si.smoo;
+// Dynamic Articulation Mapping based on Strike Style
+isStaccato      = (strike == 1.0);
+isSulTasto      = (strike == 2.0);
+isSulPonticello = (strike == 3.0);
+isSpiccato      = (strike == 4.0);
 
-// Linearly map velocity to attack time up to 150ms
-attackTime  = velocity * 0.150; 
-releaseTime = 0.030; // Snappy 30ms release to clear fast note transitions
+// Attack and Release Times according to playing style
+attackTime  = ba.if(isStaccato | isSpiccato, 0.010, ba.if(isSulTasto, 0.080, 0.035));
+releaseTime = ba.if(isStaccato | isSpiccato, 0.025, 0.045);
 
 // Dynamic Envelope targeting the bow activation path
 bowEnv = t : si.smooth(ba.tau2pole(ba.if(t, attackTime, releaseTime)));
 
+// Initial friction catch transient (bite) for Staccato / Spiccato strokes
+catchBite = (t : si.smooth(ba.tau2pole(0.015))) * (1.0 - (t : si.smooth(ba.tau2pole(0.040))));
+catchBoost = ba.if(isStaccato | isSpiccato, catchBite * 0.35, 0.0);
+
+// Effective Bow Parameters per Style
+effBowPress = ba.if(isSulTasto, 0.22, ba.if(isSulPonticello, 0.65, ba.if(isStaccato, 0.55, bowPressureTarget))) + catchBoost;
+effBowVel   = ba.if(isSulTasto, 0.60, ba.if(isSpiccato, 0.40, ba.if(isStaccato, 0.70, bowVelocityTarget)));
+effBowPos   = ba.if(isSulTasto, 0.28, ba.if(isSulPonticello, 0.04, bowPositionTarget));
+
 // Apply envelope modulation directly to physics engine drives
-bowVelocity = (bowVelocityTarget / 5.0) * bowEnv;
+bowVelocity = (effBowVel / 5.0) * bowEnv;
 
-// Humanize bow pressure with micro-fluctuations (simulating rosin grip/slip and hand tremor).
-// IMPORTANT: microPressure is multiplied by bowEnv here (not just in bowPressure below) so that
-// the random lf-noise source is SILENT during the attack phase and only fades in as the bow
-// settles. Without this, no.lfnoise(12.0) is always running and enters at a random phase on
-// each new note, causing audible pressure wobble at note onset — especially on Strike 0 (150ms
-// slow attack) when played in a fast sequencer context.
-microPressure = no.lfnoise(12.0) * 0.08 * (bowPressureTarget / 5.0) * bowEnv;
-bowPressure = ((bowPressureTarget / 5.0) + microPressure) * bowEnv;
+// Humanize bow pressure with micro-fluctuations (simulating rosin grip/slip and hand tremor)
+microPressure = no.lfnoise(12.0) * 0.06 * (effBowPress / 5.0) * bowEnv;
+bowPressure = ((effBowPress / 5.0) + microPressure) * bowEnv;
+bowPosition = effBowPos : si.smoo;
 
-// --- Faust pm.violinBody Compensation Filter ---
-bodyCompGain = max(1.0, min(3.0,
-    sqrt(1.0 + 4.0 * ((f / 500.0) - (500.0 / f)) * ((f / 500.0) - (500.0 / f)))
-));
+// Calibration: frequency-dependent string length offset to correct pitch drift
+calibration = hslider("calibration", 0.0, -0.1, 0.1, 0.001) : si.smoo;
 
 // --- Pitch Humanization ---
-// IMPORTANT: drift is gated through bowEnv so random pitch deviation is ZERO during attack
-// and only grows in once the bow is fully engaged. Without this gate, no.lfnoise(2.0) runs
-// continuously at a random phase between notes and causes audible pitch instability at the
-// very start of each new note — clearly audible as a "wobble" on slow-attack Strike 0 notes
-// in the sequencer. vibratoLFO is already safely gated by vibEnv which ramps from gate.
-drift = no.lfnoise(2.0) * 0.0015 * f * bowEnv;
-vibEnv = t : si.smooth(ba.tau2pole(0.3)); 
+drift = no.lfnoise(2.0) * 0.0012 * f * bowEnv;
+vibEnv = t : si.smooth(ba.tau2pole(0.15)); 
 vibratoLFO = os.osc(vibratoRate) * vibratoDepth * vibEnv * f;
 
 humanizedFreq = f + drift + vibratoLFO;
 
+// --- 4-Peak Acoustic Violin Wood Body Resonances ---
+// Real violin body modal resonances:
+// 1. A0 Air Mode (~275 Hz, Q=4.0, +6 dB) — Deep acoustic body warmth
+// 2. B1- Lower Wood Mode (~440 Hz, Q=5.0, +8 dB) — Low plate resonance
+// 3. B1+ Upper Wood Mode (~550 Hz, Q=5.0, +9 dB) — Main wood plate resonance
+// 4. Bridge & Soundboard Formant (~2800 Hz, Q=2.5, +5 dB) — Sweet acoustic sheen
+violinBody = fi.peak_eq(6.0, 275.0, 275.0 / 4.0)
+           : fi.peak_eq(8.0, 440.0, 440.0 / 5.0)
+           : fi.peak_eq(9.0, 550.0, 550.0 / 5.0)
+           : fi.peak_eq(5.0, 2800.0, 2800.0 / 2.5);
+
 // --- Physical Processing Engine Execution ---
-// DC blocker (fi.dcblocker) removes any DC offset accumulated in the waveguide feedback
-// loop which can build up during model instability. Hard clip at ±1.0 prevents any
-// momentary instability from corrupting the audio output stream.
 process = pm.violinModel(pm.f2l(humanizedFreq) + calibration, bowPressure, bowVelocity, bowPosition)
           : fi.dcblocker
           : max(-1.0, min(1.0))
-          : *(bodyCompGain)
-          : *(1.1);
+          : violinBody
+          : *(0.45);
