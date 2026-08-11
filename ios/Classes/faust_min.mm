@@ -23,8 +23,98 @@
 #import <Foundation/Foundation.h>
 #include "../../src/faust_min.h"
 
-// Force-link reference to prevent Xcode static linker from stripping C++ FFI symbols
+// Force-link reference to prevent Xcode static linker from stripping C FFI symbols.
+//
+// Dart uses DynamicLibrary.process() on iOS, which resolves symbols at *runtime*.
+// The linker cannot see these callsites and would normally strip the unreferenced
+// symbols. This stub creates an explicit call-graph edge from an ObjC method
+// (reachable from the app's class list) to each exported C symbol.
+//
+// This is belt-and-suspenders with the -all_load flag in the Podfile; either
+// one alone should be sufficient, both together are bulletproof.
 __attribute__((visibility("default"))) __attribute__((used))
 void faust_min_ios_force_link(void) {
-    (void)mixer_get_instance();
+    // Mixer singleton + lifecycle
+    (void)mixer_get_instance;
+    (void)mixer_start;
+    (void)mixer_start_async;
+    (void)mixer_stop;
+    (void)mixer_clear_all;
+    (void)mixer_get_sample_rate;
+    (void)mixer_set_master_gain;
+    (void)mixer_set_instrument_weight;
+    (void)mixer_register_instrument;
+    (void)mixer_unregister_instrument;
+    (void)mixer_add_track;
+    (void)mixer_remove_track;
+    (void)mixer_set_track_weight;
+    (void)mixer_get_track_weight;
+    (void)mixer_set_track_envelope;
+    (void)mixer_set_track_reverb;
+    (void)mixer_set_track_echo;
+    (void)mixer_set_track_eq;
+    (void)mixer_set_track_mid;
+    (void)mixer_set_track_bypass_eq;
+    (void)mixer_set_track_bypass_echo;
+    (void)mixer_set_fx_return;
+    (void)mixer_master_fade_in;
+    (void)mixer_master_fade_out;
+    (void)mixer_add_instrument_to_track;
+    (void)mixer_remove_instrument_from_track;
+    (void)mixer_register_waveform_callback;
+
+    // Instrument factory
+    (void)instrument_create;
+    (void)instrument_destroy;
+    (void)instrument_get_sample_rate;
+    (void)instrument_set_parameter;
+    (void)instrument_get_parameters_json;
+    (void)instrument_free_json;
+    (void)instrument_note_on;
+    (void)instrument_note_off;
+    (void)instrument_render;
+
+    // Sequence orchestrator
+    (void)orchestrator_create;
+    (void)orchestrator_destroy;
+    (void)orchestrator_add_sequence;
+    (void)orchestrator_play;
+    (void)orchestrator_stop;
+    (void)orchestrator_pause;
+    (void)orchestrator_resume;
+    (void)orchestrator_set_song_looping;
+    (void)orchestrator_set_weight;
+    (void)orchestrator_set_parameter;
+    (void)orchestrator_poll_finished;
+    (void)orchestrator_set_asset_base_path;
+    (void)orchestrator_load_song;
+    (void)orchestrator_unload_song;
+    (void)orchestrator_play_song;
+    (void)orchestrator_stop_song;
+    (void)orchestrator_register_tick_callback;
+
+    // UML Sequence
+    (void)sequence_create;
+    (void)sequence_destroy;
+    (void)sequence_get_bpm;
+    (void)sequence_set_bpm;
+    (void)sequence_get_grid;
+    (void)sequence_get_basefreq;
+    (void)sequence_set_basefreq;
+    (void)sequence_prepare;
+    (void)sequence_is_dirty;
+    (void)sequence_add_note;
+    (void)sequence_remove_note;
+    (void)sequence_clear_notes;
+    (void)sequence_get_notes;
+    (void)sequence_get_instrument;
+
+    // Instrument mapper
+    (void)instrument_mapper_get_name;
+    (void)instrument_mapper_get_id;
+    (void)instrument_mapper_is_percussion;
+    (void)instrument_mapper_get_polyphony;
+    (void)instrument_mapper_get_class;
+    (void)instrument_mapper_get_origin;
+    (void)instrument_mapper_get_available;
 }
