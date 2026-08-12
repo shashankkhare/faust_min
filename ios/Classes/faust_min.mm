@@ -119,3 +119,32 @@ __attribute__((used)) static void* const faust_min_ios_force_link_ptrs[] = {
     (void)faust_min_ios_force_link_ptrs;
 }
 @end
+
+// Forwarder includes for C++ implementation files because CocoaPods ignores ../src/*.cpp relative paths.
+#include "../../src/faust_min.cpp"
+#include "../../src/FaustMixer.cpp"
+#include "../../src/FaustInstrument.cpp"
+#include "../../src/SequenceOrchestrator.cpp"
+#include "../../src/UMLSequence.cpp"
+#include "../../src/UMLParser.cpp"
+#include "../../src/InstrumentMapper.cpp"
+#include "../../src/FaustAcousticGuitar.cpp"
+#include "../../src/FaustBansuri.cpp"
+#include "../../src/FaustBayan.cpp"
+#include "../../src/FaustBell.cpp"
+#include "../../src/FaustBowl.cpp"
+#include "../../src/FaustCowbell.cpp"
+#include "../../src/FaustDayan.cpp"
+#include "../../src/FaustFlute.cpp"
+#include "../../src/FaustHiHat.cpp"
+#include "../../src/FaustKick.cpp"
+#include "../../src/FaustPiano.cpp"
+#include "../../src/FaustRide.cpp"
+#include "../../src/FaustSax.cpp"
+#include "../../src/FaustShakuhachi.cpp"
+#include "../../src/FaustSitar.cpp"
+#include "../../src/FaustSnare.cpp"
+#include "../../src/FaustTanpura.cpp"
+#include "../../src/FaustTom.cpp"
+#include "../../src/FaustTrumpet.cpp"
+#include "../../src/FaustViolin.cpp"
