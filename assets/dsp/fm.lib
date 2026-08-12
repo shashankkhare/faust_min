@@ -67,9 +67,11 @@ with {
     wire_loss_filter(x) = x * 0.002 + x' * 0.998;
 
     // 3. Asymmetric tanh jawari — downward wave gets pre-gain into hard clip
+    // Interpolates linear (jivari=0) <-> original soft-clipper (jivari=1),
+    // so small-signal gain stays 1.0 at every jivari and sustain is preserved.
     jawariInLoop(x) = ba.if(x > 0.0,
         x,
-        ma.tanh(x * (1.0 + jivari_val * 20.0)) / (1.0 + jivari_val * 20.0)
+        x - jivari_val * (x - ma.tanh(x * (1.0 + jivari_val * 20.0)) / (1.0 + jivari_val * 20.0))
     );
 
     // 4. Feedback loop

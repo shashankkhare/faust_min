@@ -886,8 +886,6 @@ void testViolin(FaustMixer& mixer, DSPExecutionType execType) {
             
             // Note On
             inst->noteOn(freq, gTestVelocity, gTestStrike);
-            // Force gain to the user-specified amplitude — LUT may override it otherwise
-            inst->setParam("gain", gTestVelocity);
             
             // Original timing: keep bowing up to 1.5s total before release
             usleep(1500000);

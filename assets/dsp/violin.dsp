@@ -71,6 +71,9 @@ bowPosition = effBowPos : si.smoo;
 // Calibration: frequency-dependent string length offset to correct pitch drift
 calibration = hslider("calibration", 0.0, -0.1, 0.1, 0.001) : si.smoo;
 
+// Per-frequency energy flattening gain (calibrated via fix_instrument_gain.py)
+gain = hslider("gain", 1.0, 0, 1, 0.01) : si.smooth(0.03);
+
 // --- Pitch Humanization ---
 drift = no.lfnoise(2.0) * 0.0012 * f * bowEnv;
 vibEnv = t : si.smooth(ba.tau2pole(0.15)); 
@@ -94,4 +97,4 @@ process = pm.violinModel(pm.f2l(humanizedFreq) + calibration, bowPressure, bowVe
           : fi.dcblocker
           : max(-1.0, min(1.0))
           : violinBody
-          : *(0.45);
+          : *(gain * 0.45 * 24.25);

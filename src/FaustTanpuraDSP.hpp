@@ -433,7 +433,7 @@ class FaustTanpuraDSP : public dsp {
 			float fTemp11 = ((((fRec2[((IOTA - (std::min<int>(1024, std::max<int>(0, iTemp6)) + 1)) & 2047)] * (0.0f - fTemp8)) * (0.0f - (0.5f * fTemp9))) * (0.0f - (0.333333343f * fTemp10))) + ((fTemp2 + (1.0f - fTemp7)) * ((((fRec2[((IOTA - (std::min<int>(1024, std::max<int>(0, (iTemp6 + 1))) + 1)) & 2047)] * (0.0f - fTemp9)) * (0.0f - (0.5f * fTemp10))) + (0.5f * ((fTemp8 * fRec2[((IOTA - (std::min<int>(1024, std::max<int>(0, (iTemp6 + 2))) + 1)) & 2047)]) * (0.0f - fTemp10)))) + (0.166666672f * ((fTemp8 * fTemp9) * fRec2[((IOTA - (std::min<int>(1024, std::max<int>(0, (iTemp6 + 3))) + 1)) & 2047)])))));
 			fVec0[0] = fTemp11;
 			float fTemp12 = ((0.00200000009f * fTemp11) + (0.998000026f * fVec0[1]));
-			float fThen0 = (fSlow5 * float(tanhf(float((fSlow4 * fTemp12)))));
+			float fThen0 = (fTemp12 - (fSlow3 * (fTemp12 - (fSlow5 * float(tanhf(float((fSlow4 * fTemp12))))))));
 			fVec1[0] = fSlow7;
 			iRec6[0] = ((1103515245 * iRec6[1]) + 12345);
 			float fTempFTZ1 = ((4.65661287e-10f * float(iRec6[0])) - (fConst13 * ((fConst14 * fRec5[2]) + (fConst15 * fRec5[1]))));

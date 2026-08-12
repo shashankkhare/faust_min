@@ -23,28 +23,7 @@
 #import <Foundation/Foundation.h>
 #include "../../src/faust_min.h"
 
-// Force-link reference to prevent Xcode static linker from stripping C FFI symbols.
-//
-// Dart uses DynamicLibrary.process() on iOS, which resolves symbols at *runtime*.
-// The linker cannot see these callsites and would normally strip the unreferenced
-// symbols.
-//
-// CRITICAL: __attribute__((used)) alone is insufficient — the linker's dead-code
-// stripper still removes functions that are not reachable from main(). The only
-// guaranteed path is to call faust_min_ios_force_link from a FlutterPlugin method
-// that is invoked by GeneratedPluginRegistrant during app startup.
-@interface FaustMinPlugin : NSObject<FlutterPlugin>
-@end
-
-@implementation FaustMinPlugin
-+ (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
-    // Calling this makes every C symbol in the function reachable from the
-    // Objective-C class list → app startup → GeneratedPluginRegistrant, which
-    // the linker is guaranteed to preserve.
-    faust_min_ios_force_link();
-}
-@end
-
+__attribute__((constructor))
 static void faust_min_ios_force_link(void) {
     // Mixer singleton + lifecycle (all declared in faust_min.h)
     (void)mixer_get_instance;

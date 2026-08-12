@@ -54,7 +54,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #add_compile_definitions(DEBUG_INSTRUMENT)
 
-add_library(faust_min SHARED
+set(FAUST_MIN_SOURCES
   "faust_min.cpp"
   "FaustInstrument.cpp"
   "FaustFlute.cpp"
@@ -84,8 +84,21 @@ add_library(faust_min SHARED
   "InstrumentMapper.cpp"
   ${FAUST_GENERATED_HEADERS}
 )
- 
+
+add_library(faust_min SHARED ${FAUST_MIN_SOURCES})
+
+# Static build of the same engine so test binaries can link the DSPs
+# directly instead of resolving libfaust_min.so at runtime.
+add_library(faust_min_static STATIC ${FAUST_MIN_SOURCES})
+target_compile_options(faust_min_static PRIVATE -O3 -ffast-math)
+target_include_directories(faust_min_static PRIVATE
+    "."
+    "faust_arch"
+)
+target_compile_definitions(faust_min_static PUBLIC DART_SHARED_LIB)
+
 add_dependencies(faust_min compile_faust_dsps)
+add_dependencies(faust_min_static compile_faust_dsps)
 
 # Sync CSV lookup tables from plugin assets to main application assets post-build
 file(GLOB CSV_FILES "${CMAKE_CURRENT_SOURCE_DIR}/../assets/dsp/*.csv")
@@ -123,6 +136,7 @@ if (NOT ANDROID AND NOT CMAKE_CROSSCOMPILING)
         PATHS /usr/lib /usr/lib/x86_64-linux-gnu /usr/local/lib /home/shashankkhare/faust_sdk/lib)
     if (FAUST_LIB)
         target_link_libraries(faust_min PRIVATE ${FAUST_LIB})
+        target_link_libraries(faust_min_static PRIVATE ${FAUST_LIB})
         message(STATUS "Found libfaust: ${FAUST_LIB}")
     else()
         message(WARNING "libfaust not found — interpreter mode disabled on this platform")
@@ -152,7 +166,7 @@ set(FAUST_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/faust_arch")
 
 if(NOT CMAKE_CROSSCOMPILING)
 set(TEST_COMMON_LINK
-    faust_min
+    faust_min_static
     ${FAUST_LIB}
     pthread
     dl
@@ -174,17 +188,27 @@ macro(add_faust_test NAME SOURCE)
     endif()
 endmacro()
 
-add_faust_test(test_instruments "../test/test_instruments.cpp")
-target_link_libraries(test_instruments PRIVATE fftw3)
-add_faust_test(test_mixer "../test/test_mixer.cpp")
-add_faust_test(test_sequence "../test/test_sequence.cpp")
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../test/test_instruments.cpp")
+    add_faust_test(test_instruments "../test/test_instruments.cpp")
+    target_link_libraries(test_instruments PRIVATE fftw3)
+endif()
 
-add_executable(test_orchestrator "../test/test_orchestrator.cpp")
-target_compile_options(test_orchestrator PRIVATE ${TEST_COMMON_COMPILE})
-target_include_directories(test_orchestrator PRIVATE "." ${FAUST_INCLUDE_DIR})
-target_link_libraries(test_orchestrator PRIVATE ${TEST_COMMON_LINK} faust_min)
-set_target_properties(test_orchestrator PROPERTIES
-    EXCLUDE_FROM_ALL ON
-)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../test/test_mixer.cpp")
+    add_faust_test(test_mixer "../test/test_mixer.cpp")
+endif()
+
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../test/test_sequence.cpp")
+    add_faust_test(test_sequence "../test/test_sequence.cpp")
+endif()
+
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../test/test_orchestrator.cpp")
+    add_executable(test_orchestrator "../test/test_orchestrator.cpp")
+    target_compile_options(test_orchestrator PRIVATE ${TEST_COMMON_COMPILE})
+    target_include_directories(test_orchestrator PRIVATE "." ${FAUST_INCLUDE_DIR})
+    target_link_libraries(test_orchestrator PRIVATE ${TEST_COMMON_LINK} faust_min)
+    set_target_properties(test_orchestrator PROPERTIES
+        EXCLUDE_FROM_ALL ON
+    )
+endif()
 
 endif()

@@ -13,7 +13,7 @@ Example: python3 scripts/fix_instrument_gain.py sarod
 import subprocess, sys, os, math, re, argparse
 
 CSV_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "dsp")
-TEST_BINARY = "./build-release/test_instruments"
+TEST_BINARY = "./build-release/shared/test_instruments"
 WORK_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ENV = {**os.environ, "LD_LIBRARY_PATH": os.path.join(WORK_DIR, "build-release", "shared")}
 
@@ -252,6 +252,8 @@ def main():
 
     for freq in freqs:
         freq_rows = [r for r in rows if abs(r[freq_col] - freq) < 0.01]
+        if 'strike' in columns:
+            freq_rows = [r for r in freq_rows if abs(r['strike'] - float(STRIKE)) < 0.01]
         freq_rows.sort(key=lambda r: r[amp_col])
 
         ref_row = None

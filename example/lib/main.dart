@@ -36,15 +36,13 @@ class _ExamplesHomeState extends State<ExamplesHome> {
   final List<UMLSequence> _activeSequences = [];
 
   void _stopAll() {
+    _orchestratorSession?.dispose();
+    _orchestratorSession = null;
+    FaustMixer.instance.clearAll();
     for (final seq in _activeSequences) {
-      try {
-        FaustMixer.instance.unregisterInstrument(seq.getFaustInstrument());
-      } catch (_) {}
       seq.dispose();
     }
     _activeSequences.clear();
-    _orchestratorSession?.dispose();
-    _orchestratorSession = null;
     setState(() => _status = "Stopped & Released Native Instances");
   }
 
@@ -69,25 +67,54 @@ class _ExamplesHomeState extends State<ExamplesHome> {
 
   Future<void> _playSitarSarod(SequenceOrchestrator orch) async {
     const sitar = """
-notation: Indian
-instrument: sitar
-bpm: 60
 grid: 4
-basefreq: 220
+bpm: 60
+basefreq: 222.0
+instrument: sitar
+notation: Hindustani
+vibrato_depth: 0.008
+vibrato_rate: 5.0
+chikari_freq: 222.0
 
-5Sa.. 5Re.. 5Ga.. 5Pa..
+6Ni . 6Re . 6Ga . 6Re . 6Ga . 6ma . 6Ga . 6Re .
+6Ni . 6Re . 6Ga . 6ma . 6Dha . 6Ni . 6Sa*2 . 6Re*2 .
+6Sa*2 6Ni 6Dha 6Pa 6ma 6Ga 6Re 6Sa
+6Ni 6Re 6Ga 6ma 6Pa 6Dha 6Ni 6Sa*2
+6Sa*2 6Ni 6Dha 6Pa 6ma 6Ga 6Re 6Sa
+6Ga 6Re 6Sa 6Ni 6Dha 6Pa 6ma 6Ga
+6Ga 61Sa*2 6Re 61Sa*2 6Ga 61Sa*2 6ma 61Sa*2
+6Pa 61Sa*2 6Dha 61Sa*2 6Ni 61Sa*2 6Sa*2 61Sa*2
+6Sa*2 61Sa*2 6Ni 61Sa*2 6Dha 61Sa*2 6Pa 61Sa*2
+6ma 61Sa*2 6Ga 61Sa*2 6Re 61Sa*2 6Sa 61Sa*2
 """;
 
     const sarod = """
-notation: Indian
-instrument: sarod
-bpm: 60
 grid: 4
-basefreq: 220
-chikari_freq: 220
+bpm: 60
+basefreq: 222.0
+instrument: sarod
+notation: Hindustani
+vibrato_depth: 0.02
+vibrato_rate: 5.5
+chikari_freq: 222.0
 
-61Sa. 61Re. 61Ga. 61Pa. 61Sa. 61Re. 61Ga. 61Pa.
+5Sa..^ 5Sa..^ 8Ni..^ 5Sa..^
+8Ni..^ 8Ga..^ 8Re..^ 8Ni..~
+8Ga..^ 6Dha..^ 8Ni..^ 6Dha..~
+8Re..^ 8Ga..^ 8Re..^ 6Dha..^
+9Ni..^ 6Sa*2..^ 9Ni..~ 6Dha..~
+8Re..^ 9Ni..^ 6Sa*2..^ 8Ga..^
+9Ni..^ 8Re..^ 6Dha..^ 8Ni..^
+5Sa..^ 8Re..^ 8Ga..^ 8Re..~
+61Sa 8Ga~ 61Sa 8Ga~ 81Ni 8Ga~ 61Sa 8Ga~
+81Ni 8Ga~ 81Ga 8Re~ 81Re 8Ga~ 81Ni 8Ga~
+81Ga 8Re~ 61Dha 8Ni~ 81Ni 8Ga~ 61Dha 8Ni~
+81Re 8Ga~ 81Ga 8Re~ 81Re 8Ga~ 61Dha 8Ni~
+5Sa . . . . . . .
 """;
+
+    final String dayan = _tablaDayan();
+    final String bayan = _tablaBayan();
 
     final sitarSeq = UMLSequence("sitar_seq", 9, sitar);
     orch.addSequence("sitar_seq", sitarSeq);
@@ -98,6 +125,50 @@ chikari_freq: 220
     orch.addSequence("sarod_seq", sarodSeq);
     orch.play("sarod_seq");
     _register(sarodSeq);
+
+    final dayanSeq = UMLSequence("dayan_seq", 0, dayan);
+    orch.addSequence("dayan_seq", dayanSeq);
+    orch.play("dayan_seq");
+    _register(dayanSeq);
+
+    final bayanSeq = UMLSequence("bayan_seq", 1, bayan);
+    orch.addSequence("bayan_seq", bayanSeq);
+    orch.play("bayan_seq");
+    _register(bayanSeq);
+  }
+
+  String _tablaDayan() {
+    final b = StringBuffer("grid: 4\nbpm: 60\nbasefreq: 222.0\ninstrument: dayan\n\n");
+    const alaap = "Na... Tin... Tun... tk... Na... Tin... Na... tk... ";
+    const med = "Na. Tin. Tun. tk. Na. Tin. Na. tk. ";
+    const jhala = "Na Tin Tun tk Na Tin Na tk ";
+    for (var i = 0; i < 2; i++) {
+      b.write(alaap);
+    }
+    for (var i = 0; i < 4; i++) {
+      b.write(med);
+    }
+    for (var i = 0; i < 8; i++) {
+      b.write(jhala);
+    }
+    return b.toString();
+  }
+
+  String _tablaBayan() {
+    final b = StringBuffer("grid: 4\nbpm: 60\nbasefreq: 55.0\ninstrument: bayan\n\n");
+    const alaap = "Ghe... _... _... Ka... _... Ka... Ghe... _... ";
+    const med = "Ghe. _. _. Ka. _. Ka. Ghe. _. ";
+    const jhala = "Ghe _ _ Ka _ Ka Ghe _ ";
+    for (var i = 0; i < 2; i++) {
+      b.write(alaap);
+    }
+    for (var i = 0; i < 4; i++) {
+      b.write(med);
+    }
+    for (var i = 0; i < 8; i++) {
+      b.write(jhala);
+    }
+    return b.toString();
   }
 
   Future<void> _playVivaldi(SequenceOrchestrator orch) async {
