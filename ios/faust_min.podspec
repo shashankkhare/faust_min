@@ -41,6 +41,7 @@ A high-fidelity physical modeling music synthesis engine powered by Faust, featu
   s.source           = { :path => '.' }
   s.source_files = 'Classes/**/*', '../src/*.cpp', '../src/*.hpp', '../src/*.h', '../src/faust_arch/faust/dsp/dsp.h'
   s.dependency 'Flutter'
+  s.frameworks = 'AVFoundation', 'AudioToolbox'
   s.platform = :ios, '13.0'
 
   # Flutter.framework does not contain a i386 slice.
