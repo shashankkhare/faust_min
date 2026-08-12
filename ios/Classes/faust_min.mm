@@ -20,10 +20,21 @@
  * SOFTWARE.
  */
 
+#import <Flutter/Flutter.h>
 #import <Foundation/Foundation.h>
 #include "../../src/faust_min.h"
 
-__attribute__((constructor))
+static void faust_min_ios_force_link(void);
+
+@interface FaustMinPlugin : NSObject<FlutterPlugin>
+@end
+
+@implementation FaustMinPlugin
++ (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
+    faust_min_ios_force_link();
+}
+@end
+
 static void faust_min_ios_force_link(void) {
     // Mixer singleton + lifecycle (all declared in faust_min.h)
     (void)mixer_get_instance;
