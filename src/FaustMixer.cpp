@@ -138,13 +138,9 @@ FaustMixer& FaustMixer::getInstance() {
 }
 
 FaustMixer::FaustMixer() 
-#if defined(__ANDROID__) || defined(__linux__)
     : mSampleRate(48000.0f), 
-#else
-    : mSampleRate(44100.0f),
-#endif
       mStreamDevice(nullptr), mIsStreamActive(false),
-      mMasterSampleTime(0), mMasterGain(1.5f), mLimiterGain(1.0f), mFXReturnWeight(1.0f), mScratchBuffer(nullptr), mMaxFrames(0),
+      mMasterSampleTime(0), mMasterGain(0.95f), mLimiterGain(1.0f), mFXReturnWeight(1.0f), mScratchBuffer(nullptr), mMaxFrames(0),
       mReverbInL(nullptr), mReverbInR(nullptr), mReverbOutL(nullptr), mReverbOutR(nullptr),
       mIsHardwareStarted(false) {}
 

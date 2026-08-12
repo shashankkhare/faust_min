@@ -30,11 +30,7 @@ class dsp;
 
 class FAUST_API InstrumentMapper {
 public:
-#if defined(__ANDROID__) || defined(__linux__)
     static constexpr float DEFAULT_SAMPLE_RATE = 48000.0f;
-#else
-    static constexpr float DEFAULT_SAMPLE_RATE = 44100.0f;
-#endif
 
     static constexpr const char* DEFAULT_DSP_DIR = "./assets/dsp/";
     static constexpr const char* DEFAULT_LIB_DIR = "./assets/libraries";
