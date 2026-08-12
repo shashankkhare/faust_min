@@ -298,12 +298,17 @@ DART_EXPORT void orchestrator_stop_song(SequenceOrchestrator* orch, const char* 
 
 // --- FaustMixer Singleton Endpoints ---
 DART_EXPORT FaustMixer* mixer_get_instance();
+DART_EXPORT void mixer_init(FaustMixer* mixer, float sampleRate);
 DART_EXPORT int mixer_start(FaustMixer* mixer);
+DART_EXPORT void mixer_start_async(FaustMixer* mixer, void (*onComplete)());
 DART_EXPORT void mixer_stop(FaustMixer* mixer);
 DART_EXPORT void mixer_clear_all(FaustMixer* mixer);
 DART_EXPORT float mixer_get_sample_rate(FaustMixer* mixer);
 DART_EXPORT void mixer_set_master_gain(FaustMixer* mixer, float gain);
 DART_EXPORT void mixer_register_waveform_callback(FaustMixer* mixer, void (*cb)(float rms, float peak, void* userData), void* userData);
+DART_EXPORT void mixer_set_instrument_weight(FaustMixer* mixer, FaustInstrument* inst, float weight);
+DART_EXPORT int mixer_register_instrument(FaustMixer* mixer, FaustInstrument* inst, float weight);
+DART_EXPORT void mixer_unregister_instrument(FaustMixer* mixer, FaustInstrument* inst);
 
 // --- FaustMixer Track & Breakpoint Envelope ---
 DART_EXPORT int mixer_add_track(FaustMixer* mixer, float initialWeight);
@@ -356,9 +361,12 @@ DART_EXPORT void instrument_note_on(FaustInstrument* inst, float freq, float vel
 DART_EXPORT void instrument_note_off(FaustInstrument* inst);
 DART_EXPORT void instrument_render(FaustInstrument* inst, float* buffer, int numFrames);
 DART_EXPORT double sequence_get_bpm(UMLSequence* seq);
+DART_EXPORT void sequence_set_bpm(UMLSequence* seq, double bpm);
 DART_EXPORT int sequence_get_grid(UMLSequence* seq);
 DART_EXPORT double sequence_get_basefreq(UMLSequence* seq);
 DART_EXPORT void sequence_set_basefreq(UMLSequence* seq, double freq);
+DART_EXPORT void sequence_prepare(UMLSequence* seq);
+DART_EXPORT int sequence_is_dirty(UMLSequence* seq);
 
 DART_EXPORT void sequence_add_note(UMLSequence* seq, float pitch, float velocity, float startBeat, float durationBeats, const char* noteName, float strikeVal = 0.0f);
 DART_EXPORT void sequence_remove_note(UMLSequence* seq, float pitch, float startBeat);

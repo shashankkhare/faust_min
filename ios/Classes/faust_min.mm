@@ -36,11 +36,16 @@ __attribute__((visibility("default"))) __attribute__((used))
 void faust_min_ios_force_link(void) {
     // Mixer singleton + lifecycle (all declared in faust_min.h)
     (void)mixer_get_instance;
+    (void)mixer_init;
     (void)mixer_start;
+    (void)mixer_start_async;
     (void)mixer_stop;
     (void)mixer_clear_all;
     (void)mixer_get_sample_rate;
     (void)mixer_set_master_gain;
+    (void)mixer_set_instrument_weight;
+    (void)mixer_register_instrument;
+    (void)mixer_unregister_instrument;
     (void)mixer_add_track;
     (void)mixer_remove_track;
     (void)mixer_set_track_weight;
@@ -93,9 +98,12 @@ void faust_min_ios_force_link(void) {
     (void)sequence_create;
     (void)sequence_destroy;
     (void)sequence_get_bpm;
+    (void)sequence_set_bpm;
     (void)sequence_get_grid;
     (void)sequence_get_basefreq;
     (void)sequence_set_basefreq;
+    (void)sequence_prepare;
+    (void)sequence_is_dirty;
     (void)sequence_add_note;
     (void)sequence_remove_note;
     (void)sequence_clear_notes;
