@@ -473,6 +473,10 @@ DART_EXPORT const char* instrument_get_parameters_json(FaustInstrument* inst) {
     return cstr;
 }
 
+DART_EXPORT void instrument_mapper_set_asset_base_path(const char* path) {
+    if (path) InstrumentMapper::setAssetBasePath(path);
+}
+
 DART_EXPORT void instrument_free_json(const char* jsonPtr) {
     if (jsonPtr) delete[] jsonPtr;
 }

@@ -392,7 +392,7 @@ class FaustTanpuraDSP : public dsp {
 		ui_interface->addHorizontalSlider("calibration", &fHslider2, FAUSTFLOAT(0.0f), FAUSTFLOAT(-100.0f), FAUSTFLOAT(100.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addHorizontalSlider("excDur", &fHslider8, FAUSTFLOAT(0.119999997f), FAUSTFLOAT(9.99999975e-05f), FAUSTFLOAT(0.125f), FAUSTFLOAT(9.99999975e-05f));
 		ui_interface->addHorizontalSlider("excGain", &fHslider6, FAUSTFLOAT(0.0299999993f), FAUSTFLOAT(0.0f), FAUSTFLOAT(3.0f), FAUSTFLOAT(0.00999999978f));
-		ui_interface->addHorizontalSlider("freq", &fHslider1, FAUSTFLOAT(130.809998f), FAUSTFLOAT(130.0f), FAUSTFLOAT(300.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("freq", &fHslider1, FAUSTFLOAT(130.809998f), FAUSTFLOAT(40.0f), FAUSTFLOAT(500.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addHorizontalSlider("gain", &fHslider0, FAUSTFLOAT(0.5f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addButton("gate", &fButton0);
 		ui_interface->addHorizontalSlider("jivari", &fHslider3, FAUSTFLOAT(0.449999988f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
@@ -404,7 +404,7 @@ class FaustTanpuraDSP : public dsp {
 	
 	virtual void compute(int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs) {
 		FAUSTFLOAT* output0 = outputs[0];
-		float fSlow0 = (45.5f * float(fHslider0));
+		float fSlow0 = (204.390976f * float(fHslider0));
 		float fSlow1 = float(fHslider1);
 		float fSlow2 = (fConst6 * float(fHslider2));
 		float fSlow3 = float(fHslider3);
@@ -483,7 +483,7 @@ class FaustTanpuraDSP : public dsp {
 			fVec6[0] = (fTemp23 + ((fTemp25 + ((fTemp27 + (fTemp28 + (fTemp29 + ((fTemp32 + fTemp31) + fTemp30)))) + fTemp26)) + fTemp24));
 			float fTempFTZ11 = ((fTemp23 + (fTemp24 + (fTemp25 + (fTemp26 + (fTemp27 + (fTemp28 + (fTemp29 + (fTemp30 + (fTemp31 + ((0.995000005f * fRec0[1]) + fTemp32)))))))))) - fVec6[1]);
 			fRec0[0] = ((std::fabs(fTempFTZ11) > 1.17549435e-38f) ? fTempFTZ11 : 0.0f);
-			output0[i0] = FAUSTFLOAT((fSlow0 * (fRec0[0] / (std::fabs(fRec0[0]) + 1.0f))));
+			output0[i0] = FAUSTFLOAT(float(tanhf(float((fSlow0 * (fRec0[0] / (std::fabs(fRec0[0]) + 1.0f)))))));
 			fRec3[1] = fRec3[0];
 			fVec0[1] = fVec0[0];
 			fVec1[1] = fVec1[0];

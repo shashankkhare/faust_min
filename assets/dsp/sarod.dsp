@@ -31,7 +31,7 @@ cal = hslider("calibration", 0.0, -100.0, 100.0, 0.01) : si.smoo;
 gate = button("gate");
 velocity = hslider("velocity", 0.5, 0, 1, 0.01);
 gain = hslider("gain", 1.0, 0, 1, 0.01);
-exc_gain = hslider("exc_gain", 0.5, 0.0, 2.0, 0.01);
+exc_gain = hslider("exc_gain", 3.0, 0.0, 3.0, 0.01);
 symp_gain = hslider("symp_gain", 0.05, 0, 1, 0.01); 
 strike = hslider("strike", 0, 0, 2, 1);
 
@@ -52,7 +52,7 @@ trig = gate > gate';
 // a fast release over 'pluck_rel' seconds back to 0. The slow build spreads
 // the excitation over time so the string accumulates energy gently instead of
 // spiking on a 3ms attack — keeps the peak well below the tanh clamp.
-pluck_atk = 0.025;
+pluck_atk = 0.002;
 pluck_rel = 0.010;
 triangle_env(atk, rel, t) = count : tri
 with {
@@ -65,6 +65,23 @@ with {
 };
 
 pluck_env = triangle_env(pluck_atk, pluck_rel, trig);
+
+// One-shot 0->1 hold ramp (sample-count, resets on trigger).
+rise_env(dur, t) = count : r
+with {
+    samps = int(dur * ma.SR);
+    count = loop ~ _
+    with { loop(n) = ba.if(t, 0, min(n + 1, samps)); };
+    r(n) = min(1.0, n / max(1.0, samps));
+};
+
+// Jawari ease-in: ramp jawari from a low floor up to full over the pluck attack,
+// so the asymmetric clip stays out of the initial resonant buildup (keeps the
+// buildup linear instead of being rectified/pumped by the clip). Tied to pluck_atk
+// so it re-times with any attack change. One-pole smoothing avoids retrigger clicks.
+jawari_floor = 0.1;
+jawari_eff = jawari * (jawari_floor + (1 - jawari_floor) * (rise_env(pluck_atk, trig) : si.smoo));
+
 pick_noise = no.noise : fi.bandpass(2, 80.0, 1000.0);
 base_exc = pick_noise * exc_gain * pluck_env * velocity;
 
@@ -95,7 +112,7 @@ dynSustain = 2.0 - normFreq * 0.85;
 melody_gate = max(gate, is_chikari) : si.smoo;
 
 // sitar_string imported from fm.lib (read-only)
-stringLoop = sitar_string(modulated_freq, dynSustain, jawari, 1.0, melody_gate, melody_exc, cal);
+stringLoop = sitar_string(modulated_freq, dynSustain, jawari_eff, 1.0, melody_gate, melody_exc, cal);
 
 // 4 Chikari strings using sitar_string (detuned pairs for chorus)
 chikariLoop = ( sitar_string(chikari_freq1 - 1.0, 1.5, jawari * 0.5, 1.0, chikari_trig, chikari_trig_exc, 0)

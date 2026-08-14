@@ -40,10 +40,22 @@ with {
     modeGains(5) = 0.4;
     modeGains(6) = 0.2;
 
-    // Simple impulsive click for excitation (much safer than counting samples)
-    // A 1-pole lowpass gently mimics the metal-on-metal thud without looping bugs.
-    strike = trig * vel * 50.0; // Scaled up to perfectly ring the normalized resonbp
-    excitation = strike : fi.lowpass(1, 1500.0);
+    // Strike envelope: quick 1ms rise then ~5ms decay — a metal thud instead of a
+    // single-sample click (the old impulse clamped the output at 1.0 for ~30 samples).
+    // Scaled up to ring the normalized resonbp modes; CSV calibration sets the level.
+    strike_dur = 0.006;
+    strike_rise = 0.001;
+    strike_env = count : shape
+    with {
+        samps = int(strike_dur * ma.SR);
+        rise = int(strike_rise * ma.SR);
+        count = loop ~ _
+        with { loop(n) = ba.if(trig, 0, min(n + 1, samps)); };
+        shape(n) = ba.if(n < rise,
+                         n / max(1, rise),
+                         max(0.0, 1.0 - (n - rise) / max(1, samps - rise)));
+    };
+    excitation = (strike_env * vel) : fi.lowpass(1, 1500.0);
 };
 
 process = churchBell(freq, velocity) : fi.dcblocker : *(gain * 12.25) : ma.tanh;

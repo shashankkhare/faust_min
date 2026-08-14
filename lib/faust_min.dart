@@ -26,6 +26,8 @@ import 'dart:io';
 import 'dart:async';
 import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
+import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
 
 const String _libName = 'faust_min';
 
@@ -277,6 +279,9 @@ typedef _dart_orch_play_song = void Function(Pointer<NativeOrchestratorOpaque>, 
 
 typedef _c_orch_stop_song = Void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>);
 typedef _dart_orch_stop_song = void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>);
+
+typedef _c_mapper_set_asset_base_path = Void Function(Pointer<Utf8>);
+typedef _dart_mapper_set_asset_base_path = void Function(Pointer<Utf8>);
 
 typedef _c_mapper_get_name = Pointer<Utf8> Function(Int32);
 typedef _dart_mapper_get_name = Pointer<Utf8> Function(int);
@@ -1157,3 +1162,51 @@ class FaustMixer {
   void masterFadeOut(double durationSeconds) =>
       _funcMasterFadeOut(_handle, durationSeconds);
 }
+
+/// Global asset manager and initializer for the Faust synthesis engine.
+class FaustEngine {
+  static late final _funcMapperSetAssetBasePath =
+      _dylib.lookupFunction<_c_mapper_set_asset_base_path, _dart_mapper_set_asset_base_path>(
+          'instrument_mapper_set_asset_base_path');
+  static late final _funcOrchSetAssetBasePath =
+      _dylib.lookupFunction<_c_orch_set_asset_base_path, _dart_orch_set_asset_base_path>(
+          'orchestrator_set_asset_base_path');
+
+  static bool _initialized = false;
+
+  /// Copies all instrument CSV tables and DSP assets from Flutter package assets
+  /// to local app storage and configures native C++ engines with the extracted directory path.
+  static Future<void> init() async {
+    if (_initialized) return;
+    try {
+      final dir = await getApplicationSupportDirectory();
+      final dspDir = Directory('${dir.path}/dsp');
+      if (!dspDir.existsSync()) {
+        dspDir.createSync(recursive: true);
+      }
+
+      final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
+      final dspAssets = manifest.listAssets().where((key) => key.contains('assets/dsp/'));
+
+      for (final assetKey in dspAssets) {
+        final fileName = assetKey.split('/').last;
+        final targetFile = File('${dspDir.path}/$fileName');
+        try {
+          final byteData = await rootBundle.load(assetKey);
+          final bytes = byteData.buffer.asUint8List(byteData.offsetInBytes, byteData.lengthInBytes);
+          await targetFile.writeAsBytes(bytes, flush: true);
+        } catch (_) {}
+      }
+
+      final nativePath = dir.path.toNativeUtf8();
+      try {
+        _funcMapperSetAssetBasePath(nativePath.cast());
+      } finally {
+        malloc.free(nativePath);
+      }
+
+      _initialized = true;
+    } catch (_) {}
+  }
+}
+

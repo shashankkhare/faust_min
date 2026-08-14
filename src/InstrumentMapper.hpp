@@ -64,6 +64,10 @@ public:
     // Returns the geographical origin/category (e.g. "Indian", "Western", "Chinese", "Arabic")
     static std::string getInstrumentOrigin(int id);
 
+    // Global static asset base path set by Flutter / FFI layer
+    static void setAssetBasePath(const std::string& path);
+    static std::string getAssetBasePath();
+
     // Resolves absolute/relative target source file URI based on numeric ID
     static std::string getDSPPathForID(int id, const std::string& assetBasePath = "");
 

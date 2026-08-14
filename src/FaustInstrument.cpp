@@ -35,6 +35,8 @@
 #include <limits>
 #include "InstrumentMapper.hpp"
 
+#include "FaustLog.hpp"
+
 
 #include "FaustDayanDSP.hpp"
 #include "FaustBayanDSP.hpp"
@@ -248,10 +250,10 @@ void FaustInstrument::loadTargetDSP() {
     mLUTRecords.clear();
     mLUTActive = false;
     std::ifstream csvFile(csvPath);
-#ifdef DEBUG_INSTRUMENT
-    printf("[LUT] CSV path: %s, opened=%d, mExecType=%d\n", csvPath.c_str(), (int)csvFile.is_open(), (int)mExecType);
-    fflush(stdout);
-#endif
+    FM_LOGI("[LUT] CSV path: %s, opened=%d, mExecType=%d", csvPath.c_str(), (int)csvFile.is_open(), (int)mExecType);
+    if (!csvFile.is_open()) {
+        FM_LOGE("[LUT] CSV file NOT FOUND at path: %s", csvPath.c_str());
+    }
     if (csvFile.is_open()) {
         std::string headerLine;
         if (std::getline(csvFile, headerLine)) {
@@ -307,18 +309,9 @@ void FaustInstrument::loadTargetDSP() {
                 return a.frequency < b.frequency;
             });
             mLUTActive = true;
-#ifdef DEBUG_INSTRUMENT
-            printf("[Native] SUCCESS: Auto-constructed %llu LUT records from companion CSV '%s'\n", (unsigned long long)mLUTRecords.size(), csvPath.c_str());
-            fflush(stdout);
-#endif
+            FM_LOGI("[Native] SUCCESS: Auto-constructed %llu LUT records from companion CSV '%s'", (unsigned long long)mLUTRecords.size(), csvPath.c_str());
         }
     }
-#ifdef DEBUG_INSTRUMENT
-    if (!csvFile.is_open()) {
-        printf("[LUT] CSV file NOT FOUND at path: %s\n", csvPath.c_str());
-        fflush(stdout);
-    }
-#endif
 
     // Load the dedicated per-note pitch calibration table (frequency-only).
     // Preferred companion name: "<dsp>_calibration.csv".

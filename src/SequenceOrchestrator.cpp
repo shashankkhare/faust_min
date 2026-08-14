@@ -30,6 +30,7 @@
 #include "SequenceOrchestrator.hpp"
 #include "UMLParser.hpp"
 #include "InstrumentMapper.hpp"
+#include "FaustLog.hpp"
 #include <chrono>
 #if DEBUG_ORCHESTRATOR
 #define TLOG(msg) do { \

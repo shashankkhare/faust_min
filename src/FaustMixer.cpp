@@ -32,21 +32,7 @@
 #include <iostream>
 #include <chrono>
 
-#ifdef __ANDROID__
-#include <android/log.h>
-#define FM_LOG_TAG "FaustMin"
-#define FM_LOGI(...) __android_log_print(ANDROID_LOG_INFO,  FM_LOG_TAG, __VA_ARGS__)
-#define FM_LOGW(...) __android_log_print(ANDROID_LOG_WARN,  FM_LOG_TAG, __VA_ARGS__)
-#define FM_LOGE(...) __android_log_print(ANDROID_LOG_ERROR, FM_LOG_TAG, __VA_ARGS__)
-#define FM_LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, FM_LOG_TAG, __VA_ARGS__)
-#define FM_LOG_ALWAYS(...) __android_log_print(ANDROID_LOG_INFO, FM_LOG_TAG, __VA_ARGS__)
-#else
-#define FM_LOGI(...) printf(__VA_ARGS__); fflush(stdout)
-#define FM_LOGW(...) printf(__VA_ARGS__); fflush(stdout)
-#define FM_LOGE(...) fprintf(stderr, __VA_ARGS__); fflush(stderr)
-#define FM_LOGD(...) printf(__VA_ARGS__); fflush(stdout)
-#define FM_LOG_ALWAYS(...) printf(__VA_ARGS__); fflush(stdout)
-#endif
+#include "FaustLog.hpp"
 
 #define TLOG(msg) do { \
     auto __now = std::chrono::steady_clock::now(); \
@@ -66,44 +52,44 @@
 //           required. AudioWorkgroup (iOS 16+/macOS 12+) is the future
 //           upgrade path for deadline-aware co-scheduling.
 // Linux   : SCHED_FIFO — same as Android path, desktop only.
-// Windows : SetThreadPriority(THREAD_PRIORITY_TIME_CRITICAL).
-static void elevateWorkerThreadPriority() {
-#if defined(__ANDROID__)
-    // Android NDK: real-time FIFO, one step below Oboe's own callback thread
-    struct sched_param sp;
-    sp.sched_priority = sched_get_priority_max(SCHED_FIFO) - 1;
-    if (pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp) != 0) {
-        // Non-fatal: falls back to standard priority
-        FM_LOGW("[Worker] SCHED_FIFO elevation failed (non-fatal)");
-    }
-#elif defined(__APPLE__)
-    // iOS & macOS: Quality-of-Service class — no entitlement needed
-    // Future: join AudioWorkgroup via os_workgroup_join() for deadline scheduling
-    pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0);
-#elif defined(__linux__)
-    // Linux desktop: SCHED_FIFO real-time
-    struct sched_param sp;
-    sp.sched_priority = sched_get_priority_max(SCHED_FIFO) - 1;
-    pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp);
-#elif defined(_WIN32) || defined(_WIN64)
-    // Windows: TIME_CRITICAL priority class
-    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
-#endif
-}
-
 // Platform-specific includes for thread priority APIs
 #if defined(__APPLE__)
 #include <pthread.h>  // pthread_set_qos_class_self_np
 #endif
-#if defined(__linux__) && !defined(__ANDROID__)
+#if defined(__linux__) || defined(__ANDROID__)
 #include <pthread.h>
 #include <sched.h>    // SCHED_FIFO, sched_get_priority_max
+#include <sys/resource.h>
+#include <unistd.h>
 #endif
 #if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>  // SetThreadPriority
 #endif
 
-#ifdef __ANDROID__
+// --- Cross-platform audio worker thread priority elevation ---
+static void elevateWorkerThreadPriority() {
+#if defined(__ANDROID__)
+    // Elevate Android process priority to THREAD_PRIORITY_URGENT_AUDIO (-19)
+    setpriority(PRIO_PROCESS, gettid(), -19);
+    FM_LOGI("[Worker] Priority set to THREAD_PRIORITY_URGENT_AUDIO (-19)");
+
+    struct sched_param sp;
+    sp.sched_priority = sched_get_priority_max(SCHED_FIFO) - 1;
+    if (pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp) == 0) {
+        FM_LOGI("[Worker] SCHED_FIFO real-time elevation succeeded");
+    }
+#elif defined(__APPLE__)
+    pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0);
+#elif defined(__linux__)
+    struct sched_param sp;
+    sp.sched_priority = sched_get_priority_max(SCHED_FIFO) - 1;
+    pthread_setschedparam(pthread_self(), SCHED_FIFO, &sp);
+#elif defined(_WIN32) || defined(_WIN64)
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
+#endif
+}
+
+#if 0 // USE MINIAUDIO FOR ANDROID
 #include <oboe/Oboe.h>
 class MixerOboeCallback : public oboe::AudioStreamDataCallback {
 public:
@@ -193,17 +179,21 @@ void FaustMixer::init(float sampleRate) {
         FM_LOGI("[Mixer] persistent thread pool fully armed: %d workers", mWorkerCount);
     }
 
-#ifdef __ANDROID__
+#if 0 // USE MINIAUDIO FOR ANDROID
     oboe::AudioStreamBuilder builder;
     static MixerOboeCallback cb;
     cb.mUserData = this;
     oboe::AudioStreamBuilder* b = &builder;
     b->setDirection(oboe::Direction::Output)
-     ->setPerformanceMode(oboe::PerformanceMode::LowLatency)
-     ->setSharingMode(oboe::SharingMode::Shared)
+     ->setPerformanceMode(oboe::PerformanceMode::None)
+     ->setUsage(oboe::Usage::Media)
      ->setFormat(oboe::AudioFormat::Float)
      ->setChannelCount(oboe::ChannelCount::Stereo)
+     ->setChannelConversionAllowed(true)
      ->setSampleRate((int32_t)mSampleRate)
+     ->setSampleRateConversionQuality(oboe::SampleRateConversionQuality::Medium)
+     ->setAudioApi(oboe::AudioApi::AAudio)
+     ->setBufferCapacityInFrames(8192)
      ->setDataCallback(&cb);
     oboe::AudioStream* stream = nullptr;
     if (builder.openStream(&stream) == oboe::Result::OK) {
@@ -218,9 +208,9 @@ void FaustMixer::init(float sampleRate) {
     config.playback.format = ma_format_f32;
     config.playback.channels = 2;
     config.sampleRate = (ma_uint32)mSampleRate;
-    config.periodSizeInFrames = 512;
-    config.periods = 3;
-    config.performanceProfile = ma_performance_profile_low_latency;
+    config.periodSizeInFrames = 2048;
+    config.periods = 4;
+    config.performanceProfile = ma_performance_profile_conservative;
     config.dataCallback = mixerMaCallback;
     config.stopCallback = mixerMaStopCallback;
     config.pUserData = this;
@@ -258,7 +248,7 @@ bool FaustMixer::start() {
     if (!mIsStreamActive) {
         mIsStreamActive = true;
         lock.unlock(); // Unlock before starting hardware to avoid deadlock with the callback thread!
-#ifdef __ANDROID__
+#if 0 // USE MINIAUDIO FOR ANDROID
         oboe::AudioStream* stream = static_cast<oboe::AudioStream*>(mStreamDevice);
         auto result = stream->requestStart();
         FM_LOGI("[Mixer] requestStart result=%d", static_cast<int>(result));
@@ -276,7 +266,7 @@ void FaustMixer::stop() {
     std::lock_guard<std::mutex> lock(mRegistryMutex);
     if (!mIsHardwareStarted || !mStreamDevice) return;
 
-#ifdef __ANDROID__
+#if 0 // USE MINIAUDIO FOR ANDROID
     oboe::AudioStream* stream = static_cast<oboe::AudioStream*>(mStreamDevice);
     if (mIsStreamActive) {
         stream->requestPause();
@@ -314,7 +304,7 @@ void FaustMixer::close() {
     
     std::lock_guard<std::mutex> lock(mRegistryMutex);
     if (mStreamDevice) {
-#ifdef __ANDROID__
+#if 0 // USE MINIAUDIO FOR ANDROID
         oboe::AudioStream* stream = static_cast<oboe::AudioStream*>(mStreamDevice);
         stream->close();
 #else
@@ -364,7 +354,7 @@ void FaustMixer::workerLoop(int workerID) {
     uint64_t myEpoch = 0;
     static std::atomic<int> workDispatchCount{0};
     while (true) {
-        // --- Sleep until a new dispatch epoch arrives or shutdown ---
+        // --- Sleep on condition variable until a new dispatch epoch arrives ---
         {
             std::unique_lock<std::mutex> lk(mWorkMutex);
             mWorkCV.wait(lk, [&] {
@@ -372,13 +362,6 @@ void FaustMixer::workerLoop(int workerID) {
             });
             if (!mWorkerRunning.load(std::memory_order_relaxed)) break;
             myEpoch = mDispatchEpoch;
-#if DEBUG_MIXER
-            int d = workDispatchCount.fetch_add(1, std::memory_order_relaxed);
-            if (d % 100 == 0) {
-                printf("[DEBUG_MIXER] worker[%d] dispatch #%d alive\n", workerID, d);
-                fflush(stdout);
-            }
-#endif
         }
 
         // --- Steal and process work items ---

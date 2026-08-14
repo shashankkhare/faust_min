@@ -90,7 +90,7 @@ add_library(faust_min SHARED ${FAUST_MIN_SOURCES})
 # Static build of the same engine so test binaries can link the DSPs
 # directly instead of resolving libfaust_min.so at runtime.
 add_library(faust_min_static STATIC ${FAUST_MIN_SOURCES})
-target_compile_options(faust_min_static PRIVATE -O3 -ffast-math)
+target_compile_options(faust_min_static PRIVATE -O3 -ffast-math -ftree-vectorize $<$<CONFIG:Release>:-flto>)
 target_include_directories(faust_min_static PRIVATE
     "."
     "faust_arch"
@@ -123,7 +123,7 @@ foreach(CSV_FILE ${CSV_FILES})
     )
 endforeach()
  
-target_compile_options(faust_min PRIVATE -O3 -ffast-math)
+target_compile_options(faust_min PRIVATE -O3 -ffast-math -ftree-vectorize $<$<CONFIG:Release>:-flto>)
  
 target_include_directories(faust_min PRIVATE 
     "."

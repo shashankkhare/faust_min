@@ -330,6 +330,7 @@ DART_EXPORT void mixer_master_fade_out(FaustMixer* mixer, float durationSeconds)
 
 
 // --- UMLSequence and FaustInstrument Flat Endpoints ---
+DART_EXPORT void instrument_mapper_set_asset_base_path(const char* path);
 DART_EXPORT const char* instrument_mapper_get_name(int id);
 DART_EXPORT int instrument_mapper_get_id(const char* name);
 DART_EXPORT int instrument_mapper_is_percussion(int id);

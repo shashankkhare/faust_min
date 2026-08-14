@@ -248,8 +248,19 @@ std::string InstrumentMapper::getInstrumentOrigin(int id) {
     return "Western";
 }
 
+static std::string sAssetBasePath = "";
+
+void InstrumentMapper::setAssetBasePath(const std::string& path) {
+    sAssetBasePath = path;
+}
+
+std::string InstrumentMapper::getAssetBasePath() {
+    return sAssetBasePath;
+}
+
 std::string InstrumentMapper::getDSPPathForID(int id, const std::string& assetBasePath) {
-    std::string base = assetBasePath.empty() ? DEFAULT_DSP_DIR : (assetBasePath + "/dsp/");
+    std::string effectiveBase = !assetBasePath.empty() ? assetBasePath : sAssetBasePath;
+    std::string base = effectiveBase.empty() ? DEFAULT_DSP_DIR : (effectiveBase + "/dsp/");
     switch (id) {
         case 0:  return base + "dayan.dsp";
         case 1:  return base + "bayan.dsp";

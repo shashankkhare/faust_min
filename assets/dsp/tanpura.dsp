@@ -8,9 +8,9 @@ declare options "[nvoices:4]";
 // =============================================================================
 import("stdfaust.lib");
 import("fm.lib");
-freq = hslider("freq", 130.81, 130, 300, 0.01);
+freq = hslider("freq", 130.81, 40, 500, 0.01);
 
-gain = hslider("gain", 0.5, 0, 1.0, 0.01); 
+gain = hslider("gain", 0.5, 0, 1, 0.01); 
 velocity = hslider("velocity", 0.8, 0, 1, 0.01);
 gate = button("gate");
 
@@ -43,4 +43,4 @@ string_output = sitar_string(freq, sustain, jivari, excGain * stringGainVal, gat
 
 mix = string_output;
 softclip(x) = x / (1.0 + abs(x));
-process = mix : gourdResonator : fi.dcblocker : softclip : *(gain * 45.5);
+process = mix : gourdResonator : fi.dcblocker : softclip : *(gain * 204.39098) : ma.tanh;
