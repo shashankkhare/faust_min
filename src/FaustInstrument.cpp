@@ -58,7 +58,7 @@
 #include "FaustBansuriDSP.hpp"
 #include "FaustViolinDSP.hpp"
 #include "FaustRainmakerDSP.hpp"
-#include "FaustChurchBellDSP.hpp"
+#include "FaustChurchbellDSP.hpp"
 #include "FaustAcoustic_guitarDSP.hpp"
 #include "FaustElectric_guitarDSP.hpp"
 #include "FaustBassDSP.hpp"
@@ -406,7 +406,7 @@ void FaustInstrument::loadTargetDSP() {
                 case 17: addVoice(new FaustBansuriDSP()); break;
                 case 18: addVoice(new FaustViolinDSP()); break;
                 case 19: addVoice(new FaustRainmakerDSP()); break;
-                case 20: addVoice(new FaustChurchBellDSP()); break;
+                case 20: addVoice(new FaustChurchbellDSP()); break;
                 case 21: addVoice(new FaustAcoustic_guitarDSP()); break;
                 case 22: addVoice(new FaustElectric_guitarDSP()); break;
                 case 23: addVoice(new FaustBassDSP()); break;
