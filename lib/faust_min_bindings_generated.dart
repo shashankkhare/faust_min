@@ -2071,31 +2071,6 @@ class FaustMinBindings {
   late final _orchestrator_destroy = _orchestrator_destroyPtr
       .asFunction<void Function(ffi.Pointer<SequenceOrchestrator>)>();
 
-  void orchestrator_set_asset_base_path(
-    ffi.Pointer<SequenceOrchestrator> orch,
-    ffi.Pointer<ffi.Char> path,
-  ) {
-    return _orchestrator_set_asset_base_path(orch, path);
-  }
-
-  late final _orchestrator_set_asset_base_pathPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Void Function(
-            ffi.Pointer<SequenceOrchestrator>,
-            ffi.Pointer<ffi.Char>,
-          )
-        >
-      >('orchestrator_set_asset_base_path');
-  late final _orchestrator_set_asset_base_path =
-      _orchestrator_set_asset_base_pathPtr
-          .asFunction<
-            void Function(
-              ffi.Pointer<SequenceOrchestrator>,
-              ffi.Pointer<ffi.Char>,
-            )
-          >();
-
   int orchestrator_add_sequence(
     ffi.Pointer<SequenceOrchestrator> orch,
     ffi.Pointer<ffi.Char> name,

@@ -26,6 +26,9 @@ import 'package:faust_min/faust_min.dart';
 void main() async {
   print("\n=== Faust Flute Diagnostic Integration Test ===");
 
+  // 0. Extract DSP assets and configure the native asset base path.
+  await FaustEngine.init();
+
   // 1. Prepare Valid UML Schedule String
   // Using lower basefreq (300Hz) and lower velocity (6) to avoid overblowing
   final String umlScheduleString = """

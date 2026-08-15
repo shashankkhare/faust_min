@@ -1,3 +1,10 @@
+## 0.5.3
+
+* **FaustEngine.init() Skip-Logic**: Now skips re-extracting DSP assets when the target file's size and mtime already match the bundled source asset (byte-identical fallback), making init near-instant on repeat launches.
+* **Init in Examples & Tests**: `FaustEngine.init()` added to example apps and Flutter tests, and documented in READMEs.
+* **Native Track Muting**: `muteTrack`/`unmuteTrack`/`isTrackMuted` mixer APIs.
+* **ChurchBell Fix**: Reduced hum subharmonic gain (modeGains(0) 1.0→0.4) so the prime/fundamental dominates pitch; fixed header capitalization so the generated DSP is `FaustChurchbellDSP.hpp` (case-sensitive iOS build).
+
 ## 0.5.2
 
 * **Frequency Calibration for All Instruments**: Per-instrument pitch calibration tables (bansuri, sitar, sarod, tanpura) with cents-model correction and `pitchcorrect.py` automation for pitch drift.

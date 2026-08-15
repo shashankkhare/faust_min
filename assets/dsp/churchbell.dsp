@@ -32,7 +32,7 @@ with {
     modeT60s(5) = 2.5;
     modeT60s(6) = 1.25;
 
-    modeGains(0) = 1.0;
+    modeGains(0) = 0.4;
     modeGains(1) = 1.0;
     modeGains(2) = 0.8;
     modeGains(3) = 0.6;

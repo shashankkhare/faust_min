@@ -15,6 +15,14 @@
 - ❌ Major bump > 1.0.0 (e.g., 0.5.0 → 5.0.0)
 - ❌ Any version like 5.0.0, 10.0.0 etc. — these are MAJOR versions and must only increment by 1.0.0
 
+**TAGGING — MANDATORY BEFORE EVERY PUBLISH:**
+- ✅ Every version uploaded to pub.dev MUST be tagged in GitHub.
+- ✅ Tag name MUST equal `v<version>` exactly as it appears in `pubspec.yaml`.
+- ✅ Tag **FIRST**, publish **after** — the tag marks the exact commit that gets uploaded.
+- ❌ NEVER publish to pub.dev without creating the matching tag first.
+- ❌ NEVER tag a version that was NOT published to pub.dev.
+- ❌ NEVER tag after publishing — a tag created post-publish may point at a different commit than the shipped code.
+
 **BEFORE PUBLISHING — Verify:**
 ```bash
 # Extract current and previous version, validate bump is legal:
@@ -130,7 +138,42 @@ cd ..
 Same structure as iOS but with `FlutterMacOS` dependency and no
 `FAUST_DISABLE_INTERPRETER` (macOS supports the interpreter).
 
-## 8. dart pub publish
+## 8. GitHub Tag & Release (tag FIRST, publish after)
+
+**MANDATORY ORDER: commit → tag → publish.**
+The tag MUST be created on the exact commit whose `pubspec.yaml` version is
+being published, BEFORE running `dart pub publish`.
+
+```bash
+# 1) Ensure everything is committed:
+git status
+git log --oneline -3
+
+# 2) Tag the version to be published:
+VERSION=$(grep 'version:' pubspec.yaml | awk '{print $2}')
+echo "Will publish and tag: v$VERSION"
+git tag -a "v$VERSION" -m "faust_min v$VERSION"
+git push origin "v$VERSION"
+
+# 3) Create the release (opens editor for release notes):
+gh release create "v$VERSION" \
+  --title "faust_min v$VERSION" \
+  --notes "See CHANGELOG.md for details."
+
+# 4) Verify the tag exists on GitHub:
+git ls-remote --tags origin "v$VERSION"
+# Output must show: <commit-sha>	refs/tags/v$VERSION
+
+# Or create the release manually at https://github.com/shashankkhare/faust_min/releases/new
+```
+
+**If publish (step 9) fails:** delete the tag, fix, recommit, retag, then republish.
+```bash
+git tag -d "v$VERSION"
+git push origin --delete "v$VERSION"
+```
+
+## 9. dart pub publish
 
 ```bash
 # Dry-run first:
@@ -143,21 +186,7 @@ dart pub publish --dry-run
 dart pub publish
 ```
 
-## 9. GitHub Release
-
-```bash
-# Tag the version:
-VERSION=$(grep 'version:' pubspec.yaml | awk '{print $2}')
-git tag -a "v$VERSION" -m "faust_min v$VERSION"
-git push origin "v$VERSION"
-
-# Create the release (opens editor for release notes):
-gh release create "v$VERSION" \
-  --title "faust_min v$VERSION" \
-  --notes "See CHANGELOG.md for details."
-
-# Or manually at https://github.com/shashankkhare/faust_min/releases/new
-```
+The version you upload here MUST match the tag created in step 8.
 
 ## 10. Post-Release
 
@@ -165,6 +194,11 @@ gh release create "v$VERSION" \
 # Verify the package is live:
 dart pub global list | grep faust_min
 # Or check: https://pub.dev/packages/faust_min
+
+# Confirm the live version matches the tag:
+VERSION=$(grep 'version:' pubspec.yaml | awk '{print $2}')
+git ls-remote --tags origin "v$VERSION"
+# Live pub.dev version MUST equal v$VERSION.
 ```
 
 ---

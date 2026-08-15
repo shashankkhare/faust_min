@@ -22,6 +22,15 @@ song assets, see the sibling app in
 
 ## Getting Started
 
+On startup the app runs `FaustEngine.init()` to extract the bundled DSP
+assets, then boots the mixer at 48 kHz:
+
+```dart
+await FaustEngine.init();        // extract DSP assets, configure native paths
+FaustMixer.instance.init(48000); // configure mixer sample rate
+FaustMixer.instance.start();     // start the audio device
+```
+
 ```bash
 flutter pub get
 flutter run

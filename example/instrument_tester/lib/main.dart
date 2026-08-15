@@ -35,6 +35,7 @@ const Map<String, String> _songAssets = {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await FaustEngine.init();
   FaustMixer.instance.init(48000);
   FaustMixer.instance.start();
   await _copySongAssets();

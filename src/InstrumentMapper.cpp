@@ -28,6 +28,8 @@
  */
 
 #include "InstrumentMapper.hpp"
+#include "faust_min.h"
+
 #include <algorithm>
 
 constexpr float InstrumentMapper::DEFAULT_SAMPLE_RATE;
@@ -248,18 +250,10 @@ std::string InstrumentMapper::getInstrumentOrigin(int id) {
     return "Western";
 }
 
-static std::string sAssetBasePath = "";
-
-void InstrumentMapper::setAssetBasePath(const std::string& path) {
-    sAssetBasePath = path;
-}
-
-std::string InstrumentMapper::getAssetBasePath() {
-    return sAssetBasePath;
-}
-
 std::string InstrumentMapper::getDSPPathForID(int id, const std::string& assetBasePath) {
-    std::string effectiveBase = !assetBasePath.empty() ? assetBasePath : sAssetBasePath;
+    // Shared base path is owned by FaustEngine (faust_min.cpp global).
+    std::string effectiveBase = !assetBasePath.empty() ? assetBasePath
+                               : (faust_min_get_asset_base_path() ? std::string(faust_min_get_asset_base_path()) : "");
     std::string base = effectiveBase.empty() ? DEFAULT_DSP_DIR : (effectiveBase + "/dsp/");
     switch (id) {
         case 0:  return base + "dayan.dsp";

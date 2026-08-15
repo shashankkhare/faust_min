@@ -33,58 +33,96 @@ dependencies:
   faust_min: ^0.2.0
 ```
 
+### Initialization
+Before creating instruments or sequences, initialize the engine and the audio mixer:
+
+```dart
+import 'package:faust_min/faust_min.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Extract the bundled DSP assets to app storage and configure the
+  // native C++ engines. Unchanged files are skipped on subsequent launches.
+  await FaustEngine.init();
+
+  // Configure the mixer with a sample rate (48 kHz) and start the audio device.
+  FaustMixer.instance.init(48000);
+  FaustMixer.instance.start();
+
+  // ... create instruments / sequences below
+}
+```
+
+All instruments and sequences must be created with the same sample rate as the mixer (48 kHz).
+
 ### Basic Instrument Usage
 Generate high-fidelity audio on the fly:
 ```dart
 import 'package:faust_min/faust_min.dart';
 
-// Create a new Flute instance (Instrument ID 10)
-final flute = FaustInstrument(10, DSPExecutionType.StaticCompiled, 48000);
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await FaustEngine.init();
+  FaustMixer.instance.init(48000);
 
-// Play a note (Frequency, Velocity)
-flute.noteOn(440.0, 0.8);
+  // Create a new Flute instance (Instrument ID 10, StaticCompiled, 48 kHz)
+  final flute = FaustInstrument.create(10, 0, 48000);
 
-// Apply real-time physical parameter modulations
-flute.setParameter("breath_pressure", 0.9);
-flute.setParameter("vibrato_depth", 0.05);
+  // Play a note (Frequency, Velocity)
+  flute.noteOn(freq: 440.0, velocity: 0.8);
 
-// Let it ring, then release
-flute.noteOff();
+  // Apply real-time physical parameter modulations
+  flute.setParameter("breath_pressure", 0.9);
+  flute.setParameter("vibrato_depth", 0.05);
+
+  // Let it ring, then release
+  flute.noteOff();
+}
 ```
 
 ### Advanced Multi-Instrument Sequencing
 Orchestrate a massive arrangement using the UML Sequencer:
 
 ```dart
-final orchestrator = SequenceOrchestrator(sampleRate: 48000);
+import 'package:faust_min/faust_min.dart';
 
-// Define a Tumbi sequence using Indian notation and parameter overrides
-String tumbiUML = '''
-grid: 4
-bpm: 120
-instrument: tumbi
-notation: Indian
-basefreq: 659.25
-vibrato_depth: 0.08
-vibrato_rate: 7.0
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await FaustEngine.init();
+  FaustMixer.instance.init(48000);
+  FaustMixer.instance.start();
 
-5Sa . . 5Re . 5Ga . . 5Re . . 5Sa . . . 
-''';
+  final orchestrator = SequenceOrchestrator();
 
-// Define a Dhol sequence using Percussion strokes
-String dholUML = '''
-grid: 4
-bpm: 120
-instrument: dhol
+  // Define a Tumbi sequence using Indian notation and parameter overrides
+  String tumbiUML = '''
+  grid: 4
+  bpm: 120
+  instrument: tumbi
+  notation: Indian
+  basefreq: 659.25
+  vibrato_depth: 0.08
+  vibrato_rate: 7.0
 
-Dha . . Na Na . . Tin Na . . Dha Dha . . Na
-''';
+  5Sa . . 5Re . 5Ga . . 5Re . . 5Sa . . . 
+  ''';
 
-// Load and play flawlessly synchronized
-orchestrator.addSequence("Tumbi", tumbiUML);
-orchestrator.addSequence("Dhol", dholUML);
+  // Define a Dhol sequence using Percussion strokes
+  String dholUML = '''
+  grid: 4
+  bpm: 120
+  instrument: dhol
 
-orchestrator.play();
+  Dha . . Na Na . . Tin Na . . Dha Dha . . Na
+  ''';
+
+  // Load and play flawlessly synchronized
+  orchestrator.addSequence("Tumbi", tumbiUML);
+  orchestrator.addSequence("Dhol", dholUML);
+
+  orchestrator.play();
+}
 ```
 
 ## 🔨 Build Process (Native Engine)

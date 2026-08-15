@@ -26,6 +26,9 @@ import 'package:faust_min/faust_min.dart';
 void main() async {
   print("\n=== Faust Native Bridge: Multi-Track Sequence Test ===");
 
+  // 0. Extract DSP assets and configure the native asset base path.
+  await FaustEngine.init();
+
   // 0. Initialize and Start the Mixer (The Heartbeat)
   final mixer = FaustMixer.instance;
   print("[Test] Starting FaustMixer...");

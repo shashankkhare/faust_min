@@ -80,7 +80,6 @@ __attribute__((used)) static void* const faust_min_ios_force_link_ptrs[] = {
     (void*)orchestrator_set_weight,
     (void*)orchestrator_set_parameter,
     (void*)orchestrator_poll_finished,
-    (void*)orchestrator_set_asset_base_path,
     (void*)orchestrator_load_song,
     (void*)orchestrator_unload_song,
     (void*)orchestrator_play_song,
@@ -111,6 +110,10 @@ __attribute__((used)) static void* const faust_min_ios_force_link_ptrs[] = {
     (void*)instrument_mapper_get_class,
     (void*)instrument_mapper_get_origin,
     (void*)instrument_mapper_get_available,
+
+    // Shared asset base path (FaustEngine)
+    (void*)faust_min_set_asset_base_path,
+    (void*)faust_min_get_asset_base_path,
 };
 
 @interface FaustMinPlugin : NSObject<FlutterPlugin>

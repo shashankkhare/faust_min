@@ -280,7 +280,6 @@ DART_EXPORT SequenceOrchestrator* orchestrator_create();
 DART_EXPORT void orchestrator_destroy(SequenceOrchestrator* orch);
 DART_EXPORT void orchestrator_register_tick_callback(SequenceOrchestrator* orch, TickCallback cb, void* userData);
 
-DART_EXPORT void orchestrator_set_asset_base_path(SequenceOrchestrator* orch, const char* path);
 DART_EXPORT int orchestrator_add_sequence(SequenceOrchestrator* orch, const char* name, UMLSequence* seq);
 DART_EXPORT void orchestrator_play(SequenceOrchestrator* orch, const char* name);
 DART_EXPORT void orchestrator_stop(SequenceOrchestrator* orch);
@@ -332,7 +331,6 @@ DART_EXPORT void mixer_master_fade_out(FaustMixer* mixer, float durationSeconds)
 
 
 // --- UMLSequence and FaustInstrument Flat Endpoints ---
-DART_EXPORT void instrument_mapper_set_asset_base_path(const char* path);
 DART_EXPORT const char* instrument_mapper_get_name(int id);
 DART_EXPORT int instrument_mapper_get_id(const char* name);
 DART_EXPORT int instrument_mapper_is_percussion(int id);
@@ -340,6 +338,12 @@ DART_EXPORT int instrument_mapper_get_polyphony(int id);
 DART_EXPORT const char* instrument_mapper_get_class(int id);
 DART_EXPORT const char* instrument_mapper_get_origin(int id);
 DART_EXPORT int instrument_mapper_get_available(int* outArray, int maxElements);
+
+// --- Shared Asset Base Path (owned by FaustEngine) ---
+// FaustEngine.init() writes it; both InstrumentMapper (DSP assets) and
+// SequenceOrchestrator (song directories) read it via the getter.
+DART_EXPORT void faust_min_set_asset_base_path(const char* path);
+DART_EXPORT const char* faust_min_get_asset_base_path();
 
 DART_EXPORT UMLSequence* sequence_create(const char* name, int instID, const char* umlDataString);
 DART_EXPORT void sequence_destroy(UMLSequence* seq);

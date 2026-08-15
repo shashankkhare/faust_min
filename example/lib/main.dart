@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:faust_min/faust_min.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await FaustEngine.init();
   FaustMixer.instance.init(48000);
   FaustMixer.instance.start();
   runApp(const MyApp());

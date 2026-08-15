@@ -187,8 +187,16 @@ DART_EXPORT void orchestrator_stop_song(SequenceOrchestrator* orch, const char* 
     if (orch && directory) orch->stopSong(std::string(directory));
 }
 
-DART_EXPORT void orchestrator_set_asset_base_path(SequenceOrchestrator* orch, const char* path) {
-    if (orch && path) orch->setAssetBasePath(std::string(path));
+// --- Shared Asset Base Path (owned by FaustEngine) ---
+
+static std::string gAssetBasePath = "";
+
+DART_EXPORT void faust_min_set_asset_base_path(const char* path) {
+    if (path) gAssetBasePath = path;
+}
+
+DART_EXPORT const char* faust_min_get_asset_base_path() {
+    return gAssetBasePath.c_str();
 }
 
 // --- FaustMixer Singleton Endpoints ---
@@ -479,10 +487,6 @@ DART_EXPORT const char* instrument_get_parameters_json(FaustInstrument* inst) {
     char* cstr = new char[jsonStr.length() + 1];
     strcpy(cstr, jsonStr.c_str());
     return cstr;
-}
-
-DART_EXPORT void instrument_mapper_set_asset_base_path(const char* path) {
-    if (path) InstrumentMapper::setAssetBasePath(path);
 }
 
 DART_EXPORT void instrument_free_json(const char* jsonPtr) {

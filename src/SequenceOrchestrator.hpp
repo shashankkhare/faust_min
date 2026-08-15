@@ -97,8 +97,6 @@ private:
     ~SequenceOrchestrator();
 public:
 
-    void setAssetBasePath(const std::string& path);
-
     /**
      * @brief Load all .usq files from a directory and parse their sequences.
      */
@@ -266,8 +264,6 @@ private:
     void updateDSPParamsVoice(std::shared_ptr<ActiveSequence> seqWrapper, float freq, float vel, float vowelVal);
     SequenceOrchestrator(const SequenceOrchestrator&) = delete;
     SequenceOrchestrator& operator=(const SequenceOrchestrator&) = delete;
-
-    std::string mAssetBasePath;
 
     std::map<std::string, std::shared_ptr<ActiveSequence>> mActiveSequences;
     std::vector<std::string> mPendingExtensions;

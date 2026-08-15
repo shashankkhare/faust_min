@@ -30,6 +30,7 @@
 #include "SequenceOrchestrator.hpp"
 #include "UMLParser.hpp"
 #include "InstrumentMapper.hpp"
+#include "faust_min.h"
 #include "FaustLog.hpp"
 #include <chrono>
 #if DEBUG_ORCHESTRATOR
@@ -104,15 +105,10 @@ void SequenceOrchestrator::rebuildSnapshot() {
     std::atomic_store(&mRenderSnapshot, next);
 }
 
-void SequenceOrchestrator::setAssetBasePath(const std::string& path) {
-    std::lock_guard<std::mutex> lock(mStateMutex);
-    mAssetBasePath = path;
-    printf("[Native] Asset Base Path set to: %s\n", path.c_str());
-    fflush(stdout);
-}
-
 int SequenceOrchestrator::loadSong(const std::string& songDirectory) {
-    std::string fullDir = mAssetBasePath + "/" + songDirectory;
+    // Base path is owned by FaustEngine (faust_min_get_asset_base_path).
+    std::string basePath = faust_min_get_asset_base_path() ? std::string(faust_min_get_asset_base_path()) : "";
+    std::string fullDir = basePath.empty() ? songDirectory : basePath + "/" + songDirectory;
     DIR* dir = opendir(fullDir.c_str());
     if (!dir) {
         // Attempt as absolute path if relative fails

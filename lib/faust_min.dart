@@ -271,9 +271,6 @@ typedef _c_orch_register_tick_callback = Void Function(
 typedef _dart_orch_register_tick_callback = void Function(
     Pointer<NativeOrchestratorOpaque>, Pointer<NativeFunction<TickCallbackNative>>, Pointer<Void>);
 
-typedef _c_orch_set_asset_base_path = Void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>);
-typedef _dart_orch_set_asset_base_path = void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>);
-
 typedef _c_orch_load_song = Int32 Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>);
 typedef _dart_orch_load_song = int Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>);
 
@@ -286,8 +283,11 @@ typedef _dart_orch_play_song = void Function(Pointer<NativeOrchestratorOpaque>, 
 typedef _c_orch_stop_song = Void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>);
 typedef _dart_orch_stop_song = void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>);
 
-typedef _c_mapper_set_asset_base_path = Void Function(Pointer<Utf8>);
-typedef _dart_mapper_set_asset_base_path = void Function(Pointer<Utf8>);
+typedef _c_engine_set_asset_base_path = Void Function(Pointer<Utf8>);
+typedef _dart_engine_set_asset_base_path = void Function(Pointer<Utf8>);
+
+typedef _c_engine_get_asset_base_path = Pointer<Utf8> Function();
+typedef _dart_engine_get_asset_base_path = Pointer<Utf8> Function();
 
 typedef _c_mapper_get_name = Pointer<Utf8> Function(Int32);
 typedef _dart_mapper_get_name = Pointer<Utf8> Function(int);
@@ -783,7 +783,6 @@ class SequenceOrchestrator {
 
   static late final _funcRegisterTickCb = _dylib.lookupFunction<_c_orch_register_tick_callback, _dart_orch_register_tick_callback>('orchestrator_register_tick_callback');
   static late final _funcPollFinished = _dylib.lookupFunction<_c_orch_poll_finished, _dart_orch_poll_finished>('orchestrator_poll_finished');
-  static late final _funcSetAssetBasePath = _dylib.lookupFunction<_c_orch_set_asset_base_path, _dart_orch_set_asset_base_path>('orchestrator_set_asset_base_path');
   static late final _funcLoadSong = _dylib.lookupFunction<_c_orch_load_song, _dart_orch_load_song>('orchestrator_load_song');
   static late final _funcUnloadSong = _dylib.lookupFunction<_c_orch_unload_song, _dart_orch_unload_song>('orchestrator_unload_song');
   static late final _funcPlaySong = _dylib.lookupFunction<_c_orch_play_song, _dart_orch_play_song>('orchestrator_play_song');
@@ -802,17 +801,6 @@ class SequenceOrchestrator {
       _funcAddSeq(_handle, namePtr.cast(), sequence.nativePointer);
     } finally {
       malloc.free(namePtr);
-    }
-  }
-
-  /// Set the base path for resolving relative song directories.
-  void setAssetBasePath(String path) {
-    if (_isDisposed) return;
-    final pathPtr = path.toNativeUtf8();
-    try {
-      _funcSetAssetBasePath(_handle, pathPtr.cast());
-    } finally {
-      malloc.free(pathPtr);
     }
   }
 
@@ -1189,14 +1177,22 @@ class FaustMixer {
 
 /// Global asset manager and initializer for the Faust synthesis engine.
 class FaustEngine {
-  static late final _funcMapperSetAssetBasePath =
-      _dylib.lookupFunction<_c_mapper_set_asset_base_path, _dart_mapper_set_asset_base_path>(
-          'instrument_mapper_set_asset_base_path');
-  static late final _funcOrchSetAssetBasePath =
-      _dylib.lookupFunction<_c_orch_set_asset_base_path, _dart_orch_set_asset_base_path>(
-          'orchestrator_set_asset_base_path');
+  static late final _funcSetAssetBasePath =
+      _dylib.lookupFunction<_c_engine_set_asset_base_path, _dart_engine_set_asset_base_path>(
+          'faust_min_set_asset_base_path');
+  static late final _funcGetAssetBasePath =
+      _dylib.lookupFunction<_c_engine_get_asset_base_path, _dart_engine_get_asset_base_path>(
+          'faust_min_get_asset_base_path');
 
   static bool _initialized = false;
+
+  /// Returns the native asset base path (directory where DSP/CSV assets were
+  /// extracted by [init]). Empty until [init] completes.
+  static String getAssetBasePath() {
+    final ptr = _funcGetAssetBasePath();
+    if (ptr == nullptr) return '';
+    return ptr.toDartString();
+  }
 
   /// Copies all instrument CSV tables and DSP assets from Flutter package assets
   /// to local app storage and configures native C++ engines with the extracted directory path.
@@ -1233,7 +1229,7 @@ class FaustEngine {
 
       final nativePath = dir.path.toNativeUtf8();
       try {
-        _funcMapperSetAssetBasePath(nativePath.cast());
+        _funcSetAssetBasePath(nativePath.cast());
       } finally {
         malloc.free(nativePath);
       }
