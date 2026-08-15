@@ -239,9 +239,9 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
     long currentGridIndex = 0;
 
     // Regex parsing layout:
-    // Group 1 matches standalone dots with optional operators (\.[\^\~>\_]*) -> ContinuityDot
+    // Group 1 matches standalone dots with optional operators (\.[\^~>_]*) -> ContinuityDot
     // Group 2 matches notes with optional operators -> NoteWithControl
-    std::regex tokenRegex(R"((\.[\^\~>\_]*)|([^\s\.]+))");
+    std::regex tokenRegex(R"((\.[\^~>_]*)|([^\s\.]+))");
     auto words_begin = std::sregex_iterator(notesSection.begin(), notesSection.end(), tokenRegex);
     auto words_end = std::sregex_iterator();
 

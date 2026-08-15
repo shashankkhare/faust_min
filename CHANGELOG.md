@@ -1,3 +1,7 @@
+## 0.5.4
+
+* **UML parser regex crash fix**: The tokenizer regex used `\~`, `\_`, `\>` escapes that LLVM libc++ (`std::regex`) rejects — this crashed any song load on Android and iOS. Escapes removed; parsing is unchanged.
+
 ## 0.5.3
 
 * **FaustEngine.init() Skip-Logic**: Now skips re-extracting DSP assets when the target file's size and mtime already match the bundled source asset (byte-identical fallback), making init near-instant on repeat launches.
