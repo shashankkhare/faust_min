@@ -1,6 +1,6 @@
 ## 0.5.4
 
-* **UML parser regex crash fix**: The tokenizer regex used `\~`, `\_`, `\>` escapes that LLVM libc++ (`std::regex`) rejects — this crashed any song load on Android and iOS. Escapes removed; parsing is unchanged.
+* **UML parser regex crash fix**: The tokenizer regex used `\~`, `\_`, `\>` escapes that LLVM libc++ (`std::regex`) rejects — this crashed **any** UML sequence parse (song load, inline `addSequence`, etc.) on Android and iOS. Escapes removed; parsing behavior unchanged.
 
 ## 0.5.3
 
