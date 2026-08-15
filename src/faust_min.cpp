@@ -32,6 +32,9 @@
 #include <algorithm>
 #include <cstdio>
 #include <chrono>
+#include <mutex>
+#include <unordered_map>
+#include <memory>
 
 #ifdef __ANDROID__
 #include <android/log.h>
@@ -84,24 +87,47 @@ static struct FaustMinInit {
     }
 } g_faustMinInit;
 
+// ---------------------------------------------------------------------------
+// UMLSequence ownership bridge.
+//
+// Dart cannot hold a std::shared_ptr, so the FFI passes raw addresses only.
+// This registry stores Dart's reference to every sequence it creates; the
+// object is freed when the last reference (registry + orchestrator borrows)
+// is released. sequence_create() -> make_shared + store, sequence_destroy()
+// -> erase. The registry itself never constructs or deletes objects.
+// ---------------------------------------------------------------------------
+static std::mutex gSequenceRegistryMutex;
+static std::unordered_map<UMLSequence*, std::shared_ptr<UMLSequence>> gSequenceRegistry;
+
 extern "C" {
 
 // --- High-Level Orchestrator Endpoints (The Controller) ---
 
-DART_EXPORT SequenceOrchestrator* orchestrator_create() {
+DART_EXPORT SequenceOrchestrator* orchestrator_get_instance() {
     auto& orch = SequenceOrchestrator::getInstance();
-    // Connect the Brain to the Heartbeat via the FFI bridge (Decoupled)
+    // Connect the Brain to the Heartbeat via the FFI bridge (Decoupled).
+    // setPreRenderCallback overwrites the single slot, so this is idempotent.
     FaustMixer::getInstance().setPreRenderCallback(SequenceOrchestrator::staticPreRender, &orch);
     return &orch;
+}
+
+[[deprecated("Use orchestrator_get_instance()")]]
+DART_EXPORT SequenceOrchestrator* orchestrator_create() {
+    return orchestrator_get_instance();
 }
 
 
 
 DART_EXPORT int orchestrator_add_sequence(SequenceOrchestrator* orch, const char* name, UMLSequence* seq) {
-    if (orch && name && seq) {
-        return orch->addSequence(name, seq);
+    if (!orch || !name || !seq) return -3;
+    std::lock_guard<std::mutex> lock(gSequenceRegistryMutex);
+    auto it = gSequenceRegistry.find(seq);
+    if (it == gSequenceRegistry.end()) {
+        printf("[Native Error] orchestrator_add_sequence: sequence %p is not tracked in the registry\n", (void*)seq);
+        fflush(stdout);
+        return -4;
     }
-    return -3;
+    return orch->addSequence(name, it->second);
 }
 
 DART_EXPORT void orchestrator_play(SequenceOrchestrator* orch, const char* name) {
@@ -122,11 +148,20 @@ DART_EXPORT void orchestrator_play_sequences(SequenceOrchestrator* orch, const c
     }
 }
 
+[[deprecated("Use orchestrator_clear_sequences() / orchestrator_stop()")]]
 DART_EXPORT void orchestrator_destroy(SequenceOrchestrator* orchestrator) {
     if (orchestrator) {
         orchestrator->stop();
-        // Do NOT delete the singleton!
+        orchestrator->clearSequences();
     }
+}
+
+DART_EXPORT void orchestrator_clear_sequence(SequenceOrchestrator* orch, const char* name) {
+    if (orch && name) orch->clearSequence(name);
+}
+
+DART_EXPORT void orchestrator_clear_sequences(SequenceOrchestrator* orch) {
+    if (orch) orch->clearSequences();
 }
 
 DART_EXPORT void orchestrator_stop(SequenceOrchestrator* orch) {
@@ -407,11 +442,16 @@ DART_EXPORT void mixer_master_fade_out(FaustMixer* mixer, float durationSeconds)
 
 DART_EXPORT UMLSequence* sequence_create(const char* name, int instID, const char* umlDataString) {
     if (!name || !umlDataString) return nullptr;
-    return new UMLSequence(name, instID, umlDataString);
+    auto seq = std::make_shared<UMLSequence>(name, instID, umlDataString);
+    std::lock_guard<std::mutex> lock(gSequenceRegistryMutex);
+    gSequenceRegistry[seq.get()] = seq;
+    return seq.get();
 }
 
 DART_EXPORT void sequence_destroy(UMLSequence* seq) {
-    if (seq) delete seq;
+    if (!seq) return;
+    std::lock_guard<std::mutex> lock(gSequenceRegistryMutex);
+    gSequenceRegistry.erase(seq);
 }
 
 DART_EXPORT double sequence_get_bpm(UMLSequence* seq) {

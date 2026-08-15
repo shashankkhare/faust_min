@@ -1,6 +1,6 @@
 name: faust_min
 description: "High-fidelity physical modeling music synthesis engine powered by Faust, featuring 50+ dynamic instruments, polyphonic support, and an advanced UML multi-notation sequencer."
-version: 0.5.4
+version: 0.5.5
 homepage: https://github.com/shashankkhare/faust_min
 repository: https://github.com/shashankkhare/faust_min
 issue_tracker: https://github.com/shashankkhare/faust_min/issues

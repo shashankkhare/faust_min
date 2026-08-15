@@ -148,11 +148,9 @@ int SequenceOrchestrator::loadSong(const std::string& songDirectory) {
 
                 if (isParam && inNotes) {
                     std::string seqName = songDirectory + "_" + filename + "_" + std::to_string(subSeqIdx++);
-                    UMLSequence* seq = new UMLSequence(seqName, -1, currentSeqBlock);
+                    auto seq = std::make_shared<UMLSequence>(seqName, -1, currentSeqBlock);
                     if (addSequence(seqName, seq) == 0) {
                         loadedSeqNames.push_back(seqName);
-                    } else {
-                        delete seq;
                     }
                     currentSeqBlock = "";
                     inNotes = false;
@@ -161,11 +159,9 @@ int SequenceOrchestrator::loadSong(const std::string& songDirectory) {
             }
             if (!currentSeqBlock.empty()) {
                 std::string seqName = songDirectory + "_" + filename + "_" + std::to_string(subSeqIdx++);
-                UMLSequence* seq = new UMLSequence(seqName, -1, currentSeqBlock);
+                auto seq = std::make_shared<UMLSequence>(seqName, -1, currentSeqBlock);
                 if (addSequence(seqName, seq) == 0) {
                     loadedSeqNames.push_back(seqName);
-                } else {
-                    delete seq;
                 }
             }
         }
@@ -219,7 +215,7 @@ void SequenceOrchestrator::stopSong(const std::string& songDirectory) {
     }
 }
 
-int SequenceOrchestrator::addSequence(const std::string& name, UMLSequence* sequence) {
+int SequenceOrchestrator::addSequence(const std::string& name, const std::shared_ptr<UMLSequence>& sequence) {
     if (!sequence || sequence->instrumentID == -1) {
         printf("[Native Error] Failed to add sequence '%s': Invalid Instrument ID\n", name.c_str());
         fflush(stdout);
@@ -352,6 +348,28 @@ void SequenceOrchestrator::clearSequences() {
     fflush(stdout);
 }
 
+void SequenceOrchestrator::clearSequence(const std::string& name) {
+    stop();
+    {
+        std::lock_guard<std::mutex> lock(mStateMutex);
+        mPendingPlay.erase(std::remove(mPendingPlay.begin(), mPendingPlay.end(), name), mPendingPlay.end());
+        mPendingExtensions.erase(std::remove(mPendingExtensions.begin(), mPendingExtensions.end(), name), mPendingExtensions.end());
+        mActiveSequences.erase(name);
+        for (auto it = mSongRegistry.begin(); it != mSongRegistry.end();) {
+            auto& seqs = it->second;
+            seqs.erase(std::remove(seqs.begin(), seqs.end(), name), seqs.end());
+            if (seqs.empty()) {
+                it = mSongRegistry.erase(it);
+            } else {
+                ++it;
+            }
+        }
+        rebuildSnapshot();
+    }
+    printf("[Native] Sequence cleared: %s\n", name.c_str());
+    fflush(stdout);
+}
+
 void SequenceOrchestrator::stop() {
     mIsPaused = false;
     std::lock_guard<std::mutex> lock(mStateMutex);
@@ -404,7 +422,7 @@ void SequenceOrchestrator::muteSequence(const std::string& name, bool mute) {
     std::lock_guard<std::mutex> lock(mStateMutex);
     if (mActiveSequences.count(name)) {
         mActiveSequences[name]->isMuted.store(mute);
-        auto* seq = mActiveSequences[name]->sequenceObj;
+        auto seq = mActiveSequences[name]->sequenceObj;
         if (seq) {
             auto* inst = seq->getFaustInstrument();
             if (inst) {
@@ -416,7 +434,7 @@ void SequenceOrchestrator::muteSequence(const std::string& name, bool mute) {
         // Dump all mute states for debugging
         printf("[Native] --- All mute states ---\n");
         for (auto& pair : mActiveSequences) {
-            auto* seq = pair.second->sequenceObj;
+            auto seq = pair.second->sequenceObj;
             bool muted = false;
             if (seq) {
                 auto* inst = seq->getFaustInstrument();
@@ -605,7 +623,7 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
             continue;
         }
 
-        UMLSequence* seq = seqWrapper->sequenceObj;
+        auto seq = seqWrapper->sequenceObj;
         if (!seq || seq->totalDurationSamples <= 0) continue;
 
         long framesRemaining = numFrames;
@@ -828,7 +846,7 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
                         TLOG("FIRST TICK fired - cursor starts moving");
                         firstTick = false;
                     }
-                    UMLSequence* seq = seqWrapper->sequenceObj;
+                    auto seq = seqWrapper->sequenceObj;
                     int activeNote = -1;
                     if (seq && seq->bpm > 0.0) {
                         double samplesPerBeat = (60.0 / seq->bpm)

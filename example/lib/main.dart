@@ -37,7 +37,8 @@ class _ExamplesHomeState extends State<ExamplesHome> {
   final List<UMLSequence> _activeSequences = [];
 
   void _stopAll() {
-    _orchestratorSession?.dispose();
+    // Stop + drop orchestrator references FIRST (it only borrows sequences).
+    _orchestratorSession?.clearSequences();
     _orchestratorSession = null;
     FaustMixer.instance.clearAll();
     for (final seq in _activeSequences) {
@@ -50,7 +51,7 @@ class _ExamplesHomeState extends State<ExamplesHome> {
   Future<void> _playDemo(String demo) async {
     _stopAll();
     setState(() => _status = "Streaming $demo...");
-    _orchestratorSession = SequenceOrchestrator();
+    _orchestratorSession = FaustEngine.getOrchestrator();
 
     final orchestrator = _orchestratorSession!;
     if (demo == "Sequence 1: Sitar → Sarod") {

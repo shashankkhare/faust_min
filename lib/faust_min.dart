@@ -221,14 +221,20 @@ typedef _dart_inst_render = void Function(Pointer<NativeInstrumentOpaque>, Point
 typedef _c_inst_get_sample_rate = Float Function(Pointer<NativeInstrumentOpaque>);
 typedef _dart_inst_get_sample_rate = double Function(Pointer<NativeInstrumentOpaque>);
 
-typedef _c_orch_create = Pointer<NativeOrchestratorOpaque> Function();
-typedef _dart_orch_create = Pointer<NativeOrchestratorOpaque> Function();
+typedef _c_orch_get_instance = Pointer<NativeOrchestratorOpaque> Function();
+typedef _dart_orch_get_instance = Pointer<NativeOrchestratorOpaque> Function();
 
 typedef _c_orch_destroy = Void Function(Pointer<NativeOrchestratorOpaque>);
 typedef _dart_orch_destroy = void Function(Pointer<NativeOrchestratorOpaque>);
 
 typedef _c_orch_add_seq = Void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>, Pointer<NativeSequenceOpaque>);
 typedef _dart_orch_add_seq = void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>, Pointer<NativeSequenceOpaque>);
+
+typedef _c_orch_clear_sequence = Void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>);
+typedef _dart_orch_clear_sequence = void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>);
+
+typedef _c_orch_clear_sequences = Void Function(Pointer<NativeOrchestratorOpaque>);
+typedef _dart_orch_clear_sequences = void Function(Pointer<NativeOrchestratorOpaque>);
 
 typedef _c_orch_play = Void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>);
 typedef _dart_orch_play = void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>);
@@ -766,9 +772,11 @@ class SequenceOrchestrator {
   late final Pointer<NativeOrchestratorOpaque> _handle;
   bool _isDisposed = false;
 
-  static late final _funcCreate = _dylib.lookupFunction<_c_orch_create, _dart_orch_create>('orchestrator_create');
+  static late final _funcGetInstance = _dylib.lookupFunction<_c_orch_get_instance, _dart_orch_get_instance>('orchestrator_get_instance');
   static late final _funcDestroy = _dylib.lookupFunction<_c_orch_destroy, _dart_orch_destroy>('orchestrator_destroy');
   static late final _funcAddSeq = _dylib.lookupFunction<_c_orch_add_seq, _dart_orch_add_seq>('orchestrator_add_sequence');
+  static late final _funcClearSequence = _dylib.lookupFunction<_c_orch_clear_sequence, _dart_orch_clear_sequence>('orchestrator_clear_sequence');
+  static late final _funcClearSequences = _dylib.lookupFunction<_c_orch_clear_sequences, _dart_orch_clear_sequences>('orchestrator_clear_sequences');
   static late final _funcPlay = _dylib.lookupFunction<_c_orch_play, _dart_orch_play>('orchestrator_play');
   static late final _funcPlaySequences = _dylib.lookupFunction<_c_orch_play_sequences, _dart_orch_play_sequences>('orchestrator_play_sequences');
 
@@ -788,9 +796,19 @@ class SequenceOrchestrator {
   static late final _funcPlaySong = _dylib.lookupFunction<_c_orch_play_song, _dart_orch_play_song>('orchestrator_play_song');
   static late final _funcStopSong = _dylib.lookupFunction<_c_orch_stop_song, _dart_orch_stop_song>('orchestrator_stop_song');
 
-  /// Create an orchestrator instance. Call [dispose] when done.
-  SequenceOrchestrator() {
-    _handle = _funcCreate();
+  /// Access the global singleton orchestrator. Prefer [FaustEngine.getOrchestrator].
+  ///
+  /// The native orchestrator is a process-wide singleton; every call returns
+  /// the same instance. There is no per-session create/destroy lifecycle.
+  factory SequenceOrchestrator() {
+    _instance ??= SequenceOrchestrator._();
+    return _instance!;
+  }
+
+  static SequenceOrchestrator? _instance;
+
+  SequenceOrchestrator._() {
+    _handle = _funcGetInstance();
   }
 
   /// Register a parsed [UMLSequence] by name for playback.
@@ -802,6 +820,27 @@ class SequenceOrchestrator {
     } finally {
       malloc.free(namePtr);
     }
+  }
+
+  /// Stop a single sequence and drop the orchestrator's reference to it.
+  ///
+  /// The sequence object itself stays alive as long as Dart still owns it
+  /// (and is freed by reference count when the last owner disposes it).
+  void clearSequence(String name) {
+    if (_isDisposed) return;
+    final namePtr = name.toNativeUtf8();
+    try {
+      _funcClearSequence(_handle, namePtr.cast());
+    } finally {
+      malloc.free(namePtr);
+    }
+  }
+
+  /// Stop all playback and drop every sequence reference held by the
+  /// orchestrator.
+  void clearSequences() {
+    if (_isDisposed) return;
+    _funcClearSequences(_handle);
   }
 
   /// Load a song from a directory
@@ -948,7 +987,10 @@ class SequenceOrchestrator {
     return ptr.toDartString();
   }
 
-  /// Free the orchestrator and stop all playback.
+  /// @Deprecated: The orchestrator is a process-wide singleton; it is never
+  /// created or destroyed per-session. Use [stop]/[clearSequences] to release
+  /// playback state instead. Retained for backward compatibility only.
+  @Deprecated('Use clearSequences()/stop() — the orchestrator is a singleton')
   void dispose() {
     if (!_isDisposed && _handle != nullptr) {
       _funcDestroy(_handle);
@@ -1185,6 +1227,17 @@ class FaustEngine {
           'faust_min_get_asset_base_path');
 
   static bool _initialized = false;
+  static SequenceOrchestrator? _orchestrator;
+
+  /// The global singleton [SequenceOrchestrator].
+  ///
+  /// The native orchestrator is a process-wide singleton shared by every
+  /// caller; no per-session create/destroy lifecycle exists.
+  static SequenceOrchestrator getOrchestrator() =>
+      _orchestrator ??= SequenceOrchestrator();
+
+  /// The global singleton [FaustMixer].
+  static FaustMixer getMixer() => FaustMixer.instance;
 
   /// Returns the native asset base path (directory where DSP/CSV assets were
   /// extracted by [init]). Empty until [init] completes.

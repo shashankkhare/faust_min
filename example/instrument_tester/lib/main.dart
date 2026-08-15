@@ -186,7 +186,7 @@ class _FaustInstrumentsHomeState extends State<FaustInstrumentsHome> {
 
     try {
       _stopAll();
-      _orchestratorSession = SequenceOrchestrator();
+      _orchestratorSession = FaustEngine.getOrchestrator();
 
       final appDir = await getApplicationDocumentsDirectory();
 
@@ -286,6 +286,10 @@ basefreq: 130.81
   }
 
   void _stopAll() {
+    // 1. Stop playback and drop the orchestrator's references FIRST — it only
+    //    borrows sequences and must release them while they are still alive.
+    _orchestratorSession?.clearSequences();
+    // 2. Release Dart's own references (the shared_ptr registry drops its ref).
     for (final seq in _activeSequences) {
       try {
         FaustMixer.instance.unregisterInstrument(seq.getFaustInstrument());
@@ -293,7 +297,6 @@ basefreq: 130.81
       seq.dispose();
     }
     _activeSequences.clear();
-    _orchestratorSession?.dispose();
     _orchestratorSession = null;
     setState(() => _status = "Stopped & Released Native Instances");
   }

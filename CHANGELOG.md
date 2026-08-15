@@ -1,3 +1,11 @@
+## 0.5.5
+
+* **Song-switch crash fix (Android/iOS)**: Sequences now use `std::shared_ptr` lifetime shared between Dart and the audio thread, with an FFI-side `UMLSequence*` registry holding the Dart-owned reference. Switching songs no longer `delete`s a sequence while the audio thread is still rendering it (no more `pthread_mutex_lock: abort` / destroyed-mutex crashes).
+* **Singleton orchestrator API**: `FaustEngine.getOrchestrator()` and `FaustEngine.getMixer()` now expose the sequence orchestrator / mixer as true singletons.
+* **Deprecated legacy endpoints**: `SequenceOrchestrator()` constructor and `dispose()`, and native `orchestrator_create`/`orchestrator_destroy`, are deprecated (still functional) — will be removed in a future build. Prefer `FaustEngine.getOrchestrator()` / `orchestrator_get_instance()` and `clearSequences()`.
+* **New native APIs**: `orchestrator_get_instance()`, `orchestrator_clear_sequence()`, `orchestrator_clear_sequences()`.
+* **Memory leak fix**: `loadSong()` no longer leaks the sequence allocation.
+
 ## 0.5.4
 
 * **UML parser regex crash fix**: The tokenizer regex used `\~`, `\_`, `\>` escapes that LLVM libc++ (`std::regex`) rejects — this crashed **any** UML sequence parse (song load, inline `addSequence`, etc.) on Android and iOS. Escapes removed; parsing behavior unchanged.

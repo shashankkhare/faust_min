@@ -150,6 +150,7 @@ __attribute__((used)) static void* const faust_min_ios_force_link_ptrs[] = {
 #include "../../src/FaustSitar.cpp"
 #include "../../src/FaustSnare.cpp"
 #include "../../src/FaustTanpura.cpp"
+#include "../../src/FaustTibetanbowl.cpp"
 #include "../../src/FaustTom.cpp"
 #include "../../src/FaustTrumpet.cpp"
 #include "../../src/FaustViolin.cpp"

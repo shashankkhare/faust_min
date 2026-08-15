@@ -82,9 +82,9 @@ int main() {
         "2Sa...... 3Re...... 4Ga...... 5Ma...... 6Pa...... 7Dha...... 8Ni...... 9Sa......";
 
     std::cout << "[Test] Creating UMLSequences..." << std::endl;
-    UMLSequence* seqDayan = new UMLSequence("TestDayan", 0, umlDayan);
-    UMLSequence* seqBayan = new UMLSequence("TestBayan", 1, umlBayan);
-    UMLSequence* seqFlute = new UMLSequence("TestFlute", 10, umlFlute);
+    auto seqDayan = std::make_shared<UMLSequence>("TestDayan", 0, umlDayan);
+    auto seqBayan = std::make_shared<UMLSequence>("TestBayan", 1, umlBayan);
+    auto seqFlute = std::make_shared<UMLSequence>("TestFlute", 10, umlFlute);
     
     // 3. Register sequences with Orchestrator (The Brain)
     std::cout << "[Test] Adding sequences to Orchestrator..." << std::endl;
@@ -122,10 +122,8 @@ int main() {
     // 2. Clear from Orchestrator (The Brain)
     orch.clearSequences(); 
 
-    // 3. Safely delete sequence memory
-    delete seqDayan;
-    delete seqBayan;
-    delete seqFlute;
+    // 3. Sequences are reference-counted: they self-free when the orchestrator's
+    //    last reference is dropped. No manual delete.
 
     std::cout << "\n[Test] --- ACT II: Jazz Orchestra ---" << std::endl;
 
@@ -163,11 +161,11 @@ int main() {
         "\n"
         "6x.._..6x..7x.. 6x.._..6x..7x.. 6x.._..6x..7x.. 6x.._..6x..7x..";
 
-    UMLSequence* seqPiano = new UMLSequence("JazzPiano", -1, umlPiano);
-    UMLSequence* seqSax = new UMLSequence("JazzSax", -1, umlSax);
-    UMLSequence* seqKick = new UMLSequence("JazzKick", -1, umlKick);
-    UMLSequence* seqSnare = new UMLSequence("JazzSnare", -1, umlSnare);
-    UMLSequence* seqHihat = new UMLSequence("JazzHihat", -1, umlHihat);
+    auto seqPiano = std::make_shared<UMLSequence>("JazzPiano", -1, umlPiano);
+    auto seqSax = std::make_shared<UMLSequence>("JazzSax", -1, umlSax);
+    auto seqKick = std::make_shared<UMLSequence>("JazzKick", -1, umlKick);
+    auto seqSnare = std::make_shared<UMLSequence>("JazzSnare", -1, umlSnare);
+    auto seqHihat = std::make_shared<UMLSequence>("JazzHihat", -1, umlHihat);
 
     orch.addSequence("JazzPiano", seqPiano);
     orch.addSequence("JazzSax", seqSax);
@@ -221,11 +219,6 @@ int main() {
     mixer.removeTrack(jazzMelodyTrack);
     mixer.removeTrack(jazzDrumTrack);
     orch.clearSequences();
-    delete seqPiano;
-    delete seqSax;
-    delete seqKick;
-    delete seqSnare;
-    delete seqHihat;
 
     std::cout << "\nSUCCESS: Test playback cycle completed." << std::endl;
     std::cout << "--- Test Complete ---" << std::endl;

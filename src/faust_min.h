@@ -276,11 +276,16 @@ typedef struct FaustMixer FaustMixer;
 typedef void (*TickCallback)(long tick, int noteIndex, const char* seqName, void* userData);
 
 // --- Real-time Sequence Orchestrator Object Exposure ---
+DART_EXPORT SequenceOrchestrator* orchestrator_get_instance();
+[[deprecated("Use orchestrator_get_instance()")]]
 DART_EXPORT SequenceOrchestrator* orchestrator_create();
+[[deprecated("Use orchestrator_clear_sequences() / orchestrator_stop()")]]
 DART_EXPORT void orchestrator_destroy(SequenceOrchestrator* orch);
 DART_EXPORT void orchestrator_register_tick_callback(SequenceOrchestrator* orch, TickCallback cb, void* userData);
 
 DART_EXPORT int orchestrator_add_sequence(SequenceOrchestrator* orch, const char* name, UMLSequence* seq);
+DART_EXPORT void orchestrator_clear_sequence(SequenceOrchestrator* orch, const char* name);
+DART_EXPORT void orchestrator_clear_sequences(SequenceOrchestrator* orch);
 DART_EXPORT void orchestrator_play(SequenceOrchestrator* orch, const char* name);
 DART_EXPORT void orchestrator_stop(SequenceOrchestrator* orch);
 DART_EXPORT void orchestrator_pause(SequenceOrchestrator* orch);

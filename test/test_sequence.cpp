@@ -37,7 +37,7 @@
 // Helper structure to group sequences for a style
 struct SequenceGroup {
     std::string name;
-    std::vector<std::pair<std::string, UMLSequence*>> sequences;
+    std::vector<std::pair<std::string, std::shared_ptr<UMLSequence>>> sequences;
     float percussionTrackWeight = 0.7f;
     float melodyTrackWeight = 1.0f;
     float backgroundTrackWeight = 1.0f;
@@ -204,10 +204,8 @@ void playSequenceGroup(FaustMixer& mixer, SequenceOrchestrator& orch, SequenceGr
     
     orch.clearSequences();
 
-    // 4. Free memory
-    for (auto& seqPair : group.sequences) {
-        delete seqPair.second;
-    }
+    // Sequences are reference-counted: they self-free when the orchestrator's
+    // last reference is dropped. No manual delete.
     group.sequences.clear();
     
     std::cout << "=== Finished Sequence: " << group.name << " ===\n" << std::endl;
@@ -399,10 +397,10 @@ int main(int argc, char* argv[]) {
             std::string umlDayan = buildDayan();
             std::string umlBayan = buildBayan();
 
-            group.sequences.push_back({"Tanpura", new UMLSequence("Tanpura", 11, umlTanpura)});
-            group.sequences.push_back({"Bansuri", new UMLSequence("Flute", 10, umlBansuri)});
-            group.sequences.push_back({"Dayan", new UMLSequence("Dayan", 0, umlDayan)});
-            group.sequences.push_back({"Bayan", new UMLSequence("Bayan", 1, umlBayan)});
+            group.sequences.push_back({"Tanpura", std::make_shared<UMLSequence>("Tanpura", 11, umlTanpura)});
+            group.sequences.push_back({"Bansuri", std::make_shared<UMLSequence>("Flute", 10, umlBansuri)});
+            group.sequences.push_back({"Dayan", std::make_shared<UMLSequence>("Dayan", 0, umlDayan)});
+            group.sequences.push_back({"Bayan", std::make_shared<UMLSequence>("Bayan", 1, umlBayan)});
             
             group.percussionTrackWeight = 0.0f;
             group.melodyTrackWeight = 1.4f;
@@ -470,12 +468,12 @@ int main(int argc, char* argv[]) {
                 "8x... 8x.8x. 8x... 8x.8x. 8x... 8x.8x. 8x... 8x.8x. "
                 "8x... 8x.8x. 8x... 8x.8x. 8x... 8x.8x. 8x... 8x.8x.";
 
-            group.sequences.push_back({"JazzPiano", new UMLSequence("JazzPiano", 12, umlPiano)});
-            group.sequences.push_back({"JazzSax", new UMLSequence("JazzSax", 13, umlSax)});
-            group.sequences.push_back({"JazzBass", new UMLSequence("JazzBass", 23, umlBass)});
-            group.sequences.push_back({"JazzKick", new UMLSequence("JazzKick", 2, umlKick)});
-            group.sequences.push_back({"JazzSnare", new UMLSequence("JazzSnare", 3, umlSnare)});
-            group.sequences.push_back({"JazzRide", new UMLSequence("JazzRide", 6, umlRide)});
+            group.sequences.push_back({"JazzPiano", std::make_shared<UMLSequence>("JazzPiano", 12, umlPiano)});
+            group.sequences.push_back({"JazzSax", std::make_shared<UMLSequence>("JazzSax", 13, umlSax)});
+            group.sequences.push_back({"JazzBass", std::make_shared<UMLSequence>("JazzBass", 23, umlBass)});
+            group.sequences.push_back({"JazzKick", std::make_shared<UMLSequence>("JazzKick", 2, umlKick)});
+            group.sequences.push_back({"JazzSnare", std::make_shared<UMLSequence>("JazzSnare", 3, umlSnare)});
+            group.sequences.push_back({"JazzRide", std::make_shared<UMLSequence>("JazzRide", 6, umlRide)});
             
             duration = -1;
 
@@ -601,11 +599,11 @@ int main(int argc, char* argv[]) {
                 "8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x 8x "
                 "8x 8x 8x 8x 8x 8x 8x 8x 8x....... ";
 
-            group.sequences.push_back({"AcousticGuitar", new UMLSequence("AcousticGuitar", 21, umlAGuitar)});
-            group.sequences.push_back({"RockBGuitar", new UMLSequence("RockBGuitar", 23, umlBGuitar)});
-            group.sequences.push_back({"RockKick", new UMLSequence("RockKick", 2, umlKick)});
-            group.sequences.push_back({"RockSnare", new UMLSequence("RockSnare", 3, umlSnare)});
-            group.sequences.push_back({"RockHihat", new UMLSequence("RockHihat", 4, umlHihat)});
+            group.sequences.push_back({"AcousticGuitar", std::make_shared<UMLSequence>("AcousticGuitar", 21, umlAGuitar)});
+            group.sequences.push_back({"RockBGuitar", std::make_shared<UMLSequence>("RockBGuitar", 23, umlBGuitar)});
+            group.sequences.push_back({"RockKick", std::make_shared<UMLSequence>("RockKick", 2, umlKick)});
+            group.sequences.push_back({"RockSnare", std::make_shared<UMLSequence>("RockSnare", 3, umlSnare)});
+            group.sequences.push_back({"RockHihat", std::make_shared<UMLSequence>("RockHihat", 4, umlHihat)});
 
             duration = -1;
 
@@ -671,12 +669,12 @@ int main(int argc, char* argv[]) {
             group.backgroundTrackWeight = 0.3f;
             group.melodyTrackWeight = 1.0f;
 
-            group.sequences.push_back({"AmbientRain", new UMLSequence("AmbientRain", 19, umlRainmaker)});
-            group.sequences.push_back({"AmbientBowl", new UMLSequence("AmbientBowl", 8, umlBowl)});
-            group.sequences.push_back({"LagNgaHigh", new UMLSequence("LagNgaHigh", 36, umlLagngaHigh)});
-            group.sequences.push_back({"LagNgaLow", new UMLSequence("LagNgaLow", 36, umlLagngaLow)});
-            group.sequences.push_back({"Bowl222", new UMLSequence("Bowl222", 8, umlBowl222)});
-            group.sequences.push_back({"Bowl444", new UMLSequence("Bowl444", 8, umlBowl444)});
+            group.sequences.push_back({"AmbientRain", std::make_shared<UMLSequence>("AmbientRain", 19, umlRainmaker)});
+            group.sequences.push_back({"AmbientBowl", std::make_shared<UMLSequence>("AmbientBowl", 8, umlBowl)});
+            group.sequences.push_back({"LagNgaHigh", std::make_shared<UMLSequence>("LagNgaHigh", 36, umlLagngaHigh)});
+            group.sequences.push_back({"LagNgaLow", std::make_shared<UMLSequence>("LagNgaLow", 36, umlLagngaLow)});
+            group.sequences.push_back({"Bowl222", std::make_shared<UMLSequence>("Bowl222", 8, umlBowl222)});
+            group.sequences.push_back({"Bowl444", std::make_shared<UMLSequence>("Bowl444", 8, umlBowl444)});
 
         } else if (selection == 5) {
             group.name = "Hotel California — Piano, Bass, 3 Congas, Shaker";
@@ -816,12 +814,12 @@ int main(int argc, char* argv[]) {
                 "8sh . 8sh .  8sh . 8sh .  8sh . 8sh .  8sh . 8sh . "
                 "8sh . 8sh .  8sh . 8sh .  8sh . 8sh .  8sh . 8sh .";
 
-            group.sequences.push_back({"Piano", new UMLSequence("Piano", 12, umlPiano)});
-            group.sequences.push_back({"Bass", new UMLSequence("Bass", 23, umlBass)});
-            group.sequences.push_back({"CongaLow", new UMLSequence("CongaLow", 30, umlCongaLow)});
-            group.sequences.push_back({"CongaMid", new UMLSequence("CongaMid", 30, umlCongaMid)});
-            group.sequences.push_back({"CongaHigh", new UMLSequence("CongaHigh", 30, umlCongaHigh)});
-            group.sequences.push_back({"Shaker", new UMLSequence("Shaker", 33, umlShaker)});
+            group.sequences.push_back({"Piano", std::make_shared<UMLSequence>("Piano", 12, umlPiano)});
+            group.sequences.push_back({"Bass", std::make_shared<UMLSequence>("Bass", 23, umlBass)});
+            group.sequences.push_back({"CongaLow", std::make_shared<UMLSequence>("CongaLow", 30, umlCongaLow)});
+            group.sequences.push_back({"CongaMid", std::make_shared<UMLSequence>("CongaMid", 30, umlCongaMid)});
+            group.sequences.push_back({"CongaHigh", std::make_shared<UMLSequence>("CongaHigh", 30, umlCongaHigh)});
+            group.sequences.push_back({"Shaker", std::make_shared<UMLSequence>("Shaker", 33, umlShaker)});
 
             duration = -1;
 
@@ -918,10 +916,10 @@ int main(int argc, char* argv[]) {
                 umlBayan += "Ghe . . . _ . . . ";
             }
             
-            group.sequences.push_back({"Tanpura", new UMLSequence("Tanpura", 11, umlTanpura)});
-            group.sequences.push_back({"Sitar", new UMLSequence("Sitar", 9, umlSitar)});
-            group.sequences.push_back({"Dayan", new UMLSequence("Dayan", 0, umlDayan)});
-            group.sequences.push_back({"Bayan", new UMLSequence("Bayan", 1, umlBayan)});
+            group.sequences.push_back({"Tanpura", std::make_shared<UMLSequence>("Tanpura", 11, umlTanpura)});
+            group.sequences.push_back({"Sitar", std::make_shared<UMLSequence>("Sitar", 9, umlSitar)});
+            group.sequences.push_back({"Dayan", std::make_shared<UMLSequence>("Dayan", 0, umlDayan)});
+            group.sequences.push_back({"Bayan", std::make_shared<UMLSequence>("Bayan", 1, umlBayan)});
             
             group.backgroundTrackWeight = 0.8f;
             duration = -1;
@@ -948,7 +946,7 @@ int main(int argc, char* argv[]) {
                 "Dha Na Ge Na Dha Na Ti _ Na Ti Ke Ti Na Ti Dha _ "
                 "Dha Na Ge Na Dha Na Ti _ Na Ti Ke Ti Na Ti Dha _";
                 
-            group.sequences.push_back({"Dholak", new UMLSequence("Dholak", 37, umlDholak)});
+            group.sequences.push_back({"Dholak", std::make_shared<UMLSequence>("Dholak", 37, umlDholak)});
             duration = -1;
         } else if (selection == 8) {
             group.name = "Punjabi Folk (Dhol Percussion)";
@@ -973,7 +971,7 @@ int main(int argc, char* argv[]) {
                 "Dha _ _ Na Dha Dha _ Tin Dha _ _ Na Dha Dha _ Tin "
                 "Dha _ _ Na Dha Dha _ Tin Dha _ _ Na Dha Dha _ Tin";
 
-            group.sequences.push_back({"Dhol", new UMLSequence("Dhol", 38, umlDhol)});
+            group.sequences.push_back({"Dhol", std::make_shared<UMLSequence>("Dhol", 38, umlDhol)});
             duration = -1;
         } else if (selection == 10) {
             group.name = "Sarod & Harmonium — Raag Yaman";
@@ -1065,11 +1063,11 @@ int main(int argc, char* argv[]) {
                 return s;
             };
 
-            group.sequences.push_back({"Tanpura", new UMLSequence("Tanpura", 11, umlTanpura)});
-            group.sequences.push_back({"Sarod", new UMLSequence("Sarod", 44, umlSarod)});
-            group.sequences.push_back({"Harmonium", new UMLSequence("Harmonium", 54, umlHarmonium)});
-            group.sequences.push_back({"Dayan", new UMLSequence("Dayan", 0, buildDayan())});
-            group.sequences.push_back({"Bayan", new UMLSequence("Bayan", 1, buildBayan())});
+            group.sequences.push_back({"Tanpura", std::make_shared<UMLSequence>("Tanpura", 11, umlTanpura)});
+            group.sequences.push_back({"Sarod", std::make_shared<UMLSequence>("Sarod", 44, umlSarod)});
+            group.sequences.push_back({"Harmonium", std::make_shared<UMLSequence>("Harmonium", 54, umlHarmonium)});
+            group.sequences.push_back({"Dayan", std::make_shared<UMLSequence>("Dayan", 0, buildDayan())});
+            group.sequences.push_back({"Bayan", std::make_shared<UMLSequence>("Bayan", 1, buildBayan())});
             
             group.percussionTrackWeight = 0.7f;
             group.melodyTrackWeight = 1.0f;
@@ -1129,8 +1127,8 @@ int main(int argc, char* argv[]) {
                 "9Tha 4Dhi 8Thom 6Nam 9Gumki 5Nam 4Dhi 8Tha 9Tha 4Dhi 8Thom 6Nam 9Gumki 5Nam 4Dhi 8Tha \n"
                 "9Tha 7Tha 5Dhi 4Dhi 8Thom 6Thom 9Nam 7Nam 9Gumki 7Gumki 6Nam 5Nam _... _... \n";
 
-            group.sequences.push_back({"Violin", new UMLSequence("Violin", 18, umlViolin)});
-            group.sequences.push_back({"Ghatam", new UMLSequence("Ghatam", 50, umlGhatam)});
+            group.sequences.push_back({"Violin", std::make_shared<UMLSequence>("Violin", 18, umlViolin)});
+            group.sequences.push_back({"Ghatam", std::make_shared<UMLSequence>("Ghatam", 50, umlGhatam)});
 
             group.percussionTrackWeight = 1.2f;
             group.melodyTrackWeight = 1.0f;
@@ -1203,10 +1201,10 @@ int main(int argc, char* argv[]) {
                  return s;
              };
              
-             //group.sequences.push_back({"Panflute", new UMLSequence("Panflute", 51, buildPanflute())});
-             group.sequences.push_back({"NAF", new UMLSequence("NAF", 52, buildNAF())});
-            group.sequences.push_back({"Voice", new UMLSequence("Voice", 32, buildVoice())});
-            group.sequences.push_back({"Voice_ext", new UMLSequence("Voice_ext", 32, buildVoiceExt())});
+             //group.sequences.push_back({"Panflute", std::make_shared<UMLSequence>("Panflute", 51, buildPanflute())});
+             group.sequences.push_back({"NAF", std::make_shared<UMLSequence>("NAF", 52, buildNAF())});
+            group.sequences.push_back({"Voice", std::make_shared<UMLSequence>("Voice", 32, buildVoice())});
+            group.sequences.push_back({"Voice_ext", std::make_shared<UMLSequence>("Voice_ext", 32, buildVoiceExt())});
             group.percussionTrackWeight = 1.5f;
             group.melodyTrackWeight = 1.8f;
             group.backgroundTrackWeight = 0.5f;
@@ -1268,16 +1266,16 @@ int main(int argc, char* argv[]) {
             };
 
             // 20 instruments total
-            for(int i=1; i<=1; i++) group.sequences.push_back({"ViolinM"+std::to_string(i), new UMLSequence("ViolinM"+std::to_string(i), 18, buildUml(umlViolinM, i))});
-            for(int i=2; i<=5; i++) group.sequences.push_back({"ViolinM"+std::to_string(i), new UMLSequence("ViolinM"+std::to_string(i), 18, buildUml(umlViolinM, i))});
+            for(int i=1; i<=1; i++) group.sequences.push_back({"ViolinM"+std::to_string(i), std::make_shared<UMLSequence>("ViolinM"+std::to_string(i), 18, buildUml(umlViolinM, i))});
+            for(int i=2; i<=5; i++) group.sequences.push_back({"ViolinM"+std::to_string(i), std::make_shared<UMLSequence>("ViolinM"+std::to_string(i), 18, buildUml(umlViolinM, i))});
             
             // --- HARMONY COMMENTED OUT (violin too loud) ---
-            // for(int i=1; i<=4; i++) group.sequences.push_back({"ViolinH"+std::to_string(i), new UMLSequence("ViolinH"+std::to_string(i), 18, buildUml(umlViolinH, i))});
-            for(int i=1; i<=4; i++) group.sequences.push_back({"Cello"+std::to_string(i), new UMLSequence("Cello"+std::to_string(i), 24, buildUml(umlBass, i))});
-            for(int i=1; i<=3; i++) group.sequences.push_back({"Flute"+std::to_string(i), new UMLSequence("Flute"+std::to_string(i), 10, buildUml(umlFlute, i))});
-            for(int i=1; i<=2; i++) group.sequences.push_back({"Timpani"+std::to_string(i), new UMLSequence("Timpani"+std::to_string(i), 5, buildUml(umlTimpani, i))});
-            // for(int i=1; i<=2; i++) group.sequences.push_back({"Trumpet"+std::to_string(i), new UMLSequence("Trumpet"+std::to_string(i), 15, buildUml(umlTrumpet, i))});
-            for(int i=1; i<=2; i++) group.sequences.push_back({"Piano"+std::to_string(i), new UMLSequence("Piano"+std::to_string(i), 12, buildUml(umlPiano, i))});
+            // for(int i=1; i<=4; i++) group.sequences.push_back({"ViolinH"+std::to_string(i), std::make_shared<UMLSequence>("ViolinH"+std::to_string(i), 18, buildUml(umlViolinH, i))});
+            for(int i=1; i<=4; i++) group.sequences.push_back({"Cello"+std::to_string(i), std::make_shared<UMLSequence>("Cello"+std::to_string(i), 24, buildUml(umlBass, i))});
+            for(int i=1; i<=3; i++) group.sequences.push_back({"Flute"+std::to_string(i), std::make_shared<UMLSequence>("Flute"+std::to_string(i), 10, buildUml(umlFlute, i))});
+            for(int i=1; i<=2; i++) group.sequences.push_back({"Timpani"+std::to_string(i), std::make_shared<UMLSequence>("Timpani"+std::to_string(i), 5, buildUml(umlTimpani, i))});
+            // for(int i=1; i<=2; i++) group.sequences.push_back({"Trumpet"+std::to_string(i), std::make_shared<UMLSequence>("Trumpet"+std::to_string(i), 15, buildUml(umlTrumpet, i))});
+            for(int i=1; i<=2; i++) group.sequences.push_back({"Piano"+std::to_string(i), std::make_shared<UMLSequence>("Piano"+std::to_string(i), 12, buildUml(umlPiano, i))});
 
             group.melodyTrackWeight = 1.0f;
             group.percussionTrackWeight = 0.10f;

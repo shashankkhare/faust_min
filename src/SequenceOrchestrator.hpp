@@ -45,7 +45,7 @@
 enum class SequenceState { PLAYING, STOPPED, PAUSED };
 
 struct ActiveSequence {
-    UMLSequence* sequenceObj;
+    std::shared_ptr<UMLSequence> sequenceObj;
     long currentSample;           // written only by driving worker thread — no race
     size_t nextEventIndex;        // written only by driving worker thread — no race
     std::atomic<bool> isPlaying{false};
@@ -120,9 +120,10 @@ public:
     /**
      * @brief Register a new sequence definition into the orchestrator.
      * @param name Unique identifier for the sequence track.
-     * @param sequence Parsed UML sequence object.
+     * @param sequence Parsed UML sequence object (shared ownership — the
+     *        orchestrator borrows a reference and never deletes it).
      */
-    int addSequence(const std::string& name, UMLSequence* sequence);
+    int addSequence(const std::string& name, const std::shared_ptr<UMLSequence>& sequence);
     void linkExtensions();
 
     /**
@@ -142,6 +143,12 @@ public:
      * @brief Remove all sequences from the active orchestrator pool.
      */
     void clearSequences();
+
+    /**
+     * @brief Remove a single sequence from the active orchestrator pool.
+     *        Stops its playback and drops the orchestrator's reference.
+     */
+    void clearSequence(const std::string& name);
 
     /**
      * @brief Stop all active playback immediately.

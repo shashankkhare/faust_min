@@ -31,7 +31,8 @@ dependencies:
   flutter:
     sdk: flutter
 
-  faust_min: any
+  faust_min:
+    path: ../
 
   cupertino_icons: ^1.0.8
 
