@@ -316,6 +316,8 @@ DART_EXPORT void mixer_remove_track(FaustMixer* mixer, int trackID);
 DART_EXPORT void mixer_set_track_envelope(FaustMixer* mixer, int trackID, float* times, float* values, uint8_t* interpTypes, int numPoints);
 DART_EXPORT void mixer_set_track_weight(FaustMixer* mixer, int trackID, float weight);
 DART_EXPORT float mixer_get_track_weight(FaustMixer* mixer, int trackID);
+DART_EXPORT void mixer_mute_track(FaustMixer* mixer, int trackID);
+DART_EXPORT void mixer_unmute_track(FaustMixer* mixer, int trackID);
 DART_EXPORT void mixer_set_track_reverb(FaustMixer* mixer, int trackID, float send);
 DART_EXPORT void mixer_set_track_echo(FaustMixer* mixer, int trackID, float send, float feedback, float delaySec);
 DART_EXPORT void mixer_set_track_eq(FaustMixer* mixer, int trackID, float bassDb, float trebleDb);

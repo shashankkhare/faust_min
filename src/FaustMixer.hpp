@@ -91,6 +91,9 @@ public:
 
     void setTrackWeight(int trackID, float dynamicWeight);
     float getTrackWeight(int trackID);
+    void muteTrack(int trackID);
+    void unmuteTrack(int trackID);
+    bool isTrackMuted(int trackID);
 
     // Per-track FX controls (post-AGC, applied to the track's wet signal).
     void setTrackReverbSend(int trackID, float send);
@@ -168,6 +171,7 @@ private:
         std::vector<EnvelopePoint> envelope;
         float fadeGain = 1.0f;
         long envelopeStartSample = 0;
+        bool muted = false;
         
         // AGC State
         float agcEnvelope = 1.0f;

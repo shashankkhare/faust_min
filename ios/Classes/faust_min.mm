@@ -41,6 +41,8 @@ __attribute__((used)) static void* const faust_min_ios_force_link_ptrs[] = {
     (void*)mixer_remove_track,
     (void*)mixer_set_track_weight,
     (void*)mixer_get_track_weight,
+    (void*)mixer_mute_track,
+    (void*)mixer_unmute_track,
     (void*)mixer_set_track_envelope,
     (void*)mixer_set_track_reverb,
     (void*)mixer_set_track_echo,

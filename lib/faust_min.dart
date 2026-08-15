@@ -113,6 +113,12 @@ typedef _dart_mixer_set_track_weight = void Function(Pointer<NativeMixerOpaque> 
 typedef _c_mixer_get_track_weight = Float Function(Pointer<NativeMixerOpaque> mixer, Int32 trackID);
 typedef _dart_mixer_get_track_weight = double Function(Pointer<NativeMixerOpaque> mixer, int trackID);
 
+typedef _c_mixer_mute_track = Void Function(Pointer<NativeMixerOpaque> mixer, Int32 trackID);
+typedef _dart_mixer_mute_track = void Function(Pointer<NativeMixerOpaque> mixer, int trackID);
+
+typedef _c_mixer_unmute_track = Void Function(Pointer<NativeMixerOpaque> mixer, Int32 trackID);
+typedef _dart_mixer_unmute_track = void Function(Pointer<NativeMixerOpaque> mixer, int trackID);
+
 typedef _c_mixer_set_track_reverb = Void Function(Pointer<NativeMixerOpaque> mixer, Int32 trackID, Float send);
 typedef _dart_mixer_set_track_reverb = void Function(Pointer<NativeMixerOpaque> mixer, int trackID, double send);
 
@@ -1000,6 +1006,8 @@ class FaustMixer {
   static late final _funcSetTrackEnvelope = _dylib.lookupFunction<_c_mixer_set_track_envelope, _dart_mixer_set_track_envelope>('mixer_set_track_envelope');
   static final _funcSetTrackWeight = _dylib.lookupFunction<_c_mixer_set_track_weight, _dart_mixer_set_track_weight>('mixer_set_track_weight');
   static final _funcGetTrackWeight = _dylib.lookupFunction<_c_mixer_get_track_weight, _dart_mixer_get_track_weight>('mixer_get_track_weight');
+  static final _funcMuteTrack = _dylib.lookupFunction<_c_mixer_mute_track, _dart_mixer_mute_track>('mixer_mute_track');
+  static final _funcUnmuteTrack = _dylib.lookupFunction<_c_mixer_unmute_track, _dart_mixer_unmute_track>('mixer_unmute_track');
   static final _funcSetTrackReverb = _dylib.lookupFunction<_c_mixer_set_track_reverb, _dart_mixer_set_track_reverb>('mixer_set_track_reverb');
   static final _funcSetTrackEcho = _dylib.lookupFunction<_c_mixer_set_track_echo, _dart_mixer_set_track_echo>('mixer_set_track_echo');
   static final _funcSetTrackEQ = _dylib.lookupFunction<_c_mixer_set_track_eq, _dart_mixer_set_track_eq>('mixer_set_track_eq');
@@ -1048,8 +1056,16 @@ class FaustMixer {
     _funcRegisterWaveformCb(_handle, callback, userData);
   }
 
+  double _masterGain = 1.0;
+
+  /// Get the current master bus gain.
+  double get masterGain => _masterGain;
+
   /// Set the master bus gain (0.0 to 1.0+).
-  set masterGain(double gain) => _funcSetGain(_handle, gain);
+  set masterGain(double gain) {
+    _masterGain = gain;
+    _funcSetGain(_handle, gain);
+  }
 
   /// Set the volume weight for a specific instrument.
   void setInstrumentWeight(FaustInstrument inst, double weight) {
@@ -1115,6 +1131,14 @@ class FaustMixer {
   double getTrackWeight(int trackID) =>
       _funcGetTrackWeight(_handle, trackID);
 
+  /// Mute a track (skips DSP rendering for 0% CPU load).
+  void muteTrack(int trackID) =>
+      _funcMuteTrack(_handle, trackID);
+
+  /// Unmute a track.
+  void unmuteTrack(int trackID) =>
+      _funcUnmuteTrack(_handle, trackID);
+
   /// Set this track's send level (0.0..1.0) into the shared master reverb bus.
   /// Sends are summed across all tracks and returned through the master bus
   /// scaled by [fxReturnWeight].
@@ -1176,6 +1200,10 @@ class FaustEngine {
 
   /// Copies all instrument CSV tables and DSP assets from Flutter package assets
   /// to local app storage and configures native C++ engines with the extracted directory path.
+  ///
+  /// Unchanged files are skipped: an existing target is reused when its size and
+  /// modification time match the on-disk source asset, or (when the source cannot
+  /// be stat'd, e.g. packaged builds) when its content is byte-identical.
   static Future<void> init() async {
     if (_initialized) return;
     try {
@@ -1194,7 +1222,12 @@ class FaustEngine {
         try {
           final byteData = await rootBundle.load(assetKey);
           final bytes = byteData.buffer.asUint8List(byteData.offsetInBytes, byteData.lengthInBytes);
+          final sourceStat = _statSourceAsset(assetKey, fileName);
+          if (_isUpToDate(targetFile, bytes, sourceStat)) continue;
           await targetFile.writeAsBytes(bytes, flush: true);
+          if (sourceStat != null) {
+            targetFile.setLastModifiedSync(sourceStat.modified);
+          }
         } catch (_) {}
       }
 
@@ -1207,6 +1240,42 @@ class FaustEngine {
 
       _initialized = true;
     } catch (_) {}
+  }
+
+  /// Best-effort stat of the on-disk source asset (available during source/dev
+  /// runs from the plugin repo). Returns `null` when the asset is only reachable
+  /// through the asset bundle (packaged builds).
+  static FileStat? _statSourceAsset(String assetKey, String fileName) {
+    final candidates = <String>[
+      assetKey.startsWith('packages/')
+          ? assetKey.substring(assetKey.indexOf('/') + 1)
+          : assetKey,
+      'assets/dsp/$fileName',
+    ];
+    for (final candidate in candidates) {
+      try {
+        final stat = File(candidate).statSync();
+        if (stat.type != FileSystemEntityType.notFound) return stat;
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  static bool _isUpToDate(File targetFile, Uint8List bytes, FileStat? sourceStat) {
+    if (!targetFile.existsSync()) return false;
+    if (targetFile.lengthSync() != bytes.length) return false;
+    if (sourceStat != null) {
+      return targetFile.lastModifiedSync() == sourceStat.modified;
+    }
+    return _bytesEqual(targetFile.readAsBytesSync(), bytes);
+  }
+
+  static bool _bytesEqual(List<int> a, List<int> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
 }
 

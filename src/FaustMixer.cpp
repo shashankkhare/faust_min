@@ -520,6 +520,25 @@ float FaustMixer::getTrackWeight(int trackID) {
     return mTracks.count(trackID) ? mTracks[trackID].dynamicWeight : 0.0f;
 }
 
+void FaustMixer::muteTrack(int trackID) {
+    std::lock_guard<std::mutex> lock(mRegistryMutex);
+    if (mTracks.count(trackID)) {
+        mTracks[trackID].muted = true;
+    }
+}
+
+void FaustMixer::unmuteTrack(int trackID) {
+    std::lock_guard<std::mutex> lock(mRegistryMutex);
+    if (mTracks.count(trackID)) {
+        mTracks[trackID].muted = false;
+    }
+}
+
+bool FaustMixer::isTrackMuted(int trackID) {
+    std::lock_guard<std::mutex> lock(mRegistryMutex);
+    return mTracks.count(trackID) ? mTracks[trackID].muted : false;
+}
+
 void FaustMixer::setTrackReverbSend(int trackID, float send) {
     std::lock_guard<std::mutex> lock(mRegistryMutex);
     if (mTracks.count(trackID)) {
@@ -747,6 +766,7 @@ inline void FaustMixer::accumulateInstrumentChannels(float* stereoOutput, int nu
     std::vector<float> activeFadeGains;
 
     for (auto& pair : mTracks) {
+        if (pair.second.muted) continue;
         for (auto& tInst : pair.second.instruments) {
             if (workCount >= InstrumentMapper::MAX_INSTRUMENTS) break;
             activeList.push_back(tInst.instrument);

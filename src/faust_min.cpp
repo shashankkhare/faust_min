@@ -342,6 +342,14 @@ DART_EXPORT float mixer_get_track_weight(FaustMixer* mixer, int trackID) {
     return mixer ? mixer->getTrackWeight(trackID) : 0.0f;
 }
 
+DART_EXPORT void mixer_mute_track(FaustMixer* mixer, int trackID) {
+    if (mixer) mixer->muteTrack(trackID);
+}
+
+DART_EXPORT void mixer_unmute_track(FaustMixer* mixer, int trackID) {
+    if (mixer) mixer->unmuteTrack(trackID);
+}
+
 DART_EXPORT void mixer_set_track_reverb(FaustMixer* mixer, int trackID, float send) {
     if (mixer) mixer->setTrackReverbSend(trackID, send);
 }
