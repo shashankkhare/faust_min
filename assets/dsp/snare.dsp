@@ -28,4 +28,4 @@ hiss = hslider("hiss", 1.0, 0, 1, 0.01);
 shell_tone = os.osc(freq) * en.ar(0.001, 0.1, gate);
 wires = no.noise : fi.bandpass(1, 2000, 6000) * en.ar(0.001, 0.2 * (1 + rattle), gate) * (0.3 + 0.7 * velocity) * hiss;
 
-process = (shell_tone + wires) * gain * (0.6 + 0.4 * velocity) * 2.0;
+process = (shell_tone + wires) * gain * 3.0125 : ma.tanh;

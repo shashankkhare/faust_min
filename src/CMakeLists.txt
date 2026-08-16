@@ -49,7 +49,6 @@ add_custom_target(compile_faust_dsps DEPENDS ${FAUST_GENERATED_HEADERS})
  
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-#add_compile_definitions(DEBUG_INSTRUMENT)
 
 set(FAUST_MIN_SOURCES
   "faust_min.cpp"

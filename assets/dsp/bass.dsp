@@ -51,4 +51,4 @@ dampFilter(x) = (x + x') * 0.5;
 stringLoop = excitation : (+ : de.fdelay(8192, delaySamples)) ~ (dampFilter : *(R * gateDamp));
 
 // 5. Output: gain scales drive into tanh (low gain = linear, high gain = warm saturation)
-process = stringLoop * gain : fi.lowpass(2, tone) : fi.dcblocker : ma.tanh;
+process = stringLoop * gain * 6.25 : fi.lowpass(2, tone) : fi.dcblocker : ma.tanh;

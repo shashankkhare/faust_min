@@ -189,7 +189,7 @@ class FaustCowbellDSP : public dsp {
 		ui_interface->addHorizontalSlider("clang_intensity", &fHslider2, FAUSTFLOAT(0.5f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->declare(&fHslider3, "unit", "Hz");
 		ui_interface->addHorizontalSlider("freq", &fHslider3, FAUSTFLOAT(560.0f), FAUSTFLOAT(400.0f), FAUSTFLOAT(800.0f), FAUSTFLOAT(1.0f));
-		ui_interface->addHorizontalSlider("gain", &fHslider1, FAUSTFLOAT(0.5f), FAUSTFLOAT(0.0f), FAUSTFLOAT(100.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("gain", &fHslider1, FAUSTFLOAT(0.5f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addButton("gate", &fButton0);
 		ui_interface->addHorizontalSlider("velocity", &fHslider0, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->closeBox();
@@ -201,7 +201,7 @@ class FaustCowbellDSP : public dsp {
 		float fSlow1 = std::tan((fConst1 * ((200.0f * fSlow0) + 500.0f)));
 		float fSlow2 = (1.0f / fSlow1);
 		float fSlow3 = (((fSlow2 + 1.41421354f) / fSlow1) + 1.0f);
-		float fSlow4 = (((fSlow0 * float(fHslider1)) * (((0.300000012f * fSlow0) + float(fHslider2)) + 1.0f)) / fSlow3);
+		float fSlow4 = (0.797299981f * (((fSlow0 * float(fHslider1)) * (((0.300000012f * fSlow0) + float(fHslider2)) + 1.0f)) / fSlow3));
 		float fSlow5 = FaustCowbellDSP_faustpower2_f(fSlow1);
 		float fSlow6 = (1.0f / fSlow5);
 		float fSlow7 = float(fHslider3);

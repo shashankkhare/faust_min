@@ -1,3 +1,9 @@
+## 0.5.6
+
+* **Debug-log spam fix**: `DEBUG_INSTRUMENT` is no longer compiled in by CMake — it's now a `#define` in `FaustInstrument.cpp` (default 0). The per-note `[LUT]`/`[NOTEON]` printf spam (100k+ lines per song) is gone from all release builds. Also fixed the corresponding pre-release check in `publish.md`.
+* **Snare pitch + gain calibration**: Removed the stale `freq_nudge` (±15% detune) from `snare_calibration.csv` — the snare's shell tone is a pure `os.osc`, so it needed no pitch correction. The nudge was also shifting LUT gain lookups off the CSV grid, which made `f=100` impossible to calibrate. Snare gain re-calibrated to the 0.5 target with `max_gain` folded into the DSP.
+* **Bass / Cowbell gain calibration**: Completed steps 5–7 of the gain-fix procedure (normalize CSV, fold `max_gain` into DSP, revert slider to 0–1). Bass calibrated to 0.5, cowbell to 0.3.
+
 ## 0.5.5
 
 * **Song-switch crash fix (Android/iOS)**: Sequences now use `std::shared_ptr` lifetime shared between Dart and the audio thread, with an FFI-side `UMLSequence*` registry holding the Dart-owned reference. Switching songs no longer `delete`s a sequence while the audio thread is still rendering it (no more `pthread_mutex_lock: abort` / destroyed-mutex crashes).

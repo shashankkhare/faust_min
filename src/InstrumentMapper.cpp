@@ -314,7 +314,7 @@ float InstrumentMapper::getMeasureStart(int id) {
         case 0:  return 0.050f; // Dayan — Tun rings ~1.75s
         case 1:  return 0.050f; // Bayan — Open ring ~1.5s
         case 2:  return 0.030f; // Kick — Fast decay
-        case 3:  return 0.030f; // Snare — Shell 100ms + wires 400ms
+        case 3:  return 0.005f; // Snare — Shell 100ms + wires 400ms
         case 4:  return 0.020f; // HiHat — Closed 60-250ms
         case 5:  return 0.030f; // Tom — Default 0.5s decay
         case 6:  return 0.050f; // Ride — Ping 41ms + shimmer 450ms

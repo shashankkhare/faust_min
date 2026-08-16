@@ -42,7 +42,15 @@ Debug builds (`-g`, no `-O`) produce unoptimized DSP code that can consume 5–1
 # Update CHANGELOG.md with new entries
 # Ensure debug logging is OFF in all source files:
 grep -rn "DEBUG_" src/ | grep -v "#define DEBUG_"
-# (DEBUG_ORCHESTRATOR etc. should be #define'd to 0 for release)
+# (DEBUG_INSTRUMENT, DEBUG_ORCHESTRATOR, DEBUG_MIXER etc. must be #define'd to 0 — NEVER 1 — in release)
+# ⚠️ CRITICAL: src/FaustInstrument.cpp must have DEBUG_INSTRUMENT = 0 — when set to 1 it
+# spams 100k+ lines per song from the LUT section. VERIFY before every release:
+grep -n "define DEBUG_INSTRUMENT" src/FaustInstrument.cpp
+# Expected output:  #define DEBUG_INSTRUMENT 0
+# If it shows 1, flip it back to 0 and rebuild the shared lib:
+#   cd build-release && make -j$(nproc)
+# The #define lives in the source file (like DEBUG_MIXER/DEBUG_ORCHESTRATOR) — there is NO
+# CMake flag for it, so plain builds stay quiet automatically.
 
 # Run memory & CPU sanity check:
 bash scripts/verify.sh

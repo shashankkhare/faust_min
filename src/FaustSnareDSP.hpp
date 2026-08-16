@@ -12,6 +12,7 @@ Compilation options: -lang cpp -es 1 -single -ftz 1
 #define FAUSTFLOAT float
 #endif 
 
+/* link with : "" */
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -77,10 +78,9 @@ class FaustSnareDSP : public dsp {
  private:
 	
 	FAUSTFLOAT fHslider0;
-	FAUSTFLOAT fHslider1;
 	int fSampleRate;
 	float fConst1;
-	FAUSTFLOAT fHslider2;
+	FAUSTFLOAT fHslider1;
 	float fRec1[2];
 	float fConst2;
 	float fConst3;
@@ -88,6 +88,7 @@ class FaustSnareDSP : public dsp {
 	float fVec1[2];
 	int iRec2[2];
 	float fConst4;
+	FAUSTFLOAT fHslider2;
 	FAUSTFLOAT fHslider3;
 	float fConst12;
 	int iRec4[2];
@@ -186,9 +187,9 @@ class FaustSnareDSP : public dsp {
 	
 	virtual void instanceResetUserInterface() {
 		fHslider0 = FAUSTFLOAT(0.59999999999999998f);
-		fHslider1 = FAUSTFLOAT(1.0f);
-		fHslider2 = FAUSTFLOAT(180.0f);
+		fHslider1 = FAUSTFLOAT(180.0f);
 		fButton0 = FAUSTFLOAT(0.0f);
+		fHslider2 = FAUSTFLOAT(1.0f);
 		fHslider3 = FAUSTFLOAT(1.0f);
 		fHslider4 = FAUSTFLOAT(0.5f);
 	}
@@ -231,36 +232,35 @@ class FaustSnareDSP : public dsp {
 	
 	virtual void buildUserInterface(UI* ui_interface) {
 		ui_interface->openVerticalBox("snare");
-		ui_interface->declare(&fHslider2, "unit", "Hz");
-		ui_interface->addHorizontalSlider("freq", &fHslider2, FAUSTFLOAT(180.0f), FAUSTFLOAT(90.0f), FAUSTFLOAT(260.0f), FAUSTFLOAT(1.0f));
+		ui_interface->declare(&fHslider1, "unit", "Hz");
+		ui_interface->addHorizontalSlider("freq", &fHslider1, FAUSTFLOAT(180.0f), FAUSTFLOAT(90.0f), FAUSTFLOAT(260.0f), FAUSTFLOAT(1.0f));
 		ui_interface->addHorizontalSlider("gain", &fHslider0, FAUSTFLOAT(0.600000024f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addButton("gate", &fButton0);
-		ui_interface->addHorizontalSlider("hiss", &fHslider3, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
-		ui_interface->addHorizontalSlider("velocity", &fHslider1, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("hiss", &fHslider2, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("velocity", &fHslider3, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addHorizontalSlider("wire_rattle", &fHslider4, FAUSTFLOAT(0.5f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->closeBox();
 	}
 	
 	virtual void compute(int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs) {
 		FAUSTFLOAT* output0 = outputs[0];
-		float fSlow0 = float(fHslider1);
-		float fSlow1 = (2.0f * (float(fHslider0) * ((0.400000006f * fSlow0) + 0.600000024f)));
-		float fSlow2 = (fConst1 * float(fHslider2));
-		float fSlow3 = float(fButton0);
-		float fSlow4 = (float(fHslider3) * ((0.699999988f * fSlow0) + 0.300000012f));
-		float fSlow5 = (1.0f / std::max<float>(1.0f, (fConst17 * (float(fHslider4) + 1.0f))));
+		float fSlow0 = (3.01250005f * float(fHslider0));
+		float fSlow1 = (fConst1 * float(fHslider1));
+		float fSlow2 = float(fButton0);
+		float fSlow3 = (float(fHslider2) * ((0.699999988f * float(fHslider3)) + 0.300000012f));
+		float fSlow4 = (1.0f / std::max<float>(1.0f, (fConst17 * (float(fHslider4) + 1.0f))));
 		for (int i0 = 0; (i0 < count); i0 = (i0 + 1)) {
-			float fTempFTZ0 = (fSlow2 + (fRec1[1] - std::floor((fSlow2 + fRec1[1]))));
+			float fTempFTZ0 = (fSlow1 + (fRec1[1] - std::floor((fSlow1 + fRec1[1]))));
 			fRec1[0] = ((std::fabs(fTempFTZ0) > 1.17549435e-38f) ? fTempFTZ0 : 0.0f);
-			fVec1[0] = fSlow3;
-			iRec2[0] = (((iRec2[1] + (iRec2[1] > 0)) * (fSlow3 <= fVec1[1])) + (fSlow3 > fVec1[1]));
+			fVec1[0] = fSlow2;
+			iRec2[0] = (((iRec2[1] + (iRec2[1] > 0)) * (fSlow2 <= fVec1[1])) + (fSlow2 > fVec1[1]));
 			float fTemp0 = float(iRec2[0]);
 			float fTemp1 = (fConst3 * fTemp0);
 			float fTemp2 = (fConst2 - fTemp0);
 			iRec4[0] = ((1103515245 * iRec4[1]) + 12345);
 			float fTempFTZ1 = ((4.65661287e-10f * float(iRec4[0])) - (fConst13 * ((fConst14 * fRec3[1]) + (fConst15 * fRec3[2]))));
 			fRec3[0] = ((std::fabs(fTempFTZ1) > 1.17549435e-38f) ? fTempFTZ1 : 0.0f);
-			output0[i0] = FAUSTFLOAT((fSlow1 * ((ftbl0FaustSnareDSPSIG0[int((65536.0f * fRec1[0]))] * std::max<float>(0.0f, std::min<float>(fTemp1, ((fConst4 * fTemp2) + 1.0f)))) + (fSlow4 * (((fConst12 * fRec3[0]) + (fConst16 * fRec3[2])) * std::max<float>(0.0f, std::min<float>(fTemp1, ((fSlow5 * fTemp2) + 1.0f))))))));
+			output0[i0] = FAUSTFLOAT(float(tanhf(float((fSlow0 * ((ftbl0FaustSnareDSPSIG0[int((65536.0f * fRec1[0]))] * std::max<float>(0.0f, std::min<float>(fTemp1, ((fConst4 * fTemp2) + 1.0f)))) + (fSlow3 * (((fConst12 * fRec3[0]) + (fConst16 * fRec3[2])) * std::max<float>(0.0f, std::min<float>(fTemp1, ((fSlow4 * fTemp2) + 1.0f)))))))))));
 			fRec1[1] = fRec1[0];
 			fVec1[1] = fVec1[0];
 			iRec2[1] = iRec2[0];

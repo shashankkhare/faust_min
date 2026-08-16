@@ -37,6 +37,10 @@
 
 #include "FaustLog.hpp"
 
+// Set to 1 to enable per-note [LUT]/[NOTEON] debug printf spam (100k+ lines per song).
+// Keep at 0 for all release builds.
+#define DEBUG_INSTRUMENT 0
+
 
 #include "FaustDayanDSP.hpp"
 #include "FaustBayanDSP.hpp"
@@ -323,7 +327,7 @@ void FaustInstrument::loadTargetDSP() {
             calPath = calPath.substr(0, calPath.length() - 4) + "_calibration.csv";
         }
         std::ifstream calFile(calPath);
-#ifdef DEBUG_INSTRUMENT
+#if DEBUG_INSTRUMENT
         printf("[CALIB] calibration path: %s, opened=%d\n", calPath.c_str(), (int)calFile.is_open());
         fflush(stdout);
 #endif
@@ -374,7 +378,7 @@ void FaustInstrument::loadTargetDSP() {
                 std::sort(mCalibrationRecords.begin(), mCalibrationRecords.end(),
                           [](const CalibrationRow& a, const CalibrationRow& b) { return a.frequency < b.frequency; });
                 mCalibrationActive = true;
-#ifdef DEBUG_INSTRUMENT
+#if DEBUG_INSTRUMENT
                 printf("[CALIB] SUCCESS: Loaded %llu calibration rows from '%s'\n",
                        (unsigned long long)mCalibrationRecords.size(), calPath.c_str());
                 fflush(stdout);
@@ -472,7 +476,7 @@ void FaustInstrument::loadTargetDSP() {
                     }
                 }
                 if (success) {
-#ifdef DEBUG_INSTRUMENT
+#if DEBUG_INSTRUMENT
                     printf("[Native] SUCCESS: Faust Bytecode Interpreter successfully compiled DSP file '%s' with %d voices\n", path.c_str(), mNumVoices);
 #endif
                     if (!err.empty()) {
@@ -534,7 +538,7 @@ void FaustInstrument::initParams() {
             }
         }
         iniFile.close();
-#ifdef DEBUG_INSTRUMENT
+#if DEBUG_INSTRUMENT
         printf("[Native] Loaded INI parameters from '%s'\n", iniPath.c_str());
         fflush(stdout);
 #endif
@@ -830,7 +834,9 @@ void FaustInstrument::noteOn(float freq, float vel, float strikeVal) {
     }
 
     if (mLUTActive) {
+#if DEBUG_INSTRUMENT
         printf("[NOTEON] instrument=%d freq=%.2f vel=%.2f strike=%.1f\n", mInstrumentID, mFrequency, mVelocity, strikeVal);
+#endif
         applyDynamicLUTParams(mFrequency, mVelocity, v);
     }
     applyCalibration(mFrequency, v);
@@ -1273,7 +1279,7 @@ void FaustInstrument::processRealtimeStream(float* buffer, int numFrames) {
         }
     }
 
-#ifdef DEBUG_INSTRUMENT
+#if DEBUG_INSTRUMENT
     if (mInstrumentID == 11) {
         static long absoluteFrames = 0;
         absoluteFrames += numFrames;
@@ -1308,7 +1314,7 @@ void FaustInstrument::stopInternalStream() {
 
 void FaustInstrument::applyDynamicLUTParams(float freq, float velocity, int voiceIndex) {
     if (!mLUTActive || mLUTRecords.empty()) {
-#ifdef DEBUG_INSTRUMENT
+#if DEBUG_INSTRUMENT
         printf("[LUT] SKIP: mLUTActive=%d mLUTRecords=%zu\n", (int)mLUTActive, mLUTRecords.size());
         fflush(stdout);
 #endif
@@ -1338,7 +1344,7 @@ void FaustInstrument::applyDynamicLUTParams(float freq, float velocity, int voic
             if (distSq < 1e-10f) {
             for (const auto& pair : rec.targetParams) {
                 setParamImmediate(pair.first.c_str(), pair.second, voiceIndex);
-#ifdef DEBUG_INSTRUMENT
+#if DEBUG_INSTRUMENT
                 printf("[LUT] EXACT match: set param '%s' = %.4f\n", pair.first.c_str(), pair.second);
                 fflush(stdout);
 #endif
@@ -1356,7 +1362,7 @@ void FaustInstrument::applyDynamicLUTParams(float freq, float velocity, int voic
         }
     }
 
-#ifdef DEBUG_INSTRUMENT
+#if DEBUG_INSTRUMENT
     printf("\n[DEBUG LUT] Interpolating for Request: Freq=%.1f, Vel=%.2f, TargetStrike=%.1f\n", freq, velocity, mStrikeVal >= 0.0f ? mStrikeVal : 1.0f);
 #endif
 
@@ -1364,7 +1370,7 @@ void FaustInstrument::applyDynamicLUTParams(float freq, float velocity, int voic
     for (int i = 0; i < K && nearest[i].record; ++i) {
         float weight = 1.0f / (nearest[i].distSq + 1e-10f);
         
-#ifdef DEBUG_INSTRUMENT
+#if DEBUG_INSTRUMENT
         printf("  -> Using Row %d: CSV Freq=%.1f, CSV Vel=%.2f, CSV Strike=%.1f (DistSq=%.6f, Weight=%.2f)\n", 
                i, nearest[i].record->frequency, nearest[i].record->velocity, nearest[i].record->strike, nearest[i].distSq, weight);
 #endif
@@ -1380,7 +1386,7 @@ void FaustInstrument::applyDynamicLUTParams(float freq, float velocity, int voic
         if (wSum > 0.0f) {
             float val = pair.second / wSum;
             setParamImmediate(pair.first.c_str(), val, voiceIndex);
-#ifdef DEBUG_INSTRUMENT
+#if DEBUG_INSTRUMENT
             printf("[LUT] set param '%s' = %.4f (raw sum=%.4f, wSum=%.4f)\n", pair.first.c_str(), val, pair.second, wSum);
             fflush(stdout);
 #endif
@@ -1410,7 +1416,7 @@ void FaustInstrument::applyCalibration(float freq, int voiceIndex) {
         cents = lo.cents;
     }
     setParamImmediate("calibration", cents, voiceIndex);
-#ifdef DEBUG_INSTRUMENT
+#if DEBUG_INSTRUMENT
     printf("[CALIB] freq=%.2f -> cal=%.4f\n", freq, cents);
     fflush(stdout);
 #endif
