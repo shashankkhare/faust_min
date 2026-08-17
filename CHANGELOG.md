@@ -1,3 +1,7 @@
+## 0.5.7
+
+* **Bass gain recalibrated to 0.3**: Re-ran fix_instrument_gain.py with --target 0.3 (drone/comping level instead of melody 0.5). Max gain 0.52 folded into DSP. Verified: 82Hz=0.329, 196Hz=0.298, 392Hz=0.329.
+
 ## 0.5.6
 
 * **Debug-log spam fix**: `DEBUG_INSTRUMENT` is no longer compiled in by CMake — it's now a `#define` in `FaustInstrument.cpp` (default 0). The per-note `[LUT]`/`[NOTEON]` printf spam (100k+ lines per song) is gone from all release builds. Also fixed the corresponding pre-release check in `publish.md`.

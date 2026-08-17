@@ -137,10 +137,12 @@ if (NOT ANDROID AND NOT CMAKE_CROSSCOMPILING)
     else()
         message(WARNING "libfaust not found — interpreter mode disabled on this platform")
         target_compile_definitions(faust_min PRIVATE FAUST_DISABLE_INTERPRETER)
+        target_compile_definitions(faust_min_static PRIVATE FAUST_DISABLE_INTERPRETER)
     endif()
 else()
     message(STATUS "libfaust skipped (cross-compile or Android) — interpreter mode disabled")
     target_compile_definitions(faust_min PRIVATE FAUST_DISABLE_INTERPRETER)
+    target_compile_definitions(faust_min_static PRIVATE FAUST_DISABLE_INTERPRETER)
 endif()
  
 set_target_properties(faust_min PROPERTIES

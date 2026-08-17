@@ -219,7 +219,7 @@ class FaustBassDSP : public dsp {
 	
 	virtual void compute(int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs) {
 		FAUSTFLOAT* output0 = outputs[0];
-		float fSlow0 = (6.25f * float(fHslider0));
+		float fSlow0 = (3.25f * float(fHslider0));
 		float fSlow1 = float(fHslider1);
 		float fSlow2 = (fConst0 / fSlow1);
 		float fSlow3 = std::floor(fSlow2);
