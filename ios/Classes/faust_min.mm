@@ -125,8 +125,8 @@ __attribute__((used)) static void* const faust_min_ios_force_link_ptrs[] = {
 }
 @end
 
-// Forwarder includes for C++ implementation files because CocoaPods ignores ../src/*.cpp relative paths.
 #include "../../src/faust_min.cpp"
+#include "../../src/MixerTrack.cpp"
 #include "../../src/FaustMixer.cpp"
 #include "../../src/FaustInstrument.cpp"
 #include "../../src/SequenceOrchestrator.cpp"
@@ -149,7 +149,6 @@ __attribute__((used)) static void* const faust_min_ios_force_link_ptrs[] = {
 #include "../../src/FaustShakuhachi.cpp"
 #include "../../src/FaustSitar.cpp"
 #include "../../src/FaustSnare.cpp"
-#include "../../src/FaustTanpura.cpp"
 #include "../../src/FaustTibetanbowl.cpp"
 #include "../../src/FaustTom.cpp"
 #include "../../src/FaustTrumpet.cpp"
