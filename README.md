@@ -30,7 +30,7 @@ The engine ships with an extensive, highly optimized library of over 50 real-tim
 Add `faust_min` to your `pubspec.yaml`:
 ```yaml
 dependencies:
-  faust_min: ^0.2.0
+  faust_min: ^0.6.0
 ```
 
 ### Initialization
@@ -78,6 +78,49 @@ void main() async {
 
   // Let it ring, then release
   flute.noteOff();
+}
+```
+
+### Mixer Controls (Tracks, Mute/Unmute & FX)
+Every registered instrument lives on a mixer track you can mute, unmute, automate and shape with per-track FX — all without touching the audio thread:
+
+```dart
+import 'package:faust_min/faust_min.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await FaustEngine.init();
+  final mixer = FaustMixer.instance;
+  mixer.init(48000);
+  mixer.start();
+
+  // Register instruments — each returns a mixer track ID
+  // (sampleRate is optional and defaults to the mixer's rate).
+  final flute = FaustInstrument.create(10);
+  final sitar = FaustInstrument.create(9);
+  final tFlute = mixer.registerInstrument(flute, 1.0);
+  final tSitar = mixer.registerInstrument(sitar, 0.8);
+
+  // Mute / unmute tracks. Muted tracks skip DSP rendering entirely.
+  mixer.muteTrack(tFlute);
+  print(mixer.getTrackMute(tFlute)); // true
+
+  // Atomically un-gate multiple tracks for sample-tight sync.
+  mixer.unmuteTracks([tFlute, tSitar]);
+
+  // Per-track envelopes (times in seconds, linear/exponential/S-curve).
+  mixer.setTrackEnvelope(tFlute,
+      [0.0, 0.05, 1.0],   // times
+      [0.0, 1.0, 1.0],    // values
+      [2]);               // interp: 0=linear, 1=exponential, 2=S-curve
+
+  // Per-track FX chain.
+  mixer.setTrackEQ(tFlute, 2.0, 1.5);
+  mixer.setTrackReverbSend(tFlute, 0.25);
+  mixer.setTrackEcho(tSitar, 0.3, feedback: 0.35, delaySec: 0.22);
+
+  // Global output level.
+  mixer.masterGain = 0.9;
 }
 ```
 
