@@ -330,14 +330,14 @@ DART_EXPORT void mixer_clear_all(FaustMixer* mixer) {
 }
 
 DART_EXPORT float mixer_get_sample_rate(FaustMixer* mixer) {
-    return mixer ? mixer->getSampleRate() : 0.0f;
+    return mixer ? mixer->getMasterSampleRate() : 0.0f;
 }
 
 DART_EXPORT void mixer_set_master_gain(FaustMixer* mixer, float gain) {
     if (mixer) mixer->setMasterGain(gain);
 }
 
-DART_EXPORT void mixer_register_waveform_callback(FaustMixer* mixer, FaustMixer::WaveformCallback cb, void* userData) {
+DART_EXPORT void mixer_register_waveform_callback(FaustMixer* mixer, WaveformCallback cb, void* userData) {
     if (mixer) mixer->setWaveformCallback(cb, userData);
 }
 
@@ -347,13 +347,13 @@ DART_EXPORT void mixer_set_instrument_weight(FaustMixer* mixer, FaustInstrument*
 
 DART_EXPORT int mixer_register_instrument(FaustMixer* mixer, FaustInstrument* inst, float weight) {
     if (!mixer || !inst) return 0;
-    if (fabsf(mixer->getSampleRate() - inst->getSampleRate()) > 0.5f) {
+    if (fabsf(mixer->getMasterSampleRate() - inst->getSampleRate()) > 0.5f) {
         fprintf(stderr, "[FaustMixer] ERROR: Sample rate mismatch — mixer SR=%.0f, instrument SR=%.0f. Rejecting registration.\n",
-                mixer->getSampleRate(), inst->getSampleRate());
+                mixer->getMasterSampleRate(), inst->getSampleRate());
         return 0;
     }
     int trackID = mixer->addTrack(weight);
-    mixer->addInstrumentToTrack(trackID, inst);
+    mixer->addInstrumentToTrack(trackID, inst, 1.0f);
     return trackID;
 }
 
@@ -616,5 +616,18 @@ DART_EXPORT void bansuri_destroy(FaustBansuri* i) { delete i; }
 
 DART_EXPORT FaustViolin* violin_create(float sampleRate) { return new FaustViolin(sampleRate); }
 DART_EXPORT void violin_destroy(FaustViolin* i) { delete i; }
+
+
+
+
+DART_EXPORT bool mixer_get_track_mute(FaustMixer* mixer, int trackID) {
+    return mixer ? mixer->isTrackMuted(trackID) : true;
+}
+
+DART_EXPORT void mixer_unmute_tracks(FaustMixer* mixer, const int* trackIDs, int count) {
+    if (mixer && trackIDs && count > 0) {
+        mixer->unmuteTracks(trackIDs, count);
+    }
+}
 
 } // extern "C"

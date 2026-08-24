@@ -113,9 +113,13 @@ typedef _dart_mixer_set_track_weight = void Function(Pointer<NativeMixerOpaque> 
 typedef _c_mixer_get_track_weight = Float Function(Pointer<NativeMixerOpaque> mixer, Int32 trackID);
 typedef _dart_mixer_get_track_weight = double Function(Pointer<NativeMixerOpaque> mixer, int trackID);
 
+typedef _c_mixer_get_track_mute = Int32 Function(Pointer<NativeMixerOpaque> mixer, Int32 trackID);
+typedef _dart_mixer_get_track_mute = int Function(Pointer<NativeMixerOpaque> mixer, int trackID);
 typedef _c_mixer_mute_track = Void Function(Pointer<NativeMixerOpaque> mixer, Int32 trackID);
 typedef _dart_mixer_mute_track = void Function(Pointer<NativeMixerOpaque> mixer, int trackID);
 
+typedef _c_mixer_unmute_tracks = Void Function(Pointer<NativeMixerOpaque> mixer, Pointer<Int32> trackIDs, Int32 count);
+typedef _dart_mixer_unmute_tracks = void Function(Pointer<NativeMixerOpaque> mixer, Pointer<Int32> trackIDs, int count);
 typedef _c_mixer_unmute_track = Void Function(Pointer<NativeMixerOpaque> mixer, Int32 trackID);
 typedef _dart_mixer_unmute_track = void Function(Pointer<NativeMixerOpaque> mixer, int trackID);
 
@@ -445,8 +449,9 @@ class FaustInstrument {
   ///
   /// [instrumentID] is the instrument type (0-48).
   /// [execType] is 0 for StaticCompiled, 1 for InterpretedByte.
-  factory FaustInstrument.create(int instrumentID, int execType, double sampleRate) {
-    final handle = _funcCreate(instrumentID, execType, sampleRate);
+  factory FaustInstrument.create(int instrumentID, int execType, [double? sampleRate]) {
+    final sr = sampleRate ?? FaustMixer.instance.sampleRate;
+    final handle = _funcCreate(instrumentID, execType, sr);
     return FaustInstrument(handle, true);
   }
 
@@ -1036,7 +1041,9 @@ class FaustMixer {
   static late final _funcSetTrackEnvelope = _dylib.lookupFunction<_c_mixer_set_track_envelope, _dart_mixer_set_track_envelope>('mixer_set_track_envelope');
   static final _funcSetTrackWeight = _dylib.lookupFunction<_c_mixer_set_track_weight, _dart_mixer_set_track_weight>('mixer_set_track_weight');
   static final _funcGetTrackWeight = _dylib.lookupFunction<_c_mixer_get_track_weight, _dart_mixer_get_track_weight>('mixer_get_track_weight');
+  static final _funcGetTrackMute = _dylib.lookupFunction<_c_mixer_get_track_mute, _dart_mixer_get_track_mute>('mixer_get_track_mute');
   static final _funcMuteTrack = _dylib.lookupFunction<_c_mixer_mute_track, _dart_mixer_mute_track>('mixer_mute_track');
+  static final _funcUnmuteTracks = _dylib.lookupFunction<_c_mixer_unmute_tracks, _dart_mixer_unmute_tracks>('mixer_unmute_tracks');
   static final _funcUnmuteTrack = _dylib.lookupFunction<_c_mixer_unmute_track, _dart_mixer_unmute_track>('mixer_unmute_track');
   static final _funcSetTrackReverb = _dylib.lookupFunction<_c_mixer_set_track_reverb, _dart_mixer_set_track_reverb>('mixer_set_track_reverb');
   static final _funcSetTrackEcho = _dylib.lookupFunction<_c_mixer_set_track_echo, _dart_mixer_set_track_echo>('mixer_set_track_echo');
@@ -1162,8 +1169,22 @@ class FaustMixer {
       _funcGetTrackWeight(_handle, trackID);
 
   /// Mute a track (skips DSP rendering for 0% CPU load).
+  /// Check if a track is muted.
+  bool getTrackMute(int trackID) => _funcGetTrackMute(_handle, trackID) != 0;
+
+  /// Mute a track.
   void muteTrack(int trackID) =>
       _funcMuteTrack(_handle, trackID);
+
+  /// Unmute multiple tracks atomically to ensure sub-millisecond sync.
+  void unmuteTracks(List<int> trackIDs) {
+    final pointer = calloc<Int32>(trackIDs.length);
+    for (int i = 0; i < trackIDs.length; i++) {
+      pointer[i] = trackIDs[i];
+    }
+    _funcUnmuteTracks(_handle, pointer, trackIDs.length);
+    calloc.free(pointer);
+  }
 
   /// Unmute a track.
   void unmuteTrack(int trackID) =>

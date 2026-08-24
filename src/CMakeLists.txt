@@ -77,6 +77,7 @@ set(FAUST_MIN_SOURCES
   "UMLSequence.cpp"
   "SequenceOrchestrator.cpp"
   "FaustMixer.cpp"
+  "MixerTrack.cpp"
   "InstrumentMapper.cpp"
   ${FAUST_GENERATED_HEADERS}
 )

@@ -1,150 +1,83 @@
-/*
- * Copyright (c) 2026 Shashank Khare
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-
 #ifndef FAUST_MIXER_HPP
 #define FAUST_MIXER_HPP
 
-#include <vector>
+#include "MixerTrack.hpp"
 #include <map>
-#include <mutex>
-#include <atomic>
+#include <vector>
 #include <thread>
+#include <mutex>
 #include <condition_variable>
-#include <algorithm>
-#include <cstring>
-#include <cmath>
+#include <atomic>
 #include <memory>
-#include "FaustInstrument.hpp"
 #include "FaustMasterReverbDSP.hpp"
-#include "FaustTrackFxDSP.hpp"
-#include "PlatformCompat.hpp"
 
-class MapUI;
+// Typedefs for Dart callbacks
+typedef int (*PreRenderCallback)(int numFrames, void* userData);
+typedef void (*WaveformCallback)(float rms, float peak, void* userData);
 
-enum InterpType : uint8_t {
-    INTERP_LINEAR = 0,
-    INTERP_EXPONENTIAL = 1,
-    INTERP_S_CURVE = 2
-};
-
-struct EnvelopePoint {
-    float timeSec;
-    float value;
-    uint8_t interpType;
-};
-
-/**
- * @class FaustMixer
- * @brief Centralized audio engine dispatcher and mixer.
- * 
- * The FaustMixer is a singleton responsible for:
- * 1. Owning the hardware audio driver (miniaudio/Oboe).
- * 2. Managing a persistent thread pool for parallel DSP rendering.
- * 3. Orchestrating the "Centralized Mixer" model where the audio thread 
- *    triggers rendering of active nodes via a generic PreRenderCallback.
- * 4. Applying master-bus gain, sweeps, and a safety peak limiter.
- */
-class FAUST_API FaustMixer {
+class FaustMixer {
 public:
-    static FaustMixer& getInstance();
 
-    // Setup & Hardware Driver Ownership
+    enum class MixerWeightMode {
+        STATIC_WEIGHTS,
+        DYNAMIC_WEIGHTS
+    };
+    MixerWeightMode mWeightMode = MixerWeightMode::DYNAMIC_WEIGHTS;
+
+public:
+    static FaustMixer& getInstance() {
+        static FaustMixer instance;
+        return instance;
+    }
+
     void init(float sampleRate);
     bool start();
     void stop();
     void close();
-    float getSampleRate() const { return mSampleRate; }
-    bool isHardwareStarted() const { return mIsHardwareStarted; }
-
-    // Standalone Node Registration
-    int addTrack(float initialWeight);
-    void removeTrack(int trackID);
     
-    void addInstrumentToTrack(int trackID, FaustInstrument* inst, float instWeight = 1.0f);
-    void removeInstrumentFromTrack(int trackID, FaustInstrument* inst);
+    int addTrack(float initialWeight = 1.0f);
+    void removeTrack(int trackID);
     void clearAll();
 
-    // Update an instrument's weight across all tracks it belongs to.
-    void setInstrumentWeight(FaustInstrument* inst, float weight);
+    void addInstrumentToTrack(int trackID, FaustInstrument* inst, float instWeight);
+    void removeInstrumentFromTrack(int trackID, FaustInstrument* inst);
+    void setInstrumentWeight(int trackID, FaustInstrument* inst, float weight);
 
-    // Per-track breakpoint envelope (post-weight gain multiplier)
-    void setTrackEnvelope(int trackID, const float* times, const float* values, const uint8_t* interpTypes, int numPoints);
+    // Record & Play API
+    bool setTrackPlaybackFile(int trackID, const char* wavPath);
+    void clearTrackPlaybackFile(int trackID);
+    void recordTracks(const char* baseDir);
+    void stopRecordingAllTracks();
+    void playRecordedTracks(const char* baseDir);
+    void resetTrackPlayback();
+    void purgeAllTracks(const char* baseDir);
 
+        void setInstrumentWeight(FaustInstrument* inst, float weight);
     void setTrackWeight(int trackID, float dynamicWeight);
     float getTrackWeight(int trackID);
     void muteTrack(int trackID);
     void unmuteTrack(int trackID);
+    void unmuteTracks(const int* trackIDs, int count);
     bool isTrackMuted(int trackID);
-
-    // Per-track FX controls (post-AGC, applied to the track's wet signal).
     void setTrackReverbSend(int trackID, float send);
     void setTrackEcho(int trackID, float send, float feedback, float delaySec);
     void setTrackEQ(int trackID, float bassDb, float trebleDb);
     void setTrackMid(int trackID, float midDb, float midFreq, float midQ);
     void setTrackBypassEQ(int trackID, bool bypass);
     void setTrackBypassEcho(int trackID, bool bypass);
-
-    // Global Master-Bus Automation
+    void setFXReturnWeight(float weight);
     void masterFadeIn(float durationSeconds);
     void masterFadeOut(float durationSeconds);
-    void setMasterGain(float gain);
-    float getMasterGain() const { return mMasterGain; }
+    void mixRawSignals(int numTracks, const int* trackIDs, const float* trackGains, const float* const* channelInL, const float* const* channelInR, float* stereoOut, int numFrames);
+    void setTrackEnvelope(int trackID, const float* times, const float* values, const uint8_t* interpTypes, int numPoints);
+
+    void setTrackMuted(int trackID, bool muted);
+    void triggerMasterSweep(float targetGain, float durationSec);
     
-    // FX Bus Return Automation
-    void setFXReturnWeight(float weight);
-    float getFXReturnWeight() const { return mFXReturnWeight; }
-
-    // Multi-Track Offline Signal Mixing API
-    static void mixRawSignals(
-        float** inputBuffers,
-        float* amplitudeScales,
-        int* fadeInSamples,
-        int* fadeOutSamples,
-        int* curveTypes,
-        int* offsetSamples,
-        float* pans,
-        int numTracks,
-        int numSamples,
-        float* outputBuffer,
-        float masterGain
-    );
-
-    // Generic callback triggered before every block accumulation.
-    // Returns the number of frames that can safely be rendered before the next event.
-    typedef int (*PreRenderCallback)(int numFrames, void* userData);
+    void setMasterGain(float gain);
+    float getMasterSampleRate() const;
     void setPreRenderCallback(PreRenderCallback cb, void* userData);
-
-    // Waveform callback: RMS and peak of the mixed output after each block.
-    typedef void (*WaveformCallback)(float rms, float peak, void* userData);
     void setWaveformCallback(WaveformCallback cb, void* userData);
-
-    /**
-     * @brief Static hardware callback wrapper for miniaudio/oboe.
-     */
-    static void hardwareCallback(void* pOutput, int frameCount, void* pUserData) {
-        if (pUserData) {
-            static_cast<FaustMixer*>(pUserData)->onAudioReady(static_cast<float*>(pOutput), frameCount);
-        }
-    }
 
 private:
     FaustMixer();
@@ -152,58 +85,88 @@ private:
     FaustMixer(const FaustMixer&) = delete;
     FaustMixer& operator=(const FaustMixer&) = delete;
 
-    enum class MixerWeightMode {
-        STATIC_WEIGHTS,   // Pure, un-interpolated weights (bypasses sweeps and auto-recalibration)
-        DYNAMIC_WEIGHTS   // Supports automated fades, crossfades, and auto-recalibration
-    };
-
-    struct TrackInstrument {
-        FaustInstrument* instrument;
-        float instrumentWeight;
-        float effectiveWeight = 1.0f;
-    };
-
-    struct MixerTrack {
-        int trackID;
-        float assignedWeight;
-        float dynamicWeight;
-        std::vector<TrackInstrument> instruments;
-        std::vector<EnvelopePoint> envelope;
-        float fadeGain = 1.0f;
-        long envelopeStartSample = 0;
-        bool muted = false;
-        
-        // AGC State
-        float agcEnvelope = 1.0f;
-        float agcAttack = 0.005f;
-        float agcRelease = 0.999f;
-
-        // --- Per-Track FX (written under mRegistryMutex, read on audio thread) ---
-        // Send level (0..1) into the shared master reverb bus.
-        float reverbSend = 0.0f;
-        // Insert FX (echo + 3-band EQ) as a per-track Faust DSP driven via MapUI.
-        std::unique_ptr<FaustTrackFxDSP> fxDSP;
-        std::unique_ptr<MapUI> fxUI;
-        std::vector<float> fxInL;
-        std::vector<float> fxInR;
-        std::vector<float> fxOutL;
-        std::vector<float> fxOutR;
-    };
-
-    // Real-Time Audio Interrupt Accumulator Endpoint
     void onAudioReady(float* stereoOutput, int numFrames);
 
-    float mSampleRate;
-    void* mStreamDevice;
-    bool mIsStreamActive;
-    long mMasterSampleTime;
-    float mMasterGain;
-    float mLimiterGain;
-    float mFXReturnWeight;
+    // Hardware callback
+    public:
+    static void hardwareCallback(void* pOutput, int frameCount, void* pUserData) {
+        if (pUserData) {
+            static_cast<FaustMixer*>(pUserData)->onAudioReady(static_cast<float*>(pOutput), frameCount);
+        }
+    }
 
-    MixerWeightMode mWeightMode = MixerWeightMode::DYNAMIC_WEIGHTS;
-    std::map<int, MixerTrack> mTracks;
+    float mSampleRate = 0.0f;
+    void* mStreamDevice = nullptr;
+    bool mIsStreamActive = false;
+    long mMasterSampleTime = 0;
+    float mMasterGain = 1.0f;
+    float mLimiterGain = 1.0f;
+    float mFXReturnWeight = 1.0f;
+
+    std::map<int, std::shared_ptr<MixerTrack>> mTracks;
     int mNextTrackID = 1;
+    std::recursive_mutex mRegistryMutex;
+    
+    float* mScratchBuffer = nullptr;
+    int mMaxFrames = 0;
+
+    std::unique_ptr<FaustMasterReverbDSP> mMasterReverbDSP;
+    float* mReverbInL = nullptr;
+    float* mReverbInR = nullptr;
+    float* mReverbOutL = nullptr;
+    float* mReverbOutR = nullptr;
+
+    // --- Worker Pool ---
+    struct WorkItem {
+        FaustInstrument* inst;
+        int bufferSlot;
+        int numFrames;
+        bool valid = false;
+        WorkItem() : inst(nullptr), bufferSlot(0), numFrames(0), valid(false) {}
+        WorkItem(FaustInstrument* i, int slot, int frames, bool v) 
+            : inst(i), bufferSlot(slot), numFrames(frames), valid(v) {}
+    };
+
+    int mWorkerCount = 4;
+    std::vector<std::thread> mWorkerThreads;
+    std::atomic<bool> mWorkerRunning{false};
+    std::mutex mWorkMutex;
+    std::condition_variable mWorkCV;
+    std::condition_variable mMainCV;
+    uint64_t mDispatchEpoch{0};
+    
+    // Hardcoded max size to avoid dynamic allocation during audio loop
+    static constexpr int MAX_INSTRUMENTS = 128;
+    WorkItem mWorkQueue[MAX_INSTRUMENTS];
+    std::atomic<int> mWorkHead{0};
+    std::atomic<int> mWorkCount{0};
+    std::atomic<int> mPendingTasks{0};
+
+    float* mInstrumentBuffers[MAX_INSTRUMENTS] = {};
+
+    void startWorkers();
+    void stopWorkers();
+    void workerLoop(int workerID);
+
+    // --- I/O Thread ---
+    std::thread mIOThread;
+    std::atomic<bool> mIORunning{false};
+    void ioThreadLoop();
+
+    // Clean modular helpers
+    inline void enqueueInstrumentTrack(void* source, int numFrames, int& workCount, std::vector<int>& slotToTrackMap);
+    inline void accumulateInstrumentWorkerResults(void* source, int trackID, int numFrames, int workCount, const std::vector<int>& slotToTrackMap);
+    inline void accumulateFileTrack(void* source, float* renderBuf, int numFrames);
+    inline void accumulateMemoryTrack(void* source, float* renderBuf, int numFrames);
+    
+    inline void accumulateAllChannels(float* stereoOutput, int numFrames, float balanceMultiplier);
+    
+    void processMasterSweep(long currentS);
+    void processEnvelopes(long currentS);
+    void recalculateWeights();
+    float computeAutoRecalibrationMultiplier();
+    void applyMasterGainAndLimiter(float* stereoOutput, int numFrames);
+    void applyMasterLimiter(float* buffer, int totalSamples);
 
     struct MasterSweep {
         bool isActive = false;
@@ -213,71 +176,11 @@ private:
         long durationSamples = 0;
     } mMasterSweep;
 
-    std::mutex mRegistryMutex;
-    float* mScratchBuffer;
-    int mMaxFrames;
-
-    // --- Master Reverb Bus ---
-    std::unique_ptr<FaustMasterReverbDSP> mMasterReverbDSP;
-    float* mReverbInL;
-    float* mReverbInR;
-    float* mReverbOutL;
-    float* mReverbOutR;
-
-    // --- Persistent Thread Pool ---
-    // Workers sleep via mWorkCV and are woken per dispatch.
-    // Main audio thread sleeps via mMainCV until all workers finish.
-    // This replaces the old CPU_PAUSE() spin-barrier which pegged all cores at 100%.
-    int mWorkerCount = 4;
-    std::vector<std::thread> mWorkerThreads;
-    std::atomic<bool> mWorkerRunning{false};
-
-    std::mutex mWorkMutex;                 // Guards mWorkReady and mDoneCount
-    std::condition_variable mWorkCV;       // Workers wait on this until dispatched
-    std::condition_variable mMainCV;       // Main audio thread waits on this until done
-    uint64_t mDispatchEpoch{0};            // Monotonically increasing dispatch counter
-
-
-    struct WorkItem {
-        FaustInstrument* inst;
-        int bufferSlot;
-        int numFrames;
-        bool valid = false;
-
-        WorkItem() : inst(nullptr), bufferSlot(0), numFrames(0), valid(false) {}
-        WorkItem(FaustInstrument* i, int slot, int frames, bool v) 
-            : inst(i), bufferSlot(slot), numFrames(frames), valid(v) {}
-    };
-    WorkItem mWorkQueue[InstrumentMapper::MAX_INSTRUMENTS];
-    std::atomic<int> mWorkHead{0};
-    std::atomic<int> mWorkCount{0};
-    std::atomic<int> mPendingTasks{0};
-
-
-    void startWorkers();
-    void stopWorkers();
-    void workerLoop(int workerID);
-
-    // Per-instrument pre-allocated scratch buffer arrays for thread pool extraction
-    float* mInstrumentBuffers[InstrumentMapper::MAX_INSTRUMENTS] = {};
-
-
-    // Modular Inline Helpers for Control-Rate Block Interrupt Handling
-    inline void processMasterSweep(long currentS);
-    inline void processEnvelopes(long currentS);
-    inline float computeAutoRecalibrationMultiplier();
-    void recalculateWeights();
-    inline void accumulateInstrumentChannels(float* stereoOutput, int numFrames, float balanceMultiplier);
-    inline void applyMasterGainAndLimiter(float* stereoOutput, int numFrames);
-    inline void applyMasterLimiter(float* buffer, int totalSamples);
-
     bool mIsHardwareStarted = false;
     PreRenderCallback mPreRenderCallback = nullptr;
     void* mPreRenderUserData = nullptr;
-
     WaveformCallback mWaveformCallback = nullptr;
     void* mWaveformUserData = nullptr;
-
     std::atomic<bool> mFirstCallbackFired{false};
 };
 
