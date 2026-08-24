@@ -1,10 +1,16 @@
 #include "MixerTrack.hpp"
-#include <android/log.h>
 #include <algorithm>
 #include <cstring>
 
+#ifdef __ANDROID__
+#include <android/log.h>
 #define MT_LOGI(...) __android_log_print(ANDROID_LOG_INFO, "MixerTrack", __VA_ARGS__)
 #define MT_LOGE(...) __android_log_print(ANDROID_LOG_ERROR, "MixerTrack", __VA_ARGS__)
+#else
+#include <iostream>
+#define MT_LOGI(...) do { printf("MixerTrack [INFO]: "); printf(__VA_ARGS__); printf("\n"); } while(0)
+#define MT_LOGE(...) do { printf("MixerTrack [ERROR]: "); printf(__VA_ARGS__); printf("\n"); } while(0)
+#endif
 
 bool AudioRingBuffer::openFile(const std::string& path) {
     closeFile();
