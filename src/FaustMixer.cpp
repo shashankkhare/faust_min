@@ -533,7 +533,20 @@ void FaustMixer::setTrackWeight(int trackID, float dynamicWeight) {
 
 float FaustMixer::getTrackWeight(int trackID) {
     std::lock_guard<std::recursive_mutex> lock(mRegistryMutex);
-    return mTracks.count(trackID) ? mTracks[trackID]->dynamicWeight : 0.0f;
+    if (!mTracks.count(trackID)) return 0.0f;
+
+    if (mWeightMode == MixerWeightMode::DYNAMIC_WEIGHTS) {
+        float totalTrackWeight = 0.0f;
+        for (auto& pair : mTracks) {
+            if (!pair.second->muted) {
+                totalTrackWeight += pair.second->dynamicWeight;
+            }
+        }
+        float trackMultiplier = (totalTrackWeight > 0.0f) ? (1.0f / totalTrackWeight) : 1.0f;
+        return mTracks[trackID]->dynamicWeight * trackMultiplier;
+    }
+
+    return mTracks[trackID]->dynamicWeight;
 }
 
 void FaustMixer::muteTrack(int trackID) {
@@ -640,7 +653,9 @@ void FaustMixer::mixRawSignals(int numTracks, const int* trackIDs, const float* 
 void FaustMixer::recalculateWeights() {
     float totalTrackWeight = 0.0f;
     for (auto& pair : mTracks) {
-        totalTrackWeight += pair.second->dynamicWeight;
+        if (!pair.second->muted) {
+            totalTrackWeight += pair.second->dynamicWeight;
+        }
     }
     float trackMultiplier = 1.0f;
     if (mWeightMode == MixerWeightMode::DYNAMIC_WEIGHTS) {
@@ -661,7 +676,9 @@ void FaustMixer::recalculateWeights() {
 inline float FaustMixer::computeAutoRecalibrationMultiplier() {
     float totalDynamicWeight = 0.0f;
     for (auto& pair : mTracks) {
-        totalDynamicWeight += pair.second->dynamicWeight;
+        if (!pair.second->muted) {
+            totalDynamicWeight += pair.second->dynamicWeight;
+        }
     }
     return (totalDynamicWeight > 0.0f) ? (1.0f / totalDynamicWeight) : 1.0f;
 }
