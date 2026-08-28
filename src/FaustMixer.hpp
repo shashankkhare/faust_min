@@ -39,7 +39,7 @@ public:
     void removeTrack(int trackID);
     void clearAll();
 
-    void addInstrumentToTrack(int trackID, FaustInstrument* inst, float instWeight);
+    void addInstrumentToTrack(int trackID, FaustInstrument* inst, float instWeight = 1.0f);
     void removeInstrumentFromTrack(int trackID, FaustInstrument* inst);
     void setInstrumentWeight(int trackID, FaustInstrument* inst, float weight);
 
