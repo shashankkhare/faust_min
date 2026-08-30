@@ -216,8 +216,9 @@ void FaustMixer::init(float sampleRate) {
     config.playback.format = ma_format_f32;
     config.playback.channels = 2;
     config.sampleRate = (ma_uint32)mSampleRate;
-    config.periodSizeInFrames = 2048;
-    config.periods = 4;
+    config.periodSizeInMilliseconds = 40; // Replaces periodSizeInFrames to allow safe negotiation of a large buffer
+    //config.periodSizeInFrames = 2048;
+    //config.periods = 4;
     config.performanceProfile = ma_performance_profile_conservative;
     config.dataCallback = mixerMaCallback;
     config.stopCallback = mixerMaStopCallback;
@@ -525,8 +526,33 @@ void FaustMixer::setInstrumentWeight(FaustInstrument* inst, float weight) {
 void FaustMixer::setTrackWeight(int trackID, float dynamicWeight) {
     std::lock_guard<std::recursive_mutex> lock(mRegistryMutex);
     if (mTracks.count(trackID)) {
-        mTracks[trackID]->dynamicWeight = dynamicWeight;
-        mTracks[trackID]->renderWeight = dynamicWeight;
+        float newWeight = std::max(0.0f, std::min(1.0f, dynamicWeight));
+        
+        if (mWeightMode == MixerWeightMode::DYNAMIC_WEIGHTS) {
+            float sOthers = 0.0f;
+            int numOthers = 0;
+            for (auto& pair : mTracks) {
+                if (pair.first != trackID && !pair.second->muted) {
+                    sOthers += pair.second->dynamicWeight;
+                    numOthers++;
+                }
+            }
+            
+            float sNew = std::max(0.0f, std::min(1.0f, 1.0f - newWeight));
+            
+            for (auto& pair : mTracks) {
+                if (pair.first != trackID && !pair.second->muted) {
+                    if (sOthers > 0.0f) {
+                        pair.second->dynamicWeight = pair.second->dynamicWeight * (sNew / sOthers);
+                    } else if (numOthers > 0) {
+                        pair.second->dynamicWeight = sNew / static_cast<float>(numOthers);
+                    }
+                }
+            }
+        }
+        
+        mTracks[trackID]->dynamicWeight = newWeight;
+        mTracks[trackID]->renderWeight = newWeight;
         recalculateWeights();
     }
 }
