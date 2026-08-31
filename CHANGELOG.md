@@ -1,3 +1,11 @@
+## 0.7.0
+
+* **Mixer weight mode API**: New `setWeightMode()` exposes the mixer's dual-mode weight system. Start in STATIC mode to set initial track weights at registration time, then switch to DYNAMIC mode for real-time weight updates (e.g., live mixing, automation). DYNAMIC mode auto-normalises track weights so their sum stays at 1.0, preventing clipping when tracks are added or removed on the fly.
+* **Mixer FaustMixer API docs overhaul**: Complete rewrite of all `FaustMixer` Dart-side documentation — class-level overview, per-method descriptions with parameter ranges, return values, and cross-references to related APIs. Fixed copy-paste error on `getTrackMute` (was documented as mute, not query). Also documented `InstrumentMapper`, `FaustInstrument`, `FaustEngine`, and `SequenceOrchestrator`.
+* **Level-monitoring callback**: New ergonomic `FaustMixer.onWaveform` setter receives per-block RMS/peak of the final mix (auto-manages the native callable). The low-level `registerWaveformCallback` is deprecated.
+* **FaustMixer weight mode C++ fix**: `setWeightMode()` now properly guards against race conditions with a mutex lock, and `setTrackWeight()` applies the correct per-track weight when DYNAMIC mode is active.
+* **normalise_gains.py refactor**: Generalised from single-file Bansuri script to a reusable function that accepts any CSV path.
+
 ## 0.6.0
 
 * **FaustMixer track controls**: The mixer core was rebuilt around a data-oriented `MixerTrack` class, exposing full per-track control from Dart — `muteTrack()` / `unmuteTrack()` / batch `unmuteTracks(List<int>)` (atomic, sub-millisecond multi-track sync) and `getTrackMute()` state query. Muted tracks skip DSP rendering entirely (0% CPU while silenced).

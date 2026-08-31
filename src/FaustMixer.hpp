@@ -52,8 +52,9 @@ public:
     void resetTrackPlayback();
     void purgeAllTracks(const char* baseDir);
 
-        void setInstrumentWeight(FaustInstrument* inst, float weight);
+    void setInstrumentWeight(FaustInstrument* inst, float weight);
     void setTrackWeight(int trackID, float dynamicWeight);
+    void setWeightMode(int mode);
     float getTrackWeight(int trackID);
     void muteTrack(int trackID);
     void unmuteTrack(int trackID);

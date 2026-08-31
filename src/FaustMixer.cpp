@@ -523,6 +523,11 @@ void FaustMixer::setInstrumentWeight(FaustInstrument* inst, float weight) {
     recalculateWeights();
 }
 
+void FaustMixer::setWeightMode(int mode) {
+    std::lock_guard<std::recursive_mutex> lock(mRegistryMutex);
+    mWeightMode = (mode == 0) ? MixerWeightMode::STATIC_WEIGHTS : MixerWeightMode::DYNAMIC_WEIGHTS;
+}
+
 void FaustMixer::setTrackWeight(int trackID, float dynamicWeight) {
     std::lock_guard<std::recursive_mutex> lock(mRegistryMutex);
     if (mTracks.count(trackID)) {

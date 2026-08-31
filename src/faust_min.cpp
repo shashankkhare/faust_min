@@ -381,6 +381,10 @@ DART_EXPORT void mixer_set_track_weight(FaustMixer* mixer, int trackID, float we
     if (mixer) mixer->setTrackWeight(trackID, weight);
 }
 
+DART_EXPORT void mixer_set_weight_mode(FaustMixer* mixer, int mode) {
+    if (mixer) mixer->setWeightMode(mode);
+}
+
 DART_EXPORT float mixer_get_track_weight(FaustMixer* mixer, int trackID) {
     return mixer ? mixer->getTrackWeight(trackID) : 0.0f;
 }

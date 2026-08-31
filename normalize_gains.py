@@ -1,11 +1,32 @@
 import csv
-with open('assets/dsp/bansuri.csv') as f:
-    rows = list(csv.DictReader(f))
-max_gain = max(float(r['gain']) for r in rows)
-for r in rows:
-    r['gain'] = f"{float(r['gain']) / max_gain:.4f}"
-with open('assets/dsp/bansuri.csv', 'w', newline='') as f:
-    w = csv.DictWriter(f, fieldnames=rows[0].keys())
-    w.writeheader()
-    w.writerows(rows)
-print(f"Max gain was {max_gain}")
+import sys
+import os
+
+def normalize(csv_file):
+    rows = []
+    max_gain = 0.0
+    with open(csv_file, 'r') as f:
+        reader = csv.reader(f)
+        header = next(reader)
+        for row in reader:
+            if not row or len(row) < 4: continue
+            gain = float(row[3])
+            if gain > max_gain:
+                max_gain = gain
+            rows.append(row)
+            
+    # normalize
+    for row in rows:
+        gain = float(row[3])
+        row[3] = f"{gain / max_gain:.4f}"
+        
+    with open(csv_file, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(header)
+        writer.writerows(rows)
+        
+    print(f"{os.path.basename(csv_file)} max_gain: {max_gain:.4f}")
+
+# Example usage from past AI agents:
+# normalize('assets/dsp/bayan.csv')
+# normalize('assets/dsp/dayan.csv')

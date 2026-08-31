@@ -30,7 +30,7 @@ The engine ships with an extensive, highly optimized library of over 50 real-tim
 Add `faust_min` to your `pubspec.yaml`:
 ```yaml
 dependencies:
-  faust_min: ^0.6.0
+  faust_min: ^0.7.0
 ```
 
 ### Initialization
@@ -92,7 +92,11 @@ void main() async {
   await FaustEngine.init();
   final mixer = FaustMixer.instance;
   mixer.init(48000);
-  mixer.start();
+
+  // --- Set up the mix in STATIC weight mode ---
+  // STATIC fixes each track to the exact weight you give it here,
+  // so registration order can't rebalance your mix underneath you.
+  mixer.setWeightMode(0);
 
   // Register instruments — each returns a mixer track ID
   // (sampleRate is optional and defaults to the mixer's rate).
@@ -101,12 +105,21 @@ void main() async {
   final tFlute = mixer.registerInstrument(flute, 1.0);
   final tSitar = mixer.registerInstrument(sitar, 0.8);
 
+  // Start the audio device, then switch to DYNAMIC mode so weights
+  // can be adjusted in real time (auto-normalised to keep sum = 1.0).
+  mixer.start();
+  mixer.setWeightMode(1);
+
   // Mute / unmute tracks. Muted tracks skip DSP rendering entirely.
   mixer.muteTrack(tFlute);
   print(mixer.getTrackMute(tFlute)); // true
 
   // Atomically un-gate multiple tracks for sample-tight sync.
   mixer.unmuteTracks([tFlute, tSitar]);
+
+  // Real-time level automation (DYNAMIC mode).
+  mixer.setTrackWeight(tFlute, 0.5);
+  mixer.setTrackWeight(tSitar, 0.7);
 
   // Per-track envelopes (times in seconds, linear/exponential/S-curve).
   mixer.setTrackEnvelope(tFlute,
@@ -123,6 +136,20 @@ void main() async {
   mixer.masterGain = 0.9;
 }
 ```
+
+### Track weight modes (STATIC vs DYNAMIC)
+The mixer's weight system has two modes, switched with `setWeightMode(int)`:
+
+* **STATIC (0)** — the default during setup. Each track keeps the exact weight
+  you pass to `registerInstrument()` / `addTrack()`. `setTrackWeight()` has no
+  effect here.
+* **DYNAMIC (1)** — for live control. `setTrackWeight()` applies changes in
+  real time, and the mixer **auto-normalises** all active track weights so
+  their sum stays at `1.0`. This prevents master-bus clipping and keeps the
+  level stable when tracks are added or removed mid-performance.
+
+The recommended pattern is to configure the initial mix in STATIC mode, start
+the device, then flip to DYNAMIC for real-time level automation.
 
 ### Advanced Multi-Instrument Sequencing
 Orchestrate a massive arrangement using the UML Sequencer:

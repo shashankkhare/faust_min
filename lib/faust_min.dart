@@ -109,6 +109,8 @@ typedef _dart_mixer_set_track_envelope = void Function(Pointer<NativeMixerOpaque
 
 typedef _c_mixer_set_track_weight = Void Function(Pointer<NativeMixerOpaque> mixer, Int32 trackID, Float weight);
 typedef _dart_mixer_set_track_weight = void Function(Pointer<NativeMixerOpaque> mixer, int trackID, double weight);
+typedef _c_mixer_set_weight_mode = Void Function(Pointer<NativeMixerOpaque> mixer, Int32 mode);
+typedef _dart_mixer_set_weight_mode = void Function(Pointer<NativeMixerOpaque> mixer, int mode);
 
 typedef _c_mixer_get_track_weight = Float Function(Pointer<NativeMixerOpaque> mixer, Int32 trackID);
 typedef _dart_mixer_get_track_weight = double Function(Pointer<NativeMixerOpaque> mixer, int trackID);
@@ -341,55 +343,63 @@ typedef _dart_mixer_register_waveform_callback = void Function(
 
 // --- Classes ---
 
-/// A physically modeled instrument instance backed by a real-time Faust DSP engine.
+/// Static registry / metadata lookup for the built-in instrument library.
 ///
-/// [FaustInstrument] wraps a native C++ instrument heap object accessed via FFI.
-/// Each instrument encapsulates a complete physical model (e.g., flute, sitar, tabla)
-/// with parameters for frequency, velocity, articulation, and real-time modulation.
-///
-/// Instruments are rendered by [FaustMixer] and can be sequenced via [UMLSequence]
-/// and [SequenceOrchestrator]. Multiple voices are allocated dynamically by the
-/// native engine for polyphonic playback.
-///
-/// {@tool dartpad}
-/// ```dart
-/// final flute = FaustInstrument(10, DSPExecutionType.StaticCompiled, 48000);
-/// flute.noteOn(freq: 440.0, velocity: 0.8);
-/// // ... let it ring ...
-/// flute.noteOff();
-/// ```
-/// {@end-tool}
-class InstrumentMapper {
+/// [InstrumentMapper] exposes read-only metadata about every physical model
+/// the engine ships with — its numeric ID, display name, polyphony, and
+/// classification. Use it to enumerate available instruments
+/// ([getAvailableInstruments]) and to look up details by ID or name.
+abstract final class InstrumentMapper {
+  /// Whether the instrument with the given [id] is unpitched/percussive.
   static bool isPercussion(int id) {
     return _funcIsPercussion(id) == 1;
   }
 
+  /// Whether the instrument with the given [id] is melodic (pitched).
+  ///
+  /// Equivalent to `!isPercussion(id)`. Useful for routing tracks to a
+  /// melodic vs. percussion section.
   static bool isMelody(int id) {
     return !isPercussion(id);
   }
 
+  /// The number of simultaneous voices the instrument [id] supports.
+  ///
+  /// Instruments with polyphony > 1 (e.g. piano, guitars) can ring out
+  /// multiple notes at once without cutting each other off. Returns `0`
+  /// for unknown IDs.
   static int getPolyphony(int id) {
     return _funcGetPolyphony(id);
   }
 
+  /// The instrument class/category for [id] (e.g. `aerophone`,
+  /// `chordophone`, `membranophone`, `idiophone`). Returns `'Unknown'`
+  /// for unknown IDs.
   static String getClass(int id) {
     final ptr = _funcGetClass(id);
     if (ptr == nullptr) return 'Unknown';
     return ptr.cast<Utf8>().toDartString();
   }
 
+  /// The geographic/cultural origin of instrument [id].
+  ///
+  /// Returns `'Unknown'` for unknown IDs.
   static String getOrigin(int id) {
     final ptr = _funcGetOrigin(id);
     if (ptr == nullptr) return 'Unknown';
     return ptr.cast<Utf8>().toDartString();
   }
 
+  /// The display name of instrument [id] (e.g. `'Flute'`, `'Sitar'`).
   static String getName(int id) {
     final ptr = _funcGetName(id);
     if (ptr == nullptr) return '';
     return ptr.cast<Utf8>().toDartString();
   }
 
+  /// The list of all instrument IDs available in this build.
+  ///
+  /// Use together with [getName] / [getClass] to build instrument pickers.
   static List<int> getAvailableInstruments() {
     final outArray = calloc<Int32>(256);
     final count = _funcGetAvailable(outArray, 256);
@@ -401,6 +411,9 @@ class InstrumentMapper {
     return result;
   }
 
+  /// Resolve an instrument's numeric ID from its [name].
+  ///
+  /// Returns `-1` if the name does not match any registered instrument.
   static int getId(String name) {
     final ptr = name.toNativeUtf8();
     try {
@@ -419,6 +432,25 @@ class InstrumentMapper {
   static late final _funcGetAvailable = _dylib.lookupFunction<_c_mapper_get_available, _dart_mapper_get_available>('instrument_mapper_get_available');
 }
 
+/// A physically modeled instrument instance backed by a real-time Faust DSP engine.
+///
+/// Each [FaustInstrument] encapsulates a complete physical model (e.g. flute,
+/// sitar, tabla) with parameters for frequency, velocity, articulation, and
+/// real-time modulation. It wraps a native C++ instrument heap object accessed
+/// via FFI.
+///
+/// Create instances with [FaustInstrument.create], attach them to the mixer
+/// with [FaustMixer.registerInstrument], and sequence them with [UMLSequence]
+/// / [SequenceOrchestrator]. Multiple voices are allocated dynamically by the
+/// native engine for polyphonic playback.
+///
+/// ```dart
+/// final flute = FaustInstrument.create(10);       // sampleRate auto-matches mixer
+/// flute.noteOn(freq: 440.0, velocity: 0.8);
+/// // ... let it ring ...
+/// flute.noteOff();
+/// flute.dispose();                                 // free the native heap object
+/// ```
 class FaustInstrument {
   final Pointer<NativeInstrumentOpaque> _handle;
   final bool _owned;
@@ -1007,16 +1039,44 @@ class SequenceOrchestrator {
   Pointer<NativeOrchestratorOpaque> get nativePointer => _handle;
 }
 
-/// Singleton access to the global Faust audio mixer and hardware driver.
+/// Singleton real-time audio mixer and hardware driver.
 ///
-/// [FaustMixer] is the central audio hub. It manages:
-/// - Hardware device initialization and lifecycle
-/// - Sample-rate configuration
-/// - Master gain control
-/// - Instrument registration and per-instrument volume weighting
-/// - The persistent thread pool for concurrent DSP rendering
+/// [FaustMixer] is the central audio hub that owns the hardware output device
+/// and a persistent worker thread pool for concurrent DSP rendering. It manages
+/// three core concerns:
 ///
-/// Access via [FaustMixer.instance]. Must be initialized with [init] before use.
+/// 1. **Track lifecycle** — instruments are attached to numbered tracks via
+///    [registerInstrument] (convenience, auto-creates a track) or the explicit
+///    [addTrack] / [addInstrumentToTrack] pair. Muting a track
+///    ([muteTrack]) skips its DSP entirely (0% CPU while silenced).
+///
+/// 2. **Per-track effects** — each track carries its own Faust FX chain:
+///    [setTrackReverbSend], [setTrackEcho], [setTrackEQ] / [setTrackMid],
+///    with per-effect bypass switches ([setTrackBypassEQ], [setTrackBypassEcho]).
+///
+/// 3. **Weight system** — two modes controlled by [setWeightMode]:
+///    - *STATIC* (0): weights are fixed to the value passed at registration
+///      time. Ideal during setup / initialisation.
+///    - *DYNAMIC* (1): weights can be updated at any time via
+///      [setTrackWeight] and are auto-normalised so the sum of all active
+///      track weights stays at 1.0, preventing master-bus clipping when
+///      tracks are added or removed on the fly. Use this mode for live
+///      mixing or automation.
+///
+/// Typical startup sequence:
+/// ```dart
+/// final mixer = FaustMixer.instance;
+/// mixer.init(48000);
+/// mixer.setWeightMode(0);            // STATIC during setup
+/// final t1 = mixer.registerInstrument(flute, 0.8);
+/// final t2 = mixer.registerInstrument(sitar, 0.6);
+/// mixer.start();
+/// mixer.setWeightMode(1);            // switch to DYNAMIC for live control
+/// mixer.setTrackWeight(t1, 0.5);     // real-time adjustment
+/// ```
+///
+/// Access via [FaustMixer.instance]. Call [init] once, then [start] to open
+/// the hardware audio device.
 class FaustMixer {
   /// The global singleton mixer instance.
   static final FaustMixer instance = FaustMixer._internal();
@@ -1040,6 +1100,7 @@ class FaustMixer {
   static late final _funcRemoveInstFromTrack = _dylib.lookupFunction<_c_mixer_remove_inst_from_track, _dart_mixer_remove_inst_from_track>('mixer_remove_instrument_from_track');
   static late final _funcSetTrackEnvelope = _dylib.lookupFunction<_c_mixer_set_track_envelope, _dart_mixer_set_track_envelope>('mixer_set_track_envelope');
   static final _funcSetTrackWeight = _dylib.lookupFunction<_c_mixer_set_track_weight, _dart_mixer_set_track_weight>('mixer_set_track_weight');
+  static final _funcSetWeightMode = _dylib.lookupFunction<_c_mixer_set_weight_mode, _dart_mixer_set_weight_mode>('mixer_set_weight_mode');
   static final _funcGetTrackWeight = _dylib.lookupFunction<_c_mixer_get_track_weight, _dart_mixer_get_track_weight>('mixer_get_track_weight');
   static final _funcGetTrackMute = _dylib.lookupFunction<_c_mixer_get_track_mute, _dart_mixer_get_track_mute>('mixer_get_track_mute');
   static final _funcMuteTrack = _dylib.lookupFunction<_c_mixer_mute_track, _dart_mixer_mute_track>('mixer_mute_track');
@@ -1059,16 +1120,26 @@ class FaustMixer {
     _handle = _funcGetInstance();
   }
 
-  /// Initialize the mixer with a specific sample rate.
+  /// Initialise the mixer at the given hardware sample rate.
+  ///
+  /// Must be called exactly once before [start]. Creates the internal
+  /// thread pool and pre-allocates all intermediate render buffers.
+  /// The sample rate is fixed for the lifetime of the process — all
+  /// instruments and sequences must match this rate.
   void init(double sampleRate) => _funcInit(_handle, sampleRate);
 
-  /// Start the hardware audio device.
+  /// Open the hardware audio device and begin rendering.
+  ///
+  /// Returns `true` if the device was opened successfully. Calling
+  /// [start] more than once is a safe no-op.
   bool start() => _funcStart(_handle) != 0;
 
-  /// Asynchronously starts the audio mixer and waits for initialization to complete.
-  /// 
-  /// This prevents the UI from freezing when the hardware driver (like PulseAudio)
-  /// needs to wake up from a suspended state.
+  /// Asynchronously open the hardware audio device without blocking the UI.
+  ///
+  /// Resolves when the hardware callback has fired for the first time.
+  /// Prefer this over [start] on platforms where the audio driver may
+  /// take several hundred milliseconds to wake from a suspended state
+  /// (e.g. PulseAudio on Linux, CoreAudio on macOS after sleep).
   Future<void> startAsync() async {
     final completer = Completer<void>();
     final callable = NativeCallable<VoidFunctionNative>.listener(() {
@@ -1079,39 +1150,103 @@ class FaustMixer {
     callable.close();
   }
 
-  /// Stop the hardware audio device.
+  /// Stop the hardware audio device and drain the worker pool.
+  ///
+  /// All in-flight render work is completed before the device is closed.
+  /// The mixer can be restarted with [start] without calling [init] again.
   void stop() => _funcStop(_handle);
 
-  /// Instantly wipe out all instruments and tracks from the mixer.
+  /// Remove every track, instrument and FX chain from the mixer.
+  ///
+  /// Useful when switching song/scene. The hardware device is left open;
+  /// call [stop] to release it.
   void clearAll() => _funcClearAll(_handle);
 
-  /// Get the hardware sample rate.
+  /// The hardware sample rate passed to [init].
+  ///
+  /// Returns `0.0` if [init] has not been called yet.
   double get sampleRate => _funcGetSR(_handle);
 
-  /// Register a waveform callback that fires on every audio block with RMS and peak.
+  NativeCallable<WaveformCallbackNative>? _waveformCallable;
+  void Function(double rms, double peak)? _onWaveform;
+
+  /// Callback invoked on every rendered audio block with the block's RMS
+  /// and peak level of the final stereo mix.
+  ///
+  /// Set this to receive level updates, or to `null` to disable monitoring.
+  /// This is a high-frequency callback (fires once per audio buffer, e.g.
+  /// ~48 Hz at 1024 frames / 48 kHz) — keep the handler cheap and avoid
+  /// heavy work or blocking. It runs on the audio thread, so use it for
+  /// level meters / visualizers, not for DSP or UI work.
+  ///
+  /// The first callback argument is the RMS value, the second the peak.
+  void Function(double rms, double peak)? get onWaveform => _onWaveform;
+  set onWaveform(void Function(double rms, double peak)? cb) {
+    _onWaveform = cb;
+    _waveformCallable?.close();
+    _waveformCallable = null;
+    if (cb != null) {
+      _waveformCallable = NativeCallable<WaveformCallbackNative>.listener(
+        (double rms, double peak, Pointer<Void> _) => cb(rms, peak),
+      );
+      _funcRegisterWaveformCb(_handle, _waveformCallable!.nativeFunction, nullptr);
+    } else {
+      _funcRegisterWaveformCb(_handle, nullptr, nullptr);
+    }
+  }
+
+  /// Low-level variant of [onWaveform] taking raw FFI pointers.
+  ///
+  /// Most users should prefer [onWaveform], which manages the native
+  /// callable lifetime automatically. If you use this directly, keep the
+  /// returned [NativeCallable] alive and close it with
+  /// [clearWaveformCallback] when done.
+  @Deprecated('Use the onWaveform setter, which manages the native callable for you')
   void registerWaveformCallback(Pointer<NativeFunction<WaveformCallbackNative>> callback, Pointer<Void> userData) {
     _funcRegisterWaveformCb(_handle, callback, userData);
   }
 
+  /// Drop the current waveform callback and free its native callable.
+  void clearWaveformCallback() {
+    onWaveform = null;
+  }
+
   double _masterGain = 1.0;
 
-  /// Get the current master bus gain.
+  /// The current master bus gain.
+  ///
+  /// Defaults to `1.0`. Values above `1.0` are permitted but will push the
+  /// output into the master limiter (soft-clip) sooner.
   double get masterGain => _masterGain;
 
-  /// Set the master bus gain (0.0 to 1.0+).
+  /// Set the master bus gain.
+  ///
+  /// [gain] is applied after all tracks and FX are summed, immediately
+  /// before the master limiter. This is the global output volume.
+  ///
+  /// Prefer [setTrackWeight] for per-track balancing; use [masterGain] only
+  /// for the final output level that should touch every track equally.
   set masterGain(double gain) {
     _masterGain = gain;
     _funcSetGain(_handle, gain);
   }
 
-  /// Set the volume weight for a specific instrument.
+  /// Set the volume weight of a registered instrument inside its mixer track.
   void setInstrumentWeight(FaustInstrument inst, double weight) {
     _funcSetInstWeight(_handle, inst.nativePointer, weight);
   }
 
-  /// Register an instrument with the mixer.
+  /// Register an instrument with the mixer, returning its track ID.
   ///
-  /// Throws [ArgumentError] if the instrument's sample rate does not match the mixer's.
+  /// [weight] is the initial track weight (0.0–1.0). The returned ID is used
+  /// by all subsequent per-track operations ([muteTrack], [setTrackWeight],
+  /// FX setters, etc.).
+  ///
+  /// Throws [ArgumentError] if the instrument's sample rate does not match
+  /// the mixer's, which would corrupt the timing of the shared DSP pipeline.
+  ///
+  /// Note: registering an instrument is equivalent to [addTrack] +
+  /// [addInstrumentToTrack] in a single call.
   int registerInstrument(FaustInstrument inst, double weight) {
     final result = _funcRegisterInst(_handle, inst.nativePointer, weight);
     if (result == 0) {
@@ -1124,26 +1259,42 @@ class FaustMixer {
     return result;
   }
 
-  /// Unregister an instrument from the mixer.
+  /// Unregister an instrument, removing it and its track from the mixer.
   void unregisterInstrument(FaustInstrument inst) {
     _funcUnregisterInst(_handle, inst.nativePointer);
   }
 
-  /// Add a new track to the mixer with the given initial weight. Returns the track ID.
+  /// Create an empty mixer track and return its track ID.
+  ///
+  /// [initialWeight] (0.0–1.0) is the starting weight used by the weight
+  /// system. Attach instruments with [addInstrumentToTrack]. In DYNAMIC
+  /// mode this weight is re-normalised automatically.
   int addTrack(double initialWeight) => _funcAddTrack(_handle, initialWeight);
 
-  /// Remove a track from the mixer.
+  /// Remove a track and everything attached to it from the mixer.
   void removeTrack(int trackID) => _funcRemoveTrack(_handle, trackID);
 
-  /// Add an instrument to an existing track.
+  /// Attach an already-created instrument to an existing track.
+  ///
+  /// Requires a track created with [addTrack]. For the common single-track
+  /// case, prefer [registerInstrument] which creates the track for you.
   void addInstrumentToTrack(int trackID, FaustInstrument inst, double instWeight) =>
       _funcAddInstToTrack(_handle, trackID, inst.nativePointer, instWeight);
 
-  /// Remove an instrument from a track.
+  /// Detach an instrument from a track.
   void removeInstrumentFromTrack(int trackID, FaustInstrument inst) =>
       _funcRemoveInstFromTrack(_handle, trackID, inst.nativePointer);
 
   /// Set a per-track breakpoint envelope (post-weight gain multiplier).
+  ///
+  /// The envelope plays once over [times] seconds from the moment it is set,
+  /// interpolating through [values] using the per-segment [interpTypes]:
+  /// `0` = linear, `1` = exponential, `2` = S-curve. Envelope points ride on
+  /// top of (multiply) the track weight.
+  ///
+  /// [times] and [values] must be the same length; [interpTypes] is one entry
+  /// per segment (length `values.length - 1`), or a single scalar applied to
+  /// all segments. Pass empty lists to clear the envelope.
   void setTrackEnvelope(int trackID, List<double> times, List<double> values, List<int> interpTypes) {
     final n = times.length;
     final tPtr = calloc<Float>(n);
@@ -1160,23 +1311,54 @@ class FaustMixer {
     calloc.free(iPtr);
   }
 
-  /// Immediately set a track's dynamic weight (clamped to its assigned cap).
+  /// Immediately set a track's weight.
+  ///
+  /// In DYNAMIC mode (see [setWeightMode]) the other active tracks are
+  /// re-normalised so the total sum of weights equals 1.0, keeping the
+  /// master bus free of clipping. [weight] is clamped to 0.0–1.0.
+  ///
+  /// In STATIC mode this has no effect — weights are fixed to the value
+  /// given at registration/add-track time.
   void setTrackWeight(int trackID, double weight) =>
       _funcSetTrackWeight(_handle, trackID, weight);
 
-  /// Get the current dynamic weight of a track.
+  /// Select the mixer weight mode.
+  ///
+  /// **Recommended workflow:**
+  /// 1. Call `setWeightMode(0)` (STATIC) before registering tracks so each
+  ///    track keeps the exact [weight] you pass to [addTrack] or
+  ///    [registerInstrument].
+  /// 2. Register all tracks.
+  /// 3. Once the mix is set up, call `setWeightMode(1)` (DYNAMIC) so weights
+  ///    can be adjusted in real time with [setTrackWeight].
+  ///
+  /// [mode]: `0` = STATIC_WEIGHTS (fixed at registration), `1` = DYNAMIC_WEIGHTS
+  /// (auto-normalised, real-time adjustable).
+  void setWeightMode(int mode) =>
+      _funcSetWeightMode(_handle, mode);
+
+  /// Query the current weight of a track.
+  ///
+  /// Returns the effective weight; in DYNAMIC mode this is the normalised
+  /// value (each track's share of the active sum).
   double getTrackWeight(int trackID) =>
       _funcGetTrackWeight(_handle, trackID);
 
-  /// Mute a track (skips DSP rendering for 0% CPU load).
-  /// Check if a track is muted.
+  /// Whether the track is currently muted.
   bool getTrackMute(int trackID) => _funcGetTrackMute(_handle, trackID) != 0;
 
-  /// Mute a track.
+  /// Mute a track, skipping its DSP rendering entirely (0% CPU).
+  ///
+  /// A muted track makes no sound. Unmute with [unmuteTrack] or
+  /// [unmuteTracks].
   void muteTrack(int trackID) =>
       _funcMuteTrack(_handle, trackID);
 
-  /// Unmute multiple tracks atomically to ensure sub-millisecond sync.
+  /// Unmute several tracks atomically.
+  ///
+  /// Unmuting via a single call prevents the audio thread from rendering a
+  /// partial mix between individual unmutes, giving sample-tight sync when
+  /// bringing a whole group back in on a downbeat.
   void unmuteTracks(List<int> trackIDs) {
     final pointer = calloc<Int32>(trackIDs.length);
     for (int i = 0; i < trackIDs.length; i++) {
@@ -1186,59 +1368,87 @@ class FaustMixer {
     calloc.free(pointer);
   }
 
-  /// Unmute a track.
+  /// Unmute a single track.
   void unmuteTrack(int trackID) =>
       _funcUnmuteTrack(_handle, trackID);
 
-  /// Set this track's send level (0.0..1.0) into the shared master reverb bus.
-  /// Sends are summed across all tracks and returned through the master bus
-  /// scaled by [fxReturnWeight].
+  /// Set this track's send level into the shared master reverb bus.
+  ///
+  /// [send] (0.0..1.0) is the wet amount. Sends from every track are summed
+  /// and returned through the master bus scaled by [fxReturnWeight]. A send
+  /// of `0.0` routes nothing to the reverb.
   void setTrackReverbSend(int trackID, double send) =>
       _funcSetTrackReverb(_handle, trackID, send);
 
-  /// Configure this track's echo effect.
+  /// Configure this track's echo (delay) effect.
   ///
   /// - [send]: wet mix level (0.0 = dry, 1.0 = full echo).
-  /// - [feedback]: regeneration of the delayed signal (0.0..0.95).
+  /// - [feedback]: regeneration of the delayed signal (0.0..0.95). Higher
+  ///   values repeat the echo longer and can build toward runaway feedback.
   /// - [delaySec]: echo delay time in seconds (default 0.25).
   void setTrackEcho(int trackID, double send, {double feedback = 0.3, double delaySec = 0.25}) =>
       _funcSetTrackEcho(_handle, trackID, send, feedback, delaySec);
 
-  /// Set this track's bass/treble shelving EQ gains in dB (0 disables).
-  /// Bass shelf at 250 Hz, treble shelf at 2500 Hz.
+  /// Set this track's bass/treble shelving EQ gains in dB.
+  ///
+  /// [bassDb] and [trebleDb] are shelf gains (−18..+18 dB, `0` disables).
+  /// Bass shelf sits at 250 Hz, treble shelf at 2500 Hz. Use [setTrackMid]
+  /// for a parametric mid band, and [setTrackBypassEQ] to toggle the whole
+  /// EQ stage on/off.
   void setTrackEQ(int trackID, double bassDb, double trebleDb) =>
       _funcSetTrackEQ(_handle, trackID, bassDb, trebleDb);
 
   /// Set this track's parametric mid (peaking) band.
   ///
-  /// - [midDb]: gain in dB at the center frequency.
-  /// - [midFreq]: center frequency in Hz (20..20000).
-  /// - [midQ]: bandwidth (0.1..18, default 1.0).
+  /// - [midDb]: gain in dB at the center frequency (−18..+18).
+  /// - [midFreq]: center frequency in Hz (20..20000, default 1000).
+  /// - [midQ]: bandwidth (0.1..18, default 1.0). Higher Q = narrower band.
   void setTrackMid(int trackID, double midDb, {double midFreq = 1000.0, double midQ = 1.0}) =>
       _funcSetTrackMid(_handle, trackID, midDb, midFreq, midQ);
 
-  /// Bypass (true) or re-engage (false) this track's EQ stage.
+  /// Bypass or re-engage this track's EQ stage.
+  ///
+  /// When [bypass] is `true` the EQ is skipped and the dry signal passes
+  /// through unchanged. Pass `false` to re-engage.
   void setTrackBypassEQ(int trackID, {bool bypass = true}) =>
       _funcSetTrackBypassEQ(_handle, trackID, bypass ? 1.0 : 0.0);
 
-  /// Bypass (true) or re-engage (false) this track's echo stage.
+  /// Bypass or re-engage this track's echo stage.
+  ///
+  /// When [bypass] is `true` the echo is skipped. Pass `false` to re-engage.
   void setTrackBypassEcho(int trackID, {bool bypass = true}) =>
       _funcSetTrackBypassEcho(_handle, trackID, bypass ? 1.0 : 0.0);
 
-  /// Set the master FX (reverb) return weight (0.0..1.0), scaling the wet
-  /// signal added back into the master bus.
+  /// Set the master FX (reverb) return weight (0.0..1.0).
+  ///
+  /// Scales the summed wet reverb signal added back into the master bus.
+  /// A value of `0.0` silences the global reverb entirely.
   set fxReturnWeight(double weight) => _funcSetFXReturn(_handle, weight);
 
   /// Fade the master bus from 0 to 1.0 over [durationSeconds].
+  ///
+  /// A typical startup ramp to avoid an opening click. Interrupted by
+  /// [masterFadeOut] or a direct [masterGain] write.
   void masterFadeIn(double durationSeconds) =>
       _funcMasterFadeIn(_handle, durationSeconds);
 
   /// Fade the master bus from its current gain to 0 over [durationSeconds].
+  ///
+  /// Use before [stop] for a click-free shutdown. Interrupted by
+  /// [masterFadeIn] or a direct [masterGain] write.
   void masterFadeOut(double durationSeconds) =>
       _funcMasterFadeOut(_handle, durationSeconds);
 }
 
 /// Global asset manager and initializer for the Faust synthesis engine.
+///
+/// [init] must be called once before creating any instruments or sequences.
+/// It copies the bundled DSP/CSV assets from the package into app storage and
+/// tells the native engine where to find them. On subsequent launches it
+/// skips files whose size and mtime already match, so it is near-instant.
+///
+/// [getOrchestrator] and [getMixer] are the canonical entry points for the
+/// process-wide [SequenceOrchestrator] and [FaustMixer] singletons.
 class FaustEngine {
   static late final _funcSetAssetBasePath =
       _dylib.lookupFunction<_c_engine_set_asset_base_path, _dart_engine_set_asset_base_path>(
