@@ -118,12 +118,6 @@ __attribute__((used)) static void* const faust_min_ios_force_link_ptrs[] = {
     // Tanpura (TTS voice guidance 1.0.8)
     (void*)tanpura_create,
     (void*)tanpura_destroy,
-    (void*)tanpura_set_params,
-    (void*)tanpura_set_jivari,
-    (void*)tanpura_set_playing,
-    (void*)tanpura_note_on,
-    (void*)tanpura_note_off,
-    (void*)tanpura_render,
 };
 
 @interface FaustMinPlugin : NSObject<FlutterPlugin>
