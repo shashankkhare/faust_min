@@ -15,23 +15,31 @@ mkdir -p "$RESULTS_DIR"
 echo "=== faust_min verify: build=$BUILD_DIR ==="
 
 # ---- 1. Build (if needed) ----
-if [ ! -f "$BUILD_DIR/test_sequence" ]; then
+# CMake emits binaries into $BUILD_DIR/shared/ (see src/CMakeLists.txt RUNTIME_OUTPUT_DIRECTORY).
+if [ ! -f "$BUILD_DIR/shared/test_sequence" ] && [ ! -f "$BUILD_DIR/test_sequence" ]; then
     echo "[verify] Building Release targets..."
-    cmake -S . -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE=Release
+    cmake -S src -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE=Release
     cmake --build "$BUILD_DIR" -j"$(nproc)" --target test_sequence
 fi
 
-TEST_SEQ="$BUILD_DIR/test_sequence"
+if [ -f "$BUILD_DIR/shared/test_sequence" ]; then
+    TEST_SEQ="$BUILD_DIR/shared/test_sequence"
+else
+    TEST_SEQ="$BUILD_DIR/test_sequence"
+fi
+export LD_LIBRARY_PATH="$BUILD_DIR/shared:${LD_LIBRARY_PATH:-}"
 
 # ---- 2. Check no debug flags leak into release code ----
 echo ""
 echo "[verify] Checking debug flags in source..."
-DEBUG_LEAKS=$(grep -rn "DEBUG_" src/ --include="*.cpp" --include="*.hpp" | grep -v "#define DEBUG_" | grep -v "//.*DEBUG_" || true)
-if [ -n "$DEBUG_LEAKS" ]; then
-    echo "WARNING: Debug flags found enabled in source:"
-    echo "$DEBUG_LEAKS"
-    echo "These should be #define'd to 0 for release."
+# Every DEBUG_* switch must be #define'd to 0. Guarded uses (#if DEBUG_X) are fine.
+DEBUG_ON=$(grep -rnE "^[[:space:]]*#define[[:space:]]+DEBUG_[A-Z_]+[[:space:]]+[^0]" src/ --include="*.cpp" --include="*.hpp" || true)
+if [ -n "$DEBUG_ON" ]; then
+    echo "FAIL: Debug switches not set to 0:"
+    echo "$DEBUG_ON"
+    exit 1
 fi
+grep -rnE "^[[:space:]]*#define[[:space:]]+DEBUG_[A-Z_]+" src/ --include="*.cpp" --include="*.hpp" | sed 's/^/[verify] /'
 
 # ---- 3. Run test_sequence with timeout ----
 # Sequence 2 (Jazz Ensemble): Piano, Sax, Bass, Kick, Snare, Ride = 6 inst

@@ -12,6 +12,7 @@ Compilation options: -lang cpp -es 1 -single -ftz 1
 #define FAUSTFLOAT float
 #endif 
 
+/* link with : "" */
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -54,7 +55,7 @@ class FaustFluteDSP : public dsp {
 	FAUSTFLOAT fHslider2;
 	float fRec8[2];
 	FAUSTFLOAT fHslider3;
-	float fRec10[2];
+	float fRec9[2];
 	float fConst5;
 	FAUSTFLOAT fHslider4;
 	int IOTA;
@@ -62,7 +63,7 @@ class FaustFluteDSP : public dsp {
 	float fVec2[2];
 	float fRec12[2];
 	float fRec11[2];
-	float fRec9[2];
+	float fRec10[3];
 	float fVec3[32768];
 	float fRec3[8192];
 	FAUSTFLOAT fHslider5;
@@ -105,9 +106,6 @@ class FaustFluteDSP : public dsp {
 		m->declare("filters.lib/tf1:author", "Julius O. Smith III");
 		m->declare("filters.lib/tf1:copyright", "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>");
 		m->declare("filters.lib/tf1:license", "MIT-style STK-4.3 license");
-		m->declare("filters.lib/tf1s:author", "Julius O. Smith III");
-		m->declare("filters.lib/tf1s:copyright", "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>");
-		m->declare("filters.lib/tf1s:license", "MIT-style STK-4.3 license");
 		m->declare("filters.lib/tf2:author", "Julius O. Smith III");
 		m->declare("filters.lib/tf2:copyright", "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>");
 		m->declare("filters.lib/tf2:license", "MIT-style STK-4.3 license");
@@ -192,7 +190,7 @@ class FaustFluteDSP : public dsp {
 			fRec8[l8] = 0.0f;
 		}
 		for (int l9 = 0; (l9 < 2); l9 = (l9 + 1)) {
-			fRec10[l9] = 0.0f;
+			fRec9[l9] = 0.0f;
 		}
 		IOTA = 0;
 		for (int l10 = 0; (l10 < 2048); l10 = (l10 + 1)) {
@@ -207,8 +205,8 @@ class FaustFluteDSP : public dsp {
 		for (int l13 = 0; (l13 < 2); l13 = (l13 + 1)) {
 			fRec11[l13] = 0.0f;
 		}
-		for (int l14 = 0; (l14 < 2); l14 = (l14 + 1)) {
-			fRec9[l14] = 0.0f;
+		for (int l14 = 0; (l14 < 3); l14 = (l14 + 1)) {
+			fRec10[l14] = 0.0f;
 		}
 		for (int l15 = 0; (l15 < 32768); l15 = (l15 + 1)) {
 			fVec3[l15] = 0.0f;
@@ -262,7 +260,8 @@ class FaustFluteDSP : public dsp {
 		float fSlow6 = (0.000833333354f * float(fHslider4));
 		float fSlow7 = (fConst5 * std::pow(2.0f, (-1.0f * fSlow6)));
 		float fSlow8 = (fConst5 * std::pow(2.0f, (0.0f - fSlow6)));
-		float fSlow9 = (0.970000029f * float(fHslider5));
+		float fSlow9 = (2.5f * std::pow(2.0f, fSlow6));
+		float fSlow10 = (0.970000029f * float(fHslider5));
 		for (int i0 = 0; (i0 < count); i0 = (i0 + 1)) {
 			fVec0[0] = fSlow0;
 			float fTempFTZ0 = (fSlow0 + (fRec1[1] * float((fVec0[1] >= fSlow0))));
@@ -283,10 +282,10 @@ class FaustFluteDSP : public dsp {
 			fRec5[0] = ((std::fabs(fTempFTZ4) > 1.17549435e-38f) ? fTempFTZ4 : 0.0f);
 			float fTempFTZ5 = (fSlow4 + (fConst3 * fRec8[1]));
 			fRec8[0] = ((std::fabs(fTempFTZ5) > 1.17549435e-38f) ? fTempFTZ5 : 0.0f);
-			float fTemp4 = ((fRec4[0] * fRec0[0]) * ((((((fRec5[1] * (0.0f - (2.0f / fTemp2))) + (fRec5[0] / fTemp2)) + (fRec5[2] / fTemp2)) * ((0.100000001f * std::pow(fRec8[0], 2.0f)) + 0.200000003f)) / fTemp3) + 1.0f));
-			float fTempFTZ6 = (fSlow5 + (fConst3 * fRec10[1]));
-			fRec10[0] = ((std::fabs(fTempFTZ6) > 1.17549435e-38f) ? fTempFTZ6 : 0.0f);
-			float fTemp5 = (1.0f / std::tan((fConst4 * (8500.0f - (6500.0f * fRec10[0])))));
+			float fTemp4 = (float(tanhf(float((2.0f * (fRec4[0] * fRec0[0]))))) * ((((((fRec5[1] * (0.0f - (2.0f / fTemp2))) + (fRec5[0] / fTemp2)) + (fRec5[2] / fTemp2)) * ((0.100000001f * std::pow(fRec8[0], 2.0f)) + 0.200000003f)) / fTemp3) + 1.0f));
+			float fTempFTZ6 = (fSlow5 + (fConst3 * fRec9[1]));
+			fRec9[0] = ((std::fabs(fTempFTZ6) > 1.17549435e-38f) ? fTempFTZ6 : 0.0f);
+			float fTemp5 = (0.99000001f - (0.0399999991f * fRec9[0]));
 			float fTemp6 = std::max<float>(40.0f, fRec7[0]);
 			fVec1[(IOTA & 2047)] = fRec3[((IOTA - (std::min<int>(16384, std::max<int>(0, int(((fSlow7 / fTemp6) + -2.5f)))) + 1)) & 8191)];
 			float fTemp7 = (fSlow8 / fTemp6);
@@ -299,16 +298,17 @@ class FaustFluteDSP : public dsp {
 			fRec12[0] = ((std::fabs(fTempFTZ7) > 1.17549435e-38f) ? fTempFTZ7 : 0.0f);
 			float fTempFTZ8 = ((fRec12[0] + (0.995000005f * fRec11[1])) - fRec12[1]);
 			fRec11[0] = ((std::fabs(fTempFTZ8) > 1.17549435e-38f) ? fTempFTZ8 : 0.0f);
-			float fTempFTZ9 = (0.0f - (((fRec9[1] * (1.0f - fTemp5)) - (fRec11[0] + fRec11[1])) / (fTemp5 + 1.0f)));
-			fRec9[0] = ((std::fabs(fTempFTZ9) > 1.17549435e-38f) ? fTempFTZ9 : 0.0f);
-			float fTemp12 = (fRec9[0] * (0.99000001f - (0.0399999991f * fRec10[0])));
-			fVec3[(IOTA & 32767)] = (fTemp4 - fTemp12);
-			float fTemp13 = std::max<float>(-1.10000002f, std::min<float>(1.10000002f, fVec3[((IOTA - std::min<int>(16384, std::max<int>(0, int((fSlow8 * (std::max<float>(0.0199999996f, (0.449999988f * fRec8[0])) / fTemp6)))))) & 32767)]));
-			float fTempFTZ10 = ((fTemp13 + (9.99999975e-05f * fTemp4)) - (fTemp12 + (0.333299994f * std::pow(fTemp13, 3.0f))));
+			float fTemp12 = std::tan((fConst4 * std::min<float>((8500.0f - (6500.0f * fRec9[0])), std::max<float>((fSlow9 * fRec7[0]), 100.0f))));
+			float fTemp13 = (1.0f / fTemp12);
+			float fTemp14 = (((fTemp13 + 1.41421354f) / fTemp12) + 1.0f);
+			float fTempFTZ9 = (fRec11[0] - (((fRec10[2] * (((fTemp13 + -1.41421354f) / fTemp12) + 1.0f)) + (2.0f * (fRec10[1] * (1.0f - (1.0f / FaustFluteDSP_faustpower2_f(fTemp12)))))) / fTemp14));
+			fRec10[0] = ((std::fabs(fTempFTZ9) > 1.17549435e-38f) ? fTempFTZ9 : 0.0f);
+			fVec3[(IOTA & 32767)] = ((0.5f * fTemp4) - ((fTemp5 * (fRec10[2] + (fRec10[0] + (2.0f * fRec10[1])))) / fTemp14));
+			float fTempFTZ10 = ((4.85714293f * (float(tanhf(float((0.349999994f * std::max<float>(-1.5f, std::min<float>(1.5f, fVec3[((IOTA - std::min<int>(16384, std::max<int>(0, int((fSlow8 * (std::max<float>(0.0199999996f, (0.449999988f * fRec8[0])) / fTemp6)))))) & 32767)])))))) / fTemp5)) + (4.99999987e-05f * fTemp4));
 			fRec3[(IOTA & 8191)] = ((std::fabs(fTempFTZ10) > 1.17549435e-38f) ? fTempFTZ10 : 0.0f);
-			float fTempFTZ11 = (fSlow9 + (0.0299999993f * fRec13[1]));
+			float fTempFTZ11 = (fSlow10 + (0.0299999993f * fRec13[1]));
 			fRec13[0] = ((std::fabs(fTempFTZ11) > 1.17549435e-38f) ? fTempFTZ11 : 0.0f);
-			output0[i0] = FAUSTFLOAT((0.0372281f * ((fRec0[0] * fRec3[((IOTA - 0) & 8191)]) * fRec13[0])));
+			output0[i0] = FAUSTFLOAT((0.242250696f * ((fRec0[0] * fRec3[((IOTA - 0) & 8191)]) * fRec13[0])));
 			fVec0[1] = fVec0[0];
 			fRec1[1] = fRec1[0];
 			iRec2[1] = iRec2[0];
@@ -319,12 +319,13 @@ class FaustFluteDSP : public dsp {
 			fRec5[2] = fRec5[1];
 			fRec5[1] = fRec5[0];
 			fRec8[1] = fRec8[0];
-			fRec10[1] = fRec10[0];
+			fRec9[1] = fRec9[0];
 			IOTA = (IOTA + 1);
 			fVec2[1] = fVec2[0];
 			fRec12[1] = fRec12[0];
 			fRec11[1] = fRec11[0];
-			fRec9[1] = fRec9[0];
+			fRec10[2] = fRec10[1];
+			fRec10[1] = fRec10[0];
 			fRec13[1] = fRec13[0];
 		}
 	}

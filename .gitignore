@@ -32,6 +32,10 @@ migrate_working_dir/
 /build/
 /build-release/
 /build-debug/
+/build-host/
+/build-linux/
+/build-mingw/
+/build-android/
 /coverage/
 build_asan/
 scratch/

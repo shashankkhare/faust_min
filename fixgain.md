@@ -118,3 +118,29 @@ Ran this procedure for `assets/dsp/flute.csv` and `assets/dsp/flute.dsp`.
 **Verification (step 8):** at `v=1.0` the raw energy measures 0.541 (164.81 Hz), 0.465 (440 Hz), 0.515 (1975.53 Hz) — all within the 0.45–0.55 target band for a melody instrument.
 
 **Known floor:** `velocity=0.1` rows sit at the GAIN_MIN floor of ~`0.01` (25 warnings during calibration). Even at minimum gain the instrument's quietest notes cannot reach the 0.5 target (E ≈ 0.012–0.015); this is accepted so that low velocities stay musical rather than silent.
+
+## Flute + Bansuri Gain Re-Calibration (September 2026)
+
+Re-ran the full procedure because `fm.lib`'s waveguide was rewritten (single feedback tap, bounded `ma.tanh` valve, frequency-tracking `mode_cutoff`). The new loop is **6–17x quieter** than the model the July gains were solved against, so every `gain` value and both DSP multipliers were stale. Pitch calibration was unaffected.
+
+**Step 1 (`checkdsp.md`):** multipliers present, excitation healthy, energy 0.028–0.35 (in range), all peaks < 0.71 — no DSP bug, purely a gain-staleness issue.
+
+**Step 4 (target 0.5, melody instruments):**
+- `flute`: `max_gain` = **6.5072** (162 rows changed)
+- `bansuri`: `max_gain` = **1.5427** (104 rows changed)
+
+**Step 6 (DSP multipliers):**
+- `flute.dsp`: `0.0372281 * 6.5072` = **`0.2422507`**
+- `bansuri.dsp`: `0.1575 * 1.5427` = **`0.2429753`**
+
+**Step 8 verification (v=1.0):**
+- flute energy 0.451–0.533 across all 27 frequencies (**1.18x spread**, was 2.9x)
+- bansuri energy 0.451–0.548 across all 21 frequencies (**1.22x spread**)
+- max peak 0.574 (flute) / 0.705 (bansuri) — no clipping
+- pitch re-verified at the new gain: flute 60/61 rows within 25c, bansuri 45/45 (worst 15.7c) — `calibration` is gain-independent, as expected
+- crack zone 147–220 Hz: 74 notes, **0 wrong-mode locks**, worst 43.8c
+- velocity: `sqrt(E)/v` constant at 0.66–0.76 across the full range
+
+**Two gotchas worth recording:**
+1. The script's binary search has a `GAIN_MAX` ceiling. For 8 flute frequencies (440–880 Hz) it reported `WARNING: amp=1.0 could not reach target, skipping freq` and left their `velocity` 0.1–0.8 rows at the stale values while `velocity=1.0` got re-solved — a 24x level cliff between v=0.8 and v=1.0. Always check the *whole* velocity column, not just v=1.0; rebuild skipped rows from the instrument-wide velocity shape.
+2. `test_instruments` silently changes code path depending on the flags. Pass `--render` for offline renders, and do **not** add `s=<strike>` to a `--dumpwav` call — it falls through to the "test all instruments sequentially" path, writes no WAV, and emits a reduced `{freq, energy, P, G0}` line with no harmonic breakdown. Both mistakes produce convincing but meaningless pitch numbers.

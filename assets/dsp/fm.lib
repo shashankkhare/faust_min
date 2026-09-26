@@ -131,11 +131,11 @@ with {
 // DEPENDENCIES
 // ===================================================================
 //   stdfaust.lib — ma.SR, de.delay, de.fdelay1a, no.noise,
-//                  fi.highpass
+//                  fi.highpass, fi.lowpass, fi.dcblocker, tanh
 //
 // ===================================================================
 
-fluteModel(freq, pressure, breathEnv, mouthPos, loss, mode, cal) = output
+fluteModel(freq, pressure, breathEnv, mouthPos, loss, cal, jetDelBias, jetDelScale) = output
 with {
     // 1. BASE TARGET PERIOD (in samples)
     target_period = ma.SR / max(40.0, freq);
@@ -145,11 +145,22 @@ with {
     // Negative cal values lengthen the tube (lower pitch), positive values shorten it (raise pitch).
     calibrated_period = target_period * pow(2.0, -cal / 1200.0);
 
+    // The pitch trim has to move the WHOLE loop, not just the bore. The loop
+    // lowpass below is what sets the mode selection, and its group delay is a
+    // fixed number of samples; if the cutoff stayed tied to the raw request,
+    // that fixed delay would dilute every cent of `cal` to roughly half its
+    // nominal value (measured: 182 cents of cal bought ~69 cents at 698 Hz).
+    // Tying the cutoff to the calibrated frequency keeps the cutoff/oscillation
+    // ratio -- and therefore the timbre -- constant across the trim range.
+    calibrated_freq = freq * pow(2.0, cal / 1200.0);
+
     // Half-wave acoustic bore calculation with fixed filter group-delay offset (~2.5 samples)
     bore_del = (calibrated_period * 0.5) - 2.5;
 
     // 3. JET PRE-DELAY
-    jet_del = (calibrated_period * 0.5) * max(0.02, mouthPos * 0.45);
+    // Split into a fixed offset plus a mouth-position term so flute.dsp and
+    // bansuri.dsp can share this model while keeping their own embouchure feel.
+    jet_del = (calibrated_period * 0.5) * max(0.02, jetDelBias + (mouthPos * jetDelScale));
 
     // Isolate integer and fractional parts for the main bore tracking
     int_bore = int(bore_del);
@@ -157,43 +168,77 @@ with {
 
     // Stable wall loss lowpass parameters
     wall_cutoff = 8500.0 - (loss * 6500.0);
-    g_wall = 0.990 - (loss * 0.04); 
+    g_wall = 0.990 - (loss * 0.04);
+
+    // Mode-selective loop cutoff. The odd bore modes sit near 1x/3x/5x the
+    // fundamental, so rolling the loop off above roughly 3.5x f keeps the 3rd
+    // mode well under unity while the fundamental stays above it.
+    mode_cutoff = min(wall_cutoff, max(calibrated_freq * 2.5, 100.0));
+
+    // Valve hardness. This is the drive that pushes the jet curve into its
+    // saturating knee, and with it the amount of 3rd-harmonic energy fed back
+    // into the bore. Lower values keep the valve closer to linear, so less
+    // energy reaches the 3rd bore mode; higher values make it easier for that
+    // mode to latch and bring the crack back.
+    jet_k = 0.35;
+
+    // Loop gain referenced to the wall loss, so the oscillator holds a constant
+    // margin above unity at every loss setting instead of drifting with cutoff.
+    //
+    // The margin must stay low enough that the 3rd bore mode cannot sustain: at
+    // 1.7 the 1st mode sits ~1.6 above unity while the 3rd sits ~0.8, a 6 dB
+    // separation. At the old 2.0 the 3rd mode reached ~1.07 and latched onto
+    // 2.4x the request on 150/155/165/220 Hz -- the crack in its last form.
+    jet_gain = 1.7 / g_wall;
 
     // Streamlined Excitation Architecture
     dynamic_noise_gain = 0.20 + (pow(mouthPos, 2.0) * 0.10);
-    breath_drive = pressure * breathEnv;
+
+    // Bounded jet drive: blowing harder must never push the valve curve so deep
+    // into saturation that its incremental gain falls below unity and kills the
+    // note. Unbounded drive did exactly that above pressure ~1.1.
+    breath_drive = 0.5 * ma.tanh((pressure * breathEnv) / 0.5);
     noise = no.noise : fi.highpass(2, max(40.0, freq * 0.6));
     noise_injection = noise * breath_drive * dynamic_noise_gain;
     excitation = breath_drive + noise_injection;
 
-    // Physical interaction loop at the labium split point
-// Physical interaction loop at the labium split point
+    // Physical interaction loop at the labium split point.
+    //
+    // The bore reflection enters through the jet pre-delay ONLY. Subtracting it a
+    // second time directly made this a two-tap positive comb with ~2x loop gain,
+    // which left the 1st/3rd/5th modes nearly degenerate (+5.7/+5.5/+4.8 dB). The
+    // loop then latched onto whichever mode the attack transient favoured -- 0.5x,
+    // 1.4x or 2.85x the requested pitch -- and being ~1.6x louder than the intended
+    // mode it drove the old clipper into hard clip. That was the low-register crack.
     flute_loop(bore_reflection) = net_pressure
     with {
-        // Balanced physical jet phase inversion 
         delayed_jet = excitation - bore_reflection : de.delay(16384, int(jet_del));
-        
-        // --- SELF-RECOVERING SMOOTH CLIPPER ---
-        // Clipping slightly wider (1.1) ensures the derivative slope never hits absolute zero.
-        // This prevents the feedback loop from freezing in a zero-gain black hole.
-        clipped_jet = max(-1.1, min(1.1, delayed_jet));
-        jet_wave = clipped_jet - (pow(clipped_jet, 3.0) * 0.3333);
-        
+
+        // Monotone valve curve. Small-signal gain is jet_gain (> 1, so the loop
+        // sustains itself) and the slope decays smoothly to zero as the drive
+        // grows, which is what sets the steady-state amplitude. The old x - x^3/3
+        // saturator had slope 1 - x^2, never above 1, so it could not sustain the
+        // loop at all -- that is why the extra tap existed. Being monotone, this
+        // curve also never folds back, so it cannot reintroduce the crack.
+        safety = max(-1.5, min(1.5, delayed_jet));
+        jet_wave = jet_gain * ma.tanh(jet_k * safety) / jet_k;
+
         // Micro-stimulus: We leak a tiny fraction of raw breath excitation past the clip.
         // This acts as an acoustic spark plug to restart the engine if it ever breaks down.
         recovery_stimulus = excitation * 0.0001;
-        
-        net_pressure = jet_wave - bore_reflection + recovery_stimulus;
+
+        net_pressure = jet_wave + recovery_stimulus;
     };
     // Main acoustic body loop containing precise fractional reflections
     raw_wave = flute_loop ~ (
-        de.delay(16384, int_bore)                     
-        : de.fdelay1a(1024, frac_bore)                 
-        : fi.dcblocker                                 
-        : fi.lowpass(1, wall_cutoff)                   
-        : * (g_wall)                                   
+        de.delay(16384, int_bore)
+        : de.fdelay1a(1024, frac_bore)
+        : fi.dcblocker
+        : fi.lowpass(2, mode_cutoff)
+        : * (g_wall)
     );
 
     output = raw_wave;
 };
+
 

@@ -12,6 +12,8 @@ cal = hslider("calibration", 0.0, -1200.0, 1200.0, 0.01);
 // Performance controls
 t = button("gate");
 velocity = hslider("velocity", 0.8, 0.0, 1.0, 0.01);
+// fixgain.md step 6: 0.0372281 * max_gain 6.5072 = 0.2422507 (absolute scaling).
+// Step 7: gain slider restored to 0-1 with smoothing.
 gain = hslider("gain", 0.5, 0, 1, 0.01) : si.smooth(0.03);
 
 // Physical UI Sliders
@@ -28,7 +30,7 @@ rawEnv = en.asr(attackTime, 1.0, 0.05, t);
 breathEnv = rawEnv : si.smooth(0.995);
 releaseEnv = rawEnv : si.smooth(0.995);
 
-mode = 0;
-
-process = fluteModel(f, pressure, breathEnv, mouthPosition, loss, mode, cal) * releaseEnv * gain * 0.0372281;
+// jetDelBias / jetDelScale set the embouchure split: no fixed offset, and the jet
+// pre-delay scales fully with mouth position.
+process = fluteModel(f, pressure, breathEnv, mouthPosition, loss, cal, 0.0, 0.45) * releaseEnv * gain * 0.2422507;
 
