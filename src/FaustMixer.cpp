@@ -225,13 +225,40 @@ void FaustMixer::init(float sampleRate) {
     config.pUserData = this;
 
     ma_device* device = new ma_device();
-    ma_result res = ma_device_init(NULL, &config, device);
+
+    // iOS: the host app (audio_session plugin) owns the AVAudioSession. Build an
+    // explicit miniaudio context that does NOT reconfigure the category (default
+    // would be PlayAndRecord -> earpiece) and does NOT (de)activate the session,
+    // so the live route/format is never swapped under the running AudioUnit.
+    // The session must be configured + active by the host BEFORE mixer init.
+    ma_context* deviceContext = nullptr;
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+    {
+        ma_context* ctx = new ma_context();
+        ma_context_config ctxConfig = ma_context_config_init();
+        ctxConfig.coreaudio.sessionCategory = ma_ios_session_category_none;
+        ctxConfig.coreaudio.noAudioSessionActivate = MA_TRUE;
+        ctxConfig.coreaudio.noAudioSessionDeactivate = MA_TRUE;
+        if (ma_context_init(NULL, 0, &ctxConfig, ctx) == MA_SUCCESS) {
+            deviceContext = ctx;
+        } else {
+            delete ctx;
+        }
+    }
+#endif
+
+    ma_result res = ma_device_init(deviceContext, &config, device);
     if (res == MA_SUCCESS) {
         mStreamDevice = device;
+        mContext = deviceContext;
         mIsHardwareStarted = true;
         printf("[Native Trace] miniaudio hardware device initialized successfully. SR=%d\n", config.sampleRate);
     } else {
         delete device;
+        if (deviceContext) {
+            ma_context_uninit(deviceContext);
+            delete deviceContext;
+        }
         printf("[Native Trace] ERROR: Failed to init miniaudio (ma_result=%d). Entering Headless Mode.\n", res);
         mIsHardwareStarted = true; // Fallback to headless
     }
@@ -288,6 +315,11 @@ void FaustMixer::stop() {
     }
     ma_device_uninit(device);
     delete device;
+    if (mContext) {
+        ma_context_uninit(static_cast<ma_context*>(mContext));
+        delete static_cast<ma_context*>(mContext);
+        mContext = nullptr;
+    }
 #endif
     mStreamDevice = nullptr;
     mIsStreamActive = false;
@@ -322,6 +354,11 @@ void FaustMixer::close() {
         delete device;
 #endif
         mStreamDevice = nullptr;
+    }
+    if (mContext) {
+        ma_context_uninit(static_cast<ma_context*>(mContext));
+        delete static_cast<ma_context*>(mContext);
+        mContext = nullptr;
     }
     mIsHardwareStarted = false;
 }

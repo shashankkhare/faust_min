@@ -22,6 +22,7 @@
 
 #import <Flutter/Flutter.h>
 #import <Foundation/Foundation.h>
+#import <AVFAudio/AVFAudio.h>
 #include "../../src/faust_min.h"
 
 __attribute__((used)) static void* const faust_min_ios_force_link_ptrs[] = {
@@ -114,6 +115,7 @@ __attribute__((used)) static void* const faust_min_ios_force_link_ptrs[] = {
     // Shared asset base path (FaustEngine)
     (void*)faust_min_set_asset_base_path,
     (void*)faust_min_get_asset_base_path,
+    (void*)faust_min_get_device_sample_rate,
 
     // Tanpura (TTS voice guidance 1.0.8)
     (void*)tanpura_create,

@@ -351,6 +351,12 @@ DART_EXPORT int instrument_mapper_get_available(int* outArray, int maxElements);
 DART_EXPORT void faust_min_set_asset_base_path(const char* path);
 DART_EXPORT const char* faust_min_get_asset_base_path();
 
+// --- Device Sample Rate (iOS-only) ---
+// Returns the active AVAudioSession output sample rate on iOS so the host can
+// initialize the mixer to match the hardware and avoid an in-engine resampler.
+// Returns 0.0f on every non-iOS platform (caller falls back to its default).
+DART_EXPORT float faust_min_get_device_sample_rate(void);
+
 DART_EXPORT UMLSequence* sequence_create(const char* name, int instID, const char* umlDataString);
 DART_EXPORT void sequence_destroy(UMLSequence* seq);
 DART_EXPORT FaustInstrument* sequence_get_instrument(UMLSequence* seq);

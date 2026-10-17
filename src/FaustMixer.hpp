@@ -98,6 +98,7 @@ private:
 
     float mSampleRate = 0.0f;
     void* mStreamDevice = nullptr;
+    void* mContext = nullptr;  // Optional ma_context* (iOS owns AVAudioSession via host)
     bool mIsStreamActive = false;
     long mMasterSampleTime = 0;
     float mMasterGain = 1.0f;

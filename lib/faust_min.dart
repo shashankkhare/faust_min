@@ -301,6 +301,9 @@ typedef _dart_engine_set_asset_base_path = void Function(Pointer<Utf8>);
 typedef _c_engine_get_asset_base_path = Pointer<Utf8> Function();
 typedef _dart_engine_get_asset_base_path = Pointer<Utf8> Function();
 
+typedef _c_get_device_sample_rate = Float Function();
+typedef _dart_get_device_sample_rate = double Function();
+
 typedef _c_mapper_get_name = Pointer<Utf8> Function(Int32);
 typedef _dart_mapper_get_name = Pointer<Utf8> Function(int);
 
@@ -1457,6 +1460,10 @@ class FaustEngine {
       _dylib.lookupFunction<_c_engine_get_asset_base_path, _dart_engine_get_asset_base_path>(
           'faust_min_get_asset_base_path');
 
+  static late final _funcGetDeviceSampleRate =
+      _dylib.lookupFunction<_c_get_device_sample_rate, _dart_get_device_sample_rate>(
+          'faust_min_get_device_sample_rate');
+
   static bool _initialized = false;
   static SequenceOrchestrator? _orchestrator;
 
@@ -1476,6 +1483,22 @@ class FaustEngine {
     final ptr = _funcGetAssetBasePath();
     if (ptr == nullptr) return '';
     return ptr.toDartString();
+  }
+
+  /// Returns the active audio output sample rate reported by the platform.
+  ///
+  /// On iOS this is the live `AVAudioSession` sample rate and should be queried
+  /// after the session has been configured and activated; pass it to
+  /// [FaustMixer.init] so the engine matches the hardware and no internal
+  /// resampler is required. Returns `0.0` on every non-iOS platform (and if the
+  /// session is not yet active), in which case the caller falls back to its own
+  /// default rate.
+  static double getDeviceSampleRate() {
+    try {
+      return _funcGetDeviceSampleRate();
+    } catch (_) {
+      return 0.0;
+    }
   }
 
   /// Copies all instrument CSV tables and DSP assets from Flutter package assets

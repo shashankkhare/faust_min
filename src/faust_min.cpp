@@ -234,6 +234,22 @@ DART_EXPORT const char* faust_min_get_asset_base_path() {
     return gAssetBasePath.c_str();
 }
 
+// --- Device Sample Rate (iOS-only) ---
+#if defined(__APPLE__)
+#include <TargetConditionals.h>
+#endif
+
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+DART_EXPORT float faust_min_get_device_sample_rate(void) {
+    // Compiled as Objective-C++ because faust_min.cpp is #included by
+    // ios/Classes/faust_min.mm (which imports AVFAudio). The session must be
+    // configured + active before this reflects the real hardware rate.
+    return (float)[[AVAudioSession sharedInstance] sampleRate];
+}
+#else
+DART_EXPORT float faust_min_get_device_sample_rate(void) { return 0.0f; }
+#endif
+
 // --- FaustMixer Singleton Endpoints ---
 
 DART_EXPORT FaustMixer* mixer_get_instance() {
