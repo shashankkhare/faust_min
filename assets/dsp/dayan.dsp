@@ -154,4 +154,8 @@ dayan = syahiOut * syahiMix + maidanOut * maidanMix;
 dynamicDrive = ba.selectn(4, strike, 1.0, 2.0, 1.2, 1.3) * (1.0 + velocity * 0.2);
 
 // Final Stage
-process = (dayan * dynamicDrive * 4.0 : ma.tanh) * gain * 14.1637;
+// 25 Hz 2nd-order high-pass removes sub-sonic membrane energy that would
+// otherwise waste headroom and overdrive small speakers. The output trim is
+// scaled so that gain=1 / velocity=1 peaks below unity (no clipping).
+process = (dayan * dynamicDrive * 4.0 : fi.highpass(2, 25.0) : ma.tanh) * gain * 1.4
+        : min(0.99) : max(-0.99);
