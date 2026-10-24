@@ -816,10 +816,7 @@ void FaustInstrument::noteOn(float freq, float vel, float strikeVal) {
         setParamImmediate("freq", mFrequency, v); // Force jump immediately
     }
 
-    // Deterministic attack: flute (ID 10) always re-articulates the gate
-    // first, even though it is legato. Otherwise leftover bore state makes
-    // identical triggers randomly lock the fundamental or burst overtones.
-    if (!isLegato() || mInstrumentID == 10) {
+    if (!isLegato()) {
         noteOff(v);
         setParamImmediate("gate", 0.0f, v);
     }

@@ -316,7 +316,7 @@ int main(int argc, char* argv[]) {
                 "grid: 4\n"
                 "bpm: 70\n"
                 "basefreq: 444.0\n"
-                "instrument: flute\n"
+                "instrument: bansuri\n"
                 "notation: Hindustani\n"
                 "vibrato_depth: 0.02\n"
                 "vibrato_rate: 5.5\n"
