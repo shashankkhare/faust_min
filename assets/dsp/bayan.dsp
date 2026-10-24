@@ -200,5 +200,5 @@ dynamicDrive = ba.selectn(5, int_strike, 1.2, 1.5, 0.5, 1.0, 1.6);
 // 25 Hz 2nd-order high-pass removes sub-sonic membrane/bowl energy that would
 // otherwise waste headroom and overdrive small speakers. The output trim is
 // scaled so that gain=1 / velocity=1 peaks below unity (no clipping).
-process = (bayan_raw * dynamicDrive * 4.0 : fi.highpass(2, 25.0) : ma.tanh) * gain * 0.9
+process = (bayan_raw * dynamicDrive * 4.0 : fi.highpass(2, 25.0) : ma.tanh) * gain * 1.55
         : min(0.99) : max(-0.99);

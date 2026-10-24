@@ -216,7 +216,7 @@ class FaustDayanDSP : public dsp {
 	
 	virtual void compute(int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs) {
 		FAUSTFLOAT* output0 = outputs[0];
-		float fSlow0 = (1.39999998f * float(fHslider0));
+		float fSlow0 = (2.79999995f * float(fHslider0));
 		float fSlow1 = float(fHslider1);
 		float fSlow2 = (4.0f * ((0.200000003f * fSlow1) + 1.0f));
 		float fSlow3 = float(fHslider2);

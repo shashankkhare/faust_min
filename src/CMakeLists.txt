@@ -110,8 +110,10 @@ target_include_directories(faust_min_static PRIVATE
 )
 target_compile_definitions(faust_min_static PUBLIC DART_SHARED_LIB)
 
-add_dependencies(faust_min compile_faust_dsps)
-add_dependencies(faust_min_static compile_faust_dsps)
+if (FAUST_EXECUTABLE)
+    add_dependencies(faust_min compile_faust_dsps)
+    add_dependencies(faust_min_static compile_faust_dsps)
+endif()
 
 # Sync CSV lookup tables from plugin assets to main application assets post-build
 file(GLOB CSV_FILES "${CMAKE_CURRENT_SOURCE_DIR}/../assets/dsp/*.csv")
