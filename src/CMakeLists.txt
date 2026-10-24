@@ -8,7 +8,15 @@ if (ANDROID)
     include_directories("../deps/oboe/include")
 endif()
 
-# Automatically compile Faust .dsp files into C++ headers when their timestamps change
+# Check if the Faust compiler is available on the host system
+find_program(FAUST_EXECUTABLE NAMES faust)
+if (FAUST_EXECUTABLE)
+    message(STATUS "Faust compiler found: ${FAUST_EXECUTABLE} (DSP auto-compilation enabled)")
+else()
+    message(STATUS "Faust compiler not found: using pre-generated C++ headers")
+endif()
+
+# Automatically compile Faust .dsp files into C++ headers when compiler is available
 file(GLOB DSP_FILES "${CMAKE_CURRENT_SOURCE_DIR}/../assets/dsp/*.dsp")
 foreach(DSP_FILE ${DSP_FILES})
     get_filename_component(DSP_NAME ${DSP_FILE} NAME_WE)
@@ -25,15 +33,21 @@ foreach(DSP_FILE ${DSP_FILES})
     endif()
     set(HPP_FILE "${CMAKE_CURRENT_SOURCE_DIR}/Faust${CAP_NAME}DSP.hpp")
     
-    # All DSPs that import("fm.lib") depend on it
-    set(LIB_DEPS "")
-    list(APPEND LIB_DEPS "${CMAKE_CURRENT_SOURCE_DIR}/../assets/dsp/fm.lib")
-    add_custom_command(
-        OUTPUT ${HPP_FILE}
-        COMMAND faust -lang cpp -es 1 -single -ftz 1 -I ${CMAKE_CURRENT_SOURCE_DIR}/faust_arch -cn Faust${CAP_NAME}DSP ${DSP_FILE} -o ${HPP_FILE}
-        DEPENDS ${DSP_FILE} ${LIB_DEPS}
-        COMMENT "Auto-compiling Faust DSP: ${DSP_NAME} (-single) -> Faust${CAP_NAME}DSP.hpp"
-    )
+    if (FAUST_EXECUTABLE)
+        # All DSPs that import("fm.lib") depend on it
+        set(LIB_DEPS "")
+        list(APPEND LIB_DEPS "${CMAKE_CURRENT_SOURCE_DIR}/../assets/dsp/fm.lib")
+        add_custom_command(
+            OUTPUT ${HPP_FILE}
+            COMMAND ${FAUST_EXECUTABLE} -lang cpp -es 1 -single -ftz 1 -I ${CMAKE_CURRENT_SOURCE_DIR}/faust_arch -cn Faust${CAP_NAME}DSP ${DSP_FILE} -o ${HPP_FILE}
+            DEPENDS ${DSP_FILE} ${LIB_DEPS}
+            COMMENT "Auto-compiling Faust DSP: ${DSP_NAME} (-single) -> Faust${CAP_NAME}DSP.hpp"
+        )
+    else()
+        if (NOT EXISTS ${HPP_FILE})
+            message(FATAL_ERROR "Faust compiler not found and pre-generated header ${HPP_FILE} is missing!")
+        endif()
+    endif()
     list(APPEND FAUST_GENERATED_HEADERS ${HPP_FILE})
     
     # Establish direct dependency so that C++ object files recompile when the generated header changes
@@ -45,7 +59,9 @@ endforeach()
 
 # FaustInstrument.cpp includes ALL generated hpp headers — ensure it recompiles when any hpp changes
 set_source_files_properties("FaustInstrument.cpp" PROPERTIES OBJECT_DEPENDS "${FAUST_GENERATED_HEADERS}")
-add_custom_target(compile_faust_dsps DEPENDS ${FAUST_GENERATED_HEADERS})
+if (FAUST_EXECUTABLE)
+    add_custom_target(compile_faust_dsps DEPENDS ${FAUST_GENERATED_HEADERS})
+endif()
  
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
