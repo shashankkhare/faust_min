@@ -43,10 +43,10 @@ freq = ba.if(material_select == 0, 220, 800): si.smoo;
 bead_count = ba.if(material_select == 0, 150, 45);
 
 // Custom Rainmaker Physics:
-// White noise simulates thousands of tiny bead impacts.
+// Pink noise simulates thousands of tiny bead impacts with a natural warm spectrum.
 // We amplitude-modulate it with the tilt_energy to simulate the sliding rush of beads.
 // Then we pass it through a resonant bandpass filter tuned to 'freq' to simulate the hollow tube!
-bead_noise = no.noise * tilt_energy * (bead_count / 150.0);
+bead_noise = no.pink_noise * tilt_energy * (bead_count / 150.0);
 rainmaker_source = bead_noise : fi.resonbp(freq, 2.0, 1.0);
 
 

@@ -276,7 +276,7 @@ class FaustSeawaveDSP : public dsp {
 	
 	virtual void compute(int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs) {
 		FAUSTFLOAT* output0 = outputs[0];
-		float fSlow0 = (20.0f * float(fHslider0));
+		float fSlow0 = (14.0f * float(fHslider0));
 		float fSlow1 = (fConst2 * float(fHslider1));
 		float fSlow2 = (fConst13 * float(fButton0));
 		for (int i0 = 0; (i0 < count); i0 = (i0 + 1)) {

@@ -46,4 +46,4 @@ crash = crash_noise * crash_env * (0.4 + intensity * 0.3) * 0.25;
 
 mix = (body_clean + crash) * waveEnv;
 
-process = mix : fi.dcblocker : *(gate_switch) : *(gain * 20.0) : ma.tanh;
+process = mix : fi.dcblocker : *(gate_switch) : *(gain * 14.0) : ma.tanh;

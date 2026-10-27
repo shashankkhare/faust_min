@@ -33,15 +33,15 @@ cutoffMod = os.osc(0.052) * 0.2 + 1.0; // +/- 20% variation at 19s cycle
 rumbleCutoff = max(40.0, (80.0 + size * 220.0) * cutoffMod);
 bodyCutoff = max(300.0, (1000.0 + size * 1500.0) * cutoffMod);
 
-// 4. Multi-band Noise Generation
+// 4. Multi-band Noise Generation (Pink noise for organic water spectrum)
 // Low rumble (50–300 Hz)
-rumble = no.noise : fi.lowpass(3, rumbleCutoff) * (0.05 + size * 0.7);
+rumble = no.pink_noise : fi.lowpass(3, rumbleCutoff) * (0.05 + size * 0.7);
 
 // Main cascading body (200–2500 Hz)
-body = no.noise : fi.lowpass(2, bodyCutoff) : fi.highpass(2, 200.0) * 0.6;
+body = no.pink_noise : fi.lowpass(2, bodyCutoff) : fi.highpass(2, 200.0) * 0.6;
 
 // High mist/spray (3000 Hz+)
-spray = no.noise : fi.highpass(3, 3000.0) : fi.lowpass(1, 12000.0) * (0.15 + (1.0 - size) * 0.25);
+spray = no.pink_noise : fi.highpass(3, 3000.0) : fi.lowpass(1, 12000.0) * (0.15 + (1.0 - size) * 0.25);
 
 // 5. Combine bands and apply the dynamic surge envelope
 rawMix = (rumble + body + spray) * waterEnv;
