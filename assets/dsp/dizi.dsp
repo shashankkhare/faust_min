@@ -3,9 +3,8 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 // =============================================================================
 // === PHYSICAL MODEL DESIGN ===
 // Description: Chinese transverse bamboo flute (Dizi) with dimo membrane buzz.
-// Core waveguide modeled along bansuri lines (embouchure, jet turbulence, tube).
-// The dimo membrane adds a nasal, bright buzzing timbre via asymmetric nonlinear
-// waveshaping + bandpass filtering mixed back into the clean output.
+// Uses the calibrated precision flute waveguide (fm.lib) for perfect pitch tracking,
+// coupled with the dimo paper membrane nonlinear waveshaper and resonator.
 //
 // Parameters (Controls):
 //   - freq
@@ -14,127 +13,71 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 //   - gain
 //   - pressure
 //   - mouthPosition
-//   - glide
+//   - loss
+//   - calibration
 //   - vibrato
 //   - breathiness
 //   - buzzIntensity  (0-1, blend of dimo buzz vs clean tone)
+//   - buzzFrequency  (dimo membrane resonant frequency, default 2200 Hz)
 // =============================================================================
 import("stdfaust.lib");
+import("fm.lib");
 
 // Dizi range: D4 (293.66 Hz) to Bb6 (1864.66 Hz)
-fTarget = hslider("freq", 440.0, 293, 1865, 0.1);
+fTarget = hslider("freq", 440.0, 290, 2000, 0.1) : si.smooth(0.995);
+cal = hslider("calibration", 0.0, -1200.0, 1200.0, 0.01);
 velocity = hslider("velocity", 0.8, 0.0, 1.0, 0.01);
 t = button("gate");
 
 gain = hslider("gain", 1.0, 0.0, 3.0, 0.01) : si.smoo;
 
-pressureTarget = hslider("pressure", 0.8, 0.0, 1.0, 0.001) : si.smoo;
-mouthPosition  = hslider("mouthPosition", 0.5, 0.0, 1.0, 0.001) : si.smoo;
-buzzIntensity  = hslider("buzzIntensity", 0.4, 0.0, 1.0, 0.001) : si.smoo;
+pressure = hslider("pressure", 0.75, 0.0, 1.5, 0.001) : si.smoo;
+mouthPosition  = hslider("mouthPosition", 0.15, 0.01, 1.0, 0.001) : si.smoo;
+loss = hslider("loss", 0.02, 0.0, 1.0, 0.001) : si.smoo;
+
+buzzIntensity  = hslider("buzzIntensity", 0.35, 0.0, 1.0, 0.001) : si.smoo;
 buzzFrequency  = hslider("buzzFrequency", 2200.0, 800.0, 4000.0, 10.0) : si.smoo;
 
-glide = hslider("glide", 0.08, 0.0, 1.0, 0.001);
-
-fSmoothed = fTarget : si.smooth(ba.tau2pole(glide));
-
-vibrato = hslider("vibrato", 0.3, 0.0, 1.0, 0.01) : si.smoo;
+vibrato = hslider("vibrato", 0.0, 0.0, 1.0, 0.01) : si.smoo;
 vibratoRate = 5.5;
-vibratoDepth = vibrato * 0.06;
-vibratoLFO = os.osc(vibratoRate) * vibratoDepth * fSmoothed;
-actualFreq = fSmoothed + vibratoLFO;
+vibratoDepth = vibrato * 0.015;
+vibratoLFO = os.osc(vibratoRate) * vibratoDepth * fTarget;
+actualFreq = fTarget + vibratoLFO;
 
-attackTime = 0.005 + (1.0 - velocity) * 0.1;
+attackTime = 0.035;
 
-pressure = t * pressureTarget : min(1.0) : si.smooth(ba.tau2pole(attackTime));
+rawEnv = en.asr(attackTime, 1.0, 0.05, t);
+breathEnv = rawEnv : si.smooth(0.995);
+releaseEnv = rawEnv : si.smooth(0.995);
 
 breathIntensity = hslider("breathiness", 0.08, 0.0, 1.0, 0.01) : si.smoo;
 
-// Breath attack: decaying noise burst
-burstRelease = 0.08;
-poleRel = ba.tau2pole(burstRelease);
-burstScale = 0.08 / (1.0 - poleRel);
-tDel = t : mem;
-risingEdge = t - tDel : >(0);
-gateBurst = risingEdge * burstScale : si.smooth(poleRel);
+externalAir = no.pink_noise
+              : fi.highpass(2, 400.0)
+              : fi.lowpass(2, 3500.0)
+              : *(breathIntensity * 0.25 * breathEnv);
 
-filteredNoise = no.noise;
-
-actualBreath = breathIntensity + gateBurst;
-jetTurbulence = filteredNoise * actualBreath * 0.4;
-noisyPressure = pressure + (jetTurbulence * pressure);
-
-// =============================================================================
-// Core Dizi waveguide (same structure as bansuri — transverse flute)
-// =============================================================================
-diziModel(tubeLength, mouthPosition, pressure) = pm.endChain(diziChain) : fi.dcblocker
-with {
-    maxTubeLength = pm.maxLength;
-    tubeTuning = 0.27;
-    tLength = tubeLength + tubeTuning;
-    embouchurePos = 0.27 + (mouthPosition - 0.5) * 0.4;
-    tted = tLength * embouchurePos;
-    eted = tLength * (1.0 - embouchurePos);
-
-    bambooWallLoss = si.smooth(0.40);
-
-    diziHead = pm.lTermination(*(0.98), pm.basicBlock);
-    diziFoot = pm.rTermination(pm.basicBlock, *(0.97) : si.smooth(0.30) : bambooWallLoss);
-
-    diziChain = pm.chain(
-        diziHead :
-        pm.openTube(maxTubeLength, tted) :
-        pm.fluteEmbouchure(pressure) :
-        pm.openTube(maxTubeLength, eted) :
-        diziFoot :
-        pm.out
-    );
-};
+// Calibrated waveguide core (exact acoustic period tracking from fm.lib)
+fluteCore = fluteModel(actualFreq, pressure, breathEnv, mouthPosition, loss, cal, 0.0, 0.45);
 
 // =============================================================================
 // Dimo Membrane Buzz Model
 // =============================================================================
-//
-// The dimo is a thin paper membrane glued over a hole between the embouchure
-// and the finger holes. It vibrates asymmetrically with the tube's pressure
-// wave, adding a nasal buzzing quality rich in odd/even harmonics.
-//
-// We model this by:
-//   1. Tapping the pressure wave at the embouchure point
-//   2. Applying an asymmetric polynomial waveshaper
-//   3. Bandpass filtering centered on the dimo resonance (~2.2 kHz)
-//   4. Mixing the buzz back with the clean tube output
-//
-dimoQ = 4.0;            // resonance Q factor
-
-// Asymmetric waveshaper — models the membrane flapping against the hole rim
-// The asymmetry (bias + different gains for positive vs negative) creates
-// the characteristic nasal buzz rich in both even and odd harmonics.
+// The dimo is a thin membrane of reed tissue glued over a hole between the
+// embouchure and the finger holes.
+dimoQ = 4.0;
 waveshaper(x) = (x * (1.0 + buzzIntensity * 1.5)) +
                 (x * abs(x) * buzzIntensity * 2.0) +
                 (x * x * x * buzzIntensity * 3.0);
 
-// Extract the pressure signal from the waveguide (post-embouchure, pre-output)
-// We drive the dimo model from the main audio signal
 dimoDrive = fi.dcblocker;
-
-// Resonant bandpass filter at dimo resonance (controlled by buzzFrequency slider)
 dimoBP = fi.resonbp(buzzFrequency, dimoQ, 1.0);
-
-// Complete dimo processing chain
 dimoProcessor = dimoDrive : waveshaper : dimoBP : *(2.0);
 
-// =============================================================================
-// Main signal path
-// =============================================================================
-flute = diziModel(pm.f2l(actualFreq), mouthPosition, noisyPressure);
+buzzSignal = fluteCore : dimoProcessor;
+cleanSignal = fluteCore;
 
-// Split: clean tube output + dimo buzzed signal
-cleanSignal = flute;
-buzzSignal = flute : dimoProcessor;
-
-// Crossfade based on buzzIntensity
 buzzMix = buzzIntensity;
-output = (cleanSignal * (1.0 - buzzMix)) + (buzzSignal * buzzMix);
+output = (cleanSignal * (1.0 - buzzMix)) + (buzzSignal * buzzMix) + externalAir;
 
-// Add breath burst
-process = (output + no.pink_noise * gateBurst * 0.015) : *(gain * 1.0);
+process = output * releaseEnv * gain * 0.242;

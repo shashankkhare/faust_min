@@ -1,3 +1,12 @@
+## 0.7.2
+
+* **Chinese Ensemble Physical Models & Calibrations**:
+  * **Guzheng (ID 39)**: Tuned 4-strike plucked articulation engine with quadratic touch response, nonlinear tanh soft-saturation to eliminate square-wave clipping, and pitch stability.
+  * **Erhu (ID 40)**: Tuned bowed physical string model with python-skin membrane resonances (950 Hz, 1550 Hz, 2800 Hz) and body acoustics with robust fundamental projection across D4-D6.
+  * **Dizi (ID 53)**: Re-architected transverse bamboo flute waveguide onto the calibrated `fm.lib` core for exact acoustic period tracking, preserving the authentic Dimo reed tissue membrane buzzing model and resonator.
+  * **Chou Gong (ID 35) & Dagu (ID 43)**: Integrated traditional pitch-glide Chinese opera gong and grand ceremonial drum.
+  * **Sequence Orchestrator & Multi-Style Validation**: Added Traditional Chinese Ensemble (*High Mountain & Flowing Water* / 高山流水) preset test suite (Selection 14 in `test_sequence`).
+
 ## 0.7.1
 
 * **Flute low-register crack fixed (3rd-mode lock eliminated)**: The flute's two-tap waveguide with a cubic saturator had loop gain > 1 on the 3rd bore mode, so notes in the low register latched onto it instead of the fundamental (2.4-2.9x pitch jumps with a weak 3rd harmonic - the audible "crack"). The shared `fm.lib` model was reworked: single feedback tap, bounded `ma.tanh` valve, a `mode_cutoff` lowpass that tracks the *calibrated* frequency so mode selectivity is frequency-invariant, and a softer `jet_k` valve knee. Verified across 147 notes at 5-cent spacing from 147-220 Hz: **0 mode locks**.

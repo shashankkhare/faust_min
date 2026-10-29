@@ -1550,6 +1550,7 @@ void testGuzheng(FaustMixer& mixer, DSPExecutionType execType) {
     
     std::vector<double> freqs = getTestFreqsDouble(inst.get(), { 261.63, 392.00, 523.25, 783.99, 1046.50 });
     for (double freq : freqs) {
+        std::cout << "\n>>> [Playing: " << freq << " Hz] " << std::flush;
         inst->clearDiagnosticFreqs();
         inst->addDiagnosticFreq(freq);
         inst->clearDiagnosticLogs();
@@ -1558,7 +1559,6 @@ void testGuzheng(FaustMixer& mixer, DSPExecutionType execType) {
         inst->noteOff();
         usleep(300000);
         printEnergy(inst.get(), freq);
-        if (&freq != &freqs.back()) std::cout << " , ";
         std::cout << std::flush;
     }
     std::cout << std::endl;
@@ -1576,6 +1576,7 @@ void testErhu(FaustMixer& mixer, DSPExecutionType execType) {
     // Test the actual playable range of the Erhu (D4 to D6/D7)
     std::vector<double> freqs = getTestFreqsDouble(inst.get(), { 293.66, 440.00, 659.25, 880.00, 1174.66 });
     for (double freq : freqs) {
+        std::cout << "\n>>> [Playing: " << freq << " Hz] " << std::flush;
         inst->clearDiagnosticFreqs();
         inst->addDiagnosticFreq(freq);
         inst->clearDiagnosticLogs();
@@ -1584,7 +1585,6 @@ void testErhu(FaustMixer& mixer, DSPExecutionType execType) {
         inst->noteOff();
         usleep(400000);
         printEnergy(inst.get(), freq);
-        if (&freq != &freqs.back()) std::cout << " , ";
         std::cout << std::flush;
     }
     std::cout << std::endl;

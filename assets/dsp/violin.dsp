@@ -30,10 +30,10 @@ t = button("gate");
 vibratoRate = hslider("vibrato_rate", 5.5, 3.0, 8.0, 0.1) : si.smoo;
 vibratoDepth = hslider("vibrato_depth", 0.012, 0.0, 0.05, 0.001) : si.smoo;
 
-// Independent Physical Bowing Controls (Instantaneous response via si.smoo)
-bowPressureTarget = hslider("bowPressure", 0.45, 0.0, 1.0, 0.001) : si.smoo;
+// Independent Physical Bowing Controls (0.72 is near the bridge where fundamental speaks clearly)
+bowPressureTarget = hslider("bowPressure", 0.50, 0.0, 1.0, 0.001) : si.smoo;
 bowVelocityTarget = hslider("bowVelocity", 0.50, 0.0, 1.0, 0.001) : si.smoo;
-bowPositionTarget = hslider("bowPosition", 0.15, 0.0, 1.0, 0.001) : si.smoo;
+bowPositionTarget = hslider("bowPosition", 0.72, 0.0, 1.0, 0.001) : si.smoo;
 
 // Strike Playing Styles (0 = Détaché/Legato, 1 = Staccato, 2 = Sul Tasto, 3 = Sul Ponticello, 4 = Spiccato)
 strike = hslider("strike", 0.0, 0.0, 4.0, 1.0);
@@ -53,23 +53,23 @@ bowEnv = t : si.smooth(ba.tau2pole(ba.if(t, attackTime, releaseTime)));
 
 // Initial friction catch transient (bite) for Staccato / Spiccato strokes
 catchBite = (t : si.smooth(ba.tau2pole(0.015))) * (1.0 - (t : si.smooth(ba.tau2pole(0.040))));
-catchBoost = ba.if(isStaccato | isSpiccato, catchBite * 0.35, 0.0);
+catchBoost = ba.if(isStaccato | isSpiccato, catchBite * 0.20, 0.0);
 
 // Effective Bow Parameters per Style
-effBowPress = ba.if(isSulTasto, 0.22, ba.if(isSulPonticello, 0.65, ba.if(isStaccato, 0.55, bowPressureTarget))) + catchBoost;
-effBowVel   = ba.if(isSulTasto, 0.60, ba.if(isSpiccato, 0.40, ba.if(isStaccato, 0.70, bowVelocityTarget)));
-effBowPos   = ba.if(isSulTasto, 0.28, ba.if(isSulPonticello, 0.04, bowPositionTarget));
+effBowPress = ba.if(isSulTasto, 0.35, ba.if(isSulPonticello, 0.75, ba.if(isStaccato, 0.65, bowPressureTarget))) + catchBoost;
+effBowVel   = ba.if(isSulTasto, 0.40, ba.if(isSpiccato, 0.55, ba.if(isStaccato, 0.65, bowVelocityTarget)));
+effBowPos   = ba.if(isSulTasto, 0.50, ba.if(isSulPonticello, 0.88, bowPositionTarget));
 
-// Apply envelope modulation directly to physics engine drives
-bowVelocity = (effBowVel / 5.0) * bowEnv;
+// Apply envelope modulation directly to physics engine drives (full physical scale)
+bowVelocity = effBowVel * bowEnv;
 
 // Humanize bow pressure with micro-fluctuations (simulating rosin grip/slip and hand tremor)
-microPressure = no.lfnoise(12.0) * 0.06 * (effBowPress / 5.0) * bowEnv;
-bowPressure = ((effBowPress / 5.0) + microPressure) * bowEnv;
-bowPosition = effBowPos : si.smoo;
+microPressure = no.lfnoise(12.0) * 0.04 * effBowPress * bowEnv;
+bowPressure = (effBowPress + microPressure) * bowEnv;
+bowPosition = effBowPos;
 
 // Calibration: frequency-dependent string length offset to correct pitch drift
-calibration = hslider("calibration", 0.0, -0.1, 0.1, 0.001) : si.smoo;
+calibration = hslider("calibration", 0.0, -0.1, 0.1, 0.001);
 
 // Per-frequency energy flattening gain (calibrated via fix_instrument_gain.py)
 gain = hslider("gain", 1.0, 0, 1, 0.01) : si.smooth(0.03);

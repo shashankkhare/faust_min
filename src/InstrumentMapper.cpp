@@ -189,6 +189,7 @@ int InstrumentMapper::getPolyphonyVoices(int id) {
         case 21: return 6; // Acoustic Guitar
         case 22: return 6; // Electric Guitar
         case 23: return 4; // Bass
+        case 39: return 8; // Guzheng
         case 54: return 6; // Harmonium
         default: return 1; // Monophonic by default
     }
@@ -200,6 +201,7 @@ bool InstrumentMapper::isPolyphonic(int id) {
         case 11: return true; // Tanpura — drone, 4 voices
         case 21: return true; // Acoustic Guitar
         case 22: return true; // Electric Guitar
+        case 39: return true; // Guzheng
         case 44: return true; // Sarod — drone, let strings ring into next pluck
         case 54: return true; // Harmonium — polyphonic/drone behaviour
         default: return false;
@@ -295,6 +297,8 @@ std::string InstrumentMapper::getDSPPathForID(int id, const std::string& assetBa
         case 36: return base + "lagnga.dsp";
         case 37: return base + "dholak.dsp";
         case 38: return base + "dhol.dsp";
+        case 39: return base + "guzheng.dsp";
+        case 40: return base + "erhu.dsp";
         case 43: return base + "dagu.dsp";
         case 44: return base + "sarod.dsp";
         case 47: return base + "tibetanbowl.dsp";

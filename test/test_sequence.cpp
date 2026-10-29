@@ -279,7 +279,8 @@ int main(int argc, char* argv[]) {
             std::cout << " 11. Carnatic Classical — Raag Hamsadhwani (Violin, Mridangam, Ghatam)" << std::endl;
             std::cout << " 12. Last of the Mohicans — Promontory & Elk Hunt (Panflute, NAF, Rainmaker, Dhol)" << std::endl;
             std::cout << " 13. Vivaldi Spring Ensemble (20 Instruments Load Test)" << std::endl;
-            std::cout << ">>> Enter selection (1-13): ";
+            std::cout << " 14. Traditional Chinese Ensemble — High Mountain & Flowing Water (Guzheng, Erhu, Dizi, Dagu, ChouGong)" << std::endl;
+            std::cout << ">>> Enter selection (1-14): ";
             if (!(std::cin >> selection)) {
                 break;
             }
@@ -1280,11 +1281,154 @@ int main(int argc, char* argv[]) {
             group.melodyTrackWeight = 1.0f;
             group.percussionTrackWeight = 0.10f;
             group.backgroundTrackWeight = 0.45f;
+        } else if (selection == 14) {
+            group.name = "Traditional Chinese Ensemble — High Mountain & Flowing Water (高山流水)";
+
+            std::string umlChouGong =
+                "grid: 4\n"
+                "bpm: 76\n"
+                "basefreq: 120.0\n"
+                "instrument: chougong\n"
+                "notation: Western\n"
+                "loop: false\n\n"
+                // Bar 1: opening ceremonial gong strike with shimmering bloom
+                "8X............... "
+                // Bars 2-4: rest
+                "_............... _............... _............... "
+                // Bars 5-8: rest
+                "_............... _............... _............... _............... "
+                // Bars 9-12: rest
+                "_............... _............... _............... _............... "
+                // Bar 13: dramatic gong strike at transition
+                "7X............... "
+                // Bars 14-16: rest
+                "_............... _............... _............... "
+                // Bar 17: final crescendo gong
+                "9X............... _...............";
+
+            std::string umlDagu =
+                "grid: 4\n"
+                "bpm: 76\n"
+                "basefreq: 55.0\n"
+                "instrument: dagu\n"
+                "notation: Western\n"
+                "loop: false\n\n"
+                // Bars 1-2: silence during Guzheng harp sweep
+                "_............... _............... "
+                // Bars 3-4: ceremonial entry (strong center head booms)
+                "7X... _... _... _... 8X... _... _... _... "
+                // Bars 5-8: steady atmospheric cadence (accents on beats 1 and 3)
+                "6X... _... 5X... _... 7X... _... 5X... 5X... "
+                "6X... _... 5X... _... 8X... 6X... 7X... _... "
+                // Bars 9-12: flowing accompaniment
+                "6X... _... 5X... _... 7X... _... 5X... 5X... "
+                "6X... 5X... 6X... _... 8X... _... _... _... "
+                // Bars 13-16: driving rhythmic build into climax
+                "7X... 6X... 7X... 6X... 8X... 7X... 8X... _... "
+                "7X. 7X. 6X... 7X. 7X. 6X... 8X... 7X... 9X... _... "
+                // Bars 17-18: final ceremonial cadence
+                "8X... _... _... _... 9X...............";
+
+            std::string umlGuzheng =
+                "grid: 4\n"
+                "bpm: 76\n"
+                "instrument: guzheng\n"
+                "notation: Western\n"
+                "loop: false\n\n"
+                // Bars 1-2: Cascading pentatonic opening sweep (rolling up from D3 to D5)
+                "5D3. 5F#3. 5A3. 5B3. 6D4. 6E4. 6F#4. 6A4. 7B4. 7D5. 6B4. 6A4. 6F#4... _... "
+                "5D3. 5A3. 6D4. 6F#4. 7A4... 6F#4. 6E4. 6D4... 5B3. 5A3. 5F#3... _... "
+                // Bars 3-4: Polyphonic arpeggiated foundation as Dagu enters
+                "5D3... 6A3. 6D4. 6F#4... 5B3... 6D4. 6F#4. 7A4... "
+                "5D3... 6F#3. 6A3. 6D4... 5A3... 6D4. 6E4. 6F#4... "
+                // Bars 5-8: Flowing arpeggio accompaniment under Dizi & Erhu
+                "5D4. 5F#4. 5A4. 5F#4. 5E4. 5D4. 5B3. 5D4. 5F#4. 5A4. 6D5. 5A4. 5F#4... _... "
+                "5B3. 5D4. 5F#4. 5D4. 5A3. 5D4. 5E4. 5D4. 5D4. 5F#4. 5A4. 6D5. 6E5... _... "
+                "6D5. 6B4. 5A4. 5F#4. 5E4. 5D4. 5E4. 5F#4. 5D4. 5A3. 5B3. 5D4. 5D4... _... "
+                "5D3... 5A3. 5D4. 6F#4... 5A3... 5D4. 5F#4. 7A4... "
+                // Bars 9-12: Cascading ornamentation
+                "6F#4. 6A4. 7B4. 7D5. 6B4. 6A4. 6F#4. 6E4. 6D4. 6E4. 6F#4. 6A4. 7D5... _... "
+                "5D4. 5F#4. 5A4. 6D5. 6E5. 6D5. 6B4. 6A4. 6F#4. 6A4. 6B4. 6A4. 6F#4... _... "
+                "5B3. 5D4. 5F#4. 5A4. 6B4. 6A4. 6F#4. 6E4. 6D4. 5B3. 5A3. 5F#3. 5D3... _... "
+                "5D3. 5F#3. 5A3. 6D4. 6F#4. 7A4. 7B4. 8D5. 7B4. 7A4. 6F#4. 6E4. 6D4... _... "
+                // Bars 13-16: High-energy polyphonic plucked runs into climax
+                "6D4. 6F#4. 6A4. 7D5. 7E5. 7F#5. 7D5. 7B4. 7A4. 7F#4. 6E4. 6D4. 6F#4... _... "
+                "7F#4. 7A4. 8D5. 8E5. 8F#5. 8A5. 8F#5. 8E5. 8D5. 7B4. 7A4. 7F#4. 7D4... _... "
+                "7B4. 7D5. 7E5. 7F#5. 8A5. 7F#5. 7E5. 7D5. 7B4. 7A4. 6F#4. 6E4. 6D4... _... "
+                "6D4. 6E4. 6F#4. 6A4. 7B4. 8D5. 8E5. 8F#5. 9A5............... "
+                // Bars 17-18: Final chordal resonance
+                "6D3. 6A3. 7D4. 7F#4. 8D5............... _...............";
+
+            std::string umlDizi =
+                "grid: 4\n"
+                "bpm: 76\n"
+                "basefreq: 293.66\n"
+                "instrument: dizi\n"
+                "notation: Western\n"
+                "loop: false\n\n"
+                // Bars 1-4: Rest during Guzheng intro
+                "_............... _............... _............... _............... "
+                // Bars 5-8: Main soaring theme (Dizi introduces melody)
+                "6A4... 6B4. 6D5... 6E5. 6F#5... 6A5. 6F#5... "
+                "6E5. 6D5. 6B4. 6D5. 6E5... 6F#5. 6D5........... "
+                "6A4... 6B4. 6D5... 6E5. 6F#5. 6A5. 6B5. 6A5. 6F#5... "
+                "6E5. 6D5. 6B4. 6A4. 6B4... 6D5. 6D5........... "
+                // Bars 9-12: High octave ornamental flourishes
+                "7A5... 7B5. 8D6... 7B5. 7A5. 7F#5. 7A5. 7B5. 7A5... "
+                "7F#5. 7E5. 7D5. 7E5. 7F#5... 7A5. 7F#5........... "
+                "7A5. 7F#5. 7E5. 7D5. 6B4... 6D5. 6E5. 6F#5. 6A5. 6F#5. 6E5... "
+                "6D5. 6B4. 6A4. 6F#4. 6A4... 6D5. 6D5........... "
+                // Bars 13-16: Climax duet with Erhu
+                "7F#5... 7A5. 8D6... 8E6. 8F#6... 8E6. 8D6. 7B5. 7A5... "
+                "7B5... 8D6. 7B5. 7A5. 7F#5... 7A5. 7F#5........... "
+                "7A5. 7F#5. 7E5. 7D5. 7E5... 7F#5. 7A5... 7B5. 8D6... "
+                "8E6... 8F#6. 8D6........... _... "
+                // Bars 17-18: Final resolution note
+                "7D5............... _...............";
+
+            std::string umlErhu =
+                "grid: 4\n"
+                "bpm: 76\n"
+                "basefreq: 293.66\n"
+                "instrument: erhu\n"
+                "notation: Western\n"
+                "loop: false\n\n"
+                // Bars 1-4: Rest during Guzheng intro
+                "_............... _............... _............... _............... "
+                // Bars 5-8: Tender bowed harmony answering Dizi
+                "5F#4... 5A4. 5B4... 5D5. 6D5... 6E5. 6D5... "
+                "5B4. 5A4. 5F#4. 5A4. 5B4... 5D5. 5A4........... "
+                "5F#4... 5A4. 5B4... 5D5. 6D5. 6E5. 6F#5. 6E5. 6D5... "
+                "5B4. 5A4. 5F#4. 5E4. 5F#4... 5A4. 5D4........... "
+                // Bars 9-12: Erhu takes lead melody (expressive, singing)
+                "6D5... 6E5. 6F#5... 6E5. 6D5. 5B4. 5D5. 6E5. 6D5... "
+                "5B4. 5A4. 5F#4. 5A4. 5B4... 6D5. 5B4........... "
+                "6D5. 5B4. 5A4. 5F#4. 5E4... 5F#4. 5A4. 5B4. 6D5. 5B4. 5A4... "
+                "5F#4. 5E4. 5D4. 5E4. 5D4... 5F#4. 5D4........... "
+                // Bars 13-16: Passionate soaring climax
+                "6D5... 6F#5. 6A5... 6B5. 7D6... 6B5. 6A5. 6F#5. 6E5... "
+                "6F#5... 6A5. 6F#5. 6E5. 6D5... 6F#5. 6D5........... "
+                "6F#5. 6D5. 5B4. 5A4. 5B4... 6D5. 6E5... 6F#5. 6A5... "
+                "6B5... 7D6. 6A5........... _... "
+                // Bars 17-18: Gentle fading release
+                "6D4............... _...............";
+
+            group.sequences.push_back({"ChouGong", std::make_shared<UMLSequence>("ChouGong", 35, umlChouGong)});
+            group.sequences.push_back({"Dagu", std::make_shared<UMLSequence>("Dagu", 43, umlDagu)});
+            group.sequences.push_back({"Guzheng", std::make_shared<UMLSequence>("Guzheng", 39, umlGuzheng)});
+            // Dizi silenced for testing
+            // group.sequences.push_back({"Dizi", std::make_shared<UMLSequence>("Dizi", 53, umlDizi)});
+            group.sequences.push_back({"Erhu", std::make_shared<UMLSequence>("Erhu", 40, umlErhu)});
+
+            group.melodyTrackWeight = 1.0f;
+            group.percussionTrackWeight = 0.70f;
+            group.backgroundTrackWeight = 0.85f;
+            duration = -1;
         } else {
             std::cout << "Invalid selection. Please try again." << std::endl;
         }
 
-        if (selection >= 1 && selection <= 13 && selection != 9) {
+        if (selection >= 1 && selection <= 14 && selection != 9) {
             if (timeoutSec > 0) duration = timeoutSec;
             playSequenceGroup(mixer, orch, group, duration);
         }

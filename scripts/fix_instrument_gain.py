@@ -120,7 +120,7 @@ def binary_search_gain(instrument_id, freq, amp, target_energy, initial_gain,
                        path, header, rows, columns, gain_col, row):
     GAIN_MIN, GAIN_MAX = 0.01, 100.0
     PROBE_LIMIT = 15
-    BS_ITERS = 4
+    BS_ITERS = 6
 
     lo = target_energy * (1.0 - TARGET_TOLERANCE)
     hi = target_energy * (1.0 + TARGET_TOLERANCE)
@@ -139,8 +139,9 @@ def binary_search_gain(instrument_id, freq, amp, target_energy, initial_gain,
     if e < lo:
         print(f"    amp={amp:.1f}: gain={g:.4f} E={e:.6f} < target, probing up...")
         g_lo, e_lo = g, e
-        g_hi, e_hi = g, e
+        g_hi = g
         for step in range(PROBE_LIMIT):
+            g_prev = g_hi
             g_hi = min(g_hi * 2, GAIN_MAX)
             set_gain(row, gain_col, g_hi, path, header, rows, columns)
             e_hi = measure(instrument_id, freq, amp)
@@ -149,6 +150,7 @@ def binary_search_gain(instrument_id, freq, amp, target_energy, initial_gain,
                 return g_hi, False
             print(f"    amp={amp:.1f}: probe gain={g_hi:.4f} E={e_hi:.6f}")
             if e_hi >= lo:
+                g_lo = g_prev
                 break
         else:
             if e_hi < lo:
@@ -156,9 +158,10 @@ def binary_search_gain(instrument_id, freq, amp, target_energy, initial_gain,
                 return g_hi, False
     else:
         print(f"    amp={amp:.1f}: gain={g:.4f} E={e:.6f} > target, probing down...")
-        g_hi, e_hi = g, e
-        g_lo, e_lo = g, e
+        g_hi = g
+        g_lo = g
         for step in range(PROBE_LIMIT):
+            g_prev = g_lo
             g_lo = max(g_lo / 2, GAIN_MIN)
             set_gain(row, gain_col, g_lo, path, header, rows, columns)
             e_lo = measure(instrument_id, freq, amp)
@@ -167,6 +170,7 @@ def binary_search_gain(instrument_id, freq, amp, target_energy, initial_gain,
                 return g_lo, False
             print(f"    amp={amp:.1f}: probe gain={g_lo:.4f} E={e_lo:.6f}")
             if e_lo <= hi:
+                g_hi = g_prev
                 break
         else:
             if e_lo > hi:
