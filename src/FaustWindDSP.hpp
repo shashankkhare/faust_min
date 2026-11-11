@@ -119,7 +119,7 @@ class FaustWindDSP : public dsp {
 	}
 	
 	virtual void instanceResetUserInterface() {
-		fHslider0 = FAUSTFLOAT(0.5f);
+		fHslider0 = FAUSTFLOAT(0.25f);
 		fButton0 = FAUSTFLOAT(0.0f);
 	}
 	
@@ -164,7 +164,7 @@ class FaustWindDSP : public dsp {
 	
 	virtual void buildUserInterface(UI* ui_interface) {
 		ui_interface->openVerticalBox("wind");
-		ui_interface->addHorizontalSlider("gain", &fHslider0, FAUSTFLOAT(0.5f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
+		ui_interface->addHorizontalSlider("gain", &fHslider0, FAUSTFLOAT(0.25f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addButton("gate", &fButton0);
 		ui_interface->closeBox();
 	}
@@ -193,7 +193,7 @@ class FaustWindDSP : public dsp {
 			float fTemp7 = (((fTemp6 + 1.41421354f) / fTemp5) + 1.0f);
 			float fTempFTZ4 = (((fRec2[0] / fTemp4) + (fRec2[2] * (0.0f - (1.0f / fTemp4)))) - (((fRec1[2] * (((fTemp6 + -1.41421354f) / fTemp5) + 1.0f)) + (2.0f * (fRec1[1] * (1.0f - (1.0f / FaustWindDSP_faustpower2_f(fTemp5)))))) / fTemp7));
 			fRec1[0] = ((std::fabs(fTempFTZ4) > 1.17549435e-38f) ? fTempFTZ4 : 0.0f);
-			output0[i0] = FAUSTFLOAT((fSlow0 * std::max<float>(-1.0f, std::min<float>(1.0f, (1.5f * ((fRec0[0] * (fRec1[2] + (fRec1[0] + (2.0f * fRec1[1])))) / fTemp7))))));
+			output0[i0] = FAUSTFLOAT((fSlow0 * std::max<float>(-1.0f, std::min<float>(1.0f, (0.25f * ((fRec0[0] * (fRec1[2] + (fRec1[0] + (2.0f * fRec1[1])))) / fTemp7))))));
 			fRec0[1] = fRec0[0];
 			iRec3[1] = iRec3[0];
 			fRec4[1] = fRec4[0];

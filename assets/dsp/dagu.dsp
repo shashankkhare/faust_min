@@ -47,5 +47,5 @@ dagu = exc <: mode1 + mode2 + mode3 + mode4;
 // after the saturation block to keep the tail dark, muddy, and heavy.
 punch = dagu : *(4.0) : ef.cubicnl(0.1, 0.0) : fi.lowpass(2, 800) * 0.6;
 
-process = punch * gain;
+process = punch * (gain * 7.5);
 

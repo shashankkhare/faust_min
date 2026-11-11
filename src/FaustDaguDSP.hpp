@@ -129,7 +129,7 @@ class FaustDaguDSP : public dsp {
 		float fConst1 = std::tan((2513.27417f / fConst0));
 		float fConst2 = (1.0f / fConst1);
 		float fConst3 = (((fConst2 + 1.41421354f) / fConst1) + 1.0f);
-		fConst4 = (0.600000024f / fConst3);
+		fConst4 = (4.5f / fConst3);
 		float fConst5 = std::tan((942.477783f / fConst0));
 		float fConst6 = (1.0f / fConst5);
 		fConst7 = (1.0f / (((fConst6 + 1.41421354f) / fConst5) + 1.0f));

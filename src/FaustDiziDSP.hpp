@@ -460,7 +460,7 @@ class FaustDiziDSP : public dsp {
 			float fTemp18 = std::tan((fConst5 * fRec20[0]));
 			float fTemp19 = (1.0f / fTemp18);
 			float fTemp20 = (((fTemp19 + 0.25f) / fTemp18) + 1.0f);
-			float fTempFTZ17 = ((fRec19[0] * ((((1.5f * fRec17[0]) + 1.0f) + (2.0f * (fRec17[0] * std::fabs(fRec19[0])))) + (3.0f * (fRec17[0] * FaustDiziDSP_faustpower2_f(fRec19[0]))))) - (((fRec18[2] * (((fTemp19 + -0.25f) / fTemp18) + 1.0f)) + (2.0f * (fRec18[1] * (1.0f - (1.0f / FaustDiziDSP_faustpower2_f(fTemp18)))))) / fTemp20));
+			float fTempFTZ17 = (float(tanhf(float((fRec19[0] * ((((1.5f * fRec17[0]) + 1.0f) + (2.0f * (fRec17[0] * std::fabs(fRec19[0])))) + (3.0f * (fRec17[0] * FaustDiziDSP_faustpower2_f(fRec19[0])))))))) - (((fRec18[2] * (((fTemp19 + -0.25f) / fTemp18) + 1.0f)) + (2.0f * (fRec18[1] * (1.0f - (1.0f / FaustDiziDSP_faustpower2_f(fTemp18)))))) / fTemp20));
 			fRec18[0] = ((std::fabs(fTempFTZ17) > 1.17549435e-38f) ? fTempFTZ17 : 0.0f);
 			float fTemp21 = (fTemp18 * fTemp20);
 			float fTempFTZ18 = (fSlow14 + (fConst4 * fRec21[1]));
@@ -471,7 +471,7 @@ class FaustDiziDSP : public dsp {
 			fRec23[0] = ((std::fabs(fTempFTZ20) > 1.17549435e-38f) ? fTempFTZ20 : 0.0f);
 			float fTempFTZ21 = ((fConst14 * (((fConst16 * fRec23[0]) + (fConst19 * fRec23[1])) + (fConst16 * fRec23[2]))) - (fConst20 * ((fConst21 * fRec22[2]) + (fConst22 * fRec22[1]))));
 			fRec22[0] = ((std::fabs(fTempFTZ21) > 1.17549435e-38f) ? fTempFTZ21 : 0.0f);
-			output0[i0] = FAUSTFLOAT((0.241999999f * ((fRec0[0] * fRec3[0]) * (((fTemp17 * (1.0f - fRec17[0])) + (2.0f * (fRec17[0] * ((fRec18[0] / fTemp21) + (fRec18[2] * (0.0f - (1.0f / fTemp21))))))) + (fConst11 * ((fRec0[0] * fRec21[0]) * (fRec22[2] + (fRec22[0] + (2.0f * fRec22[1])))))))));
+			output0[i0] = FAUSTFLOAT((0.241999999f * ((fRec0[0] * fRec3[0]) * (((fTemp17 * (1.0f - fRec17[0])) + (fRec17[0] * ((fRec18[0] / fTemp21) + (fRec18[2] * (0.0f - (1.0f / fTemp21)))))) + (fConst11 * ((fRec0[0] * fRec21[0]) * (fRec22[2] + (fRec22[0] + (2.0f * fRec22[1])))))))));
 			fVec0[1] = fVec0[0];
 			fRec1[1] = fRec1[0];
 			iRec2[1] = iRec2[0];

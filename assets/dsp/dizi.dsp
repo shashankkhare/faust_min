@@ -72,7 +72,7 @@ waveshaper(x) = (x * (1.0 + buzzIntensity * 1.5)) +
 
 dimoDrive = fi.dcblocker;
 dimoBP = fi.resonbp(buzzFrequency, dimoQ, 1.0);
-dimoProcessor = dimoDrive : waveshaper : dimoBP : *(2.0);
+dimoProcessor = dimoDrive : waveshaper : ma.tanh : dimoBP;
 
 buzzSignal = fluteCore : dimoProcessor;
 cleanSignal = fluteCore;

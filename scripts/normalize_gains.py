@@ -27,5 +27,6 @@ def normalize(csv_file):
         
     print(f"{os.path.basename(csv_file)} max_gain: {max_gain:.4f}")
 
-normalize('assets/dsp/bayan.csv')
-normalize('assets/dsp/dayan.csv')
+# Example usage from past AI agents:
+# normalize('assets/dsp/bayan.csv')
+# normalize('assets/dsp/dayan.csv')

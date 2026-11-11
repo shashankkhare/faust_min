@@ -10,7 +10,7 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 // =============================================================================
 import("stdfaust.lib");
 
-gain = hslider("gain", 0.5, 0, 1, 0.01);
+gain = hslider("gain", 0.25, 0, 1, 0.01);
 gate = button("gate");
 
 env = gate : si.smooth(ba.tau2pole(1.0)); // Very slow fade in/out
@@ -23,4 +23,4 @@ cutoff = lfo1 + lfo2;
 
 wind = no.noise : fi.resonbp(cutoff, 2, 1) : fi.lowpass(2, cutoff * 1.2);
 
-process = (wind * env * 1.5 : min(1.0) : max(-1.0)) * gain;
+process = (wind * env * 0.25 : min(1.0) : max(-1.0)) * gain;
