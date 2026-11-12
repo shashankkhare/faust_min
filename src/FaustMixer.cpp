@@ -858,8 +858,8 @@ inline void FaustMixer::accumulateAllChannels(float* stereoOutput, int numFrames
             accumulateMemoryTrack(track->getSource(), track->renderBuf.data(), numFrames);
         }
 
-        // Apply weights and sum to master
-        float trackWeight = track->renderWeight * balanceMultiplier * mMasterGain * track->fadeGain;
+        // Apply weights and sum to master (mMasterGain is applied once in applyMasterGainAndLimiter)
+        float trackWeight = track->renderWeight * balanceMultiplier * track->fadeGain;
         
         if (track->fxDSP) {
             if (static_cast<int>(track->fxInL.size()) < numFrames) {
