@@ -258,8 +258,39 @@ protected:
 
     float mDSPGlideParam = 0.05f; // Store original portamento
     
-    // Tracks the current peak amplitude energy of each active voice
+    // Tracks the current peak amplitude energy and derived idle state of each voice
     std::vector<float> mVoiceEnergies;
+    std::vector<FAUSTFLOAT*> mVoiceGateZones;
+    std::vector<uint8_t> mVoiceSilentBlocks;
+
+    static constexpr float kSilenceThreshold = 1e-6f;
+    static constexpr uint8_t kSilenceHoldBlocks = 10;
+
+    inline bool isVoiceGateOpen(int voiceIndex) const {
+        if (voiceIndex >= 0 && voiceIndex < static_cast<int>(mVoiceGateZones.size()) &&
+            mVoiceGateZones[voiceIndex] != nullptr) {
+            return *mVoiceGateZones[voiceIndex] > 0.0f;
+        }
+        return mGateOpen;
+    }
+
+    inline bool isVoiceActive(int voiceIndex) const {
+        if (mVelGlideActive || mFreqGlideActive || mGainGlideActive) return true;
+        if (isVoiceGateOpen(voiceIndex)) return true;
+        return voiceIndex >= 0 &&
+               voiceIndex < static_cast<int>(mVoiceSilentBlocks.size()) &&
+               mVoiceSilentBlocks[voiceIndex] < kSilenceHoldBlocks;
+    }
+
+    inline void updateVoiceSilenceState(int voiceIndex) {
+        if (voiceIndex < 0 || voiceIndex >= static_cast<int>(mVoiceSilentBlocks.size())) return;
+        if (isVoiceGateOpen(voiceIndex) || mVelGlideActive || mFreqGlideActive || mGainGlideActive ||
+            mVoiceEnergies[voiceIndex] >= kSilenceThreshold) {
+            mVoiceSilentBlocks[voiceIndex] = 0;
+        } else if (mVoiceSilentBlocks[voiceIndex] < kSilenceHoldBlocks) {
+            mVoiceSilentBlocks[voiceIndex]++;
+        }
+    }
 
     // Running peak envelope tracker for smooth look-ahead normalization
     float mRunningPeakEnvelope = 0.0f;

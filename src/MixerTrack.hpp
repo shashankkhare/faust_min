@@ -130,6 +130,17 @@ public:
     std::unique_ptr<FaustTrackFxDSP> fxDSP;
     std::unique_ptr<MapUI>           fxUI;
     std::vector<float> fxInL, fxInR, fxOutL, fxOutR;
+
+    bool hasActiveFX() const {
+        if (!fxUI) return false;
+        const bool eqOn = (fxUI->getParamValue("bypass_eq") < 0.5f) &&
+            (fxUI->getParamValue("bass_db") != 0.0f ||
+             fxUI->getParamValue("mid_db") != 0.0f ||
+             fxUI->getParamValue("treble_db") != 0.0f);
+        const bool echoOn = (fxUI->getParamValue("bypass_echo") < 0.5f) &&
+            (fxUI->getParamValue("echo_mix") > 0.0f);
+        return eqOn || echoOn;
+    }
     
     // Render buffer where the mixer stores the aggregated audio for this track
     std::vector<float> renderBuf;

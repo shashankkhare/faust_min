@@ -234,7 +234,7 @@ DART_EXPORT const char* faust_min_get_asset_base_path() {
     return gAssetBasePath.c_str();
 }
 
-// --- Device Sample Rate (iOS-only) ---
+// --- Device Sample Rate ---
 #if defined(__APPLE__)
 #include <TargetConditionals.h>
 #endif
@@ -246,8 +246,13 @@ DART_EXPORT float faust_min_get_device_sample_rate(void) {
     // configured + active before this reflects the real hardware rate.
     return (float)[[AVAudioSession sharedInstance] sampleRate];
 }
+#elif defined(__ANDROID__) || defined(__linux__)
+DART_EXPORT float faust_min_get_device_sample_rate(void) {
+    // Android AAudio/AudioFlinger and Linux PipeWire/PulseAudio default natively to 48kHz.
+    return 48000.0f;
+}
 #else
-DART_EXPORT float faust_min_get_device_sample_rate(void) { return 0.0f; }
+DART_EXPORT float faust_min_get_device_sample_rate(void) { return 48000.0f; }
 #endif
 
 // --- FaustMixer Singleton Endpoints ---

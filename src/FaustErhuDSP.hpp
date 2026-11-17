@@ -510,7 +510,7 @@ class FaustErhuDSP : public dsp {
 		ui_interface->addHorizontalSlider("bowPressure", &fHslider8, FAUSTFLOAT(0.5f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addHorizontalSlider("bowVelocity", &fHslider7, FAUSTFLOAT(0.5f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addHorizontalSlider("calibration", &fHslider3, FAUSTFLOAT(0.0f), FAUSTFLOAT(-0.100000001f), FAUSTFLOAT(0.100000001f), FAUSTFLOAT(0.00100000005f));
-		ui_interface->addHorizontalSlider("freq", &fHslider4, FAUSTFLOAT(440.0f), FAUSTFLOAT(290.0f), FAUSTFLOAT(1400.0f), FAUSTFLOAT(0.100000001f));
+		ui_interface->addHorizontalSlider("freq", &fHslider4, FAUSTFLOAT(440.0f), FAUSTFLOAT(100.0f), FAUSTFLOAT(1400.0f), FAUSTFLOAT(0.100000001f));
 		ui_interface->addHorizontalSlider("gain", &fHslider0, FAUSTFLOAT(1.0f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
 		ui_interface->addButton("gate", &fButton0);
 		ui_interface->addHorizontalSlider("noiseLvl", &fHslider9, FAUSTFLOAT(0.0199999996f), FAUSTFLOAT(0.0f), FAUSTFLOAT(1.0f), FAUSTFLOAT(0.00999999978f));
@@ -522,7 +522,7 @@ class FaustErhuDSP : public dsp {
 	
 	virtual void compute(int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs) {
 		FAUSTFLOAT* output0 = outputs[0];
-		float fSlow0 = (1.25999999f * float(fHslider0));
+		float fSlow0 = (0.569267988f * float(fHslider0));
 		float fSlow1 = float(fHslider1);
 		int iSlow2 = (fSlow1 == 2.0f);
 		int iSlow3 = (fSlow1 == 3.0f);

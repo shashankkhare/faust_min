@@ -1487,18 +1487,16 @@ class FaustEngine {
 
   /// Returns the active audio output sample rate reported by the platform.
   ///
-  /// On iOS this is the live `AVAudioSession` sample rate and should be queried
-  /// after the session has been configured and activated; pass it to
-  /// [FaustMixer.init] so the engine matches the hardware and no internal
-  /// resampler is required. Returns `0.0` on every non-iOS platform (and if the
-  /// session is not yet active), in which case the caller falls back to its own
-  /// default rate.
+  /// Live hardware sample rate.
+  /// On iOS this reflects the active `AVAudioSession` hardware sample rate.
+  /// On Android, Linux, and other platforms it defaults to 48,000 Hz matching
+  /// the native HAL and C++ Faust engine.
   static double getDeviceSampleRate() {
     try {
-      return _funcGetDeviceSampleRate();
-    } catch (_) {
-      return 0.0;
-    }
+      final rate = _funcGetDeviceSampleRate();
+      if (rate > 0.0) return rate;
+    } catch (_) {}
+    return 48000.0;
   }
 
   /// Copies all instrument CSV tables and DSP assets from Flutter package assets

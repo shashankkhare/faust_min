@@ -216,9 +216,8 @@ void FaustMixer::init(float sampleRate) {
     config.playback.format = ma_format_f32;
     config.playback.channels = 2;
     config.sampleRate = (ma_uint32)mSampleRate;
-    config.periodSizeInMilliseconds = 40; // Replaces periodSizeInFrames to allow safe negotiation of a large buffer
-    //config.periodSizeInFrames = 2048;
-    //config.periods = 4;
+    config.periodSizeInMilliseconds = 80; // Large buffer headroom for glitch-free sleep/meditation playback
+    config.periods = 4;
     config.performanceProfile = ma_performance_profile_conservative;
     config.dataCallback = mixerMaCallback;
     config.stopCallback = mixerMaStopCallback;
@@ -413,25 +412,23 @@ void FaustMixer::workerLoop(int workerID) {
         // --- Steal and process work items ---
         int total = mWorkCount.load(std::memory_order_acquire);
         int idx;
+        bool notifyMain = false;
         while ((idx = mWorkHead.fetch_add(1, std::memory_order_acq_rel)) < total) {
             WorkItem& item = mWorkQueue[idx];
-            if (!item.valid) { mPendingTasks.fetch_sub(1, std::memory_order_release); continue; }
-
-            float* buf = mInstrumentBuffers[item.bufferSlot];
-            std::fill(buf, buf + item.numFrames * 2, 0.0f);
-
-            if (item.inst) {
+            if (item.valid && item.inst) {
+                float* buf = mInstrumentBuffers[item.bufferSlot];
+                std::fill(buf, buf + item.numFrames * 2, 0.0f);
                 item.inst->processRealtimeStream(buf, item.numFrames);
             }
-            mPendingTasks.fetch_sub(1, std::memory_order_release);
+            if (mPendingTasks.fetch_sub(1, std::memory_order_acq_rel) == 1) {
+                notifyMain = true;
+            }
         }
 
-        // --- If we finished the last task, wake the main audio thread ---
-        {
+        // --- Only the worker that finished the last task wakes the main audio thread ---
+        if (notifyMain) {
             std::lock_guard<std::mutex> lk(mWorkMutex);
-            if (mPendingTasks.load(std::memory_order_acquire) <= 0) {
-                mMainCV.notify_one();
-            }
+            mMainCV.notify_one();
         }
     }
 }
@@ -838,6 +835,7 @@ inline void FaustMixer::accumulateAllChannels(float* stereoOutput, int numFrames
     }
 
     // 3. Accumulate everything safely
+    bool anyReverbSend = false;
     for (auto& trackPtr : activeTracks) {
         MixerTrack* track = trackPtr.get();
         if (track->muted) continue;
@@ -861,7 +859,7 @@ inline void FaustMixer::accumulateAllChannels(float* stereoOutput, int numFrames
         // Apply weights and sum to master (mMasterGain is applied once in applyMasterGainAndLimiter)
         float trackWeight = track->renderWeight * balanceMultiplier * track->fadeGain;
         
-        if (track->fxDSP) {
+        if (track->fxDSP && track->hasActiveFX()) {
             if (static_cast<int>(track->fxInL.size()) < numFrames) {
                 track->fxInL.resize(numFrames);
                 track->fxInR.resize(numFrames);
@@ -872,16 +870,17 @@ inline void FaustMixer::accumulateAllChannels(float* stereoOutput, int numFrames
                 track->fxInL[i] = track->renderBuf[i * 2] * trackWeight;
                 track->fxInR[i] = track->renderBuf[i * 2 + 1] * trackWeight;
             }
-            track->fxDSP->compute(numFrames,
-                const_cast<float**>(std::vector<float*>{track->fxInL.data(), track->fxInR.data()}.data()),
-                std::vector<float*>{track->fxOutL.data(), track->fxOutR.data()}.data());
+            float* fxIn[2] = { track->fxInL.data(), track->fxInR.data() };
+            float* fxOut[2] = { track->fxOutL.data(), track->fxOutR.data() };
+            track->fxDSP->compute(numFrames, fxIn, fxOut);
                 
             for (int i = 0; i < numFrames; i++) {
                 stereoOutput[i * 2] += track->fxOutL[i];
                 stereoOutput[i * 2 + 1] += track->fxOutR[i];
             }
             
-            if (mMasterReverbDSP && track->reverbSend > 0.0f) {
+            if (mMasterReverbDSP && track->reverbSend > 0.0f && mFXReturnWeight > 0.0f) {
+                anyReverbSend = true;
                 float sendVol = track->reverbSend;
                 for (int i = 0; i < numFrames; i++) {
                     mReverbInL[i] += track->fxOutL[i] * sendVol;
@@ -889,11 +888,12 @@ inline void FaustMixer::accumulateAllChannels(float* stereoOutput, int numFrames
                 }
             }
         } else {
-            // Fast path
+            // Fast path (no active per-track EQ/Echo)
             for (int i = 0; i < numFrames * 2; i++) {
                 stereoOutput[i] += track->renderBuf[i] * trackWeight;
             }
-            if (mMasterReverbDSP && track->reverbSend > 0.0f) {
+            if (mMasterReverbDSP && track->reverbSend > 0.0f && mFXReturnWeight > 0.0f) {
+                anyReverbSend = true;
                 float sendVol = trackWeight * track->reverbSend;
                 for (int i = 0; i < numFrames; i++) {
                     mReverbInL[i] += track->renderBuf[i * 2] * sendVol;
@@ -903,10 +903,16 @@ inline void FaustMixer::accumulateAllChannels(float* stereoOutput, int numFrames
         }
     }
 
-    if (mMasterReverbDSP) {
-        mMasterReverbDSP->compute(numFrames,
-            std::vector<float*>{mReverbInL, mReverbInR}.data(),
-            std::vector<float*>{mReverbOutL, mReverbOutR}.data());
+    if (anyReverbSend) {
+        mReverbIdleBlocks = 0;
+    } else if (mReverbIdleBlocks < 25) {
+        mReverbIdleBlocks++;
+    }
+
+    if (mMasterReverbDSP && mFXReturnWeight > 0.0f && (anyReverbSend || mReverbIdleBlocks < 25)) {
+        float* revIn[2] = { mReverbInL, mReverbInR };
+        float* revOut[2] = { mReverbOutL, mReverbOutR };
+        mMasterReverbDSP->compute(numFrames, revIn, revOut);
             
         for (int i = 0; i < numFrames; i++) {
             stereoOutput[i * 2] += mReverbOutL[i] * mFXReturnWeight;
@@ -1050,7 +1056,7 @@ void FaustMixer::onAudioReady(float* stereoOutput, int numFrames) {
         // 2. Perform the actual sub-block accumulation
         float* subOutput = stereoOutput + (framesProcessed * 2);
         
-        std::lock_guard<std::recursive_mutex> lock(mRegistryMutex);
+        std::unique_lock<std::recursive_mutex> lock(mRegistryMutex);
 
         // Tick the timeline first so that events are applied immediately before rendering
         if (mPreRenderCallback) {
@@ -1061,6 +1067,7 @@ void FaustMixer::onAudioReady(float* stereoOutput, int numFrames) {
         processEnvelopes(mMasterSampleTime);
 
         float balanceMultiplier = computeAutoRecalibrationMultiplier();
+        lock.unlock(); // Release before worker dispatch/wait so Dart calls don't stall audio
         accumulateAllChannels(subOutput, framesThisSubBlock, balanceMultiplier);
 
         mMasterSampleTime += framesThisSubBlock;
@@ -1098,7 +1105,9 @@ inline void FaustMixer::applyMasterLimiter(float* buffer, int totalSamples) {
     for (int i = 0; i < totalSamples; ++i) {
         // Smooth mathematical soft-clipper to prevent digital clipping
         // and eliminate low-frequency envelope modulation distortion (crackling).
-        buffer[i] = std::tanh(buffer[i]);
+        if (buffer[i] != 0.0f) {
+            buffer[i] = std::tanh(buffer[i]);
+        }
     }
 }
 

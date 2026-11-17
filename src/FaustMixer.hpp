@@ -117,6 +117,7 @@ private:
     float* mReverbInR = nullptr;
     float* mReverbOutL = nullptr;
     float* mReverbOutR = nullptr;
+    int mReverbIdleBlocks = 25;
 
     // --- Worker Pool ---
     struct WorkItem {

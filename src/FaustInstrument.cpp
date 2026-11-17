@@ -153,6 +153,8 @@ void FaustInstrument::addVoice(dsp* newDSP) {
     mVoices.back()->buildUserInterface(mVoiceUIs.back().get());
     mVoiceFreqs.push_back(0.0f);
     mVoiceEnergies.push_back(0.0f);
+    mVoiceGateZones.push_back(mVoiceUIs.back()->getParamZone("gate"));
+    mVoiceSilentBlocks.push_back(kSilenceHoldBlocks);
 }
 
 void FaustInstrument::initializeVoices() {
@@ -240,6 +242,8 @@ void FaustInstrument::loadTargetDSP() {
     mNumVoices = InstrumentMapper::getPolyphonyVoices(mInstrumentID);
     mIsPolyphonic = (mNumVoices > 1);
     mVoiceEnergies.assign(mNumVoices, 0.0f);
+    mVoiceGateZones.clear();
+    mVoiceSilentBlocks.assign(mNumVoices, kSilenceHoldBlocks);
     mRunningPeakEnvelope = 0.0f;
     if (mIsPolyphonic && mVoiceScratchBuffer == nullptr) {
         mVoiceScratchBuffer = new float[InstrumentMapper::MAX_FRAMES_PER_BUFFER * 2];
@@ -1048,6 +1052,10 @@ void FaustInstrument::processRealtimeStream(float* buffer, int numFrames) {
 
     // --- MONOPHONIC PATH (Preserved Existing Logic) ---
     if (!mIsPolyphonic) {
+        if (mEventQueue.empty() && !isVoiceActive(0)) {
+            return;
+        }
+
         int framesPerSubBlock = 1;
         int framesProcessed = 0;
         int nOuts = mVoices[0]->getNumOutputs();
@@ -1103,6 +1111,7 @@ void FaustInstrument::processRealtimeStream(float* buffer, int numFrames) {
                     chunkBuffer[i * 2] += val;
                     chunkBuffer[i * 2 + 1] += val;
                 }
+                updateVoiceEnergyInline(0, mRenderBuffer, nullptr, remaining);
             } else if (nOuts == 2) {
                 for (int i = 0; i < remaining; ++i) {
                     float valL = outputs[0][i];
@@ -1111,7 +1120,9 @@ void FaustInstrument::processRealtimeStream(float* buffer, int numFrames) {
                     chunkBuffer[i * 2] += valL;
                     chunkBuffer[i * 2 + 1] += valR;
                 }
+                updateVoiceEnergyInline(0, outputs[0], outputs[1], remaining);
             }
+            updateVoiceSilenceState(0);
 
             if (mGateOpen) {
                 long prevElapsed = mElapsedFrames;
@@ -1213,8 +1224,13 @@ void FaustInstrument::processRealtimeStream(float* buffer, int numFrames) {
     if (remaining > 0) {
         processInternalGlides(remaining);
         float* chunkBuffer = buffer + (framesProcessed * 2);
+        bool anyVoiceRendered = false;
 
         for (int v = 0; v < mNumVoices; ++v) {
+            if (!isVoiceActive(v)) {
+                continue;
+            }
+            anyVoiceRendered = true;
             FAUSTFLOAT* outputs[2] = { mRenderBuffer, mRenderBuffer + remaining };
             mVoices[v]->compute(remaining, nullptr, outputs);
 
@@ -1236,9 +1252,12 @@ void FaustInstrument::processRealtimeStream(float* buffer, int numFrames) {
                 }
                 updateVoiceEnergyInline(v, outputs[0], outputs[1], remaining);
             }
+            updateVoiceSilenceState(v);
         }
 
-        normalizeBuffer(chunkBuffer, remaining);
+        if (anyVoiceRendered) {
+            normalizeBuffer(chunkBuffer, remaining);
+        }
 
         if (mGateOpen) {
             long prevElapsed = mElapsedFrames;

@@ -22,7 +22,7 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 // =============================================================================
 import("stdfaust.lib");
 
-freq = hslider("freq", 440, 290, 1400, 0.1);
+freq = hslider("freq", 440, 100, 1400, 0.1);
 gate = button("gate");
 
 // Expressive pitch controls
@@ -111,4 +111,4 @@ erhu_body(x) = x : hp_filter : buzz <: (skin_mode1 + skin_mode2 + skin_mode3 + (
 src = raw_string + bow_noise;
 body_out = erhu_body(src);
 
-process = body_out * (gain * 1.8) : ma.tanh;
+process = body_out * (gain * 0.81324) : ma.tanh;
