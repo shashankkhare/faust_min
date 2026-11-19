@@ -216,8 +216,9 @@ void FaustMixer::init(float sampleRate) {
     config.playback.format = ma_format_f32;
     config.playback.channels = 2;
     config.sampleRate = (ma_uint32)mSampleRate;
-    config.periodSizeInMilliseconds = 80; // Large buffer headroom for glitch-free sleep/meditation playback
-    config.periods = 4;
+    config.periodSizeInMilliseconds = 40; // Replaces periodSizeInFrames to allow safe negotiation of a large buffer
+    //config.periodSizeInFrames = 2048;
+    //config.periods = 4;
     config.performanceProfile = ma_performance_profile_conservative;
     config.dataCallback = mixerMaCallback;
     config.stopCallback = mixerMaStopCallback;
