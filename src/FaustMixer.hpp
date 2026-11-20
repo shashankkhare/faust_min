@@ -151,6 +151,15 @@ private:
     void stopWorkers();
     void workerLoop(int workerID);
 
+#if defined(__ANDROID__)
+    static constexpr int MAX_ADPF_WORKERS = 32;
+    std::atomic<int32_t> mWorkerTids[MAX_ADPF_WORKERS]{};
+    void* mAdpfSession = nullptr;
+    std::atomic<bool> mAdpfInitAttempted{false};
+    void initAdpfSessionIfReady(int numFrames);
+    void closeAdpfSession();
+#endif
+
     // --- I/O Thread ---
     std::thread mIOThread;
     std::atomic<bool> mIORunning{false};

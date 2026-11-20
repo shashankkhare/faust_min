@@ -73,8 +73,103 @@
 #include <sys/resource.h>
 #include <unistd.h>
 #endif
+#if defined(__ANDROID__)
+#include <dlfcn.h>    // Runtime ADPF (APerformanceHintManager) lookup for API 33+ without breaking minSdk 24
+#endif
 #if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>  // SetThreadPriority
+#endif
+
+#if defined(__ANDROID__)
+// Runtime-loaded Android ADPF (APerformanceHintManager) bindings.
+// Safe no-op on Android < 13 (API < 33) or devices without PerformanceHint HAL.
+namespace {
+struct AdpfApi {
+    using GetManagerFn = void* (*)();
+    using CreateSessionFn = void* (*)(void*, const int32_t*, size_t, int64_t);
+    using ReportDurationFn = int (*)(void*, int64_t);
+    using CloseSessionFn = void (*)(void*);
+
+    GetManagerFn getManager = nullptr;
+    CreateSessionFn createSession = nullptr;
+    ReportDurationFn reportDuration = nullptr;
+    CloseSessionFn closeSession = nullptr;
+    bool loaded = false;
+
+    static const AdpfApi& get() {
+        static AdpfApi api = []() {
+            AdpfApi a;
+            void* lib = dlopen("libandroid.so", RTLD_NOW | RTLD_LOCAL);
+            if (!lib) return a;
+            a.getManager = reinterpret_cast<GetManagerFn>(dlsym(lib, "APerformanceHint_getManager"));
+            a.createSession = reinterpret_cast<CreateSessionFn>(dlsym(lib, "APerformanceHint_createSession"));
+            a.reportDuration = reinterpret_cast<ReportDurationFn>(dlsym(lib, "APerformanceHint_reportActualWorkDuration"));
+            a.closeSession = reinterpret_cast<CloseSessionFn>(dlsym(lib, "APerformanceHint_closeSession"));
+            a.loaded = (a.getManager && a.createSession && a.reportDuration && a.closeSession);
+            return a;
+        }();
+        return api;
+    }
+};
+} // namespace
+
+void FaustMixer::initAdpfSessionIfReady(int numFrames) {
+    if (mAdpfInitAttempted.load(std::memory_order_acquire)) return;
+
+    const int count = std::min(mWorkerCount, MAX_ADPF_WORKERS);
+    for (int i = 0; i < count; ++i) {
+        if (mWorkerTids[i].load(std::memory_order_acquire) <= 0) {
+            return; // Wait until all worker threads have published their TIDs
+        }
+    }
+
+    if (mAdpfInitAttempted.exchange(true, std::memory_order_acq_rel)) return;
+
+    const auto& api = AdpfApi::get();
+    if (!api.loaded) {
+        FM_LOGI("[Mixer] ADPF unavailable on this Android API level (skipping)");
+        return;
+    }
+
+    void* mgr = api.getManager();
+    if (!mgr) {
+        FM_LOGI("[Mixer] ADPF manager returned null (skipping)");
+        return;
+    }
+
+    int32_t tids[MAX_ADPF_WORKERS + 1];
+    size_t tidCount = 0;
+    tids[tidCount++] = static_cast<int32_t>(gettid());
+    for (int i = 0; i < count; ++i) {
+        int32_t wt = mWorkerTids[i].load(std::memory_order_acquire);
+        if (wt > 0) tids[tidCount++] = wt;
+    }
+
+    const double sr = (mSampleRate > 0.0f) ? static_cast<double>(mSampleRate) : 48000.0;
+    int64_t targetNs = static_cast<int64_t>((static_cast<double>(numFrames) / sr) * 1e9 * 0.85);
+    if (targetNs < 1000000LL) targetNs = 1000000LL; // >= 1ms safety floor
+
+    mAdpfSession = api.createSession(mgr, tids, tidCount, targetNs);
+    if (mAdpfSession) {
+        FM_LOGI("[Mixer] ADPF session created: threads=%zu targetNs=%lld", tidCount, (long long)targetNs);
+    } else {
+        FM_LOGI("[Mixer] ADPF createSession returned null (non-fatal)");
+    }
+}
+
+void FaustMixer::closeAdpfSession() {
+    if (mAdpfSession) {
+        const auto& api = AdpfApi::get();
+        if (api.loaded) {
+            api.closeSession(mAdpfSession);
+        }
+        mAdpfSession = nullptr;
+    }
+    mAdpfInitAttempted.store(false, std::memory_order_release);
+    for (int i = 0; i < MAX_ADPF_WORKERS; ++i) {
+        mWorkerTids[i].store(0, std::memory_order_release);
+    }
+}
 #endif
 
 // --- Cross-platform audio worker thread priority elevation ---
@@ -324,6 +419,9 @@ void FaustMixer::stop() {
     mStreamDevice = nullptr;
     mIsStreamActive = false;
     mIsHardwareStarted = false;
+#if defined(__ANDROID__)
+    closeAdpfSession();
+#endif
 }
 
 void FaustMixer::setPreRenderCallback(PreRenderCallback callback, void* userData) {
@@ -396,6 +494,11 @@ void FaustMixer::workerLoop(int workerID) {
     // Elevate this thread to audio-class priority on all supported platforms.
     // This minimises OS scheduler preemption from other apps during audio blocks.
     elevateWorkerThreadPriority();
+#if defined(__ANDROID__)
+    if (workerID >= 0 && workerID < MAX_ADPF_WORKERS) {
+        mWorkerTids[workerID].store(static_cast<int32_t>(gettid()), std::memory_order_release);
+    }
+#endif
 
     uint64_t myEpoch = 0;
     static std::atomic<int> workDispatchCount{0};
@@ -1027,6 +1130,13 @@ void FaustMixer::processMasterSweep(long currentS) {
 void FaustMixer::onAudioReady(float* stereoOutput, int numFrames) {
     if (!stereoOutput || numFrames <= 0) return;
 
+#if defined(__ANDROID__)
+    const auto adpfStart = std::chrono::steady_clock::now();
+    if (!mAdpfInitAttempted.load(std::memory_order_acquire)) {
+        initAdpfSessionIfReady(numFrames);
+    }
+#endif
+
     if (!mFirstCallbackFired.exchange(true)) {
         FM_LOGI("[Mixer] FIRST onAudioReady() CALLBACK FIRED - audio pipeline is live, frames=%d", numFrames);
     }
@@ -1092,6 +1202,16 @@ void FaustMixer::onAudioReady(float* stereoOutput, int numFrames) {
         float rms = sqrtf(sumSq / (numFrames * 2));
         mWaveformCallback(rms, peakVal, mWaveformUserData);
     }
+
+#if defined(__ANDROID__)
+    if (mAdpfSession) {
+        const auto adpfEnd = std::chrono::steady_clock::now();
+        const int64_t actualNs = std::chrono::duration_cast<std::chrono::nanoseconds>(adpfEnd - adpfStart).count();
+        if (actualNs > 0) {
+            AdpfApi::get().reportDuration(mAdpfSession, actualNs);
+        }
+    }
+#endif
 }
 
 inline void FaustMixer::applyMasterGainAndLimiter(float* stereoOutput, int numFrames) {
