@@ -334,6 +334,12 @@ DART_EXPORT void mixer_master_fade_in(FaustMixer* mixer, float durationSeconds);
 DART_EXPORT void mixer_add_instrument_to_track(FaustMixer* mixer, int trackID, FaustInstrument* inst, float instWeight);
 DART_EXPORT void mixer_remove_instrument_from_track(FaustMixer* mixer, int trackID, FaustInstrument* inst);
 DART_EXPORT void mixer_master_fade_out(FaustMixer* mixer, float durationSeconds);
+DART_EXPORT void mixer_set_performance_profile(FaustMixer* mixer, int profile);
+DART_EXPORT void mixer_set_sync_mode(FaustMixer* mixer, int sync);
+DART_EXPORT void mixer_set_track_memory_mode(FaustMixer* mixer, int trackID, int enabled);
+DART_EXPORT void mixer_invalidate_memory_tracks(FaustMixer* mixer);
+DART_EXPORT void mixer_seek_track_memory(FaustMixer* mixer, int trackID, int frameOffset);
+DART_EXPORT void mixer_reset_track_playback(FaustMixer* mixer);
 
 
 // --- UMLSequence and FaustInstrument Flat Endpoints ---

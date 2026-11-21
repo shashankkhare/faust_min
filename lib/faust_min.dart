@@ -295,6 +295,24 @@ typedef _dart_orch_play_song = void Function(Pointer<NativeOrchestratorOpaque>, 
 typedef _c_orch_stop_song = Void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>);
 typedef _dart_orch_stop_song = void Function(Pointer<NativeOrchestratorOpaque>, Pointer<Utf8>);
 
+typedef _c_mixer_set_perf_profile = Void Function(Pointer<NativeMixerOpaque>, Int32);
+typedef _dart_mixer_set_perf_profile = void Function(Pointer<NativeMixerOpaque>, int);
+
+typedef _c_mixer_set_sync_mode = Void Function(Pointer<NativeMixerOpaque>, Int32);
+typedef _dart_mixer_set_sync_mode = void Function(Pointer<NativeMixerOpaque>, int);
+
+typedef _c_mixer_set_track_memory_mode = Void Function(Pointer<NativeMixerOpaque>, Int32, Int32);
+typedef _dart_mixer_set_track_memory_mode = void Function(Pointer<NativeMixerOpaque>, int, int);
+
+typedef _c_mixer_invalidate_memory_tracks = Void Function(Pointer<NativeMixerOpaque>);
+typedef _dart_mixer_invalidate_memory_tracks = void Function(Pointer<NativeMixerOpaque>);
+
+typedef _c_mixer_seek_track_memory = Void Function(Pointer<NativeMixerOpaque>, Int32, Int32);
+typedef _dart_mixer_seek_track_memory = void Function(Pointer<NativeMixerOpaque>, int, int);
+
+typedef _c_mixer_reset_track_playback = Void Function(Pointer<NativeMixerOpaque>);
+typedef _dart_mixer_reset_track_playback = void Function(Pointer<NativeMixerOpaque>);
+
 typedef _c_engine_set_asset_base_path = Void Function(Pointer<Utf8>);
 typedef _dart_engine_set_asset_base_path = void Function(Pointer<Utf8>);
 
@@ -1118,10 +1136,46 @@ class FaustMixer {
   static final _funcSetFXReturn = _dylib.lookupFunction<_c_mixer_set_fx_return, _dart_mixer_set_fx_return>('mixer_set_fx_return');
   static final _funcMasterFadeIn = _dylib.lookupFunction<_c_mixer_master_fade_in, _dart_mixer_master_fade_in>('mixer_master_fade_in');
   static final _funcMasterFadeOut = _dylib.lookupFunction<_c_mixer_master_fade_out, _dart_mixer_master_fade_out>('mixer_master_fade_out');
+  static final _funcSetPerfProfile = _dylib.lookupFunction<_c_mixer_set_perf_profile, _dart_mixer_set_perf_profile>('mixer_set_performance_profile');
+  static final _funcSetSyncMode = _dylib.lookupFunction<_c_mixer_set_sync_mode, _dart_mixer_set_sync_mode>('mixer_set_sync_mode');
+  static final _funcSetTrackMemoryMode = _dylib.lookupFunction<_c_mixer_set_track_memory_mode, _dart_mixer_set_track_memory_mode>('mixer_set_track_memory_mode');
+  static final _funcInvalidateMemoryTracks = _dylib.lookupFunction<_c_mixer_invalidate_memory_tracks, _dart_mixer_invalidate_memory_tracks>('mixer_invalidate_memory_tracks');
+  static final _funcSeekTrackMemory = _dylib.lookupFunction<_c_mixer_seek_track_memory, _dart_mixer_seek_track_memory>('mixer_seek_track_memory');
+  static final _funcResetTrackPlayback = _dylib.lookupFunction<_c_mixer_reset_track_playback, _dart_mixer_reset_track_playback>('mixer_reset_track_playback');
 
   FaustMixer._internal() {
     _handle = _funcGetInstance();
   }
+
+  /// Set the hardware audio latency/performance profile before calling [init].
+  ///
+  /// [profile]: `0` = low latency, `1` = conservative (default).
+  /// On platforms or backends that do not support latency profiles, the setting
+  /// is ignored with an informational log.
+  void setPerformanceProfile(int profile) => _funcSetPerfProfile(_handle, profile);
+
+  /// Set track start synchronization mode.
+  ///
+  /// When `sync` is `true` (default), all tracks wait until dirty `MemoryTrack`s
+  /// finish filling before starting together at sample 0. When `false`, tracks
+  /// start playing as soon as they are ready.
+  void setSyncMode(bool sync) => _funcSetSyncMode(_handle, sync ? 1 : 0);
+
+  /// Toggle a track between live `InstrumentTrack` mode (`false`) and
+  /// pre-rendered `MemoryTrack` mode (`true`).
+  void setTrackMemoryMode(int trackID, bool enabled) =>
+      _funcSetTrackMemoryMode(_handle, trackID, enabled ? 1 : 0);
+
+  /// Mark all `MemoryTrack`s dirty so they re-render from their active sequences
+  /// on the next playback pass.
+  void invalidateMemoryTracks() => _funcInvalidateMemoryTracks(_handle);
+
+  /// Seek a `MemoryTrack` to [frameOffset] (default 0 to rewind to the start).
+  void seekTrackMemory(int trackID, [int frameOffset = 0]) =>
+      _funcSeekTrackMemory(_handle, trackID, frameOffset);
+
+  /// Reset playback position to 0 on all `FileTrack` and `MemoryTrack` tracks.
+  void resetTrackPlayback() => _funcResetTrackPlayback(_handle);
 
   /// Initialise the mixer at the given hardware sample rate.
   ///

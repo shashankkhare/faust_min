@@ -31,6 +31,8 @@ public:
     }
 
     void init(float sampleRate);
+    void setPerformanceProfile(int profile); // 0 = low_latency, 1 = conservative (default)
+    void setSyncMode(bool sync);             // true = SYNC (default), false = ASYNC
     bool start();
     void stop();
     void close();
@@ -46,6 +48,10 @@ public:
     // Record & Play API
     bool setTrackPlaybackFile(int trackID, const char* wavPath);
     void clearTrackPlaybackFile(int trackID);
+    void setTrackMemoryMode(int trackID, bool enabled);
+    void invalidateMemoryTracks();
+    void setTrackMemoryBuffer(int trackID, std::vector<float>&& pcmData);
+    void seekTrackMemory(int trackID, size_t frameOffset = 0);
     void recordTracks(const char* baseDir);
     void stopRecordingAllTracks();
     void playRecordedTracks(const char* baseDir);
@@ -97,6 +103,7 @@ private:
     }
 
     float mSampleRate = 0.0f;
+    int mPerformanceProfile = 1; // 0 = low_latency, 1 = conservative
     void* mStreamDevice = nullptr;
     void* mContext = nullptr;  // Optional ma_context* (iOS owns AVAudioSession via host)
     bool mIsStreamActive = false;
@@ -164,6 +171,26 @@ private:
     std::thread mIOThread;
     std::atomic<bool> mIORunning{false};
     void ioThreadLoop();
+
+    // --- MemoryTrack Pull-Fill Thread (persistent, 0% CPU when idle) ---
+    struct MemoryFillJob {
+        int trackID;
+        std::vector<FaustInstrument*> instruments;
+    };
+    std::atomic<bool> mSyncMode{true};
+    std::thread mMemoryFillThread;
+    std::mutex mMemoryFillMutex;
+    std::condition_variable mMemoryFillCV;
+    std::atomic<bool> mMemoryFillRunning{false};
+    std::atomic<bool> mMemoryFillInProgress{false};
+    std::atomic<bool> mMemoryFillCancel{false};
+    std::atomic<uint64_t> mMemoryFillGen{0};
+    std::vector<MemoryFillJob> mPendingFillJobs;
+    uint64_t mPendingFillGen = 0;
+    bool mHasPendingFill = false;
+    void memoryFillLoop();
+    bool ensureMemoryTracksFilledLocked();
+    void cancelMemoryFill();
 
     // Clean modular helpers
     inline void enqueueInstrumentTrack(void* source, int numFrames, int& workCount, std::vector<int>& slotToTrackMap);

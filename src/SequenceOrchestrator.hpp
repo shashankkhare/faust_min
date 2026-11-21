@@ -254,6 +254,19 @@ public:
     void processBuffer(std::shared_ptr<ActiveSequence> seq, float* output, int numFrames);
 
     /**
+     * @brief Offline-render all currently playing sequences whose FaustInstrument*
+     *        is in [instruments] into an interleaved stereo float PCM buffer [outPcm].
+     *        Does not touch FaustMixer or any track state.
+     * @return true if rendered to completion (or no matching sequences), false if cancelled.
+     */
+    bool renderSequencesForInstruments(
+        const std::vector<FaustInstrument*>& instruments,
+        float sampleRate,
+        std::vector<float>& outPcm,
+        std::atomic<bool>& cancelFlag
+    );
+
+    /**
      * @brief Static bridge for the mixer's pre-render callback.
      */
     static int staticPreRender(int numFrames, void* userData) {
@@ -267,6 +280,7 @@ public:
 
 private:
     void updateTimeline(int numFrames);
+    void advanceSequence(std::shared_ptr<ActiveSequence> seqWrapper, int numFrames);
     void updateDSPParams(std::shared_ptr<ActiveSequence> seqWrapper, float freq, float vel, float strikeVal, const std::string& note);
     void updateDSPParamsVoice(std::shared_ptr<ActiveSequence> seqWrapper, float freq, float vel, float vowelVal);
     SequenceOrchestrator(const SequenceOrchestrator&) = delete;

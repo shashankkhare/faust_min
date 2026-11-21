@@ -170,11 +170,15 @@ public:
 
 // ---------------------------------------------------------------------------
 // MemoryTrack: plays pre-loaded in-memory float PCM. Zero I/O.
+// Attached instruments are rendered offline into pcmBuffer on demand.
 // ---------------------------------------------------------------------------
 class MemoryTrack : public MixerTrack {
 public:
-    std::vector<float> pcmData;  // interleaved stereo float PCM
-    size_t readPos = 0;
+    std::vector<TrackInstrument> instruments;
+    std::shared_ptr<std::vector<float>> pcmBuffer;  // interleaved stereo float PCM (swapped atomically)
+    std::atomic<size_t> readPos{0};
+    std::atomic<bool> ready{false};
+    std::atomic<bool> dirty{true};
 
     TrackType getType() const override { return TrackType::MEMORY; }
     void* getSource() override { return this; }

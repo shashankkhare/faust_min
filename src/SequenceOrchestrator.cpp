@@ -33,6 +33,7 @@
 #include "faust_min.h"
 #include "FaustLog.hpp"
 #include <chrono>
+#include <cmath>
 #if DEBUG_ORCHESTRATOR
 #define TLOG(msg) do { \
     auto __now = std::chrono::steady_clock::now(); \
@@ -622,218 +623,15 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
         if (!seqWrapper->isPlaying.load(std::memory_order_acquire)) {
             continue;
         }
-
         auto seq = seqWrapper->sequenceObj;
-        if (!seq || seq->totalDurationSamples <= 0) continue;
-
-        long framesRemaining = numFrames;
-        FaustInstrument* inst = seq->getFaustInstrument();
-        if (!inst) continue;
-
-        auto& events = seq->events;
-
-        while (framesRemaining > 0) {
-            long framesToProcess = framesRemaining;
-            // No local looping: just process up to the requested frames
-
-            // Evaluate all events that fall within this sub-block's sample range
-            while (seqWrapper->isPlaying && seqWrapper->nextEventIndex < events.size()) {
-                auto& ev = events[seqWrapper->nextEventIndex];
-                
-                long effectiveOffset = ev.sampleOffset;
-                if (mHumanize.load(std::memory_order_relaxed)) {
-                    effectiveOffset += getDeterministicJitter(seqWrapper->nextEventIndex, seqWrapper->sequenceObj->instrumentID);
-                }
-                
-                if (effectiveOffset <= seqWrapper->currentSample + framesToProcess) {
-                    if (ev.type == UMLEventType::PhonemeOn) {
-                        seqWrapper->currentPhoneme = ev.note;
-                    } else if (ev.type == UMLEventType::NoteOn) {
-                        updateDSPParams(seqWrapper, ev.frequency, ev.velocity, ev.strikeVal, ev.note);
-                        if (inst) {
-                            float durationSec = static_cast<float>(ev.durationSamples) / inst->getSampleRate();
-                            
-                            float baseVelocity = inst->getDefaultVelocity();
-                            if (seqWrapper->sequenceObj->initialParams.count("velocity")) {
-                                baseVelocity = seqWrapper->sequenceObj->initialParams["velocity"];
-                            }
-                            
-                            float dynamicVelocity;
-                            if (ev.velocity >= 0.0f) {
-                                dynamicVelocity = ev.velocity;
-                            } else if (seqWrapper->sequenceObj->initialParams.count("velocity")) {
-                                dynamicVelocity = baseVelocity;
-                            } else {
-                                float r = std::min(durationSec / 0.5f, 1.0f);
-                                dynamicVelocity = baseVelocity + (1.0f - baseVelocity) * (1.0f - r);
-                            }
-                            
-                            if (mHumanize.load(std::memory_order_relaxed)) {
-                                float vJitter = getDeterministicVelocityJitter(seqWrapper->nextEventIndex, seqWrapper->sequenceObj->instrumentID);
-                                dynamicVelocity *= (1.0f + vJitter);
-                                if (dynamicVelocity > 1.0f) dynamicVelocity = 1.0f;
-                                if (dynamicVelocity < 0.0f) dynamicVelocity = 0.0f;
-                            }
-                            
-                            float baseGlide = inst->getDSPGlideParam();
-                            if (seqWrapper->sequenceObj->initialParams.count("glide")) {
-                                baseGlide = seqWrapper->sequenceObj->initialParams["glide"];
-                            }
-
-                            float tenPercentTime = durationSec * 0.10f;
-                            float dynamicGlide = baseGlide;
-                            if (dynamicGlide > tenPercentTime) {
-                                dynamicGlide = tenPercentTime;
-                            }
-
-                            inst->setParamImmediate("glide", dynamicGlide, -1);
-                            inst->setParamImmediate("vibrato", 0.0f);
-                            inst->setParamImmediate("vibrato_depth", 0.0f);
-                            inst->setParamImmediate("vibrato_rate", 0.0f);
-                            if (seqWrapper->sequenceObj->initialParams.count("chikari_freq")) {
-                                inst->setParamImmediate("chikari_freq", seqWrapper->sequenceObj->initialParams["chikari_freq"], -1);
-                            }
-                            if (seqWrapper->sequenceObj->initialParams.count("chikari_freq1")) {
-                                inst->setParamImmediate("chikari_freq1", seqWrapper->sequenceObj->initialParams["chikari_freq1"], -1);
-                            }
-                            if (seqWrapper->sequenceObj->initialParams.count("chikari_freq2")) {
-                                inst->setParamImmediate("chikari_freq2", seqWrapper->sequenceObj->initialParams["chikari_freq2"], -1);
-                            }
-                            if (seqWrapper->sequenceObj->initialParams.count("freq_right")) {
-                                inst->setParamImmediate("freq_right", seqWrapper->sequenceObj->initialParams["freq_right"], -1);
-                            }
-                            if (seqWrapper->sequenceObj->initialParams.count("pressure")) {
-                                inst->setParamImmediate("pressure", seqWrapper->sequenceObj->initialParams["pressure"], -1);
-                            }
-                            if (seqWrapper->sequenceObj->initialParams.count("reed_octaves")) {
-                                inst->setParamImmediate("reed_octaves", seqWrapper->sequenceObj->initialParams["reed_octaves"], -1);
-                            }
-                            if (seqWrapper->sequenceObj->initialParams.count("jawari")) {
-                                inst->setParamImmediate("jawari", seqWrapper->sequenceObj->initialParams["jawari"], -1);
-                            } else if (seqWrapper->sequenceObj->baseFreq > 0 && seqWrapper->sequenceObj->instrumentID == 44) {
-                                inst->setParamImmediate("freq_right", seqWrapper->sequenceObj->baseFreq * 1.5f, -1);
-                            }
-                            {
-                                inst->noteOn(ev.frequency, dynamicVelocity, ev.strikeVal);
-#if DEBUG_ORCHESTRATOR
-                                printf("[DEBUG_ORCHESTRATOR] noteOn freq=%.2f vel=%.2f strike=%.1f seq=%s\n",
-                                       ev.frequency, dynamicVelocity, ev.strikeVal, seqWrapper->sequenceObj->name.c_str());
-                                fflush(stdout);
-#endif
-                            }
-                        }
-                    } else if (ev.type == UMLEventType::NoteOff) {
-                        if (inst) {
-                            if (inst->isLegato()) {
-                                inst->noteOff();
-#if DEBUG_ORCHESTRATOR
-                                printf("[DEBUG_ORCHESTRATOR] noteOff (legato close) seq=%s\n", seqWrapper->sequenceObj->name.c_str());
-                                fflush(stdout);
-#endif
-                            } else if (ev.frequency > 0.0f) {
-                                inst->noteOffTargetFreq(ev.frequency);
-#if DEBUG_ORCHESTRATOR
-                                printf("[DEBUG_ORCHESTRATOR] noteOff freq=%.2f seq=%s\n", ev.frequency, seqWrapper->sequenceObj->name.c_str());
-                                fflush(stdout);
-#endif
-                            } else {
-                                inst->noteOff();
-#if DEBUG_ORCHESTRATOR
-                                printf("[DEBUG_ORCHESTRATOR] noteOff (all) seq=%s\n", seqWrapper->sequenceObj->name.c_str());
-                                fflush(stdout);
-#endif
-                            }
-                        }
-                    } else if (ev.type == UMLEventType::FreqGlide) {
-                        if (inst) {
-                            float durSec = static_cast<float>(ev.durationSamples) / inst->getSampleRate();
-                            if (ev.targetFrequency > 0.0f) inst->frequencyGlide(ev.targetFrequency, durSec);
-                        }
-                    } else if (ev.type == UMLEventType::VelGlide) {
-                        if (inst) {
-                            float durSec = static_cast<float>(ev.durationSamples) / inst->getSampleRate();
-                            if (ev.targetVelocity >= 0.0f) inst->velocityGlide(ev.targetVelocity, durSec);
-                        }
-                    } else if (ev.type == UMLEventType::VibratoOn) {
-                        if (inst) {
-                            float vMaster = 0.6f;
-                            float vDepth = 0.03f;
-                            float vRate = 5.5f;
-                            if (seqWrapper->sequenceObj->initialParams.count("vibrato")) {
-                                vMaster = seqWrapper->sequenceObj->initialParams["vibrato"];
-                            }
-                            if (seqWrapper->sequenceObj->initialParams.count("vibrato_depth")) {
-                                vDepth = seqWrapper->sequenceObj->initialParams["vibrato_depth"];
-                            }
-                            if (seqWrapper->sequenceObj->initialParams.count("vibrato_rate")) {
-                                vRate = seqWrapper->sequenceObj->initialParams["vibrato_rate"];
-                            }
-                            
-                            if (mHumanize.load(std::memory_order_relaxed)) {
-                                float jitterOffset = ((float)rand() / RAND_MAX - 0.5f) * 0.05f; // +/- 2.5% depth jitter
-                                vDepth += vDepth * jitterOffset;
-                                
-                                float rateJitter = ((float)rand() / RAND_MAX - 0.5f) * 0.1f; // +/- 5% speed jitter
-                                vRate += vRate * rateJitter;
-                            }
-                            
-                            inst->setParam("vibrato", vMaster);
-                            inst->setParam("vibrato_depth", vDepth);
-                            inst->setParam("vibrato_rate", vRate);
-                        }
-                    } else if (ev.type == UMLEventType::PhonemeGlide) {
-                        if (inst) {
-                            seqWrapper->inPhonemeGlide = true;
-                            
-                            std::string tNote = ev.targetNote;
-                            // Map targetNote back to phoneme string if needed.
-                            if (UMLParser::vowelValues.count(tNote)) {
-                                float val = UMLParser::vowelValues.at(tNote);
-                                if (val == 0.0f) tNote = "aa";
-                                else if (val == 1.0f) tNote = "ee";
-                                else if (val == 2.0f) tNote = "ii";
-                                else if (val == 3.0f) tNote = "oo";
-                                else if (val == 4.0f) tNote = "uu";
-                            }
-                            
-                            seqWrapper->targetPhoneme = tNote;
-                            seqWrapper->phonemeGlideSamples = ev.durationSamples;
-                            seqWrapper->phonemeGlideSamplesElapsed = 0;
-                            
-                            if (mVoiceMatrix.count({seqWrapper->currentPhoneme, seqWrapper->targetPhoneme})) {
-                                seqWrapper->currentTransition = mVoiceMatrix[{seqWrapper->currentPhoneme, seqWrapper->targetPhoneme}];
-                            } else if (mVoiceMatrix.count({tNote, "NONE"})) {
-                                // Missing transition, snap to steady state target
-                                seqWrapper->currentTransition = mVoiceMatrix[{tNote, "NONE"}];
-                                // Set bezier points to linear
-                                seqWrapper->currentTransition.bez_p1x = 0.33f;
-                                seqWrapper->currentTransition.bez_p1y = 0.33f;
-                                seqWrapper->currentTransition.bez_p2x = 0.66f;
-                                seqWrapper->currentTransition.bez_p2y = 0.66f;
-                            }
-                            
-                            // Capture current params from instrument
-                            seqWrapper->startParams.clear();
-                            for (const auto& kv : seqWrapper->currentTransition.targetParams) {
-                                float val = inst->getParam(kv.first.c_str());
-                                seqWrapper->startParams[kv.first] = val;
-                            }
-                        }
-                    }
-                    seqWrapper->nextEventIndex++;
-                } else {
-                    break;
-                }
-            }
-            
-            if (seqWrapper->isPlaying && seqWrapper->inPhonemeGlide) {
-                processPhonemeGlide(seqWrapper, framesToProcess);
-            }
-
-            seqWrapper->currentSample += framesToProcess;
-            // No local looping: currentSample just keeps increasing until global master loop resets it
-            framesRemaining -= framesToProcess;
+        FaustInstrument* inst = seq ? seq->getFaustInstrument() : nullptr;
+        if (inst && inst->isInMemoryTrack()) {
+            // Audio is played from pre-rendered memory; still advance currentSample
+            // in lockstep so tick/note callbacks and finish detection remain accurate.
+            seqWrapper->currentSample += numFrames;
+            continue;
         }
+        advanceSequence(seqWrapper, numFrames);
     }
     // Fire tick callback with playhead position + active raw note index
     if (mTickCallback) {
@@ -874,6 +672,287 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
     }
 
     mMasterSampleCount += numFrames;
+}
+
+void SequenceOrchestrator::advanceSequence(std::shared_ptr<ActiveSequence> seqWrapper, int numFrames) {
+    auto seq = seqWrapper->sequenceObj;
+    if (!seq || seq->totalDurationSamples <= 0) return;
+
+    long framesRemaining = numFrames;
+    FaustInstrument* inst = seq->getFaustInstrument();
+    if (!inst) return;
+
+    auto& events = seq->events;
+
+    while (framesRemaining > 0) {
+        long framesToProcess = framesRemaining;
+
+        while (seqWrapper->isPlaying && seqWrapper->nextEventIndex < events.size()) {
+            auto& ev = events[seqWrapper->nextEventIndex];
+
+            long effectiveOffset = ev.sampleOffset;
+            if (mHumanize.load(std::memory_order_relaxed)) {
+                effectiveOffset += getDeterministicJitter(seqWrapper->nextEventIndex, seqWrapper->sequenceObj->instrumentID);
+            }
+
+            if (effectiveOffset <= seqWrapper->currentSample + framesToProcess) {
+                if (ev.type == UMLEventType::PhonemeOn) {
+                    seqWrapper->currentPhoneme = ev.note;
+                } else if (ev.type == UMLEventType::NoteOn) {
+                    updateDSPParams(seqWrapper, ev.frequency, ev.velocity, ev.strikeVal, ev.note);
+                    if (inst) {
+                        float durationSec = static_cast<float>(ev.durationSamples) / inst->getSampleRate();
+
+                        float baseVelocity = inst->getDefaultVelocity();
+                        if (seqWrapper->sequenceObj->initialParams.count("velocity")) {
+                            baseVelocity = seqWrapper->sequenceObj->initialParams["velocity"];
+                        }
+
+                        float dynamicVelocity;
+                        if (ev.velocity >= 0.0f) {
+                            dynamicVelocity = ev.velocity;
+                        } else if (seqWrapper->sequenceObj->initialParams.count("velocity")) {
+                            dynamicVelocity = baseVelocity;
+                        } else {
+                            float r = std::min(durationSec / 0.5f, 1.0f);
+                            dynamicVelocity = baseVelocity + (1.0f - baseVelocity) * (1.0f - r);
+                        }
+
+                        if (mHumanize.load(std::memory_order_relaxed)) {
+                            float vJitter = getDeterministicVelocityJitter(seqWrapper->nextEventIndex, seqWrapper->sequenceObj->instrumentID);
+                            dynamicVelocity *= (1.0f + vJitter);
+                            if (dynamicVelocity > 1.0f) dynamicVelocity = 1.0f;
+                            if (dynamicVelocity < 0.0f) dynamicVelocity = 0.0f;
+                        }
+
+                        float baseGlide = inst->getDSPGlideParam();
+                        if (seqWrapper->sequenceObj->initialParams.count("glide")) {
+                            baseGlide = seqWrapper->sequenceObj->initialParams["glide"];
+                        }
+
+                        float tenPercentTime = durationSec * 0.10f;
+                        float dynamicGlide = baseGlide;
+                        if (dynamicGlide > tenPercentTime) {
+                            dynamicGlide = tenPercentTime;
+                        }
+
+                        inst->setParamImmediate("glide", dynamicGlide, -1);
+                        inst->setParamImmediate("vibrato", 0.0f);
+                        inst->setParamImmediate("vibrato_depth", 0.0f);
+                        inst->setParamImmediate("vibrato_rate", 0.0f);
+                        if (seqWrapper->sequenceObj->initialParams.count("chikari_freq")) {
+                            inst->setParamImmediate("chikari_freq", seqWrapper->sequenceObj->initialParams["chikari_freq"], -1);
+                        }
+                        if (seqWrapper->sequenceObj->initialParams.count("chikari_freq1")) {
+                            inst->setParamImmediate("chikari_freq1", seqWrapper->sequenceObj->initialParams["chikari_freq1"], -1);
+                        }
+                        if (seqWrapper->sequenceObj->initialParams.count("chikari_freq2")) {
+                            inst->setParamImmediate("chikari_freq2", seqWrapper->sequenceObj->initialParams["chikari_freq2"], -1);
+                        }
+                        if (seqWrapper->sequenceObj->initialParams.count("freq_right")) {
+                            inst->setParamImmediate("freq_right", seqWrapper->sequenceObj->initialParams["freq_right"], -1);
+                        }
+                        if (seqWrapper->sequenceObj->initialParams.count("pressure")) {
+                            inst->setParamImmediate("pressure", seqWrapper->sequenceObj->initialParams["pressure"], -1);
+                        }
+                        if (seqWrapper->sequenceObj->initialParams.count("reed_octaves")) {
+                            inst->setParamImmediate("reed_octaves", seqWrapper->sequenceObj->initialParams["reed_octaves"], -1);
+                        }
+                        if (seqWrapper->sequenceObj->initialParams.count("jawari")) {
+                            inst->setParamImmediate("jawari", seqWrapper->sequenceObj->initialParams["jawari"], -1);
+                        } else if (seqWrapper->sequenceObj->baseFreq > 0 && seqWrapper->sequenceObj->instrumentID == 44) {
+                            inst->setParamImmediate("freq_right", seqWrapper->sequenceObj->baseFreq * 1.5f, -1);
+                        }
+                        {
+                            inst->noteOn(ev.frequency, dynamicVelocity, ev.strikeVal);
+#if DEBUG_ORCHESTRATOR
+                            printf("[DEBUG_ORCHESTRATOR] noteOn freq=%.2f vel=%.2f strike=%.1f seq=%s\n",
+                                   ev.frequency, dynamicVelocity, ev.strikeVal, seqWrapper->sequenceObj->name.c_str());
+                            fflush(stdout);
+#endif
+                        }
+                    }
+                } else if (ev.type == UMLEventType::NoteOff) {
+                    if (inst) {
+                        if (inst->isLegato()) {
+                            inst->noteOff();
+                        } else if (ev.frequency > 0.0f) {
+                            inst->noteOffTargetFreq(ev.frequency);
+                        } else {
+                            inst->noteOff();
+                        }
+                    }
+                } else if (ev.type == UMLEventType::FreqGlide) {
+                    if (inst) {
+                        float durSec = static_cast<float>(ev.durationSamples) / inst->getSampleRate();
+                        if (ev.targetFrequency > 0.0f) inst->frequencyGlide(ev.targetFrequency, durSec);
+                    }
+                } else if (ev.type == UMLEventType::VelGlide) {
+                    if (inst) {
+                        float durSec = static_cast<float>(ev.durationSamples) / inst->getSampleRate();
+                        if (ev.targetVelocity >= 0.0f) inst->velocityGlide(ev.targetVelocity, durSec);
+                    }
+                } else if (ev.type == UMLEventType::VibratoOn) {
+                    if (inst) {
+                        float vMaster = 0.6f;
+                        float vDepth = 0.03f;
+                        float vRate = 5.5f;
+                        if (seqWrapper->sequenceObj->initialParams.count("vibrato")) {
+                            vMaster = seqWrapper->sequenceObj->initialParams["vibrato"];
+                        }
+                        if (seqWrapper->sequenceObj->initialParams.count("vibrato_depth")) {
+                            vDepth = seqWrapper->sequenceObj->initialParams["vibrato_depth"];
+                        }
+                        if (seqWrapper->sequenceObj->initialParams.count("vibrato_rate")) {
+                            vRate = seqWrapper->sequenceObj->initialParams["vibrato_rate"];
+                        }
+
+                        if (mHumanize.load(std::memory_order_relaxed)) {
+                            float jitterOffset = ((float)rand() / RAND_MAX - 0.5f) * 0.05f;
+                            vDepth += vDepth * jitterOffset;
+
+                            float rateJitter = ((float)rand() / RAND_MAX - 0.5f) * 0.1f;
+                            vRate += vRate * rateJitter;
+                        }
+
+                        inst->setParam("vibrato", vMaster);
+                        inst->setParam("vibrato_depth", vDepth);
+                        inst->setParam("vibrato_rate", vRate);
+                    }
+                } else if (ev.type == UMLEventType::PhonemeGlide) {
+                    if (inst) {
+                        seqWrapper->inPhonemeGlide = true;
+
+                        std::string tNote = ev.targetNote;
+                        if (UMLParser::vowelValues.count(tNote)) {
+                            float val = UMLParser::vowelValues.at(tNote);
+                            if (val == 0.0f) tNote = "aa";
+                            else if (val == 1.0f) tNote = "ee";
+                            else if (val == 2.0f) tNote = "ii";
+                            else if (val == 3.0f) tNote = "oo";
+                            else if (val == 4.0f) tNote = "uu";
+                        }
+
+                        seqWrapper->targetPhoneme = tNote;
+                        seqWrapper->phonemeGlideSamples = ev.durationSamples;
+                        seqWrapper->phonemeGlideSamplesElapsed = 0;
+
+                        if (mVoiceMatrix.count({seqWrapper->currentPhoneme, seqWrapper->targetPhoneme})) {
+                            seqWrapper->currentTransition = mVoiceMatrix[{seqWrapper->currentPhoneme, seqWrapper->targetPhoneme}];
+                        } else if (mVoiceMatrix.count({tNote, "NONE"})) {
+                            seqWrapper->currentTransition = mVoiceMatrix[{tNote, "NONE"}];
+                            seqWrapper->currentTransition.bez_p1x = 0.33f;
+                            seqWrapper->currentTransition.bez_p1y = 0.33f;
+                            seqWrapper->currentTransition.bez_p2x = 0.66f;
+                            seqWrapper->currentTransition.bez_p2y = 0.66f;
+                        }
+
+                        seqWrapper->startParams.clear();
+                        for (const auto& kv : seqWrapper->currentTransition.targetParams) {
+                            float val = inst->getParam(kv.first.c_str());
+                            seqWrapper->startParams[kv.first] = val;
+                        }
+                    }
+                }
+                seqWrapper->nextEventIndex++;
+            } else {
+                break;
+            }
+        }
+
+        if (seqWrapper->isPlaying && seqWrapper->inPhonemeGlide) {
+            processPhonemeGlide(seqWrapper, framesToProcess);
+        }
+
+        seqWrapper->currentSample += framesToProcess;
+        framesRemaining -= framesToProcess;
+    }
+}
+
+bool SequenceOrchestrator::renderSequencesForInstruments(
+    const std::vector<FaustInstrument*>& instruments,
+    float sampleRate,
+    std::vector<float>& outPcm,
+    std::atomic<bool>& cancelFlag)
+{
+    outPcm.clear();
+    if (instruments.empty()) return true;
+    if (sampleRate <= 0.0f) sampleRate = InstrumentMapper::DEFAULT_SAMPLE_RATE;
+
+    std::vector<std::shared_ptr<UMLSequence>> seqObjs;
+    long maxDurationSamples = 0;
+    {
+        std::lock_guard<std::mutex> lock(mStateMutex);
+        for (const auto& pair : mActiveSequences) {
+            const auto& name = pair.first;
+            const auto& active = pair.second;
+            if (!active || !active->sequenceObj) continue;
+            const bool isPending = std::find(mPendingPlay.begin(), mPendingPlay.end(), name) != mPendingPlay.end();
+            if (!active->isPlaying.load(std::memory_order_acquire) && !isPending) {
+                continue;
+            }
+            FaustInstrument* inst = active->sequenceObj->getFaustInstrument();
+            if (!inst) continue;
+            if (std::find(instruments.begin(), instruments.end(), inst) != instruments.end()) {
+                seqObjs.push_back(active->sequenceObj);
+                if (active->sequenceObj->totalDurationSamples > maxDurationSamples) {
+                    maxDurationSamples = active->sequenceObj->totalDurationSamples;
+                }
+            }
+        }
+    }
+
+    if (seqObjs.empty() || maxDurationSamples <= 0) {
+        return true; // Nothing playing for these instruments (valid silent track)
+    }
+
+    const size_t totalFrames = static_cast<size_t>(maxDurationSamples);
+    outPcm.assign(totalFrames * 2, 0.0f);
+
+    constexpr int kChunk = 512;
+    float chunkBuf[kChunk * 2];
+
+    for (auto& seqObj : seqObjs) {
+        if (cancelFlag.load(std::memory_order_acquire)) {
+            outPcm.clear();
+            return false;
+        }
+
+        if (seqObj->isDirty) {
+            seqObj->prepare();
+        }
+        FaustInstrument* inst = seqObj->getFaustInstrument();
+        if (!inst) continue;
+
+        inst->clearVoices();
+
+        auto tempSeq = std::make_shared<ActiveSequence>();
+        tempSeq->sequenceObj = seqObj;
+        tempSeq->isPlaying.store(true, std::memory_order_relaxed);
+        tempSeq->currentSample = 0;
+        tempSeq->nextEventIndex = 0;
+
+        size_t rendered = 0;
+        while (rendered < totalFrames) {
+            if (cancelFlag.load(std::memory_order_acquire)) {
+                inst->clearVoices();
+                outPcm.clear();
+                return false;
+            }
+            const int n = static_cast<int>(std::min<size_t>(kChunk, totalFrames - rendered));
+            advanceSequence(tempSeq, n);
+            std::memset(chunkBuf, 0, static_cast<size_t>(n) * 2 * sizeof(float));
+            inst->processRealtimeStream(chunkBuf, n);
+            float* dst = outPcm.data() + rendered * 2;
+            for (int i = 0; i < n * 2; ++i) {
+                dst[i] += chunkBuf[i];
+            }
+            rendered += static_cast<size_t>(n);
+        }
+        inst->clearVoices();
+    }
+
+    return !cancelFlag.load(std::memory_order_acquire);
 }
 
 void SequenceOrchestrator::processBuffer(std::shared_ptr<ActiveSequence> seqWrapper, float* output, int numFrames) {

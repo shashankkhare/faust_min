@@ -28,6 +28,7 @@
  */
 
 #include "FaustMixer.hpp"
+#include "SequenceOrchestrator.hpp"
 
 #ifndef INTERP_LINEAR
 #define INTERP_LINEAR 0
@@ -247,6 +248,27 @@ FaustMixer::~FaustMixer() {
     }
 }
 
+void FaustMixer::setPerformanceProfile(int profile) {
+    std::lock_guard<std::recursive_mutex> lock(mRegistryMutex);
+    if (profile != 0 && profile != 1) {
+        FM_LOGI("[Mixer] setPerformanceProfile(%d) ignored: unsupported profile (expected 0=low_latency or 1=conservative)", profile);
+        return;
+    }
+    mPerformanceProfile = profile;
+    if (mIsHardwareStarted) {
+        FM_LOGI("[Mixer] setPerformanceProfile(%s) ignored for active stream; will apply on next init()",
+                mPerformanceProfile == 0 ? "low_latency" : "conservative");
+    } else {
+        FM_LOGI("[Mixer] Performance profile set to %s",
+                mPerformanceProfile == 0 ? "low_latency" : "conservative");
+    }
+}
+
+void FaustMixer::setSyncMode(bool sync) {
+    mSyncMode.store(sync, std::memory_order_release);
+    FM_LOGI("[Mixer] Track sync mode set to %s", sync ? "SYNC" : "ASYNC");
+}
+
 void FaustMixer::init(float sampleRate) {
     std::lock_guard<std::recursive_mutex> lock(mRegistryMutex);
     if (mIsHardwareStarted) return;
@@ -314,7 +336,9 @@ void FaustMixer::init(float sampleRate) {
     config.periodSizeInMilliseconds = 40; // Replaces periodSizeInFrames to allow safe negotiation of a large buffer
     //config.periodSizeInFrames = 2048;
     //config.periods = 4;
-    config.performanceProfile = ma_performance_profile_conservative;
+    config.performanceProfile = (mPerformanceProfile == 0)
+        ? ma_performance_profile_low_latency
+        : ma_performance_profile_conservative;
     config.dataCallback = mixerMaCallback;
     config.stopCallback = mixerMaStopCallback;
     config.pUserData = this;
@@ -347,7 +371,15 @@ void FaustMixer::init(float sampleRate) {
         mStreamDevice = device;
         mContext = deviceContext;
         mIsHardwareStarted = true;
-        printf("[Native Trace] miniaudio hardware device initialized successfully. SR=%d\n", config.sampleRate);
+        ma_backend backend = device->pContext ? device->pContext->backend : ma_backend_null;
+        const char* profStr = (mPerformanceProfile == 0) ? "low_latency" : "conservative";
+        if (backend == ma_backend_jack || backend == ma_backend_webaudio || backend == ma_backend_null) {
+            FM_LOGI("[Mixer] performanceProfile=%s ignored: backend '%s' does not support latency profiles",
+                    profStr, ma_get_backend_name(backend));
+        } else {
+            FM_LOGI("[Mixer] miniaudio initialized: backend=%s SR=%d profile=%s",
+                    ma_get_backend_name(backend), config.sampleRate, profStr);
+        }
     } else {
         delete device;
         if (deviceContext) {
@@ -468,6 +500,11 @@ void FaustMixer::startWorkers() {
 
         mWorkerThreads[i] = std::thread(&FaustMixer::workerLoop, this, i);
     }
+    if (!mMemoryFillThread.joinable()) {
+        mMemoryFillRunning.store(true, std::memory_order_release);
+        mMemoryFillCancel.store(false, std::memory_order_release);
+        mMemoryFillThread = std::thread(&FaustMixer::memoryFillLoop, this);
+    }
 }
 
 void FaustMixer::stopWorkers() {
@@ -481,6 +518,18 @@ void FaustMixer::stopWorkers() {
         if (t.joinable()) t.join();
     }
     mWorkerThreads.clear();
+
+    {
+        std::lock_guard<std::mutex> lk(mMemoryFillMutex);
+        mMemoryFillCancel.store(true, std::memory_order_release);
+        mMemoryFillRunning.store(false, std::memory_order_release);
+        mHasPendingFill = false;
+    }
+    mMemoryFillCV.notify_all();
+    if (mMemoryFillThread.joinable()) {
+        mMemoryFillThread.join();
+    }
+    mMemoryFillInProgress.store(false, std::memory_order_release);
 }
 
 /**
@@ -558,6 +607,13 @@ int FaustMixer::addTrack(float initialWeight) {
 
 void FaustMixer::removeTrack(int trackID) {
     std::lock_guard<std::recursive_mutex> lock(mRegistryMutex);
+    auto it = mTracks.find(trackID);
+    if (it != mTracks.end() && it->second && it->second->getType() == TrackType::MEMORY) {
+        auto* mt = static_cast<MemoryTrack*>(it->second.get());
+        for (auto& ti : mt->instruments) {
+            if (ti.instrument) ti.instrument->setInMemoryTrack(false);
+        }
+    }
     mTracks.erase(trackID);
     recalculateWeights();
     FM_LOGI("[Mixer] Removed Track ID: %d", trackID);
@@ -566,27 +622,56 @@ void FaustMixer::removeTrack(int trackID) {
 void FaustMixer::addInstrumentToTrack(int trackID, FaustInstrument* inst, float instWeight) {
     if (!inst) return;
     std::lock_guard<std::recursive_mutex> lock(mRegistryMutex);
-    if (mTracks.count(trackID) && mTracks[trackID]->getType() == TrackType::INSTRUMENT) {
-        auto* insts = static_cast<std::vector<TrackInstrument>*>(mTracks[trackID]->getSource());
+    auto it = mTracks.find(trackID);
+    if (it == mTracks.end() || !it->second) return;
+    if (it->second->getType() == TrackType::INSTRUMENT) {
+        auto* insts = static_cast<std::vector<TrackInstrument>*>(it->second->getSource());
         insts->push_back({inst, instWeight, 1.0f});
+        inst->setInMemoryTrack(false);
         recalculateWeights();
         FM_LOGI("[Mixer] Added Instrument ptr: %p to Track ID: %d with Weight: %.2f", (void*)inst, trackID, instWeight);
+    } else if (it->second->getType() == TrackType::MEMORY) {
+        auto* mt = static_cast<MemoryTrack*>(it->second.get());
+        mt->instruments.push_back({inst, instWeight, 1.0f});
+        inst->setInMemoryTrack(true);
+        mt->ready.store(false, std::memory_order_release);
+        mt->dirty.store(true, std::memory_order_release);
+        recalculateWeights();
+        FM_LOGI("[Mixer] Added Instrument ptr: %p to MemoryTrack ID: %d with Weight: %.2f", (void*)inst, trackID, instWeight);
     }
 }
 
 void FaustMixer::removeInstrumentFromTrack(int trackID, FaustInstrument* inst) {
     if (!inst) return;
     std::lock_guard<std::recursive_mutex> lock(mRegistryMutex);
-    if (mTracks.count(trackID) && mTracks[trackID]->getType() == TrackType::INSTRUMENT) {
-        auto* insts = static_cast<std::vector<TrackInstrument>*>(mTracks[trackID]->getSource());
+    auto it = mTracks.find(trackID);
+    if (it == mTracks.end() || !it->second) return;
+    if (it->second->getType() == TrackType::INSTRUMENT) {
+        auto* insts = static_cast<std::vector<TrackInstrument>*>(it->second->getSource());
         insts->erase(std::remove_if(insts->begin(), insts->end(),
             [inst](const TrackInstrument& ti) { return ti.instrument == inst; }), insts->end());
+        inst->setInMemoryTrack(false);
+        recalculateWeights();
+    } else if (it->second->getType() == TrackType::MEMORY) {
+        auto* mt = static_cast<MemoryTrack*>(it->second.get());
+        mt->instruments.erase(std::remove_if(mt->instruments.begin(), mt->instruments.end(),
+            [inst](const TrackInstrument& ti) { return ti.instrument == inst; }), mt->instruments.end());
+        inst->setInMemoryTrack(false);
         recalculateWeights();
     }
 }
 
 void FaustMixer::clearAll() {
+    cancelMemoryFill();
     std::lock_guard<std::recursive_mutex> lock(mRegistryMutex);
+    for (auto& pair : mTracks) {
+        if (pair.second && pair.second->getType() == TrackType::MEMORY) {
+            auto* mt = static_cast<MemoryTrack*>(pair.second.get());
+            for (auto& ti : mt->instruments) {
+                if (ti.instrument) ti.instrument->setInMemoryTrack(false);
+            }
+        }
+    }
     mTracks.clear();
     mNextTrackID = 1;
 }
@@ -874,7 +959,21 @@ inline void FaustMixer::accumulateFileTrack(void* source, float* renderBuf, int 
 
 inline void FaustMixer::accumulateMemoryTrack(void* source, float* renderBuf, int numFrames) {
     auto* memTrack = static_cast<MemoryTrack*>(source);
-    // Simple copy...
+    if (!memTrack || numFrames <= 0) return;
+    if (!memTrack->ready.load(std::memory_order_acquire)) return;
+
+    auto buf = std::atomic_load(&memTrack->pcmBuffer);
+    if (!buf || buf->empty()) return;
+
+    const size_t totalSamples = buf->size();
+    const size_t wantedSamples = static_cast<size_t>(numFrames) * 2;
+    const size_t pos = memTrack->readPos.load(std::memory_order_acquire);
+    if (pos < totalSamples) {
+        const size_t avail = totalSamples - pos;
+        const size_t toCopy = (wantedSamples < avail) ? wantedSamples : avail;
+        std::memcpy(renderBuf, buf->data() + pos, toCopy * sizeof(float));
+        memTrack->readPos.store(pos + toCopy, std::memory_order_release);
+    }
 }
 
 inline void FaustMixer::accumulateAllChannels(float* stereoOutput, int numFrames, float balanceMultiplier) {
@@ -1076,15 +1175,275 @@ void FaustMixer::clearTrackPlaybackFile(int trackID) {
     }
 }
 
+void FaustMixer::setTrackMemoryMode(int trackID, bool enabled) {
+    cancelMemoryFill();
+    std::lock_guard<std::recursive_mutex> lock(mRegistryMutex);
+    auto it = mTracks.find(trackID);
+    if (it == mTracks.end() || !it->second) return;
+
+    auto oldTrack = it->second;
+    if (enabled && oldTrack->getType() == TrackType::MEMORY) return;
+    if (!enabled && oldTrack->getType() == TrackType::INSTRUMENT) return;
+
+    if (enabled) {
+        auto mt = std::make_shared<MemoryTrack>();
+        mt->trackID = trackID;
+        mt->assignedWeight = oldTrack->assignedWeight;
+        mt->dynamicWeight = oldTrack->dynamicWeight;
+        mt->renderWeight = oldTrack->renderWeight;
+        mt->muted = oldTrack->muted;
+        mt->reverbSend = oldTrack->reverbSend;
+        mt->fxDSP = std::move(oldTrack->fxDSP);
+        mt->fxUI = std::move(oldTrack->fxUI);
+        mt->envelope = std::move(oldTrack->envelope);
+        mt->envelopeStartSample = oldTrack->envelopeStartSample;
+        mt->fadeGain = oldTrack->fadeGain;
+        mt->renderBuf = std::move(oldTrack->renderBuf);
+        if (oldTrack->getType() == TrackType::INSTRUMENT) {
+            auto* insts = static_cast<std::vector<TrackInstrument>*>(oldTrack->getSource());
+            mt->instruments = std::move(*insts);
+            for (auto& ti : mt->instruments) {
+                if (ti.instrument) ti.instrument->setInMemoryTrack(true);
+            }
+        }
+        mt->readPos.store(0, std::memory_order_release);
+        mt->ready.store(false, std::memory_order_release);
+        mt->dirty.store(true, std::memory_order_release);
+        mTracks[trackID] = std::move(mt);
+        FM_LOGI("[Mixer] Track %d switched to MEMORY mode", trackID);
+    } else {
+        auto itrack = std::make_shared<InstrumentTrack>();
+        itrack->trackID = trackID;
+        itrack->assignedWeight = oldTrack->assignedWeight;
+        itrack->dynamicWeight = oldTrack->dynamicWeight;
+        itrack->renderWeight = oldTrack->renderWeight;
+        itrack->muted = oldTrack->muted;
+        itrack->reverbSend = oldTrack->reverbSend;
+        itrack->fxDSP = std::move(oldTrack->fxDSP);
+        itrack->fxUI = std::move(oldTrack->fxUI);
+        itrack->envelope = std::move(oldTrack->envelope);
+        itrack->envelopeStartSample = oldTrack->envelopeStartSample;
+        itrack->fadeGain = oldTrack->fadeGain;
+        itrack->renderBuf = std::move(oldTrack->renderBuf);
+        if (oldTrack->getType() == TrackType::MEMORY) {
+            auto* mt = static_cast<MemoryTrack*>(oldTrack.get());
+            itrack->instruments = std::move(mt->instruments);
+            for (auto& ti : itrack->instruments) {
+                if (ti.instrument) ti.instrument->setInMemoryTrack(false);
+            }
+        }
+        mTracks[trackID] = std::move(itrack);
+        FM_LOGI("[Mixer] Track %d switched to INSTRUMENT mode", trackID);
+    }
+}
+
+void FaustMixer::invalidateMemoryTracks() {
+    cancelMemoryFill();
+    std::lock_guard<std::recursive_mutex> lock(mRegistryMutex);
+    for (auto& pair : mTracks) {
+        if (!pair.second || pair.second->getType() != TrackType::MEMORY) continue;
+        auto* mt = static_cast<MemoryTrack*>(pair.second.get());
+        mt->ready.store(false, std::memory_order_release);
+        mt->dirty.store(true, std::memory_order_release);
+        mt->readPos.store(0, std::memory_order_release);
+    }
+}
+
+void FaustMixer::cancelMemoryFill() {
+    mMemoryFillGen.fetch_add(1, std::memory_order_acq_rel);
+    mMemoryFillCancel.store(true, std::memory_order_release);
+    std::lock_guard<std::mutex> lk(mMemoryFillMutex);
+    mHasPendingFill = false;
+    mPendingFillJobs.clear();
+}
+
+bool FaustMixer::ensureMemoryTracksFilledLocked() {
+    // Called under mRegistryMutex from onAudioReady(). Never blocks!
+    std::vector<MemoryFillJob> jobs;
+    for (auto& pair : mTracks) {
+        if (!pair.second || pair.second->muted) continue;
+        if (pair.second->getType() != TrackType::MEMORY) continue;
+        auto* mt = static_cast<MemoryTrack*>(pair.second.get());
+        if (mt->instruments.empty()) continue;
+        if (mt->dirty.load(std::memory_order_acquire) && !mt->ready.load(std::memory_order_acquire)) {
+            MemoryFillJob job;
+            job.trackID = mt->trackID;
+            job.instruments.reserve(mt->instruments.size());
+            for (const auto& ti : mt->instruments) {
+                if (ti.instrument) job.instruments.push_back(ti.instrument);
+            }
+            if (!job.instruments.empty()) {
+                jobs.push_back(std::move(job));
+            }
+        }
+    }
+
+    if (jobs.empty()) return false;
+
+    if (!mMemoryFillInProgress.exchange(true, std::memory_order_acq_rel)) {
+        mMemoryFillCancel.store(false, std::memory_order_release);
+        const uint64_t gen = mMemoryFillGen.load(std::memory_order_acquire);
+        {
+            std::lock_guard<std::mutex> lk(mMemoryFillMutex);
+            mPendingFillJobs = std::move(jobs);
+            mPendingFillGen = gen;
+            mHasPendingFill = true;
+        }
+        mMemoryFillCV.notify_one();
+    }
+
+    // In SYNC mode (default), hold playback until all MemoryTracks finish filling.
+    // In ASYNC mode, proceed immediately (unready MemoryTracks output silence).
+    return mSyncMode.load(std::memory_order_acquire);
+}
+
+void FaustMixer::memoryFillLoop() {
+    while (true) {
+        std::vector<MemoryFillJob> jobs;
+        uint64_t gen = 0;
+        {
+            std::unique_lock<std::mutex> lk(mMemoryFillMutex);
+            mMemoryFillCV.wait(lk, [this]() {
+                return mHasPendingFill || !mMemoryFillRunning.load(std::memory_order_acquire);
+            });
+            if (!mMemoryFillRunning.load(std::memory_order_acquire)) break;
+            jobs = std::move(mPendingFillJobs);
+            gen = mPendingFillGen;
+            mHasPendingFill = false;
+        }
+
+        const bool isSync = mSyncMode.load(std::memory_order_acquire);
+        const float sr = (mSampleRate > 0.0f) ? mSampleRate : 48000.0f;
+        auto t0 = std::chrono::steady_clock::now();
+
+        std::vector<std::pair<int, std::shared_ptr<std::vector<float>>>> renderedResults;
+        if (isSync) {
+            renderedResults.reserve(jobs.size());
+        }
+
+        bool cancelled = false;
+        for (const auto& job : jobs) {
+            if (mMemoryFillCancel.load(std::memory_order_acquire) ||
+                mMemoryFillGen.load(std::memory_order_acquire) != gen) {
+                cancelled = true;
+                break;
+            }
+            std::vector<float> pcm;
+            bool ok = SequenceOrchestrator::getInstance().renderSequencesForInstruments(
+                job.instruments, sr, pcm, mMemoryFillCancel);
+            if (!ok || mMemoryFillCancel.load(std::memory_order_acquire) ||
+                mMemoryFillGen.load(std::memory_order_acquire) != gen) {
+                cancelled = true;
+                break;
+            }
+            auto bufPtr = std::make_shared<std::vector<float>>(std::move(pcm));
+            if (isSync) {
+                renderedResults.emplace_back(job.trackID, std::move(bufPtr));
+            } else {
+                // ASYNC mode: commit each track as soon as it finishes
+                std::lock_guard<std::recursive_mutex> lock(mRegistryMutex);
+                auto it = mTracks.find(job.trackID);
+                if (it != mTracks.end() && it->second && it->second->getType() == TrackType::MEMORY) {
+                    auto* mt = static_cast<MemoryTrack*>(it->second.get());
+                    std::atomic_store(&mt->pcmBuffer, bufPtr);
+                    mt->readPos.store(0, std::memory_order_release);
+                    mt->dirty.store(false, std::memory_order_release);
+                    mt->ready.store(true, std::memory_order_release);
+                }
+            }
+        }
+
+        if (!cancelled && isSync) {
+            std::lock_guard<std::recursive_mutex> lock(mRegistryMutex);
+            if (mMemoryFillGen.load(std::memory_order_acquire) == gen) {
+                for (auto& res : renderedResults) {
+                    auto it = mTracks.find(res.first);
+                    if (it != mTracks.end() && it->second && it->second->getType() == TrackType::MEMORY) {
+                        auto* mt = static_cast<MemoryTrack*>(it->second.get());
+                        std::atomic_store(&mt->pcmBuffer, res.second);
+                        mt->readPos.store(0, std::memory_order_release);
+                        mt->envelopeStartSample = mMasterSampleTime;
+                        mt->dirty.store(false, std::memory_order_release);
+                        mt->ready.store(true, std::memory_order_release);
+                    }
+                }
+            }
+        }
+
+        auto t1 = std::chrono::steady_clock::now();
+        double ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
+        FM_LOGI("[Mixer] MemoryTrack fill (%s): %zu tracks in %.0f ms%s",
+                isSync ? "SYNC" : "ASYNC", jobs.size(), ms,
+                cancelled ? " (cancelled)" : "");
+
+        mMemoryFillInProgress.store(false, std::memory_order_release);
+    }
+}
+
+void FaustMixer::setTrackMemoryBuffer(int trackID, std::vector<float>&& pcmData) {
+    std::lock_guard<std::recursive_mutex> lock(mRegistryMutex);
+    auto it = mTracks.find(trackID);
+    if (it == mTracks.end() || !it->second) return;
+
+    auto newBuf = std::make_shared<std::vector<float>>(std::move(pcmData));
+
+    if (it->second->getType() == TrackType::MEMORY) {
+        auto* mt = static_cast<MemoryTrack*>(it->second.get());
+        std::atomic_store(&mt->pcmBuffer, newBuf);
+        mt->readPos.store(0, std::memory_order_release);
+        mt->dirty.store(false, std::memory_order_release);
+        mt->ready.store(true, std::memory_order_release);
+        return;
+    }
+
+    auto oldTrack = it->second;
+    auto mt = std::make_shared<MemoryTrack>();
+    mt->trackID = trackID;
+    mt->assignedWeight = oldTrack->assignedWeight;
+    mt->dynamicWeight = oldTrack->dynamicWeight;
+    mt->renderWeight = oldTrack->renderWeight;
+    mt->muted = oldTrack->muted;
+    mt->reverbSend = oldTrack->reverbSend;
+    mt->fxDSP = std::move(oldTrack->fxDSP);
+    mt->fxUI = std::move(oldTrack->fxUI);
+    mt->envelope = std::move(oldTrack->envelope);
+    mt->envelopeStartSample = oldTrack->envelopeStartSample;
+    mt->fadeGain = oldTrack->fadeGain;
+    mt->renderBuf = std::move(oldTrack->renderBuf);
+    std::atomic_store(&mt->pcmBuffer, newBuf);
+    mt->readPos.store(0, std::memory_order_release);
+    mt->dirty.store(false, std::memory_order_release);
+    mt->ready.store(true, std::memory_order_release);
+
+    mTracks[trackID] = std::move(mt);
+}
+
+void FaustMixer::seekTrackMemory(int trackID, size_t frameOffset) {
+    std::lock_guard<std::recursive_mutex> lock(mRegistryMutex);
+    auto it = mTracks.find(trackID);
+    if (it == mTracks.end() || !it->second) return;
+    if (it->second->getType() == TrackType::MEMORY) {
+        auto* mt = static_cast<MemoryTrack*>(it->second.get());
+        auto buf = std::atomic_load(&mt->pcmBuffer);
+        const size_t total = buf ? buf->size() : 0;
+        const size_t sampleOffset = frameOffset * 2;
+        mt->readPos.store((sampleOffset < total) ? sampleOffset : total, std::memory_order_release);
+    }
+}
+
 void FaustMixer::recordTracks(const char* baseDir) {} // Stub for demo
 void FaustMixer::stopRecordingAllTracks() {} // Stub for demo
 void FaustMixer::playRecordedTracks(const char* baseDir) {} // Stub for demo
 void FaustMixer::resetTrackPlayback() {
     std::lock_guard<std::recursive_mutex> lock(mRegistryMutex);
     for (auto& pair : mTracks) {
+        if (!pair.second) continue;
         if (pair.second->getType() == TrackType::FILE) {
             auto* ring = static_cast<AudioRingBuffer*>(pair.second->getSource());
             ring->resetPlayback();
+        } else if (pair.second->getType() == TrackType::MEMORY) {
+            auto* mt = static_cast<MemoryTrack*>(pair.second.get());
+            mt->readPos.store(0, std::memory_order_release);
         }
     }
 }
@@ -1168,6 +1527,13 @@ void FaustMixer::onAudioReady(float* stereoOutput, int numFrames) {
         float* subOutput = stereoOutput + (framesProcessed * 2);
         
         std::unique_lock<std::recursive_mutex> lock(mRegistryMutex);
+
+        if (ensureMemoryTracksFilledLocked()) {
+            // SYNC mode: hold timeline, envelopes, and live tracks until MemoryTracks are ready.
+            // stereoOutput is already zeroed so the audio callback returns immediately.
+            lock.unlock();
+            break;
+        }
 
         // Tick the timeline first so that events are applied immediately before rendering
         if (mPreRenderCallback) {
