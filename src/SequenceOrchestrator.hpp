@@ -32,6 +32,8 @@
 #include <memory>
 #include <functional>
 #include <cstring>
+#include <thread>
+#include <condition_variable>
 #include "UMLParser.hpp"
 #include "CSVModelLoader.hpp"
 #include "InstrumentMapper.hpp"
@@ -177,6 +179,21 @@ public:
     bool isSongLooping() const { return mSongLooping.load(std::memory_order_relaxed); }
 
     /**
+     * @brief Enable or disable offline pre-rendering of sequences into sequence-owned PCM caches.
+     *        Default is false (live Faust DSP).
+     */
+    void setPreRenderMode(bool enabled);
+    bool isPreRenderMode() const { return mPreRenderMode.load(std::memory_order_acquire); }
+
+    /**
+     * @brief Set playback start synchronization mode when pre-rendering sequences.
+     *        true = SYNC (default: hold timeline until all dirty playing sequences finish rendering),
+     *        false = ASYNC (each sequence starts as soon as its cache is ready).
+     */
+    void setSyncMode(bool sync) { mSyncMode.store(sync, std::memory_order_release); }
+    bool isSyncMode() const { return mSyncMode.load(std::memory_order_acquire); }
+
+    /**
      * @brief Toggle the global Humanize property (adds random micro-timing jitter).
      */
     void setHumanize(bool state) { mHumanize.store(state, std::memory_order_relaxed); }
@@ -254,33 +271,24 @@ public:
     void processBuffer(std::shared_ptr<ActiveSequence> seq, float* output, int numFrames);
 
     /**
-     * @brief Offline-render all currently playing sequences whose FaustInstrument*
-     *        is in [instruments] into an interleaved stereo float PCM buffer [outPcm].
-     *        Does not touch FaustMixer or any track state.
-     * @return true if rendered to completion (or no matching sequences), false if cancelled.
-     */
-    bool renderSequencesForInstruments(
-        const std::vector<FaustInstrument*>& instruments,
-        float sampleRate,
-        std::vector<float>& outPcm,
-        std::atomic<bool>& cancelFlag
-    );
-
-    /**
      * @brief Static bridge for the mixer's pre-render callback.
+     *        Returns 0 if holding playback in SYNC mode while sequences pre-render.
      */
     static int staticPreRender(int numFrames, void* userData) {
         if (userData) {
             auto* orch = static_cast<SequenceOrchestrator*>(userData);
-            orch->updateTimeline(numFrames);
-            return numFrames;
+            return orch->updateTimeline(numFrames);
         }
         return 0;
     }
 
 private:
-    void updateTimeline(int numFrames);
+    int updateTimeline(int numFrames);
     void advanceSequence(std::shared_ptr<ActiveSequence> seqWrapper, int numFrames);
+    void preRenderLoop();
+    void enqueuePreRenderLocked(const std::vector<std::shared_ptr<UMLSequence>>& seqs);
+    void cancelPreRender();
+    bool renderSingleSequenceOffline(std::shared_ptr<UMLSequence> seqObj, std::vector<float>& outPcm);
     void updateDSPParams(std::shared_ptr<ActiveSequence> seqWrapper, float freq, float vel, float strikeVal, const std::string& note);
     void updateDSPParamsVoice(std::shared_ptr<ActiveSequence> seqWrapper, float freq, float vel, float vowelVal);
     SequenceOrchestrator(const SequenceOrchestrator&) = delete;
@@ -295,8 +303,22 @@ private:
     std::atomic<bool> mIsPaused{false};
     std::atomic<bool> mSongLooping{false};
     std::atomic<bool> mHumanize{true};
+    std::atomic<bool> mPreRenderMode{false};
+    std::atomic<bool> mSyncMode{true};
 
     std::atomic<bool> mDiagEnabled{false};
+
+    // Persistent background pre-render worker (0% CPU when idle)
+    std::thread mPreRenderThread;
+    std::mutex mPreRenderMutex;
+    std::condition_variable mPreRenderCV;
+    std::atomic<bool> mPreRenderRunning{false};
+    std::atomic<bool> mPreRenderInProgress{false};
+    std::atomic<bool> mPreRenderCancel{false};
+    std::atomic<uint64_t> mPreRenderGen{0};
+    std::vector<std::shared_ptr<UMLSequence>> mPendingPreRenderSeqs;
+    uint64_t mPendingPreRenderGen = 0;
+    bool mHasPendingPreRender = false;
 
     using SnapshotVec = std::vector<std::shared_ptr<ActiveSequence>>;
     std::shared_ptr<SnapshotVec> mRenderSnapshot; 

@@ -93,9 +93,63 @@ public:
     std::vector<std::string> noteNames;
     bool isDirty = false;
 
+    // Optional pre-rendered stereo float PCM cache owned by this sequence
+    std::shared_ptr<const std::vector<float>> cachedPcm;
+    bool cacheDirty = true;
+    std::atomic<bool> useCachedAudio{false};
+    std::atomic<bool> cachePlaying{false};
+    std::atomic<bool> cacheMuted{false};
+    std::atomic<size_t> cacheReadPos{0};
+
+    /**
+     * @brief Pull one stereo block of audio from this sequence.
+     *        Serves from cachedPcm when pre-rendered and playing, otherwise
+     *        delegates to the live FaustInstrument.
+     */
+    void renderBlock(float* stereoOut, int numFrames);
+
     std::shared_ptr<FaustInstrument> mInstrument;
 
     UMLSequence() : instrumentID(-1), bpm(120.0), grid(4), baseFreq(261.63), gain(1.0), totalDurationSamples(0), notation("Indian"), execType("static"), isDirty(false) {}
+
+    UMLSequence(const UMLSequence& other)
+        : name(other.name), events(other.events), initialParams(other.initialParams),
+          notation(other.notation), execType(other.execType), bpm(other.bpm), grid(other.grid),
+          baseFreq(other.baseFreq), gain(other.gain), totalDurationSamples(other.totalDurationSamples),
+          instrument(other.instrument), instrumentID(other.instrumentID), umlData(other.umlData),
+          loop(other.loop), delaySec(other.delaySec), delayGridUnits(other.delayGridUnits),
+          measure(other.measure), rawNotes(other.rawNotes), noteNames(other.noteNames),
+          isDirty(other.isDirty), cachedPcm(other.cachedPcm), cacheDirty(other.cacheDirty),
+          mInstrument(other.mInstrument) {}
+
+    UMLSequence& operator=(const UMLSequence& other) {
+        if (this != &other) {
+            name = other.name;
+            events = other.events;
+            initialParams = other.initialParams;
+            notation = other.notation;
+            execType = other.execType;
+            bpm = other.bpm;
+            grid = other.grid;
+            baseFreq = other.baseFreq;
+            gain = other.gain;
+            totalDurationSamples = other.totalDurationSamples;
+            instrument = other.instrument;
+            instrumentID = other.instrumentID;
+            umlData = other.umlData;
+            loop = other.loop;
+            delaySec = other.delaySec;
+            delayGridUnits = other.delayGridUnits;
+            measure = other.measure;
+            rawNotes = other.rawNotes;
+            noteNames = other.noteNames;
+            isDirty = other.isDirty;
+            cachedPcm = other.cachedPcm;
+            cacheDirty = other.cacheDirty;
+            mInstrument = other.mInstrument;
+        }
+        return *this;
+    }
 
     UMLSequence(const std::string& seqName, int instID, const std::string& umlDataString, double defaultBaseFreq = 261.63);
 

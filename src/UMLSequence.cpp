@@ -69,9 +69,11 @@ UMLSequence::UMLSequence(const std::string& seqName, int instID, const std::stri
 }
 
 void UMLSequence::setBaseFrequency(double newBaseFreq) {
-    if (baseFreq <= 0.0) return;
+    if (baseFreq <= 0.0 || newBaseFreq <= 0.0) return;
+    if (std::abs(newBaseFreq - baseFreq) < 1e-4) return;
     double ratio = newBaseFreq / baseFreq;
     baseFreq = newBaseFreq;
+    cacheDirty = true;
 
     // For percussion instruments (like Dholak/Dhol/Tabla) basefreq is also a direct DSP tuning property
     if (instrumentID == 37 || instrumentID == 38 || instrumentID == 1 || instrumentID == 0) {
@@ -90,7 +92,8 @@ void UMLSequence::setBaseFrequency(double newBaseFreq) {
 }
 
 void UMLSequence::setBpm(double newBpm) {
-    if (bpm <= 0.0) return;
+    if (bpm <= 0.0 || newBpm <= 0.0) return;
+    if (std::abs(newBpm - bpm) < 1e-4) return;
     double ratio = bpm / newBpm;
     for (auto& ev : events) {
         ev.sampleOffset = static_cast<long>(ev.sampleOffset * ratio);
@@ -98,6 +101,7 @@ void UMLSequence::setBpm(double newBpm) {
     }
     totalDurationSamples = static_cast<long>(totalDurationSamples * ratio);
     bpm = newBpm;
+    cacheDirty = true;
 }
 
 UMLSequence::~UMLSequence() {
@@ -109,6 +113,7 @@ void UMLSequence::addNote(float pitch, float velocity, float startBeat, float du
     rawNotes.push_back({pitch, velocity, startBeat, durationBeats, strikeVal});
     noteNames.push_back(noteName);
     isDirty = true;
+    cacheDirty = true;
 }
 
 void UMLSequence::removeNote(float pitch, float startBeat) {
@@ -120,6 +125,7 @@ void UMLSequence::removeNote(float pitch, float startBeat) {
                 noteNames.erase(noteNames.begin() + idx);
             }
             isDirty = true;
+            cacheDirty = true;
             break;
         }
     }
@@ -128,6 +134,7 @@ void UMLSequence::removeNote(float pitch, float startBeat) {
 void UMLSequence::clearNotes() {
     rawNotes.clear();
     isDirty = true;
+    cacheDirty = true;
 }
 
 int UMLSequence::getNotes(float fromBeat, float toBeat, float* outBuffer, int maxNotes, char* outNames) {
@@ -243,4 +250,42 @@ void UMLSequence::prepare() {
     this->umlData = serialized;
     
     isDirty = false;
+    cacheDirty = true;
+}
+
+void UMLSequence::renderBlock(float* stereoOut, int numFrames) {
+    if (!stereoOut || numFrames <= 0) return;
+
+    if (useCachedAudio.load(std::memory_order_acquire)) {
+        std::memset(stereoOut, 0, sizeof(float) * static_cast<size_t>(numFrames) * 2);
+        if (cacheMuted.load(std::memory_order_acquire)) {
+            return;
+        }
+        if (cachePlaying.load(std::memory_order_acquire)) {
+            auto pcm = std::atomic_load(&cachedPcm);
+            if (pcm && !pcm->empty()) {
+                const size_t total = pcm->size();
+                const size_t pos = cacheReadPos.load(std::memory_order_acquire);
+                const size_t wanted = static_cast<size_t>(numFrames) * 2;
+                if (pos < total) {
+                    const size_t toCopy = (wanted < (total - pos)) ? wanted : (total - pos);
+                    std::memcpy(stereoOut, pcm->data() + pos, toCopy * sizeof(float));
+                    cacheReadPos.store(pos + toCopy, std::memory_order_release);
+                }
+            }
+            return;
+        }
+        // Not actively playing cached sequence: allow direct live one-shot cues
+        // (0% CPU when no voices are active on mInstrument).
+        if (mInstrument) {
+            mInstrument->processRealtimeStream(stereoOut, numFrames);
+        }
+        return;
+    }
+
+    if (mInstrument) {
+        mInstrument->processRealtimeStream(stereoOut, numFrames);
+    } else {
+        std::memset(stereoOut, 0, sizeof(float) * static_cast<size_t>(numFrames) * 2);
+    }
 }

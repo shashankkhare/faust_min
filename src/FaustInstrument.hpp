@@ -103,10 +103,6 @@ public:
     void setMuted(bool mute) { mIsMuted.store(mute, std::memory_order_release); }
     bool isMuted() const { return mIsMuted.load(std::memory_order_acquire); }
 
-    // MemoryTrack ownership flag (when true, live updateTimeline skips this instrument)
-    void setInMemoryTrack(bool inMem) { mInMemoryTrack.store(inMem, std::memory_order_release); }
-    bool isInMemoryTrack() const { return mInMemoryTrack.load(std::memory_order_acquire); }
-
     // Diagnostics
     void enableDiagnostics(bool enable) { mEnableDiagLogging = enable; }
     void enableDiagnosticLogging(bool enable) { mEnableDiagLogging = enable; }
@@ -232,7 +228,6 @@ protected:
     float mReverbSend;
     bool mGateOpen;
     std::atomic<bool> mIsMuted{false};
-    std::atomic<bool> mInMemoryTrack{false};
 
     // Internal sample-accurate timeline counters
     long mTargetFrames;

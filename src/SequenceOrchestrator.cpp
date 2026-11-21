@@ -88,11 +88,44 @@ SequenceOrchestrator::SequenceOrchestrator() {
 SequenceOrchestrator::~SequenceOrchestrator() {
     stop();
     {
+        std::lock_guard<std::mutex> lk(mPreRenderMutex);
+        mPreRenderCancel.store(true, std::memory_order_release);
+        mPreRenderRunning.store(false, std::memory_order_release);
+        mHasPendingPreRender = false;
+        mPendingPreRenderSeqs.clear();
+    }
+    mPreRenderCV.notify_all();
+    if (mPreRenderThread.joinable()) {
+        mPreRenderThread.join();
+    }
+    {
         std::lock_guard<std::mutex> lock(mStateMutex);
         mActiveSequences.clear();
     }
     // Release snapshot — shared_ptr ref count handles safe cleanup
     std::atomic_store(&mRenderSnapshot, std::shared_ptr<SnapshotVec>(nullptr));
+}
+
+void SequenceOrchestrator::setPreRenderMode(bool enabled) {
+    mPreRenderMode.store(enabled, std::memory_order_release);
+    if (enabled) {
+        std::lock_guard<std::mutex> lk(mPreRenderMutex);
+        if (!mPreRenderThread.joinable()) {
+            mPreRenderRunning.store(true, std::memory_order_release);
+            mPreRenderCancel.store(false, std::memory_order_release);
+            mPreRenderThread = std::thread(&SequenceOrchestrator::preRenderLoop, this);
+        }
+    } else {
+        cancelPreRender();
+        std::lock_guard<std::mutex> lock(mStateMutex);
+        for (auto& pair : mActiveSequences) {
+            if (pair.second && pair.second->sequenceObj) {
+                pair.second->sequenceObj->useCachedAudio.store(false, std::memory_order_release);
+                pair.second->sequenceObj->cachePlaying.store(false, std::memory_order_release);
+            }
+        }
+    }
+    FM_LOGI("[Orchestrator] Pre-render mode set to %s", enabled ? "ON" : "OFF");
 }
 
 
@@ -300,6 +333,19 @@ void SequenceOrchestrator::play(const std::string& name) {
         }
 
         mPendingPlay.push_back(name);
+        if (mPreRenderMode.load(std::memory_order_acquire) && seqWrapper && seqWrapper->sequenceObj) {
+            auto seqObj = seqWrapper->sequenceObj;
+            if (seqObj->cacheDirty || !std::atomic_load(&seqObj->cachedPcm)) {
+                seqObj->useCachedAudio.store(true, std::memory_order_release);
+                seqObj->cachePlaying.store(false, std::memory_order_release);
+                enqueuePreRenderLocked({seqObj});
+            } else {
+                seqObj->useCachedAudio.store(true, std::memory_order_release);
+                seqObj->cacheReadPos.store(0, std::memory_order_release);
+            }
+        } else if (seqWrapper && seqWrapper->sequenceObj) {
+            seqWrapper->sequenceObj->useCachedAudio.store(false, std::memory_order_release);
+        }
         rebuildSnapshot();
     } else {
         printf("[Native] ERROR: Sequence not found: %s\n", name.c_str());
@@ -310,6 +356,9 @@ void SequenceOrchestrator::play(const std::string& name) {
 void SequenceOrchestrator::playSequences(const std::vector<std::string>& names) {
     mIsPaused = false;
     std::lock_guard<std::mutex> lock(mStateMutex);
+    const bool preRender = mPreRenderMode.load(std::memory_order_acquire);
+    std::vector<std::shared_ptr<UMLSequence>> dirtySeqs;
+
     for (const auto& name : names) {
         if (mActiveSequences.count(name)) {
             printf("[Native] Starting Playback (Batch): %s\n", name.c_str());
@@ -317,15 +366,27 @@ void SequenceOrchestrator::playSequences(const std::vector<std::string>& names) 
             
             auto seqWrapper = mActiveSequences[name];
             if (seqWrapper && seqWrapper->sequenceObj) {
-                seqWrapper->sequenceObj->prepare();
-                auto inst = seqWrapper->sequenceObj->getFaustInstrument();
+                auto seqObj = seqWrapper->sequenceObj;
+                seqObj->prepare();
+                auto inst = seqObj->getFaustInstrument();
                 if (inst) {
-                    for (const auto& ev : seqWrapper->sequenceObj->events) {
+                    for (const auto& ev : seqObj->events) {
                         if (ev.type == UMLEventType::NoteOn && ev.frequency > 0.0f) {
                             inst->setFrequencyImmediate(ev.frequency);
                             break;
                         }
                     }
+                }
+                if (preRender) {
+                    seqObj->useCachedAudio.store(true, std::memory_order_release);
+                    seqObj->cachePlaying.store(false, std::memory_order_release);
+                    if (seqObj->cacheDirty || !std::atomic_load(&seqObj->cachedPcm)) {
+                        dirtySeqs.push_back(seqObj);
+                    } else {
+                        seqObj->cacheReadPos.store(0, std::memory_order_release);
+                    }
+                } else {
+                    seqObj->useCachedAudio.store(false, std::memory_order_release);
                 }
             }
 
@@ -334,6 +395,9 @@ void SequenceOrchestrator::playSequences(const std::vector<std::string>& names) 
             printf("[Native] ERROR: Sequence not found: %s\n", name.c_str());
             fflush(stdout);
         }
+    }
+    if (!dirtySeqs.empty()) {
+        enqueuePreRenderLocked(dirtySeqs);
     }
     rebuildSnapshot();
 }
@@ -373,11 +437,14 @@ void SequenceOrchestrator::clearSequence(const std::string& name) {
 
 void SequenceOrchestrator::stop() {
     mIsPaused = false;
+    cancelPreRender();
     std::lock_guard<std::mutex> lock(mStateMutex);
+    mPendingPlay.clear();
     for (auto& pair : mActiveSequences) {
         if (pair.second) {
             pair.second->isPlaying = false;
             if (pair.second->sequenceObj) {
+                pair.second->sequenceObj->cachePlaying.store(false, std::memory_order_release);
                 auto inst = pair.second->sequenceObj->getFaustInstrument();
                 if (inst) inst->noteOff();
             }
@@ -390,12 +457,23 @@ void SequenceOrchestrator::pause() {
     std::lock_guard<std::mutex> lock(mStateMutex);
     for (auto& pair : mActiveSequences) {
         if (pair.second && pair.second->sequenceObj) {
+            pair.second->sequenceObj->cachePlaying.store(false, std::memory_order_release);
             auto inst = pair.second->sequenceObj->getFaustInstrument();
             if (inst) inst->noteOff();
         }
     }
 }
-void SequenceOrchestrator::resume() { mIsPaused = false; }
+void SequenceOrchestrator::resume() {
+    mIsPaused = false;
+    std::lock_guard<std::mutex> lock(mStateMutex);
+    for (auto& pair : mActiveSequences) {
+        if (pair.second && pair.second->isPlaying.load(std::memory_order_acquire) && pair.second->sequenceObj) {
+            if (pair.second->sequenceObj->useCachedAudio.load(std::memory_order_acquire)) {
+                pair.second->sequenceObj->cachePlaying.store(true, std::memory_order_release);
+            }
+        }
+    }
+}
 
 void SequenceOrchestrator::seek(long sampleOffset) {
     std::lock_guard<std::mutex> lock(mStateMutex);
@@ -408,6 +486,9 @@ void SequenceOrchestrator::seek(long sampleOffset) {
             long totalDur = seqWrapper->sequenceObj->totalDurationSamples;
             if (totalDur > 0) {
                 seqWrapper->currentSample = mMasterSampleCount % totalDur;
+                seqWrapper->sequenceObj->cacheReadPos.store(
+                    static_cast<size_t>(seqWrapper->currentSample) * 2,
+                    std::memory_order_release);
                 seqWrapper->nextEventIndex = 0;
                 auto& events = seqWrapper->sequenceObj->events;
                 while (seqWrapper->nextEventIndex < events.size() && 
@@ -425,6 +506,7 @@ void SequenceOrchestrator::muteSequence(const std::string& name, bool mute) {
         mActiveSequences[name]->isMuted.store(mute);
         auto seq = mActiveSequences[name]->sequenceObj;
         if (seq) {
+            seq->cacheMuted.store(mute, std::memory_order_release);
             auto* inst = seq->getFaustInstrument();
             if (inst) {
                 inst->setMuted(mute);
@@ -470,12 +552,12 @@ void SequenceOrchestrator::setParameter(const std::string& name, const std::stri
     }
 }
 
-void SequenceOrchestrator::updateTimeline(int numFrames) {
+int SequenceOrchestrator::updateTimeline(int numFrames) {
 #if DEBUG_ORCHESTRATOR
     if (mIsPaused.load(std::memory_order_relaxed)) {
         static bool pausedWarned = false;
         if (!pausedWarned) { printf("[DEBUG_ORCHESTRATOR] updateTimeline: PAUSED\n"); fflush(stdout); pausedWarned = true; }
-        return;
+        return numFrames;
     }
 
     static int timelineCount = 0;
@@ -484,8 +566,15 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
         fflush(stdout);
     }
 #else
-    if (mIsPaused.load(std::memory_order_relaxed)) return;
+    if (mIsPaused.load(std::memory_order_relaxed)) return numFrames;
 #endif
+
+    // In SYNC mode, hold the entire timeline (and signal FaustMixer to hold
+    // envelopes/live tracks) while dirty sequences are pre-rendering in the background.
+    if (mPreRenderInProgress.load(std::memory_order_acquire) &&
+        mSyncMode.load(std::memory_order_acquire)) {
+        return 0;
+    }
 
     // Check if any sequence is currently playing before adding new ones
     bool anyPlaying = false;
@@ -534,21 +623,32 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
                 seqWrapper->nextEventIndex++;
             }
         }
+        if (seqWrapper->sequenceObj && seqWrapper->sequenceObj->useCachedAudio.load(std::memory_order_acquire)) {
+            seqWrapper->sequenceObj->cacheReadPos.store(
+                static_cast<size_t>(seqWrapper->currentSample) * 2,
+                std::memory_order_release);
+            seqWrapper->sequenceObj->cacheMuted.store(
+                seqWrapper->isMuted.load(std::memory_order_acquire),
+                std::memory_order_release);
+            if (std::atomic_load(&seqWrapper->sequenceObj->cachedPcm)) {
+                seqWrapper->sequenceObj->cachePlaying.store(true, std::memory_order_release);
+            }
+        }
     }
     
     // Reload snapshot to include the newly started sequences
     snapshot = getRenderSnapshot();
-    if (!snapshot || snapshot->empty()) return;
+    if (!snapshot || snapshot->empty()) return numFrames;
 
     long maxSongSamples = 0;
-    bool allLooping = true;
+    bool allLooping = mSongLooping.load(std::memory_order_relaxed);
     if (snapshot) {
         for (auto& seqWrapper : *snapshot) {
             if (seqWrapper->sequenceObj) {
                 if (seqWrapper->sequenceObj->totalDurationSamples > maxSongSamples) {
                     maxSongSamples = seqWrapper->sequenceObj->totalDurationSamples;
                 }
-                if (!seqWrapper->sequenceObj->loop) {
+                if (!mSongLooping.load(std::memory_order_relaxed) && !seqWrapper->sequenceObj->loop) {
                     allLooping = false;
                 }
             }
@@ -576,6 +676,7 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
             for (auto& seqWrapper : *snapshot) {
                 if (seqWrapper->isPlaying.load(std::memory_order_acquire)) {
                     if (seqWrapper->sequenceObj) {
+                        seqWrapper->sequenceObj->cachePlaying.store(false, std::memory_order_release);
                         auto inst = seqWrapper->sequenceObj->getFaustInstrument();
                         if (inst) inst->noteOff();
                     }
@@ -587,7 +688,7 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
             if (mTickCallback) {
                 mTickCallback(maxSongSamples, -1, "PLAY_END", mTickUserData);
             }
-            return;
+            return numFrames;
         } else {
             // All sequences are looping! Synchronize reset to 0.
             mMasterSampleCount = 0;
@@ -595,6 +696,9 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
                 if (seqWrapper->sequenceObj) {
                     seqWrapper->currentSample = 0;
                     seqWrapper->nextEventIndex = 0;
+                    if (seqWrapper->sequenceObj->useCachedAudio.load(std::memory_order_acquire)) {
+                        seqWrapper->sequenceObj->cacheReadPos.store(0, std::memory_order_release);
+                    }
                     // Fire noteOffs to clear any lingering hung notes from the previous loop run
                     auto inst = seqWrapper->sequenceObj->getFaustInstrument();
                     if (inst) inst->noteOff();
@@ -624,10 +728,9 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
             continue;
         }
         auto seq = seqWrapper->sequenceObj;
-        FaustInstrument* inst = seq ? seq->getFaustInstrument() : nullptr;
-        if (inst && inst->isInMemoryTrack()) {
-            // Audio is played from pre-rendered memory; still advance currentSample
-            // in lockstep so tick/note callbacks and finish detection remain accurate.
+        if (seq && seq->useCachedAudio.load(std::memory_order_acquire)) {
+            // Audio is served from sequence's cachedPcm; advance currentSample
+            // in lockstep so tick/note callbacks and finish/loop detection stay exact.
             seqWrapper->currentSample += numFrames;
             continue;
         }
@@ -672,6 +775,7 @@ void SequenceOrchestrator::updateTimeline(int numFrames) {
     }
 
     mMasterSampleCount += numFrames;
+    return numFrames;
 }
 
 void SequenceOrchestrator::advanceSequence(std::shared_ptr<ActiveSequence> seqWrapper, int numFrames) {
@@ -869,90 +973,141 @@ void SequenceOrchestrator::advanceSequence(std::shared_ptr<ActiveSequence> seqWr
     }
 }
 
-bool SequenceOrchestrator::renderSequencesForInstruments(
-    const std::vector<FaustInstrument*>& instruments,
-    float sampleRate,
-    std::vector<float>& outPcm,
-    std::atomic<bool>& cancelFlag)
+void SequenceOrchestrator::cancelPreRender() {
+    mPreRenderGen.fetch_add(1, std::memory_order_acq_rel);
+    mPreRenderCancel.store(true, std::memory_order_release);
+    std::lock_guard<std::mutex> lk(mPreRenderMutex);
+    mHasPendingPreRender = false;
+    mPendingPreRenderSeqs.clear();
+}
+
+void SequenceOrchestrator::enqueuePreRenderLocked(const std::vector<std::shared_ptr<UMLSequence>>& seqs) {
+    if (seqs.empty()) return;
+    const uint64_t gen = mPreRenderGen.fetch_add(1, std::memory_order_acq_rel) + 1;
+    mPreRenderCancel.store(false, std::memory_order_release);
+    mPreRenderInProgress.store(true, std::memory_order_release);
+    {
+        std::lock_guard<std::mutex> lk(mPreRenderMutex);
+        if (!mPreRenderThread.joinable()) {
+            mPreRenderRunning.store(true, std::memory_order_release);
+            mPreRenderThread = std::thread(&SequenceOrchestrator::preRenderLoop, this);
+        }
+        mPendingPreRenderSeqs = seqs;
+        mPendingPreRenderGen = gen;
+        mHasPendingPreRender = true;
+    }
+    mPreRenderCV.notify_one();
+}
+
+bool SequenceOrchestrator::renderSingleSequenceOffline(
+    std::shared_ptr<UMLSequence> seqObj,
+    std::vector<float>& outPcm)
 {
     outPcm.clear();
-    if (instruments.empty()) return true;
-    if (sampleRate <= 0.0f) sampleRate = InstrumentMapper::DEFAULT_SAMPLE_RATE;
+    if (!seqObj || seqObj->totalDurationSamples <= 0) return true;
 
-    std::vector<std::shared_ptr<UMLSequence>> seqObjs;
-    long maxDurationSamples = 0;
-    {
-        std::lock_guard<std::mutex> lock(mStateMutex);
-        for (const auto& pair : mActiveSequences) {
-            const auto& name = pair.first;
-            const auto& active = pair.second;
-            if (!active || !active->sequenceObj) continue;
-            const bool isPending = std::find(mPendingPlay.begin(), mPendingPlay.end(), name) != mPendingPlay.end();
-            if (!active->isPlaying.load(std::memory_order_acquire) && !isPending) {
-                continue;
-            }
-            FaustInstrument* inst = active->sequenceObj->getFaustInstrument();
-            if (!inst) continue;
-            if (std::find(instruments.begin(), instruments.end(), inst) != instruments.end()) {
-                seqObjs.push_back(active->sequenceObj);
-                if (active->sequenceObj->totalDurationSamples > maxDurationSamples) {
-                    maxDurationSamples = active->sequenceObj->totalDurationSamples;
-                }
-            }
-        }
+    if (seqObj->isDirty) {
+        seqObj->prepare();
     }
+    FaustInstrument* inst = seqObj->getFaustInstrument();
+    if (!inst) return true;
 
-    if (seqObjs.empty() || maxDurationSamples <= 0) {
-        return true; // Nothing playing for these instruments (valid silent track)
-    }
-
-    const size_t totalFrames = static_cast<size_t>(maxDurationSamples);
+    const size_t totalFrames = static_cast<size_t>(seqObj->totalDurationSamples);
     outPcm.assign(totalFrames * 2, 0.0f);
+
+    inst->clearVoices();
+
+    auto tempSeq = std::make_shared<ActiveSequence>();
+    tempSeq->sequenceObj = seqObj;
+    tempSeq->isPlaying.store(true, std::memory_order_relaxed);
+    tempSeq->currentSample = 0;
+    tempSeq->nextEventIndex = 0;
 
     constexpr int kChunk = 512;
     float chunkBuf[kChunk * 2];
 
-    for (auto& seqObj : seqObjs) {
-        if (cancelFlag.load(std::memory_order_acquire)) {
+    size_t rendered = 0;
+    while (rendered < totalFrames) {
+        if (mPreRenderCancel.load(std::memory_order_acquire)) {
+            inst->clearVoices();
             outPcm.clear();
             return false;
         }
-
-        if (seqObj->isDirty) {
-            seqObj->prepare();
-        }
-        FaustInstrument* inst = seqObj->getFaustInstrument();
-        if (!inst) continue;
-
-        inst->clearVoices();
-
-        auto tempSeq = std::make_shared<ActiveSequence>();
-        tempSeq->sequenceObj = seqObj;
-        tempSeq->isPlaying.store(true, std::memory_order_relaxed);
-        tempSeq->currentSample = 0;
-        tempSeq->nextEventIndex = 0;
-
-        size_t rendered = 0;
-        while (rendered < totalFrames) {
-            if (cancelFlag.load(std::memory_order_acquire)) {
-                inst->clearVoices();
-                outPcm.clear();
-                return false;
-            }
-            const int n = static_cast<int>(std::min<size_t>(kChunk, totalFrames - rendered));
-            advanceSequence(tempSeq, n);
-            std::memset(chunkBuf, 0, static_cast<size_t>(n) * 2 * sizeof(float));
-            inst->processRealtimeStream(chunkBuf, n);
-            float* dst = outPcm.data() + rendered * 2;
-            for (int i = 0; i < n * 2; ++i) {
-                dst[i] += chunkBuf[i];
-            }
-            rendered += static_cast<size_t>(n);
-        }
-        inst->clearVoices();
+        const int n = static_cast<int>(std::min<size_t>(kChunk, totalFrames - rendered));
+        advanceSequence(tempSeq, n);
+        std::memset(chunkBuf, 0, static_cast<size_t>(n) * 2 * sizeof(float));
+        inst->processRealtimeStream(chunkBuf, n);
+        std::memcpy(outPcm.data() + rendered * 2, chunkBuf, static_cast<size_t>(n) * 2 * sizeof(float));
+        rendered += static_cast<size_t>(n);
     }
 
-    return !cancelFlag.load(std::memory_order_acquire);
+    inst->clearVoices();
+    return !mPreRenderCancel.load(std::memory_order_acquire);
+}
+
+void SequenceOrchestrator::preRenderLoop() {
+    while (true) {
+        std::vector<std::shared_ptr<UMLSequence>> seqs;
+        uint64_t gen = 0;
+        {
+            std::unique_lock<std::mutex> lk(mPreRenderMutex);
+            mPreRenderCV.wait(lk, [this]() {
+                return mHasPendingPreRender || !mPreRenderRunning.load(std::memory_order_acquire);
+            });
+            if (!mPreRenderRunning.load(std::memory_order_acquire)) break;
+            seqs = std::move(mPendingPreRenderSeqs);
+            gen = mPendingPreRenderGen;
+            mHasPendingPreRender = false;
+        }
+
+        const bool isSync = mSyncMode.load(std::memory_order_acquire);
+        auto t0 = std::chrono::steady_clock::now();
+        bool cancelled = false;
+
+        std::vector<std::pair<std::shared_ptr<UMLSequence>, std::shared_ptr<const std::vector<float>>>> batch;
+        if (isSync) batch.reserve(seqs.size());
+
+        for (auto& seqObj : seqs) {
+            if (mPreRenderCancel.load(std::memory_order_acquire) ||
+                mPreRenderGen.load(std::memory_order_acquire) != gen) {
+                cancelled = true;
+                break;
+            }
+            std::vector<float> pcm;
+            if (!renderSingleSequenceOffline(seqObj, pcm) ||
+                mPreRenderGen.load(std::memory_order_acquire) != gen) {
+                cancelled = true;
+                break;
+            }
+            auto pcmPtr = std::make_shared<const std::vector<float>>(std::move(pcm));
+            if (isSync) {
+                batch.emplace_back(seqObj, std::move(pcmPtr));
+            } else {
+                std::atomic_store(&seqObj->cachedPcm, pcmPtr);
+                seqObj->cacheDirty = false;
+                seqObj->cacheReadPos.store(0, std::memory_order_release);
+                seqObj->cachePlaying.store(true, std::memory_order_release);
+            }
+        }
+
+        if (!cancelled && isSync && mPreRenderGen.load(std::memory_order_acquire) == gen) {
+            for (auto& entry : batch) {
+                std::atomic_store(&entry.first->cachedPcm, entry.second);
+                entry.first->cacheDirty = false;
+                entry.first->cacheReadPos.store(0, std::memory_order_release);
+            }
+        }
+
+        auto t1 = std::chrono::steady_clock::now();
+        double ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
+        FM_LOGI("[Orchestrator] Pre-rendered %zu sequences (%s) in %.0f ms%s",
+                seqs.size(), isSync ? "SYNC" : "ASYNC", ms,
+                cancelled ? " (cancelled)" : "");
+
+        if (mPreRenderGen.load(std::memory_order_acquire) == gen) {
+            mPreRenderInProgress.store(false, std::memory_order_release);
+        }
+    }
 }
 
 void SequenceOrchestrator::processBuffer(std::shared_ptr<ActiveSequence> seqWrapper, float* output, int numFrames) {

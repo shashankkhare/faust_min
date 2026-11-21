@@ -10,6 +10,8 @@
 #include "FaustInstrument.hpp"
 #include "FaustTrackFxDSP.hpp"
 
+class UMLSequence;
+
 struct EnvelopePoint {
     float timeSec;
     float value;
@@ -147,11 +149,13 @@ public:
 };
 
 // ---------------------------------------------------------------------------
-// InstrumentTrack: renders Faust DSP instruments via the worker thread pool.
+// InstrumentTrack: renders attached Faust DSP instruments and/or UMLSequences
+// via the worker thread pool.
 // ---------------------------------------------------------------------------
 class InstrumentTrack : public MixerTrack {
 public:
     std::vector<TrackInstrument> instruments;
+    std::vector<UMLSequence*> sequences;
 
     TrackType getType() const override { return TrackType::INSTRUMENT; }
     void* getSource() override { return &instruments; }
@@ -170,15 +174,11 @@ public:
 
 // ---------------------------------------------------------------------------
 // MemoryTrack: plays pre-loaded in-memory float PCM. Zero I/O.
-// Attached instruments are rendered offline into pcmBuffer on demand.
 // ---------------------------------------------------------------------------
 class MemoryTrack : public MixerTrack {
 public:
-    std::vector<TrackInstrument> instruments;
-    std::shared_ptr<std::vector<float>> pcmBuffer;  // interleaved stereo float PCM (swapped atomically)
-    std::atomic<size_t> readPos{0};
-    std::atomic<bool> ready{false};
-    std::atomic<bool> dirty{true};
+    std::vector<float> pcmData;  // interleaved stereo float PCM
+    size_t readPos = 0;
 
     TrackType getType() const override { return TrackType::MEMORY; }
     void* getSource() override { return this; }

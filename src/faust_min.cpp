@@ -463,28 +463,24 @@ DART_EXPORT void mixer_master_fade_out(FaustMixer* mixer, float durationSeconds)
     if (mixer) mixer->masterFadeOut(durationSeconds);
 }
 
+DART_EXPORT void mixer_add_sequence_to_track(FaustMixer* mixer, int trackID, UMLSequence* seq) {
+    if (mixer && seq) mixer->addSequenceToTrack(trackID, seq);
+}
+
+DART_EXPORT void mixer_remove_sequence_from_track(FaustMixer* mixer, int trackID, UMLSequence* seq) {
+    if (mixer && seq) mixer->removeSequenceFromTrack(trackID, seq);
+}
+
 DART_EXPORT void mixer_set_performance_profile(FaustMixer* mixer, int profile) {
     if (mixer) mixer->setPerformanceProfile(profile);
 }
 
-DART_EXPORT void mixer_set_sync_mode(FaustMixer* mixer, int sync) {
-    if (mixer) mixer->setSyncMode(sync != 0);
+DART_EXPORT void orchestrator_set_prerender_mode(SequenceOrchestrator* orch, int enabled) {
+    if (orch) orch->setPreRenderMode(enabled != 0);
 }
 
-DART_EXPORT void mixer_set_track_memory_mode(FaustMixer* mixer, int trackID, int enabled) {
-    if (mixer) mixer->setTrackMemoryMode(trackID, enabled != 0);
-}
-
-DART_EXPORT void mixer_invalidate_memory_tracks(FaustMixer* mixer) {
-    if (mixer) mixer->invalidateMemoryTracks();
-}
-
-DART_EXPORT void mixer_seek_track_memory(FaustMixer* mixer, int trackID, int frameOffset) {
-    if (mixer) mixer->seekTrackMemory(trackID, frameOffset > 0 ? static_cast<size_t>(frameOffset) : 0);
-}
-
-DART_EXPORT void mixer_reset_track_playback(FaustMixer* mixer) {
-    if (mixer) mixer->resetTrackPlayback();
+DART_EXPORT void orchestrator_set_sync_mode(SequenceOrchestrator* orch, int sync) {
+    if (orch) orch->setSyncMode(sync != 0);
 }
 
 // --- UMLSequence Flat Endpoints ---
