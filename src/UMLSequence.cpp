@@ -73,18 +73,18 @@ void UMLSequence::setBaseFrequency(double newBaseFreq) {
     double ratio = newBaseFreq / baseFreq;
     baseFreq = newBaseFreq;
 
-    // For percussion instruments (like Dholak/Dhol/Tabla) basefreq is a direct DSP tuning property
+    // For percussion instruments (like Dholak/Dhol/Tabla) basefreq is also a direct DSP tuning property
     if (instrumentID == 37 || instrumentID == 38 || instrumentID == 1 || instrumentID == 0) {
         if (mInstrument) {
             mInstrument->setParameter("freq", static_cast<float>(newBaseFreq));
             mInstrument->setParameter("basefreq", static_cast<float>(newBaseFreq));
         }
-    } else {
-        // For melodic instruments, recalculate all pre-parsed note frequencies
-        for (auto& ev : events) {
-            if (ev.frequency > 0.0f) {
-                ev.frequency *= static_cast<float>(ratio);
-            }
+    }
+
+    // Recalculate all pre-parsed note frequencies (including tuned percussion NoteOn events)
+    for (auto& ev : events) {
+        if (ev.frequency > 0.0f) {
+            ev.frequency *= static_cast<float>(ratio);
         }
     }
 }

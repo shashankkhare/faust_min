@@ -806,13 +806,7 @@ double UMLParser::getFrequency(const std::string& token, const std::string& nota
         }
     } catch (...) {}
 
-    // 1. Universal Percussion Check via Translation Mapper (IDs 0 to 6 are non-pitched drums)
-    int instID = InstrumentMapper::getIDFromName(instrument);
-    if (instID >= 0 && instID <= 6) {
-        return baseFreq;
-    }
-
-    // 2. Parse optional *N or /N octave multiplier/divider suffix
+    // 1. Parse optional *N or /N octave multiplier/divider suffix (universal across all instruments)
     // e.g. "Sa*2" = Sa one octave up, "n2/2" = Komal Ni one octave down
     std::string baseToken = token;
     double octaveScale = 1.0;
@@ -840,6 +834,12 @@ double UMLParser::getFrequency(const std::string& token, const std::string& nota
                 if (s > 0.0) { octaveScale = 1.0 / s; baseToken = token.substr(0, slashPos); }
             } catch (...) {}
         }
+    }
+
+    // 2. Universal Percussion Check via Translation Mapper (IDs 0 to 6 are non-pitched drums)
+    int instID = InstrumentMapper::getIDFromName(instrument);
+    if (instID >= 0 && instID <= 6) {
+        return baseFreq * octaveScale;
     }
 
     // 3. Melodic Check on base token
