@@ -8,8 +8,8 @@ declare copyright "Copyright (c) 2026 Shashank Khare, MIT License";
 import("stdfaust.lib");
 
 // --- CONTROLS ---
-freq        = hslider("freq [unit:Hz]", 55.0, 40, 100, 0.1);
-gain        = hslider("gain", 0.8, 0, 1, 0.01) : si.smoo;
+freq        = hslider("freq [unit:Hz]", 55.0, 40, 130, 0.1);
+gain        = hslider("gain", 1.0, 0, 1, 0.01);
 velocity    = hslider("velocity", 0.8, 0, 1, 0.01);
 gate        = button("gate");
 
@@ -68,6 +68,6 @@ with {
 process = beaterStrike * velocity
         : dualHeadModel 
         : fi.dcblocker
-        : ma.tanh 
-        * gain * 15.0;
+        : *(gain * 5.25)
+        : ma.tanh;
 

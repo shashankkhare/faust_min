@@ -97,4 +97,4 @@ process = pm.violinModel(pm.f2l(humanizedFreq) + calibration, bowPressure, bowVe
           : fi.dcblocker
           : max(-1.0, min(1.0))
           : violinBody
-          : *(gain * 0.45 * 24.25);
+          : *(gain * 2.8132425);

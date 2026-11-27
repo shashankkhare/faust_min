@@ -32,7 +32,7 @@ import("stdfaust.lib");
 
 // Expert Play Range: Mridangam tonal range typically 130-250 Hz depending on pitch (Shruti).
 freq = hslider("freq", 146.83, 130, 250, 0.1);
-gain = hslider("gain", 0.8, 0, 1, 0.01);
+gain = hslider("gain", 1.0, 0, 1, 0.01);
 velocity = hslider("velocity", 1, 0, 1, 0.01);
 gate = button("gate");
 strike = hslider("strike", 2, 0, 5, 1);
@@ -111,4 +111,4 @@ mridangam = myResonator(actualFreq * 1.0, 3.5, g1, exciter) +
             myResonator(actualFreq * 5.0, 0.9, g5, exciter);
 
 // Output stage with soft clipping
-process = (mridangam * dynamicDrive * 20.0 : ma.tanh) * gain;
+process = (mridangam * dynamicDrive * 20.0 : ma.tanh) * (gain * 0.625);

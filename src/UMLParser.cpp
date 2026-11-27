@@ -124,6 +124,29 @@ const std::map<std::string, double> UMLParser::africanDrumBols = {
     {"Gh",   0.0}, {"gh",   0.0}   // Ghost — near-silent brush
 };
 
+// Mridangam (ID 49) Carnatic sollukattu stroke names → strikeVal (0..5)
+const std::map<std::string, double> UMLParser::mridangamBols = {
+    {"Tha",   0.0}, {"tha",   0.0},  // Open bass (Thoppi)
+    {"Thom",  1.0}, {"thom",  1.0},  // Closed bass (Thoppi)
+    {"Chapu", 2.0}, {"chapu", 2.0},  // Open harmonic ring (Valanthalai)
+    {"Din",   2.0}, {"din",   2.0},
+    {"Nam",   3.0}, {"nam",   3.0},  // Treble edge ring (Valanthalai)
+    {"Dhi",   4.0}, {"dhi",   4.0},  // Muted center (Valanthalai)
+    {"Ta",    5.0}, {"ta",    5.0},  // Sharp edge click (Valanthalai)
+    {"Ki",    5.0}, {"ki",    5.0}
+};
+
+// Ghatam (ID 50) Carnatic stroke names → strikeVal (0..4)
+const std::map<std::string, double> UMLParser::ghatamBols = {
+    {"Tha",   0.0}, {"tha",   0.0},  // Neck stroke
+    {"Ta",    0.0}, {"ta",    0.0},
+    {"Dhi",   1.0}, {"dhi",   1.0},  // Body / center metallic ring
+    {"Thom",  2.0}, {"thom",  2.0},  // Belly bass stroke
+    {"Nam",   3.0}, {"nam",   3.0},  // Rim / edge click
+    {"Ki",    3.0}, {"ki",    3.0},
+    {"Gumki", 4.0}, {"gumki", 4.0}   // Stomach pitch-drop bass
+};
+
 const std::map<std::string, double> UMLParser::westernPitches = {
     {"C4", 261.63}, {"C#", 277.18}, {"Db", 277.18}, {"D4", 293.66}
     // Add more western pitches as needed
@@ -164,6 +187,7 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
             val.erase(val.find_last_not_of(" \t\r\n") + 1);
 
             if (key == "notation") seq.notation = val;
+            else if (key == "name") seq.name = val;
             else if (key == "exectype" || key == "execType" || key == "exec_type") seq.execType = val;
             else if (key == "basefreq") seq.baseFreq = std::stod(val);
             else if (key == "bpm") seq.bpm = std::stod(val);
@@ -273,6 +297,19 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
             }
             ti.rawStr = rem;
 
+            // Standalone '_' (e.g. "_.."): StopRest token occupying 1 grid cell
+            // (+ any following ContinuityDots) that stops ALL active voices/notes.
+            if (rem == "_") {
+                ti.type = TokenType::StopRest;
+                ti.rawStr = "_";
+                ti.noteName = "_";
+                ti.controlParam = 0;
+                ti.hasStop = true;
+                tokenItems.push_back(ti);
+                currentGridIndex++;
+                continue;
+            }
+
             if (rem.find('^') != std::string::npos) {
                 ti.hasGlideOp = true;
                 rem.erase(std::remove(rem.begin(), rem.end(), '^'), rem.end());
@@ -362,6 +399,7 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
 
             size_t j = i + 1;
             bool hasStopStop = ti.hasStop;
+            long stopDurGrids = ti.hasStop ? 1 : -1;
             while (j < tokenItems.size() && tokenItems[j].type == TokenType::ContinuityDot) {
                 if (tokenItems[j].hasGlideOp) {
                     triggers.push_back({OpType::Glide, durGrids});
@@ -372,14 +410,15 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
                 if (tokenItems[j].hasVibratoOp) {
                     triggers.push_back({OpType::Vibrato, durGrids});
                 }
+                durGrids++;
                 if (tokenItems[j].hasStop) {
                     hasStopStop = true;
+                    if (stopDurGrids < 0) stopDurGrids = durGrids;
                 }
-                durGrids++;
                 j++;
             }
-            // _ supercedes all operators: clear triggers if stop is present
-            if (hasStopStop) {
+            // _ supercedes all operators: clear triggers if stop is present or followed by StopRest
+            if (hasStopStop || (j < tokenItems.size() && tokenItems[j].type == TokenType::StopRest)) {
                 triggers.clear();
             }
 
@@ -397,17 +436,28 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
                 handlePitchedToken(ti, velocityScalar, sampleOffset, durationSamples, seq.notation, seq.baseFreq, seq.instrument, samplesPerGrid, sampleRate, j, tokenItems, triggers, seq.events);
             }
 
-            if (hasStopStop && !InstrumentMapper::isPolyphonic(seq.instrumentID)) {
+            if (hasStopStop) {
+                long stopSamples = (stopDurGrids > 0) ? (long)(stopDurGrids * samplesPerGrid) : durationSamples;
                 UMLEvent restEv;
-                restEv.sampleOffset = sampleOffset + durationSamples;
+                restEv.sampleOffset = sampleOffset + stopSamples;
                 restEv.type = UMLEventType::NoteOff;
-                restEv.frequency = -1.0f; // Default: stop all
-                std::string targetNote = ti.noteName;
-                auto pipePos = targetNote.find('|');
-                if (pipePos != std::string::npos) targetNote = targetNote.substr(0, pipePos);
-                restEv.frequency = static_cast<float>(getFrequency(targetNote, seq.notation, seq.baseFreq, seq.instrument));
+                // Stop ALL voices on polyphonic instruments/chords, and stop active voice on monophonic
+                if (InstrumentMapper::isPolyphonic(seq.instrumentID) ||
+                    ti.hasCompositeNotes ||
+                    ti.noteName.find('|') != std::string::npos) {
+                    restEv.frequency = -1.0f;
+                } else {
+                    std::string targetNote = ti.noteName;
+                    restEv.frequency = static_cast<float>(getFrequency(targetNote, seq.notation, seq.baseFreq, seq.instrument));
+                }
                 seq.events.push_back(restEv);
             }
+        } else if (ti.type == TokenType::StopRest) {
+            UMLEvent restEv;
+            restEv.sampleOffset = (long)(ti.gridIndex * samplesPerGrid);
+            restEv.type = UMLEventType::NoteOff;
+            restEv.frequency = -1.0f; // Stop ALL active voices/notes (polyphonic & monophonic)
+            seq.events.push_back(restEv);
         }
     }
 
@@ -460,6 +510,17 @@ UMLSequence UMLParser::parse(const std::string& name, const std::string& input, 
             seq.rawNotes.push_back(note);
             
             seq.noteNames.push_back(".");
+        } else if (ti.type == TokenType::StopRest) {
+            lastVelocity = 0.0f;
+            UMLRawNote note = {};
+            note.pitch = 0.0f;
+            note.velocity = 0.0f;
+            note.startBeat = start;
+            note.durationBeats = dur;
+            note.strikeVal = 0.0f;
+            note.hasStop = true;
+            seq.rawNotes.push_back(note);
+            seq.noteNames.push_back("_");
         }
     }
 
@@ -552,41 +613,62 @@ void UMLParser::handlePercussionToken(const std::string& tokenNoteName, float ve
         else if (isClosedTreble) ev.strikeVal = 3.0f;
         else ev.strikeVal = 0.0f;
     } else if (instID == 49 || instID == 50) {
-        ev.frequency = static_cast<float>(baseFreq);
-        std::string lowerNote = tokenNoteName;
-        std::transform(lowerNote.begin(), lowerNote.end(), lowerNote.begin(), ::tolower);
-        
-        if (notation == "konnakol" || notation == "Konnakol") {
-            if (instID == 49) { // Mridangam
-                if (lowerNote == "tha") ev.strikeVal = 0.0f;
-                else if (lowerNote == "thom") ev.strikeVal = 1.0f;
-                else if (lowerNote == "chapu") ev.strikeVal = 2.0f;
-                else if (lowerNote == "nam") ev.strikeVal = 3.0f;
-                else if (lowerNote == "dhi") ev.strikeVal = 4.0f;
-                else if (lowerNote == "ta") ev.strikeVal = 5.0f;
-                else ev.strikeVal = 2.0f; // default to chapu
-            } else if (instID == 50) { // Ghatam
-                if (lowerNote == "tha") ev.strikeVal = 0.0f;
-                else if (lowerNote == "dhi") ev.strikeVal = 1.0f;
-                else if (lowerNote == "thom") ev.strikeVal = 2.0f;
-                else if (lowerNote == "nam") ev.strikeVal = 3.0f;
-                else if (lowerNote == "gumki") ev.strikeVal = 4.0f;
-                else ev.strikeVal = 0.0f; // default to tha
+        // Parse optional *N or /N octave multiplier on konnakol tokens (e.g. "Chapu*2", "Tha*2")
+        std::string baseSyl = tokenNoteName;
+        double octaveScale = 1.0;
+        size_t starPos = baseSyl.rfind('*');
+        size_t slashPos = baseSyl.rfind('/');
+        if (starPos != std::string::npos && starPos > 0) {
+            std::string scalePart = baseSyl.substr(starPos + 1);
+            baseSyl = baseSyl.substr(0, starPos);
+            if (scalePart.empty()) {
+                octaveScale = 2.0;
+            } else {
+                try {
+                    double s = std::stod(scalePart);
+                    if (s > 0.0) octaveScale = s;
+                } catch (...) {}
             }
-        } else {
-            // fallback x/X<strike>
-            if (!lowerNote.empty() && lowerNote[0] == 'x') {
-                if (lowerNote.length() > 1) {
-                    try {
-                        ev.strikeVal = static_cast<float>(std::stoi(lowerNote.substr(1)));
-                    } catch (...) {
-                        ev.strikeVal = 0.0f;
-                    }
-                } else {
-                    ev.strikeVal = 0.0f;
+        } else if (slashPos != std::string::npos && slashPos > 0) {
+            std::string scalePart = baseSyl.substr(slashPos + 1);
+            baseSyl = baseSyl.substr(0, slashPos);
+            if (scalePart.empty()) {
+                octaveScale = 0.5;
+            } else {
+                try {
+                    double s = std::stod(scalePart);
+                    if (s > 0.0) octaveScale = 1.0 / s;
+                } catch (...) {}
+            }
+        }
+
+        ev.frequency = static_cast<float>(baseFreq * octaveScale);
+
+        if (!baseSyl.empty() && (baseSyl[0] == 'x' || baseSyl[0] == 'X')) {
+            if (baseSyl.length() > 1) {
+                try {
+                    ev.strikeVal = static_cast<float>(std::stoi(baseSyl.substr(1)));
+                } catch (...) {
+                    ev.strikeVal = (strikeValFromPrefix >= 0.0f) ? strikeValFromPrefix : 0.0f;
                 }
             } else {
-                ev.strikeVal = 0.0f;
+                ev.strikeVal = (strikeValFromPrefix >= 0.0f) ? strikeValFromPrefix : 0.0f;
+            }
+        } else if (instID == 49) {
+            if (mridangamBols.count(baseSyl)) {
+                ev.strikeVal = static_cast<float>(mridangamBols.at(baseSyl));
+            } else if (percussionBols.count(baseSyl)) {
+                ev.strikeVal = static_cast<float>(percussionBols.at(baseSyl));
+            } else {
+                ev.strikeVal = 2.0f; // default Chapu
+            }
+        } else {
+            if (ghatamBols.count(baseSyl)) {
+                ev.strikeVal = static_cast<float>(ghatamBols.at(baseSyl));
+            } else if (percussionBols.count(baseSyl)) {
+                ev.strikeVal = static_cast<float>(percussionBols.at(baseSyl));
+            } else {
+                ev.strikeVal = 0.0f; // default Tha
             }
         }
     } else if (instID == 47 || instID == 8 || instID == 7) {
@@ -1050,17 +1132,22 @@ void UMLParser::handleCompositeNote(const TokenItem& ti, long sampleOffset, long
 
     bool nextIsNote = (nextTokenIndex < tokenItemsArray.size() &&
                        tokenItemsArray[nextTokenIndex].type == TokenType::NoteWithControl);
-    long lookAhead = 0;
-    if (nextIsNote) {
-        long maxLA = (long)(0.03 * sampleRate);
-        long minLA = (long)(0.002 * sampleRate);
-        long propLA = durationSamples / 10;
-        lookAhead = std::max(std::min(propLA, maxLA), minLA);
+    bool nextIsStopRest = (nextTokenIndex < tokenItemsArray.size() &&
+                           tokenItemsArray[nextTokenIndex].type == TokenType::StopRest);
+    if (!nextIsStopRest) {
+        long lookAhead = 0;
+        if (nextIsNote) {
+            long maxLA = (long)(0.03 * sampleRate);
+            long minLA = (long)(0.002 * sampleRate);
+            long propLA = durationSamples / 10;
+            lookAhead = std::max(std::min(propLA, maxLA), minLA);
+        }
+        long offOffset = sampleOffset + durationSamples - lookAhead;
+        if (offOffset <= sampleOffset) offOffset = sampleOffset + 1;
+        UMLEvent offEv;
+        offEv.sampleOffset = offOffset;
+        offEv.type = UMLEventType::NoteOff;
+        offEv.frequency = -1.0f; // Stop ALL chord voices
+        outEvents.push_back(offEv);
     }
-    long offOffset = sampleOffset + durationSamples - lookAhead;
-    if (offOffset <= sampleOffset) offOffset = sampleOffset + 1;
-    UMLEvent offEv;
-    offEv.sampleOffset = offOffset;
-    offEv.type = UMLEventType::NoteOff;
-    outEvents.push_back(offEv);
 }

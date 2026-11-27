@@ -9,6 +9,7 @@ build/
 test_*
 *.log
 *.csv
+!assets/dsp/*.csv
 
 # Debug/test source files
 debug_*

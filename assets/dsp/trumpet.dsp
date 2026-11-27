@@ -34,4 +34,4 @@ trumpet_env = en.adsr(0.05, 0.1, 0.8, 0.2, gate);
 // --- Resonant lowpass ---
 filter_cutoff = freq * 2.0 + breath * 800 + trumpet_env * 400;
 
-process = osc : fi.resonlp(filter_cutoff, 3.0, 1.0) * trumpet_env * gain * 1.2;
+process = osc : fi.resonlp(filter_cutoff, 3.0, 1.0) * trumpet_env * gain * 0.6046875;

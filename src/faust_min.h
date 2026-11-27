@@ -296,6 +296,10 @@ DART_EXPORT void orchestrator_set_weight(SequenceOrchestrator* orch, const char*
 DART_EXPORT void orchestrator_set_parameter(SequenceOrchestrator* orch, const char* name, const char* param, float value);
 DART_EXPORT const char* orchestrator_poll_finished(SequenceOrchestrator* orch);
 DART_EXPORT int orchestrator_load_song(SequenceOrchestrator* orch, const char* directory);
+DART_EXPORT int orchestrator_load_sequence(SequenceOrchestrator* orch, const char* usqFilePath);
+DART_EXPORT int orchestrator_load_sequence_string(SequenceOrchestrator* orch, const char* usqContent);
+DART_EXPORT int orchestrator_load_track(SequenceOrchestrator* orch, const char* trkFilePath);
+DART_EXPORT int orchestrator_load_track_string(SequenceOrchestrator* orch, const char* trkContent);
 DART_EXPORT void orchestrator_unload_song(SequenceOrchestrator* orch, const char* directory);
 DART_EXPORT void orchestrator_play_song(SequenceOrchestrator* orch, const char* directory);
 DART_EXPORT void orchestrator_stop_song(SequenceOrchestrator* orch, const char* directory);
@@ -316,6 +320,7 @@ DART_EXPORT void mixer_unregister_instrument(FaustMixer* mixer, FaustInstrument*
 
 // --- FaustMixer Track & Breakpoint Envelope ---
 DART_EXPORT int mixer_add_track(FaustMixer* mixer, float initialWeight);
+DART_EXPORT int mixer_get_track_id_by_name(FaustMixer* mixer, const char* name);
 DART_EXPORT void mixer_remove_track(FaustMixer* mixer, int trackID);
 DART_EXPORT void mixer_set_track_envelope(FaustMixer* mixer, int trackID, float* times, float* values, uint8_t* interpTypes, int numPoints);
 DART_EXPORT void mixer_set_track_weight(FaustMixer* mixer, int trackID, float weight);

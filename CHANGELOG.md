@@ -1,3 +1,19 @@
+## 0.8.0
+
+* **Sequence-Owned PCM Cache, `.trk` Routing & Song Orchestration**:
+  * Added sequence-owned stereo PCM pre-render cache (`setPreRenderMode`), `addSequenceToTrack` / `removeSequenceFromTrack`, and pull-driven `MemoryTrack` playback with `SYNC`/`ASYNC` modes and configurable latency profiles.
+  * Added multi-block `.usq` song loading (`loadSequence`, `loadSequenceString`, `loadSong`, `unloadSong`, `playSong`, `stopSong`, `setSongLooping`, `pollFinished`) and `.trk` per-track EQ/reverb/echo configuration (`loadTrack`, `loadTrackString`).
+* **UML Parser — Polyphonic `_` Stop-All-Voices & Percussion Octave Scaling**:
+  * Standalone `_` rest-stop tokens (`_`, `_.`, `_..`) and attached `_` note suffixes now emit full all-voice `NoteOff` (`frequency = -1.0`) for polyphonic chords/instruments as well as monophonic instruments.
+  * Added universal `*N` / `/N` octave scaling for percussion tokens and automatic percussion pitch rescaling on `setBaseFrequency`.
+* **Physical Model Fixes & Gain LUT Calibrations**:
+  * **Electric Guitar (ID 22)**: Replaced fixed-loss `pm.elecGuitar` model with a constant-`T60` steel-string waveguide (`82–1047 Hz`), counter-based pick excitation, `gate`-linked `35 ms` finger damping on `noteOff`, magnetic pickup spatial comb filter (`pluckPosition = 0.78`), warm asymmetric tube stage + `12"` cabinet, and 72-point gain LUT.
+  * **Conga (ID 26)**: Expanded Tumba–Quinto fundamental range (`80–300 Hz`), dynamic membrane lowpass, `ma.tanh` output limiter, and 48-point gain LUT.
+  * **Kick (ID 15) & Cowbell (ID 19)**: Placed `ma.tanh` soft-clipping at the final output stage (`P < 1.0`), expanded kick range (`40–130 Hz`), and calibrated 42-point kick gain LUT.
+  * **Ensemble Calibrations**: Added/updated gain LUTs and output headroom for `mridangam`, `sax`, `trumpet`, `sarod`, `sitar`, `violin`, and `dizi`.
+* **Mobile & Real-Time Audio Engine**:
+  * Added Android ADPF (`APerformanceHintManager`) real-time thread hints, silent-voice/FX/reverb gating, 40 ms Android AAudio period stability fix, duplicate `mMasterGain` removal, and iOS `faust_min_get_device_sample_rate()` native query.
+
 ## 0.7.2
 
 * **Chinese Ensemble Physical Models & Calibrations**:

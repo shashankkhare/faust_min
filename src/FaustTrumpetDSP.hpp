@@ -232,7 +232,7 @@ class FaustTrumpetDSP : public dsp {
 	virtual void compute(int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs) {
 		FAUSTFLOAT* output0 = outputs[0];
 		float fSlow0 = float(fHslider0);
-		float fSlow1 = (1.20000005f * fSlow0);
+		float fSlow1 = (0.604687512f * fSlow0);
 		float fSlow2 = float(fButton0);
 		int iSlow3 = (fSlow2 == 0.0f);
 		float fSlow4 = float(fHslider1);

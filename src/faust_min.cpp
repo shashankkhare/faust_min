@@ -210,6 +210,22 @@ DART_EXPORT int orchestrator_load_song(SequenceOrchestrator* orch, const char* d
     return (orch && directory) ? orch->loadSong(std::string(directory)) : -1;
 }
 
+DART_EXPORT int orchestrator_load_sequence(SequenceOrchestrator* orch, const char* usqFilePath) {
+    return (orch && usqFilePath) ? orch->loadSequence(std::string(usqFilePath)) : -1;
+}
+
+DART_EXPORT int orchestrator_load_sequence_string(SequenceOrchestrator* orch, const char* usqContent) {
+    return (orch && usqContent) ? orch->loadSequenceFromString(std::string(usqContent)) : -1;
+}
+
+DART_EXPORT int orchestrator_load_track(SequenceOrchestrator* orch, const char* trkFilePath) {
+    return (orch && trkFilePath) ? orch->loadTrack(std::string(trkFilePath)) : -1;
+}
+
+DART_EXPORT int orchestrator_load_track_string(SequenceOrchestrator* orch, const char* trkContent) {
+    return (orch && trkContent) ? orch->loadTrackFromString(std::string(trkContent)) : -1;
+}
+
 DART_EXPORT void orchestrator_unload_song(SequenceOrchestrator* orch, const char* directory) {
     if (orch && directory) orch->unloadSong(std::string(directory));
 }
@@ -387,6 +403,10 @@ DART_EXPORT void mixer_unregister_instrument(FaustMixer* mixer, FaustInstrument*
 DART_EXPORT int mixer_add_track(FaustMixer* mixer, float initialWeight) {
     FM_LOGI("mixer_add_track: mixer=%p weight=%.3f", (void*)mixer, initialWeight);
     return mixer ? mixer->addTrack(initialWeight) : 0;
+}
+
+DART_EXPORT int mixer_get_track_id_by_name(FaustMixer* mixer, const char* name) {
+    return (mixer && name) ? mixer->getTrackIdByName(std::string(name)) : -1;
 }
 
 DART_EXPORT void mixer_remove_track(FaustMixer* mixer, int trackID) {

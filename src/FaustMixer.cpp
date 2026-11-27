@@ -568,7 +568,7 @@ void FaustMixer::workerLoop(int workerID) {
     }
 }
 
-int FaustMixer::addTrack(float initialWeight) {
+int FaustMixer::addTrack(float initialWeight, const std::string& name) {
     std::lock_guard<std::recursive_mutex> lock(mRegistryMutex);
     int id = mNextTrackID++;
     mTracks[id] = std::make_shared<InstrumentTrack>();
@@ -576,6 +576,9 @@ int FaustMixer::addTrack(float initialWeight) {
     track->trackID = id;
     track->assignedWeight = initialWeight;
     track->dynamicWeight = initialWeight;
+    if (!name.empty()) {
+        mTrackNameToID[name] = id;
+    }
     if (mSampleRate > 0.0f) {
         track->fxDSP.reset(new FaustTrackFxDSP());
         track->fxDSP->init(static_cast<int>(mSampleRate));
@@ -583,13 +586,30 @@ int FaustMixer::addTrack(float initialWeight) {
         track->fxDSP->buildUserInterface(track->fxUI.get());
     }
     recalculateWeights();
-    FM_LOGI("[Mixer] Added Track ID: %d with Weight: %.2f", id, initialWeight);
+    FM_LOGI("[Mixer] Added Track ID: %d (name='%s') with Weight: %.2f", id, name.c_str(), initialWeight);
     return id;
+}
+
+int FaustMixer::getTrackIdByName(const std::string& name) {
+    if (name.empty()) return -1;
+    std::lock_guard<std::recursive_mutex> lock(mRegistryMutex);
+    auto it = mTrackNameToID.find(name);
+    if (it != mTrackNameToID.end() && mTracks.count(it->second)) {
+        return it->second;
+    }
+    return -1;
 }
 
 void FaustMixer::removeTrack(int trackID) {
     std::lock_guard<std::recursive_mutex> lock(mRegistryMutex);
     mTracks.erase(trackID);
+    for (auto it = mTrackNameToID.begin(); it != mTrackNameToID.end(); ) {
+        if (it->second == trackID) {
+            it = mTrackNameToID.erase(it);
+        } else {
+            ++it;
+        }
+    }
     recalculateWeights();
     FM_LOGI("[Mixer] Removed Track ID: %d", trackID);
 }
@@ -644,6 +664,7 @@ void FaustMixer::removeSequenceFromTrack(int trackID, UMLSequence* seq) {
 void FaustMixer::clearAll() {
     std::lock_guard<std::recursive_mutex> lock(mRegistryMutex);
     mTracks.clear();
+    mTrackNameToID.clear();
     mNextTrackID = 1;
 }
 

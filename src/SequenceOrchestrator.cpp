@@ -28,12 +28,15 @@
  */
 
 #include "SequenceOrchestrator.hpp"
+#include "FaustMixer.hpp"
 #include "UMLParser.hpp"
 #include "InstrumentMapper.hpp"
 #include "faust_min.h"
 #include "FaustLog.hpp"
+#include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <sstream>
 #if DEBUG_ORCHESTRATOR
 #define TLOG(msg) do { \
     auto __now = std::chrono::steady_clock::now(); \
@@ -139,75 +142,375 @@ void SequenceOrchestrator::rebuildSnapshot() {
     std::atomic_store(&mRenderSnapshot, next);
 }
 
+int SequenceOrchestrator::loadSequenceFromString(
+    const std::string& usqContent,
+    const std::string& fallbackPrefix,
+    std::vector<std::string>* outLoadedNames
+) {
+    std::istringstream iss(usqContent);
+    std::string line;
+    std::string currentSeqBlock;
+    bool inNotes = false;
+    int subSeqIdx = 0;
+    int loadedCount = 0;
+
+    auto registerBlock = [&](const std::string& blockStr) {
+        if (blockStr.empty()) return;
+        std::string fallbackName = fallbackPrefix + "_" + std::to_string(subSeqIdx++);
+        auto seq = std::make_shared<UMLSequence>(fallbackName, -1, blockStr);
+        std::string regName = seq->name.empty() ? fallbackName : seq->name;
+        if (addSequence(regName, seq) == 0) {
+            if (outLoadedNames) outLoadedNames->push_back(regName);
+            loadedCount++;
+        }
+    };
+
+    while (std::getline(iss, line)) {
+        bool isParam = false;
+        std::string trimmed = line;
+        auto firstPos = trimmed.find_first_not_of(" \t\r\n");
+        if (firstPos != std::string::npos) {
+            trimmed.erase(0, firstPos);
+        } else {
+            trimmed.clear();
+        }
+        if (!trimmed.empty() && trimmed.find("//") != 0) {
+            if (trimmed.find(':') != std::string::npos) {
+                isParam = true;
+            } else {
+                inNotes = true;
+            }
+        }
+
+        if (isParam && inNotes) {
+            registerBlock(currentSeqBlock);
+            currentSeqBlock.clear();
+            inNotes = false;
+        }
+        currentSeqBlock += line + "\n";
+    }
+    registerBlock(currentSeqBlock);
+    return loadedCount;
+}
+
+int SequenceOrchestrator::loadSequence(
+    const std::string& usqFilePath,
+    std::vector<std::string>* outLoadedNames
+) {
+    std::string basePath = faust_min_get_asset_base_path() ? std::string(faust_min_get_asset_base_path()) : "";
+    std::string fullPath = basePath.empty() ? usqFilePath : basePath + "/" + usqFilePath;
+
+    std::ifstream infile(fullPath);
+    if (!infile.is_open()) {
+        infile.open(usqFilePath);
+        if (!infile.is_open()) {
+            FM_LOGE("[Orchestrator] Failed to open sequence file: %s", usqFilePath.c_str());
+            return -1;
+        }
+    }
+
+    std::stringstream buffer;
+    buffer << infile.rdbuf();
+    return loadSequenceFromString(buffer.str(), usqFilePath, outLoadedNames);
+}
+
 int SequenceOrchestrator::loadSong(const std::string& songDirectory) {
-    // Base path is owned by FaustEngine (faust_min_get_asset_base_path).
     std::string basePath = faust_min_get_asset_base_path() ? std::string(faust_min_get_asset_base_path()) : "";
     std::string fullDir = basePath.empty() ? songDirectory : basePath + "/" + songDirectory;
     DIR* dir = opendir(fullDir.c_str());
     if (!dir) {
-        // Attempt as absolute path if relative fails
         dir = opendir(songDirectory.c_str());
         if (!dir) {
-            printf("[Orchestrator] Failed to open song directory: %s\n", fullDir.c_str());
+            FM_LOGE("[Orchestrator] Failed to open song directory: %s", fullDir.c_str());
             return -1;
         }
         fullDir = songDirectory;
     }
 
-    std::vector<std::string> loadedSeqNames;
+    std::vector<std::string> usqFilePaths;
+    std::vector<std::string> trkFilePaths;
     struct dirent* entry;
     while ((entry = readdir(dir)) != nullptr) {
         std::string filename = entry->d_name;
         if (filename.length() > 4 && filename.substr(filename.length() - 4) == ".usq") {
-            std::string filepath = fullDir + "/" + filename;
-            std::ifstream infile(filepath);
-            if (!infile.is_open()) continue;
-
-            std::string line;
-            std::string currentSeqBlock = "";
-            bool inNotes = false;
-            int subSeqIdx = 0;
-
-            while (std::getline(infile, line)) {
-                bool isParam = false;
-                std::string trimmed = line;
-                trimmed.erase(0, trimmed.find_first_not_of(" \t\r\n"));
-                if (!trimmed.empty() && trimmed.find("//") != 0) {
-                    if (trimmed.find(':') != std::string::npos) {
-                        isParam = true;
-                    } else {
-                        inNotes = true;
-                    }
-                }
-
-                if (isParam && inNotes) {
-                    std::string seqName = songDirectory + "_" + filename + "_" + std::to_string(subSeqIdx++);
-                    auto seq = std::make_shared<UMLSequence>(seqName, -1, currentSeqBlock);
-                    if (addSequence(seqName, seq) == 0) {
-                        loadedSeqNames.push_back(seqName);
-                    }
-                    currentSeqBlock = "";
-                    inNotes = false;
-                }
-                currentSeqBlock += line + "\n";
-            }
-            if (!currentSeqBlock.empty()) {
-                std::string seqName = songDirectory + "_" + filename + "_" + std::to_string(subSeqIdx++);
-                auto seq = std::make_shared<UMLSequence>(seqName, -1, currentSeqBlock);
-                if (addSequence(seqName, seq) == 0) {
-                    loadedSeqNames.push_back(seqName);
-                }
-            }
+            usqFilePaths.push_back(fullDir + "/" + filename);
+        } else if (filename.length() > 4 && filename.substr(filename.length() - 4) == ".trk") {
+            trkFilePaths.push_back(fullDir + "/" + filename);
         }
     }
     closedir(dir);
 
+    std::sort(usqFilePaths.begin(), usqFilePaths.end());
+    std::sort(trkFilePaths.begin(), trkFilePaths.end());
+
+    // Pass 1: Load all .usq sequences.
+    std::vector<std::string> loadedSeqNames;
+    for (const auto& usqPath : usqFilePaths) {
+        loadSequence(usqPath, &loadedSeqNames);
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(mStateMutex);
+        mSongRegistry[songDirectory] = loadedSeqNames;
+    }
+
+    // Pass 2: Load any .trk file(s) post-sequence loading.
+    for (const auto& trkPath : trkFilePaths) {
+        loadTrack(trkPath, songDirectory);
+    }
+
+    return static_cast<int>(loadedSeqNames.size());
+}
+
+std::shared_ptr<UMLSequence> SequenceOrchestrator::getSequence(const std::string& name) {
     std::lock_guard<std::mutex> lock(mStateMutex);
-    mSongRegistry[songDirectory] = loadedSeqNames;
-    return loadedSeqNames.size();
+    auto it = mActiveSequences.find(name);
+    if (it != mActiveSequences.end() && it->second) {
+        return it->second->sequenceObj;
+    }
+    return nullptr;
+}
+
+int SequenceOrchestrator::loadTrack(const std::string& trkFilePath, const std::string& songKey) {
+    std::string basePath = faust_min_get_asset_base_path() ? std::string(faust_min_get_asset_base_path()) : "";
+    std::string fullPath = basePath.empty() ? trkFilePath : basePath + "/" + trkFilePath;
+
+    std::ifstream infile(fullPath);
+    if (!infile.is_open()) {
+        infile.open(trkFilePath);
+        if (!infile.is_open()) {
+            FM_LOGE("[Orchestrator] Failed to open track file: %s", trkFilePath.c_str());
+            return -1;
+        }
+    }
+
+    std::stringstream buffer;
+    buffer << infile.rdbuf();
+    return loadTrackFromString(buffer.str(), songKey);
+}
+
+int SequenceOrchestrator::loadTrackFromString(const std::string& trkContent, const std::string& songKey) {
+    auto trim = [](std::string s) {
+        auto start = s.find_first_not_of(" \t\r\n");
+        if (start == std::string::npos) return std::string();
+        auto end = s.find_last_not_of(" \t\r\n");
+        return s.substr(start, end - start + 1);
+    };
+    auto toLower = [](std::string s) {
+        std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        return s;
+    };
+    auto splitFloats = [&](const std::string& val) {
+        std::vector<float> out;
+        std::stringstream ss(val);
+        std::string item;
+        while (std::getline(ss, item, ',')) {
+            std::string t = trim(item);
+            if (!t.empty()) {
+                try { out.push_back(std::stof(t)); } catch (...) {}
+            }
+        }
+        return out;
+    };
+
+    struct ParsedTrack {
+        std::string name;
+        float weight = 1.0f;
+        bool hasReverb = false;
+        float reverb = 0.0f;
+        bool hasEcho = false;
+        float echoSend = 0.0f, echoFeedback = 0.0f, echoDelay = 0.25f;
+        bool hasEq = false;
+        float eqBass = 0.0f, eqTreble = 0.0f;
+        bool hasMid = false;
+        float midDb = 0.0f, midFreq = 1000.0f, midQ = 1.0f;
+        bool muted = false;
+        std::vector<std::string> sequences;
+    };
+
+    bool hasFxReturn = false;
+    float fxReturn = 1.0f;
+    bool hasMasterGain = false;
+    float masterGain = 1.0f;
+    int finalWeightMode = 1; // DYNAMIC by default
+
+    std::vector<ParsedTrack> tracks;
+    ParsedTrack* currentTrack = nullptr;
+
+    std::istringstream iss(trkContent);
+    std::string rawLine;
+    while (std::getline(iss, rawLine)) {
+        // Strip inline comments
+        auto commentPos = rawLine.find("//");
+        if (commentPos != std::string::npos) {
+            rawLine = rawLine.substr(0, commentPos);
+        }
+        std::string line = trim(rawLine);
+        if (line.empty()) continue;
+
+        auto colonPos = line.find(':');
+        if (colonPos == std::string::npos) continue;
+
+        std::string key = toLower(trim(line.substr(0, colonPos)));
+        std::string val = trim(line.substr(colonPos + 1));
+
+        if (key == "track") {
+            tracks.emplace_back();
+            currentTrack = &tracks.back();
+            currentTrack->name = val;
+        } else if (currentTrack == nullptr) {
+            if (key == "fx_return" || key == "fxreturn") {
+                try { fxReturn = std::stof(val); hasFxReturn = true; } catch (...) {}
+            } else if (key == "master_gain" || key == "mastergain") {
+                try { masterGain = std::stof(val); hasMasterGain = true; } catch (...) {}
+            } else if (key == "weight_mode" || key == "weightmode") {
+                std::string lv = toLower(val);
+                if (lv == "static" || lv == "0") finalWeightMode = 0;
+                else finalWeightMode = 1;
+            }
+        } else {
+            if (key == "weight" || key == "volume") {
+                try { currentTrack->weight = std::stof(val); } catch (...) {}
+            } else if (key == "reverb" || key == "reverb_send") {
+                try { currentTrack->reverb = std::stof(val); currentTrack->hasReverb = true; } catch (...) {}
+            } else if (key == "echo") {
+                auto vals = splitFloats(val);
+                if (vals.size() >= 3) {
+                    currentTrack->echoSend = vals[0];
+                    currentTrack->echoFeedback = vals[1];
+                    currentTrack->echoDelay = vals[2];
+                    currentTrack->hasEcho = true;
+                }
+            } else if (key == "eq") {
+                auto vals = splitFloats(val);
+                if (vals.size() >= 2) {
+                    currentTrack->eqBass = vals[0];
+                    currentTrack->eqTreble = vals[1];
+                    currentTrack->hasEq = true;
+                }
+            } else if (key == "mid") {
+                auto vals = splitFloats(val);
+                if (vals.size() >= 3) {
+                    currentTrack->midDb = vals[0];
+                    currentTrack->midFreq = vals[1];
+                    currentTrack->midQ = vals[2];
+                    currentTrack->hasMid = true;
+                }
+            } else if (key == "muted") {
+                std::string lv = toLower(val);
+                currentTrack->muted = (lv == "true" || lv == "1" || lv == "yes");
+            } else if (key == "sequences" || key == "sequence") {
+                std::stringstream ss(val);
+                std::string item;
+                while (std::getline(ss, item, ',')) {
+                    std::string seqName = trim(item);
+                    if (!seqName.empty()) {
+                        currentTrack->sequences.push_back(seqName);
+                    }
+                }
+            }
+        }
+    }
+
+    FaustMixer& mixer = FaustMixer::getInstance();
+    mixer.setWeightMode(0); // STATIC during track configuration
+
+    std::vector<int> tracksToUnmute;
+    std::vector<SongTrackBinding> bindings;
+
+    for (const auto& pt : tracks) {
+        int trackId = pt.name.empty() ? -1 : mixer.getTrackIdByName(pt.name);
+        bool ownedTrack = false;
+        if (trackId == -1) {
+            trackId = mixer.addTrack(pt.weight, pt.name);
+            ownedTrack = true;
+        } else {
+            mixer.setTrackWeight(trackId, pt.weight);
+        }
+
+        if (pt.hasReverb) {
+            mixer.setTrackReverbSend(trackId, pt.reverb);
+        }
+        if (pt.hasEcho) {
+            mixer.setTrackEcho(trackId, pt.echoSend, pt.echoFeedback, pt.echoDelay);
+            mixer.setTrackBypassEcho(trackId, false);
+        } else {
+            mixer.setTrackBypassEcho(trackId, true);
+        }
+        if (pt.hasEq) {
+            mixer.setTrackEQ(trackId, pt.eqBass, pt.eqTreble);
+            mixer.setTrackBypassEQ(trackId, false);
+        }
+        if (pt.hasMid) {
+            mixer.setTrackMid(trackId, pt.midDb, pt.midFreq, pt.midQ);
+        }
+        if (pt.muted) {
+            mixer.muteTrack(trackId);
+        } else {
+            tracksToUnmute.push_back(trackId);
+        }
+
+        SongTrackBinding binding;
+        binding.trackId = trackId;
+        binding.ownedTrack = ownedTrack;
+
+        for (const auto& seqName : pt.sequences) {
+            auto seq = getSequence(seqName);
+            if (!seq) {
+                FM_LOGW("[Orchestrator] WARNING: loadTrack — sequence '%s' is not loaded (referenced by track '%s'); skipping.",
+                        seqName.c_str(), pt.name.c_str());
+                continue;
+            }
+            mixer.addSequenceToTrack(trackId, seq.get());
+            binding.sequences.push_back(seq.get());
+        }
+
+        bindings.push_back(std::move(binding));
+    }
+
+    if (hasFxReturn) {
+        mixer.setFXReturnWeight(fxReturn);
+    }
+    if (hasMasterGain) {
+        mixer.setMasterGain(masterGain);
+    }
+    if (!tracksToUnmute.empty()) {
+        mixer.unmuteTracks(tracksToUnmute.data(), static_cast<int>(tracksToUnmute.size()));
+    }
+    mixer.setWeightMode(finalWeightMode);
+
+    if (!songKey.empty()) {
+        std::lock_guard<std::mutex> lock(mStateMutex);
+        auto& existing = mSongTrackRegistry[songKey];
+        existing.insert(existing.end(), bindings.begin(), bindings.end());
+    }
+
+    FM_LOGI("[Orchestrator] loadTrack configured %zu track(s)", tracks.size());
+    return static_cast<int>(tracks.size());
 }
 
 void SequenceOrchestrator::unloadSong(const std::string& songDirectory) {
+    std::vector<SongTrackBinding> tracksToClean;
+    {
+        std::lock_guard<std::mutex> lock(mStateMutex);
+        auto trkIt = mSongTrackRegistry.find(songDirectory);
+        if (trkIt != mSongTrackRegistry.end()) {
+            tracksToClean = std::move(trkIt->second);
+            mSongTrackRegistry.erase(trkIt);
+        }
+    }
+
+    // Detach sequences from FaustMixer before releasing sequence shared_ptrs.
+    FaustMixer& mixer = FaustMixer::getInstance();
+    for (const auto& b : tracksToClean) {
+        for (UMLSequence* seqPtr : b.sequences) {
+            mixer.removeSequenceFromTrack(b.trackId, seqPtr);
+        }
+        if (b.ownedTrack) {
+            mixer.removeTrack(b.trackId);
+        }
+    }
+
     std::lock_guard<std::mutex> lock(mStateMutex);
     if (mSongRegistry.count(songDirectory)) {
         for (const auto& seqName : mSongRegistry[songDirectory]) {

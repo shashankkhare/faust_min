@@ -30,4 +30,4 @@ pulse2 = os.square(freq * 1.48); // Classic cowbell detune ratio
 
 cowbell = (pulse1 + pulse2) * en.ar(0.001, 0.3, gate) : fi.highpass(2, 500 + 200 * velocity);
 
-process = cowbell * gain * velocity * (1.0 + clang + 0.3 * velocity) * 0.7973;
+process = cowbell * gain * velocity * (1.0 + clang + 0.3 * velocity) * 0.7973 : ma.tanh;

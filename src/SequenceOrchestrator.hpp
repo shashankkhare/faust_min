@@ -100,9 +100,50 @@ private:
 public:
 
     /**
-     * @brief Load all .usq files from a directory and parse their sequences.
+     * @brief Load a .usq file from disk, splitting multi-block files into
+     *        UMLSequences and registering them in the orchestrator.
+     * @param usqFilePath Path to a .usq file (relative to asset base path or absolute).
+     * @param outLoadedNames Optional output list of registered sequence names.
+     * @return Number of sequences loaded, or -1 if the file could not be opened.
+     */
+    int loadSequence(const std::string& usqFilePath, std::vector<std::string>* outLoadedNames = nullptr);
+
+    /**
+     * @brief Parse .usq content from a string, splitting multi-block content
+     *        into UMLSequences and registering them in the orchestrator.
+     * @param usqContent Raw .usq text (single or multi-block).
+     * @param fallbackPrefix Prefix used when a block omits an explicit `name:` header.
+     * @param outLoadedNames Optional output list of registered sequence names.
+     * @return Number of sequences loaded.
+     */
+    int loadSequenceFromString(const std::string& usqContent, const std::string& fallbackPrefix = "seq", std::vector<std::string>* outLoadedNames = nullptr);
+
+    /**
+     * @brief Load all .usq files from a directory via loadSequence(), then
+     *        automatically call loadTrack() on any .trk files in the directory.
      */
     int loadSong(const std::string& songDirectory);
+
+    /**
+     * @brief Load a .trk file from disk, configuring FaustMixer tracks and
+     *        attaching already-loaded sequences by name. Prints a warning for
+     *        any referenced sequence that is not currently loaded.
+     * @return Number of tracks configured, or -1 if the file could not be read.
+     */
+    int loadTrack(const std::string& trkFilePath, const std::string& songKey = "");
+
+    /**
+     * @brief Parse .trk content from a string, configuring FaustMixer tracks
+     *        and attaching already-loaded sequences by name. Prints a warning
+     *        for any referenced sequence that is not currently loaded.
+     * @return Number of tracks configured, or -1 on parse failure.
+     */
+    int loadTrackFromString(const std::string& trkContent, const std::string& songKey = "");
+
+    /**
+     * @brief Look up a currently registered sequence by name.
+     */
+    std::shared_ptr<UMLSequence> getSequence(const std::string& name);
 
     /**
      * @brief Unload all sequences associated with a specific song directory.
@@ -296,7 +337,13 @@ private:
 
     std::map<std::string, std::shared_ptr<ActiveSequence>> mActiveSequences;
     std::vector<std::string> mPendingExtensions;
+    struct SongTrackBinding {
+        int trackId = -1;
+        std::vector<UMLSequence*> sequences;
+        bool ownedTrack = false;
+    };
     std::map<std::string, std::vector<std::string>> mSongRegistry;
+    std::map<std::string, std::vector<SongTrackBinding>> mSongTrackRegistry;
     std::vector<std::string> mPendingPlay;
     std::mutex mStateMutex;
     long mMasterSampleCount = 0;

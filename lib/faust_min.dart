@@ -95,6 +95,9 @@ typedef _dart_mixer_unregister_inst = void Function(Pointer<NativeMixerOpaque> m
 typedef _c_mixer_add_track = Int32 Function(Pointer<NativeMixerOpaque> mixer, Float initialWeight);
 typedef _dart_mixer_add_track = int Function(Pointer<NativeMixerOpaque> mixer, double initialWeight);
 
+typedef _c_mixer_get_track_id_by_name = Int32 Function(Pointer<NativeMixerOpaque> mixer, Pointer<Utf8> name);
+typedef _dart_mixer_get_track_id_by_name = int Function(Pointer<NativeMixerOpaque> mixer, Pointer<Utf8> name);
+
 typedef _c_mixer_remove_track = Void Function(Pointer<NativeMixerOpaque> mixer, Int32 trackID);
 typedef _dart_mixer_remove_track = void Function(Pointer<NativeMixerOpaque> mixer, int trackID);
 
@@ -847,6 +850,10 @@ class SequenceOrchestrator {
   static late final _funcRegisterTickCb = _dylib.lookupFunction<_c_orch_register_tick_callback, _dart_orch_register_tick_callback>('orchestrator_register_tick_callback');
   static late final _funcPollFinished = _dylib.lookupFunction<_c_orch_poll_finished, _dart_orch_poll_finished>('orchestrator_poll_finished');
   static late final _funcLoadSong = _dylib.lookupFunction<_c_orch_load_song, _dart_orch_load_song>('orchestrator_load_song');
+  static late final _funcLoadSequence = _dylib.lookupFunction<_c_orch_load_song, _dart_orch_load_song>('orchestrator_load_sequence');
+  static late final _funcLoadSequenceString = _dylib.lookupFunction<_c_orch_load_song, _dart_orch_load_song>('orchestrator_load_sequence_string');
+  static late final _funcLoadTrack = _dylib.lookupFunction<_c_orch_load_song, _dart_orch_load_song>('orchestrator_load_track');
+  static late final _funcLoadTrackString = _dylib.lookupFunction<_c_orch_load_song, _dart_orch_load_song>('orchestrator_load_track_string');
   static late final _funcUnloadSong = _dylib.lookupFunction<_c_orch_unload_song, _dart_orch_unload_song>('orchestrator_unload_song');
   static late final _funcPlaySong = _dylib.lookupFunction<_c_orch_play_song, _dart_orch_play_song>('orchestrator_play_song');
   static late final _funcStopSong = _dylib.lookupFunction<_c_orch_stop_song, _dart_orch_stop_song>('orchestrator_stop_song');
@@ -900,7 +907,7 @@ class SequenceOrchestrator {
     _funcClearSequences(_handle);
   }
 
-  /// Load a song from a directory
+  /// Load a song from a directory (calls loadSequence for .usq files, then loadTrack for .trk files)
   int loadSong(String directory) {
     if (_isDisposed) return -1;
     final dirPtr = directory.toNativeUtf8();
@@ -908,6 +915,52 @@ class SequenceOrchestrator {
       return _funcLoadSong(_handle, dirPtr.cast());
     } finally {
       malloc.free(dirPtr);
+    }
+  }
+
+  /// Load a .usq file from disk and register all contained sequences.
+  int loadSequence(String usqFilePath) {
+    if (_isDisposed) return -1;
+    final pathPtr = usqFilePath.toNativeUtf8();
+    try {
+      return _funcLoadSequence(_handle, pathPtr.cast());
+    } finally {
+      malloc.free(pathPtr);
+    }
+  }
+
+  /// Parse .usq content from a string and register all contained sequences.
+  int loadSequenceFromString(String usqContent) {
+    if (_isDisposed) return -1;
+    final contentPtr = usqContent.toNativeUtf8();
+    try {
+      return _funcLoadSequenceString(_handle, contentPtr.cast());
+    } finally {
+      malloc.free(contentPtr);
+    }
+  }
+
+  /// Load a .trk file from disk and bind already-loaded sequences to FaustMixer tracks.
+  /// Prints a warning for any referenced sequence that is not loaded.
+  int loadTrack(String trkFilePath) {
+    if (_isDisposed) return -1;
+    final pathPtr = trkFilePath.toNativeUtf8();
+    try {
+      return _funcLoadTrack(_handle, pathPtr.cast());
+    } finally {
+      malloc.free(pathPtr);
+    }
+  }
+
+  /// Parse .trk content from a string and bind already-loaded sequences to FaustMixer tracks.
+  /// Prints a warning for any referenced sequence that is not loaded.
+  int loadTrackFromString(String trkContent) {
+    if (_isDisposed) return -1;
+    final contentPtr = trkContent.toNativeUtf8();
+    try {
+      return _funcLoadTrackString(_handle, contentPtr.cast());
+    } finally {
+      malloc.free(contentPtr);
     }
   }
 
@@ -1128,6 +1181,7 @@ class FaustMixer {
   static late final _funcRegisterInst = _dylib.lookupFunction<_c_mixer_register_inst, _dart_mixer_register_inst>('mixer_register_instrument');
   static late final _funcUnregisterInst = _dylib.lookupFunction<_c_mixer_unregister_inst, _dart_mixer_unregister_inst>('mixer_unregister_instrument');
   static late final _funcAddTrack = _dylib.lookupFunction<_c_mixer_add_track, _dart_mixer_add_track>('mixer_add_track');
+  static late final _funcGetTrackIdByName = _dylib.lookupFunction<_c_mixer_get_track_id_by_name, _dart_mixer_get_track_id_by_name>('mixer_get_track_id_by_name');
   static late final _funcRemoveTrack = _dylib.lookupFunction<_c_mixer_remove_track, _dart_mixer_remove_track>('mixer_remove_track');
   static late final _funcAddInstToTrack = _dylib.lookupFunction<_c_mixer_add_inst_to_track, _dart_mixer_add_inst_to_track>('mixer_add_instrument_to_track');
   static late final _funcRemoveInstFromTrack = _dylib.lookupFunction<_c_mixer_remove_inst_from_track, _dart_mixer_remove_inst_from_track>('mixer_remove_instrument_from_track');
@@ -1323,6 +1377,17 @@ class FaustMixer {
   /// system. Attach instruments with [addInstrumentToTrack]. In DYNAMIC
   /// mode this weight is re-normalised automatically.
   int addTrack(double initialWeight) => _funcAddTrack(_handle, initialWeight);
+
+  /// Looks up a named track (such as one created via `loadTrack`) by name.
+  /// Returns `-1` if no active track has [name].
+  int getTrackIdByName(String name) {
+    final namePtr = name.toNativeUtf8();
+    try {
+      return _funcGetTrackIdByName(_handle, namePtr.cast());
+    } finally {
+      malloc.free(namePtr);
+    }
+  }
 
   /// Remove a track and everything attached to it from the mixer.
   void removeTrack(int trackID) => _funcRemoveTrack(_handle, trackID);

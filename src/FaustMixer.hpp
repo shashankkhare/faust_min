@@ -36,7 +36,8 @@ public:
     void stop();
     void close();
     
-    int addTrack(float initialWeight = 1.0f);
+    int addTrack(float initialWeight = 1.0f, const std::string& name = "");
+    int getTrackIdByName(const std::string& name);
     void removeTrack(int trackID);
     void clearAll();
 
@@ -110,6 +111,7 @@ private:
     float mFXReturnWeight = 1.0f;
 
     std::map<int, std::shared_ptr<MixerTrack>> mTracks;
+    std::map<std::string, int> mTrackNameToID;
     int mNextTrackID = 1;
     std::recursive_mutex mRegistryMutex;
     

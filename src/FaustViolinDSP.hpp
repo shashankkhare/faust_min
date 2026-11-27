@@ -280,7 +280,7 @@ class FaustViolinDSP : public dsp {
 		float fConst3 = (fConst0 * std::sin((17592.918f / fConst0)));
 		float fConst4 = (3518.58374f / fConst3);
 		float fConst5 = (((fConst2 + fConst4) / fConst1) + 1.0f);
-		fConst6 = (10.9125004f / fConst5);
+		fConst6 = (2.81324244f / fConst5);
 		fConst7 = (2.0f * (1.0f - (1.0f / FaustViolinDSP_faustpower2_f(fConst1))));
 		float fConst8 = (1727.87598f / fConst0);
 		float fConst9 = std::tan(fConst8);

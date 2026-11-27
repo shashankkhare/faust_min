@@ -83,6 +83,9 @@ public:
     static const std::map<std::string, double> bayanBols;
     // African drum stroke names → strikeVal for djembe (ID 28), conga (ID 30), bongo (ID 31)
     static const std::map<std::string, double> africanDrumBols;
+    // Carnatic percussion stroke names → strikeVal for mridangam (ID 49) and ghatam (ID 50)
+    static const std::map<std::string, double> mridangamBols;
+    static const std::map<std::string, double> ghatamBols;
 };
 
 #endif // UML_PARSER_HPP

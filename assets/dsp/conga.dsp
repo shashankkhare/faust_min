@@ -24,9 +24,9 @@ import("stdfaust.lib");
 // - strike: Strike articulation (0 = Open Tone, 1 = Slap Tone, 2 = Muffled/Touch).
 
 // UI Controls (Discrete sliders)
-// Expert Play Range: Conga fundamental typically 200-500 Hz.
-freq = hslider("freq", 200.0, 200, 500, 0.1);
-gain = hslider("gain", 0.8, 0, 1, 0.01);
+// Expert Play Range: Conga family (Tumba 82-130 Hz, Conga 116-165 Hz, Quinto 147-260 Hz): 80-300 Hz.
+freq = hslider("freq", 130.0, 80, 300, 0.1);
+gain = hslider("gain", 1.0, 0, 1, 0.01);
 velocity = hslider("velocity", 0.8, 0, 1, 0.01);
 gate = button("gate");
 position = hslider("position", 0, 0, 2, 1);
@@ -62,4 +62,4 @@ with {
 drumOutput = excitation : congaModel(freq, decayScale);
 
 // Conga has a thick leather head, so we lowpass slightly to keep it warm and woody (no high-Q bandpass cavity)
-process = (drumOutput : fi.lowpass(2, freq * 4.0)) * gain * 35 : ma.tanh;
+process = (drumOutput : fi.lowpass(2, max(1200.0, freq * 4.0))) * (gain * 6.0) : ma.tanh;

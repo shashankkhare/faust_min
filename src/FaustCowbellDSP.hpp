@@ -12,6 +12,7 @@ Compilation options: -lang cpp -es 1 -single -ftz 1
 #define FAUSTFLOAT float
 #endif 
 
+/* link with : "" */
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -254,7 +255,7 @@ class FaustCowbellDSP : public dsp {
 			float fTemp7 = float(iRec3[0]);
 			float fTempFTZ2 = ((((fConst2 * (fTemp0 * ((fSlow10 * fTemp2) + (fSlow14 * fTemp4)))) - ((fSlow18 * fVec3[((IOTA - iSlow21) & 255)]) + (((fSlow24 * fVec4[((IOTA - iSlow26) & 255)]) + (fSlow27 * fVec4[((IOTA - iSlow28) & 255)])) + (fSlow29 * fVec3[((IOTA - iSlow20) & 255)])))) * std::max<float>(0.0f, std::min<float>((fConst6 * fTemp7), ((fConst7 * (fConst5 - fTemp7)) + 1.0f)))) - (fSlow31 * ((fSlow32 * fRec0[2]) + (fSlow33 * fRec0[1]))));
 			fRec0[0] = ((std::fabs(fTempFTZ2) > 1.17549435e-38f) ? fTempFTZ2 : 0.0f);
-			output0[i0] = FAUSTFLOAT((fSlow4 * (((fSlow6 * fRec0[0]) + (fSlow34 * fRec0[1])) + (fSlow6 * fRec0[2]))));
+			output0[i0] = FAUSTFLOAT(float(tanhf(float((fSlow4 * (((fSlow6 * fRec0[0]) + (fSlow34 * fRec0[1])) + (fSlow6 * fRec0[2])))))));
 			iVec0[1] = iVec0[0];
 			fRec1[1] = fRec1[0];
 			fVec1[1] = fVec1[0];

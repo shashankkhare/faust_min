@@ -191,5 +191,5 @@ softclip(x) = ba.if(abs(x) < 0.9, x, 0.9 * ma.tanh(x / 0.9));
 
 // Signal path: string → membrane (skin resonance) → body (wooden bowl) → output
 // membrane_filter was previously dead code — now correctly wired into chain.
-process = summed : membrane_filter : body_filter : *(gain * 2.4995 * 5.14675) : ma.tanh <: _,_;
+process = summed : membrane_filter : body_filter : *(gain * 4.080946) : ma.tanh <: _,_;
 
